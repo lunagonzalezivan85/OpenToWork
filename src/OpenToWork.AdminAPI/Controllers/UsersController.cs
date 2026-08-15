@@ -27,6 +27,13 @@ public class UsersController : AdminControllerBase
         return user == null ? NotFound() : Ok(user);
     }
 
+    [HttpGet("{id}/profile")]
+    public async Task<IActionResult> GetUserProfile(Guid id)
+    {
+        var profile = await _userService.GetUserProfileAsync(id);
+        return profile == null ? NotFound() : Ok(profile);
+    }
+
     [HttpPut("{id}/activate")]
     public async Task<IActionResult> Activate(Guid id)
     {

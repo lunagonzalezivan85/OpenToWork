@@ -20,38 +20,190 @@
 
     @if (Metrics != null)
     {
-        <div class="admin-stat-grid">
-            <div class="admin-stat-card">
-                <div class="admin-stat-label">@Lang.T("admin.dashboard.totalUsers")</div>
-                <div class="admin-stat-value">@Metrics.TotalUsers</div>
+        var totalCandidates = Metrics.TotalCandidates;
+        var evaluatedPct = totalCandidates > 0 ? (int)Math.Round((double)Metrics.EvaluatedProfiles / totalCandidates * 100) : 0;
+        var scoresPct = Metrics.EvaluatedProfiles > 0 ? (int)Math.Round((double)Metrics.ProfilesWithScores / Metrics.EvaluatedProfiles * 100) : 0;
+        var totalVacancies = Metrics.OpenVacancies + Metrics.ClosedVacancies + Metrics.DraftVacancies;
+        var openPct = totalVacancies > 0 ? (double)Metrics.OpenVacancies / totalVacancies * 100 : 0;
+        var closedPct = totalVacancies > 0 ? (double)Metrics.ClosedVacancies / totalVacancies * 100 : 0;
+        var draftPct = totalVacancies > 0 ? (double)Metrics.DraftVacancies / totalVacancies * 100 : 0;
+        var totalCompanies = Metrics.CompaniesWithVacancies + Metrics.CompaniesWithoutVacancies;
+        var withVacPct = totalCompanies > 0 ? (double)Metrics.CompaniesWithVacancies / totalCompanies * 100 : 0;
+        var withoutVacPct = totalCompanies > 0 ? (double)Metrics.CompaniesWithoutVacancies / totalCompanies * 100 : 0;
+        var circumference = 2 * Math.PI * 56;
+
+        @* === Sección 1: Perfiles *@
+        <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionProfiles")</h2>
+        <div class="admin-chart-grid">
+            <!-- Progress: Perfiles evaluados -->
+            <div class="admin-progress-card admin-clickable" @onclick="GoEvaluated">
+                <div class="admin-progress-header">
+                    <span class="admin-progress-title">@Lang.T("admin.dashboard.evaluatedProfiles")</span>
+                    <span class="admin-progress-numbers"><strong>@Metrics.EvaluatedProfiles</strong> / @totalCandidates</span>
+                </div>
+                <div class="admin-progress-bar">
+                    <div class="admin-progress-fill admin-progress-fill--success" style="width: @evaluatedPct%"></div>
+                </div>
+                <div class="admin-progress-detail">
+                    <span><span class="dot" style="background: var(--success)"></span>@Lang.T("admin.dashboard.evaluated"): @Metrics.EvaluatedProfiles</span>
+                    <span><span class="dot" style="background: var(--bg-tertiary)"></span>@Lang.T("admin.dashboard.pending"): @Metrics.PendingProfiles</span>
+                    <span>@evaluatedPct%</span>
+                </div>
             </div>
-            <div class="admin-stat-card admin-stat-card--success">
-                <div class="admin-stat-label">@Lang.T("admin.dashboard.activeUsers")</div>
-                <div class="admin-stat-value">@Metrics.ActiveUsers</div>
+
+            <!-- Progress: Perfiles con scores -->
+            <div class="admin-progress-card admin-clickable" @onclick="GoScores">
+                <div class="admin-progress-header">
+                    <span class="admin-progress-title">@Lang.T("admin.dashboard.profilesWithScores")</span>
+                    <span class="admin-progress-numbers"><strong>@Metrics.ProfilesWithScores</strong> / @Metrics.EvaluatedProfiles</span>
+                </div>
+                <div class="admin-progress-bar">
+                    <div class="admin-progress-fill admin-progress-fill--info" style="width: @scoresPct%"></div>
+                </div>
+                <div class="admin-progress-detail">
+                    <span><span class="dot" style="background: #0066FF"></span>@Lang.T("admin.dashboard.withScores"): @Metrics.ProfilesWithScores</span>
+                    <span><span class="dot" style="background: var(--bg-tertiary)"></span>@Lang.T("admin.dashboard.withoutScores"): @(Metrics.EvaluatedProfiles - Metrics.ProfilesWithScores)</span>
+                    <span>@scoresPct%</span>
+                </div>
             </div>
-            <div class="admin-stat-card admin-stat-card--info">
-                <div class="admin-stat-label">@Lang.T("admin.dashboard.candidates")</div>
-                <div class="admin-stat-value">@Metrics.TotalCandidates</div>
+        </div>
+
+        @* === Sección 2: Vacantes y Empresas *@
+        <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionVacancies")</h2>
+        <div class="admin-chart-grid">
+            <!-- Donut: Vacantes por estado -->
+            <div class="admin-chart-card admin-clickable" @onclick="GoToVacancies">
+                <span class="admin-chart-card-title">@Lang.T("admin.dashboard.vacanciesByStatus")</span>
+                <div class="admin-donut-wrapper">
+                    <div class="admin-donut">
+                        <svg width="140" height="140" viewBox="0 0 140 140">
+                            <circle cx="70" cy="70" r="56" fill="none" stroke="var(--bg-tertiary)" stroke-width="16" />
+                            @if (totalVacancies > 0)
+                            {
+                                <circle cx="70" cy="70" r="56" fill="none" stroke="#0066FF" stroke-width="16"
+                                        stroke-dasharray="@(Math.Round(circumference * openPct / 100), 2) @(Math.Round(circumference, 2))"
+                                        stroke-dashoffset="0" />
+                                <circle cx="70" cy="70" r="56" fill="none" stroke="var(--warning)" stroke-width="16"
+                                        stroke-dasharray="@(Math.Round(circumference * closedPct / 100), 2) @(Math.Round(circumference, 2))"
+                                        stroke-dashoffset="@(-Math.Round(circumference * openPct / 100, 2))" />
+                                <circle cx="70" cy="70" r="56" fill="none" stroke="var(--bg-tertiary)" stroke-width="16"
+                                        stroke-dasharray="@(Math.Round(circumference * draftPct / 100), 2) @(Math.Round(circumference, 2))"
+                                        stroke-dashoffset="@(-Math.Round(circumference * (openPct + closedPct) / 100, 2))" />
+                            }
+                        </svg>
+                        <div class="admin-donut-center">
+                            <div class="admin-donut-center-value">@totalVacancies</div>
+                            <div class="admin-donut-center-label">@Lang.T("admin.dashboard.total")</div>
+                        </div>
+                    </div>
+                    <div class="admin-donut-legend">
+                        <div class="admin-legend-item">
+                            <span class="admin-legend-dot" style="background: #0066FF"></span>
+                            <span class="admin-legend-label">@Lang.T("admin.dashboard.openVacancies")</span>
+                            <span class="admin-legend-value">@Metrics.OpenVacancies</span>
+                        </div>
+                        <div class="admin-legend-item">
+                            <span class="admin-legend-dot" style="background: var(--warning)"></span>
+                            <span class="admin-legend-label">@Lang.T("admin.dashboard.closedVacancies")</span>
+                            <span class="admin-legend-value">@Metrics.ClosedVacancies</span>
+                        </div>
+                        <div class="admin-legend-item">
+                            <span class="admin-legend-dot" style="background: var(--bg-tertiary)"></span>
+                            <span class="admin-legend-label">@Lang.T("admin.dashboard.draftVacancies")</span>
+                            <span class="admin-legend-value">@Metrics.DraftVacancies</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="admin-stat-card admin-stat-card--info">
-                <div class="admin-stat-label">@Lang.T("admin.dashboard.companies")</div>
-                <div class="admin-stat-value">@Metrics.TotalCompanies</div>
+
+            <!-- Donut: Empresas con/sin vacantes -->
+            <div class="admin-chart-card admin-clickable" @onclick="GoCompanies">
+                <span class="admin-chart-card-title">@Lang.T("admin.dashboard.companiesVacancies")</span>
+                <div class="admin-donut-wrapper">
+                    <div class="admin-donut">
+                        <svg width="140" height="140" viewBox="0 0 140 140">
+                            <circle cx="70" cy="70" r="56" fill="none" stroke="var(--bg-tertiary)" stroke-width="16" />
+                            @if (totalCompanies > 0)
+                            {
+                                <circle cx="70" cy="70" r="56" fill="none" stroke="#0066FF" stroke-width="16"
+                                        stroke-dasharray="@(Math.Round(circumference * withVacPct / 100), 2) @(Math.Round(circumference, 2))"
+                                        stroke-dashoffset="0" />
+                                <circle cx="70" cy="70" r="56" fill="none" stroke="var(--text-muted)" stroke-width="16"
+                                        stroke-dasharray="@(Math.Round(circumference * withoutVacPct / 100), 2) @(Math.Round(circumference, 2))"
+                                        stroke-dashoffset="@(-Math.Round(circumference * withVacPct / 100, 2))" />
+                            }
+                        </svg>
+                        <div class="admin-donut-center">
+                            <div class="admin-donut-center-value">@totalCompanies</div>
+                            <div class="admin-donut-center-label">@Lang.T("admin.dashboard.total")</div>
+                        </div>
+                    </div>
+                    <div class="admin-donut-legend">
+                        <div class="admin-legend-item">
+                            <span class="admin-legend-dot" style="background: #0066FF"></span>
+                            <span class="admin-legend-label">@Lang.T("admin.dashboard.companiesWithVacancies")</span>
+                            <span class="admin-legend-value">@Metrics.CompaniesWithVacancies</span>
+                        </div>
+                        <div class="admin-legend-item">
+                            <span class="admin-legend-dot" style="background: var(--text-muted)"></span>
+                            <span class="admin-legend-label">@Lang.T("admin.dashboard.companiesWithoutVacancies")</span>
+                            <span class="admin-legend-value">@Metrics.CompaniesWithoutVacancies</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="admin-stat-card">
-                <div class="admin-stat-label">@Lang.T("admin.dashboard.permanentVacancies")</div>
-                <div class="admin-stat-value">@Metrics.TotalPermanentVacancies</div>
-            </div>
-            <div class="admin-stat-card admin-stat-card--warning">
-                <div class="admin-stat-label">@Lang.T("admin.dashboard.tempVacancies")</div>
-                <div class="admin-stat-value">@Metrics.TotalTempVacancies</div>
-            </div>
-            <div class="admin-stat-card">
-                <div class="admin-stat-label">@Lang.T("admin.dashboard.skills")</div>
-                <div class="admin-stat-value">@Metrics.TotalSkills</div>
-            </div>
-            <div class="admin-stat-card admin-stat-card--danger">
-                <div class="admin-stat-label">@Lang.T("admin.dashboard.auditEntries")</div>
-                <div class="admin-stat-value">@Metrics.TotalAuditLogEntries</div>
+        </div>
+
+        @* === Sección 3: Verificaciones de candidatos *@
+        <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionVerifications")</h2>
+        <div class="admin-chart-card">
+            <span class="admin-chart-card-title">@Lang.T("admin.dashboard.candidateVerifications") (@totalCandidates @Lang.T("admin.dashboard.candidatesTotal"))</span>
+            <div class="admin-bar-chart">
+                <div class="admin-bar-row admin-clickable" @onclick="GoLinkedIn">
+                    <span class="admin-bar-label">@Lang.T("admin.dashboard.withLinkedIn")</span>
+                    <div class="admin-bar-track">
+                        <div class="admin-bar-fill admin-bar-fill--linkedin" style="width: @(totalCandidates > 0 ? Metrics.CandidatesWithLinkedIn * 100 / totalCandidates : 0)%">
+                            @(totalCandidates > 0 ? Metrics.CandidatesWithLinkedIn * 100 / totalCandidates : 0)%
+                        </div>
+                    </div>
+                    <span class="admin-bar-value">@Metrics.CandidatesWithLinkedIn</span>
+                </div>
+                <div class="admin-bar-row admin-clickable" @onclick="GoPortfolio">
+                    <span class="admin-bar-label">@Lang.T("admin.dashboard.withPortfolio")</span>
+                    <div class="admin-bar-track">
+                        <div class="admin-bar-fill admin-bar-fill--portfolio" style="width: @(totalCandidates > 0 ? Metrics.CandidatesWithPortfolio * 100 / totalCandidates : 0)%">
+                            @(totalCandidates > 0 ? Metrics.CandidatesWithPortfolio * 100 / totalCandidates : 0)%
+                        </div>
+                    </div>
+                    <span class="admin-bar-value">@Metrics.CandidatesWithPortfolio</span>
+                </div>
+                <div class="admin-bar-row admin-clickable" @onclick="GoCV">
+                    <span class="admin-bar-label">@Lang.T("admin.dashboard.withCV")</span>
+                    <div class="admin-bar-track">
+                        <div class="admin-bar-fill admin-bar-fill--cv" style="width: @(totalCandidates > 0 ? Metrics.CandidatesWithCV * 100 / totalCandidates : 0)%">
+                            @(totalCandidates > 0 ? Metrics.CandidatesWithCV * 100 / totalCandidates : 0)%
+                        </div>
+                    </div>
+                    <span class="admin-bar-value">@Metrics.CandidatesWithCV</span>
+                </div>
+                <div class="admin-bar-row admin-clickable" @onclick="GoEvaluated">
+                    <span class="admin-bar-label">@Lang.T("admin.dashboard.profilesComplete")</span>
+                    <div class="admin-bar-track">
+                        <div class="admin-bar-fill admin-bar-fill--evaluated" style="width: @evaluatedPct%">
+                            @evaluatedPct%
+                        </div>
+                    </div>
+                    <span class="admin-bar-value">@Metrics.EvaluatedProfiles</span>
+                </div>
+                <div class="admin-bar-row admin-clickable" @onclick="GoPending">
+                    <span class="admin-bar-label">@Lang.T("admin.dashboard.profilesIncomplete")</span>
+                    <div class="admin-bar-track">
+                        <div class="admin-bar-fill admin-bar-fill--pending" style="width: @(totalCandidates > 0 ? Metrics.PendingProfiles * 100 / totalCandidates : 0)%">
+                            @(totalCandidates > 0 ? Metrics.PendingProfiles * 100 / totalCandidates : 0)%
+                        </div>
+                    </div>
+                    <span class="admin-bar-value">@Metrics.PendingProfiles</span>
+                </div>
             </div>
         </div>
     }
@@ -80,4 +232,23 @@
 
         Metrics = await AuthApi.GetMetricsAsync();
     }
+
+    private void GoToResults(string? role = null, string? filter = null, string? section = null)
+    {
+        var parts = new List<string>();
+        if (role != null) parts.Add($"role={role}");
+        if (filter != null) parts.Add($"filter={filter}");
+        if (section != null) parts.Add($"section={section}");
+        var query = parts.Count > 0 ? "?" + string.Join("&", parts) : "";
+        Nav.NavigateTo($"/dashboard/results{query}");
+    }
+
+    private void GoEvaluated() => GoToResults("candidate", "evaluated");
+    private void GoPending() => GoToResults("candidate", "pending");
+    private void GoScores() => GoToResults("candidate", "scores");
+    private void GoLinkedIn() => GoToResults("candidate", "linkedin");
+    private void GoPortfolio() => GoToResults("candidate", "portfolio");
+    private void GoCV() => GoToResults("candidate", "cv");
+    private void GoCompanies() => GoToResults("company");
+    private void GoToVacancies() => GoToResults(section: "vacancies");
 }

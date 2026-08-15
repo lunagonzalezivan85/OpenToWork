@@ -17,67 +17,134 @@
     </div>
 </div>
 
+<div class="admin-users-toolbar">
+    <div class="admin-users-search">
+        <input type="text" @bind="SearchTerm" @bind:event="oninput" placeholder="@Lang.T("admin.users.searchPlaceholder")" />
+    </div>
+    <div class="admin-users-chips">
+        <button class="admin-chip @(SelectedRole == null ? "admin-chip--active" : "")" @onclick="SelectAllRoles">
+            @Lang.T("admin.users.chipAll") <span class="admin-chip-count">@AllUsers.Count</span>
+        </button>
+        <button class="admin-chip @(SelectedRole == "candidate" ? "admin-chip--active" : "")" @onclick="SelectCandidates">
+            @Lang.T("admin.users.filterCandidates") <span class="admin-chip-count">@AllUsers.Count(u => u.PrimaryRole == (int)UserRole.Candidate)</span>
+        </button>
+        <button class="admin-chip @(SelectedRole == "company" ? "admin-chip--active" : "")" @onclick="SelectCompanies">
+            @Lang.T("admin.users.filterCompanies") <span class="admin-chip-count">@AllUsers.Count(u => u.PrimaryRole == (int)UserRole.Company)</span>
+        </button>
+        <button class="admin-chip @(SelectedRole == "admin" ? "admin-chip--active" : "")" @onclick="SelectAdmins">
+            @Lang.T("admin.users.filterAdmins") <span class="admin-chip-count">@AllUsers.Count(u => u.PrimaryRole == (int)UserRole.Admin)</span>
+        </button>
+    </div>
+</div>
+
 @if (UsersList == null)
 {
     <div class="admin-loading">@Lang.T("admin.common.loading")</div>
 }
-else if (UsersList.Count == 0)
+else if (FilteredUsers.Count == 0)
 {
     <div class="admin-empty">
-        <div class="admin-empty-icon">&#9632;</div>
         <div class="admin-empty-text">@Lang.T("admin.users.empty")</div>
     </div>
 }
 else
 {
-    <table class="ot-table">
-        <thead>
-            <tr>
-                <th>@Lang.T("admin.users.columnEmail")</th>
-                <th>@Lang.T("admin.users.columnRole")</th>
-                <th>@Lang.T("admin.users.columnStatus")</th>
-                <th>@Lang.T("admin.users.columnCreated")</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in UsersList)
-            {
-                <tr>
-                    <td>@user.Email</td>
-                    <td>@((UserRole)user.PrimaryRole)</td>
-                    <td>
+    <div class="admin-users-grid">
+        @foreach (var user in FilteredUsers)
+        {
+            <div class="admin-user-card admin-clickable" @onclick="() => ViewProfile(user.Id)">
+                <div class="admin-user-card-header">
+                    <div class="admin-user-card-avatar">
+                        @AvatarText(user)
+                    </div>
+                    <div class="admin-user-card-info">
+                        <div class="admin-user-card-name">@(user.CandidateName ?? user.Email)</div>
+                        <div class="admin-user-card-email">@user.Email</div>
+                    </div>
+                    <div class="admin-user-card-status @(user.IsActive ? "admin-user-card-status--active" : "admin-user-card-status--inactive")">
+                        @(user.IsActive ? Lang.T("admin.users.active") : Lang.T("admin.users.inactive"))
+                    </div>
+                </div>
+                <div class="admin-user-card-body">
+                    <span class="admin-result-badge admin-result-badge--info">@((UserRole)user.PrimaryRole)</span>
+                    @if (user.WizardCompleted == true)
+                    {
+                        <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.dashboard.evaluated")</span>
+                    }
+                    else if (user.WizardCompleted == false)
+                    {
+                        <span class="admin-result-badge admin-result-badge--warning">@Lang.T("admin.dashboard.pending")</span>
+                    }
+                    @if (user.HasLinkedIn == true)
+                    {
+                        <span class="admin-result-badge admin-result-badge--info">LinkedIn</span>
+                    }
+                    @if (user.HasPortfolio == true)
+                    {
+                        <span class="admin-result-badge admin-result-badge--info">@Lang.T("admin.dashboard.withPortfolio")</span>
+                    }
+                    @if (user.HasCV == true)
+                    {
+                        <span class="admin-result-badge admin-result-badge--success">CV</span>
+                    }
+                </div>
+                <div class="admin-user-card-footer">
+                    <span class="admin-user-card-date">@user.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
+                    <div class="admin-user-card-actions">
                         @if (user.IsActive)
                         {
-                            <span class="admin-status admin-status--active">@Lang.T("admin.users.active")</span>
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick:stopPropagation="true" @onclick="() => Deactivate(user.Id)">@Lang.T("admin.users.deactivate")</button>
                         }
                         else
                         {
-                            <span class="admin-status admin-status--inactive">@Lang.T("admin.users.inactive")</span>
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick:stopPropagation="true" @onclick="() => Activate(user.Id)">@Lang.T("admin.users.activate")</button>
                         }
-                    </td>
-                    <td>@user.CreatedAt.ToLocalTime().ToShortDateString()</td>
-                    <td>
-                        <div class="admin-table-actions">
-                            @if (user.IsActive)
-                            {
-                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Deactivate(user.Id)">@Lang.T("admin.users.deactivate")</button>
-                            }
-                            else
-                            {
-                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Activate(user.Id)">@Lang.T("admin.users.activate")</button>
-                            }
-                            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Delete(user.Id)">@Lang.T("admin.users.delete")</button>
-                        </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick:stopPropagation="true" @onclick="() => Delete(user.Id)">@Lang.T("admin.users.delete")</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 }
 
 @code {
+    private List<AdminUserDto> AllUsers = new();
     private List<AdminUserDto>? UsersList;
+    private string? SelectedRole { get; set; }
+    private string SearchTerm { get; set; } = "";
+
+    private List<AdminUserDto> FilteredUsers
+    {
+        get
+        {
+            if (UsersList == null) return new();
+
+            var filtered = UsersList;
+
+            if (!string.IsNullOrEmpty(SelectedRole))
+            {
+                var roleInt = SelectedRole switch
+                {
+                    "candidate" => (int)UserRole.Candidate,
+                    "company" => (int)UserRole.Company,
+                    "admin" => (int)UserRole.Admin,
+                    _ => -1
+                };
+                filtered = filtered.Where(u => u.PrimaryRole == roleInt).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(SearchTerm))
+            {
+                var term = SearchTerm.ToLowerInvariant();
+                filtered = filtered.Where(u =>
+                    u.Email.ToLowerInvariant().Contains(term) ||
+                    (u.CandidateName?.ToLowerInvariant().Contains(term) ?? false)
+                ).ToList();
+            }
+
+            return filtered;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -96,8 +163,27 @@ else
 
     private async Task LoadUsers()
     {
-        UsersList = await AuthApi.GetUsersAsync();
+        AllUsers = await AuthApi.GetUsersAsync();
+        UsersList = AllUsers;
     }
+
+    private void SelectRole(string? role)
+    {
+        SelectedRole = role;
+    }
+
+    private void SelectAllRoles() => SelectedRole = null;
+    private void SelectCandidates() => SelectedRole = "candidate";
+    private void SelectCompanies() => SelectedRole = "company";
+    private void SelectAdmins() => SelectedRole = "admin";
+
+    private string AvatarText(AdminUserDto user)
+    {
+        var name = user.CandidateName ?? user.Email;
+        return name.Length >= 2 ? name.Substring(0, 2).ToUpper() : name.ToUpper();
+    }
+
+    private void ViewProfile(Guid userId) => Nav.NavigateTo($"/user/{userId}");
 
     private async Task Activate(Guid id)
     {

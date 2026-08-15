@@ -29,6 +29,12 @@ public class AdminDashboardService : IAdminDashboardService
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToListAsync();
 
+        var companiesWithVacancies = await _context.PT_Vacancies
+            .Where(v => !v.IsDeleted)
+            .Select(v => v.PT_CompanyId)
+            .Distinct()
+            .CountAsync();
+
         return new DashboardMetricsDto
         {
             TotalUsers = await _context.SC_Users.CountAsync(u => !u.IsDeleted),
@@ -40,7 +46,22 @@ public class AdminDashboardService : IAdminDashboardService
             VacanciesByStatus = vacanciesByStatus.ToDictionary(x => ((VacancyStatus)x.Status).ToString(), x => x.Count),
             ApplicationsByStatus = applicationsByStatus.ToDictionary(x => ((ApplicationStatus)x.Status).ToString(), x => x.Count),
             TotalSkills = await _context.PT_Skills.CountAsync(s => !s.IsDeleted),
-            TotalAuditLogEntries = await _context.AD_AuditLogs.CountAsync(a => !a.IsDeleted)
+            TotalAuditLogEntries = await _context.AD_AuditLogs.CountAsync(a => !a.IsDeleted),
+
+            EvaluatedProfiles = await _context.PT_Candidates.CountAsync(c => !c.IsDeleted && c.WizardCompleted),
+            PendingProfiles = await _context.PT_Candidates.CountAsync(c => !c.IsDeleted && !c.WizardCompleted),
+            ProfilesWithScores = 0,
+            OpenVacancies = await _context.PT_Vacancies.CountAsync(v => !v.IsDeleted && v.Status == (int)VacancyStatus.Active),
+            ClosedVacancies = await _context.PT_Vacancies.CountAsync(v => !v.IsDeleted && v.Status == (int)VacancyStatus.Closed),
+            DraftVacancies = await _context.PT_Vacancies.CountAsync(v => !v.IsDeleted && v.Status == (int)VacancyStatus.Draft),
+            CompaniesWithVacancies = companiesWithVacancies,
+            CompaniesWithoutVacancies = await _context.PT_Companies.CountAsync(c => !c.IsDeleted) - companiesWithVacancies,
+            NonAdminUsers = await _context.SC_Users.CountAsync(u => !u.IsDeleted && u.PrimaryRole != (int)UserRole.Admin),
+            NonAdminCandidates = await _context.SC_Users.CountAsync(u => !u.IsDeleted && u.PrimaryRole == (int)UserRole.Candidate),
+            NonAdminCompanies = await _context.SC_Users.CountAsync(u => !u.IsDeleted && u.PrimaryRole == (int)UserRole.Company),
+            CandidatesWithLinkedIn = await _context.PT_Candidates.CountAsync(c => !c.IsDeleted && !string.IsNullOrEmpty(c.LinkedInUrl)),
+            CandidatesWithPortfolio = await _context.PT_Candidates.CountAsync(c => !c.IsDeleted && !string.IsNullOrEmpty(c.PortfolioUrl)),
+            CandidatesWithCV = await _context.PT_Candidates.CountAsync(c => !c.IsDeleted && !string.IsNullOrEmpty(c.CvUrl))
         };
     }
 }

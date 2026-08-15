@@ -1,6 +1,6 @@
 # OpenToWork - Agentes
 
-Este directorio define los 4 agentes del proyecto y el flujo de trabajo. Cada agente tiene un rol especifico.
+Este directorio define los 5 agentes del proyecto y el flujo de trabajo. Cada agente tiene un rol especifico.
 
 ## Agentes
 
@@ -10,6 +10,7 @@ Este directorio define los 4 agentes del proyecto y el flujo de trabajo. Cada ag
 | **QA** | `qa.md` | Quality Assurance - valida diseno, funcionalidad, calidad de informacion y i18n |
 | **FS** | `fs.md` | Full Stack Developer - experto en Blazor, C#, CSS, JS, HTML. Frontend y backend |
 | **SEC** | `sec.md` | Security Specialist - audita vulnerabilidades, JWT, encriptacion, inputs, dependencias |
+| **RH** | `rh.md` | Reclutamiento y Seleccion - mapeo de perfiles, sourcing, criba, evaluacion, entrevista, oferta y onboarding |
 
 ## Flujo de Trabajo
 

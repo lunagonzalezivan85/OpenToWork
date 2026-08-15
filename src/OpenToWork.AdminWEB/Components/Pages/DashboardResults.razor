@@ -1,0 +1,286 @@
+@page "/dashboard/results"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@using Microsoft.AspNetCore.WebUtilities
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>@ResultTitle</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@ResultTitle</h1>
+        <p class="admin-page-header-subtitle">@ResultSummary</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.dashboard.backToDashboard")</button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Results.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.dashboard.noResults")</div>
+    </div>
+}
+else
+{
+    <div class="admin-results-grid">
+        @foreach (var item in Results)
+        {
+            <div class="admin-result-card admin-clickable" @onclick="() => ViewProfile(item.UserId)">
+                <div class="admin-result-card-header">
+                    <div class="admin-result-avatar">
+                        @(item.AvatarText)
+                    </div>
+                    <div class="admin-result-info">
+                        <div class="admin-result-name">@item.DisplayName</div>
+                        <div class="admin-result-email">@item.SubText</div>
+                    </div>
+                    <div class="admin-result-status @item.StatusClass">
+                        @item.StatusLabel
+                    </div>
+                </div>
+                <div class="admin-result-card-body">
+                    @foreach (var badge in item.Badges)
+                    {
+                        <span class="admin-result-badge @badge.Class">@badge.Label</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private bool IsLoading = true;
+    private string ResultTitle = "";
+    private string ResultSummary = "";
+    private string? Section { get; set; }
+    private string? FilterType { get; set; }
+    private string? RoleFilter { get; set; }
+    private List<ResultItem> Results = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var token = await LocalStorage.GetItemAsync("otwadmin-token");
+        if (string.IsNullOrEmpty(token))
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        ParseQueryParams();
+        await LoadResults();
+    }
+
+    private void ParseQueryParams()
+    {
+        var query = QueryHelpers.ParseQuery(Nav.Uri);
+        if (query.TryGetValue("section", out var section)) Section = section;
+        if (query.TryGetValue("filter", out var filter)) FilterType = filter;
+        if (query.TryGetValue("role", out var role)) RoleFilter = role;
+    }
+
+    private async Task LoadResults()
+    {
+        var metrics = await AuthApi.GetMetricsAsync();
+
+        if (Section == "vacancies")
+        {
+            await LoadVacancies(metrics);
+        }
+        else if (RoleFilter == "company")
+        {
+            await LoadCompanies(metrics);
+        }
+        else
+        {
+            await LoadCandidates(metrics);
+        }
+
+        BuildTitle(metrics);
+        IsLoading = false;
+    }
+
+    private async Task LoadCandidates(DashboardMetricsDto? metrics)
+    {
+        var users = await AuthApi.GetUsersAsync(role: (int)UserRole.Candidate);
+
+        var filtered = FilterType switch
+        {
+            "evaluated" => users.Where(u => u.WizardCompleted == true).ToList(),
+            "pending" => users.Where(u => u.WizardCompleted == false).ToList(),
+            "scores" => users.Where(u => u.HasScore == true).ToList(),
+            "linkedin" => users.Where(u => u.HasLinkedIn == true).ToList(),
+            "portfolio" => users.Where(u => u.HasPortfolio == true).ToList(),
+            "cv" => users.Where(u => u.HasCV == true).ToList(),
+            _ => users.ToList()
+        };
+
+        Results = filtered.Select(u => new ResultItem
+        {
+            UserId = u.Id,
+            AvatarText = (u.CandidateName ?? u.Email).Substring(0, 2).ToUpper(),
+            DisplayName = u.CandidateName ?? u.Email,
+            SubText = u.Email,
+            StatusLabel = u.IsActive ? Lang.T("admin.users.active") : Lang.T("admin.users.inactive"),
+            StatusClass = u.IsActive ? "admin-result-status--active" : "admin-result-status--inactive",
+            Badges = BuildCandidateBadges(u)
+        }).ToList();
+    }
+
+    private List<BadgeItem> BuildCandidateBadges(AdminUserDto u)
+    {
+        var badges = new List<BadgeItem>();
+
+        if (u.WizardCompleted == true)
+            badges.Add(new() { Label = Lang.T("admin.dashboard.evaluated"), Class = "admin-result-badge--success" });
+        else if (u.WizardCompleted == false)
+            badges.Add(new() { Label = Lang.T("admin.dashboard.pending"), Class = "admin-result-badge--warning" });
+
+        if (u.HasLinkedIn == true)
+            badges.Add(new() { Label = Lang.T("admin.dashboard.withLinkedIn"), Class = "admin-result-badge--info" });
+
+        if (u.HasPortfolio == true)
+            badges.Add(new() { Label = Lang.T("admin.dashboard.withPortfolio"), Class = "admin-result-badge--info" });
+
+        if (u.HasCV == true)
+            badges.Add(new() { Label = Lang.T("admin.dashboard.withCV"), Class = "admin-result-badge--success" });
+
+        if (u.HasScore == true)
+            badges.Add(new() { Label = Lang.T("admin.dashboard.profilesWithScores"), Class = "admin-result-badge--info" });
+
+        return badges;
+    }
+
+    private async Task LoadCompanies(DashboardMetricsDto? metrics)
+    {
+        var users = await AuthApi.GetUsersAsync(role: (int)UserRole.Company);
+
+        Results = users.Select(u => new ResultItem
+        {
+            UserId = u.Id,
+            AvatarText = u.Email.Substring(0, 2).ToUpper(),
+            DisplayName = u.Email,
+            SubText = Lang.T("admin.users.filterCompanies"),
+            StatusLabel = u.IsActive ? Lang.T("admin.users.active") : Lang.T("admin.users.inactive"),
+            StatusClass = u.IsActive ? "admin-result-status--active" : "admin-result-status--inactive",
+            Badges = new()
+        }).ToList();
+    }
+
+    private async Task LoadVacancies(DashboardMetricsDto? metrics)
+    {
+        var vacancies = await AuthApi.GetVacanciesAsync(pageSize: 1000);
+
+        Results = vacancies.Select(v => new ResultItem
+        {
+            AvatarText = v.Title.Length >= 2 ? v.Title.Substring(0, 2).ToUpper() : v.Title.ToUpper(),
+            DisplayName = v.Title,
+            SubText = v.CompanyName ?? "-",
+            StatusLabel = VacancyStatusLabel(v.Status),
+            StatusClass = VacancyStatusClass(v.Status),
+            Badges = new()
+        }).ToList();
+    }
+
+    private string VacancyStatusLabel(int status) => (VacancyStatus)status switch
+    {
+        VacancyStatus.Draft => Lang.T("admin.dashboard.draftVacancies"),
+        VacancyStatus.Active => Lang.T("admin.dashboard.openVacancies"),
+        VacancyStatus.Closed => Lang.T("admin.dashboard.closedVacancies"),
+        _ => status.ToString()
+    };
+
+    private string VacancyStatusClass(int status) => (VacancyStatus)status switch
+    {
+        VacancyStatus.Active => "admin-result-status--active",
+        VacancyStatus.Draft => "admin-result-status--draft",
+        VacancyStatus.Closed => "admin-result-status--inactive",
+        _ => ""
+    };
+
+    private void BuildTitle(DashboardMetricsDto? m)
+    {
+        if (m == null) return;
+
+        if (FilterType == "evaluated")
+        {
+            ResultTitle = Lang.T("admin.dashboard.evaluatedProfiles");
+            ResultSummary = $"{m.EvaluatedProfiles} {Lang.T("admin.dashboard.evaluated")} / {m.TotalCandidates} {Lang.T("admin.dashboard.candidatesTotal")}";
+        }
+        else if (FilterType == "pending")
+        {
+            ResultTitle = Lang.T("admin.dashboard.pendingProfiles");
+            ResultSummary = $"{m.PendingProfiles} {Lang.T("admin.dashboard.pending")} / {m.TotalCandidates} {Lang.T("admin.dashboard.candidatesTotal")}";
+        }
+        else if (FilterType == "scores")
+        {
+            ResultTitle = Lang.T("admin.dashboard.profilesWithScores");
+            ResultSummary = $"{m.ProfilesWithScores} / {m.EvaluatedProfiles} {Lang.T("admin.dashboard.evaluated")}";
+        }
+        else if (FilterType == "linkedin")
+        {
+            ResultTitle = Lang.T("admin.dashboard.withLinkedIn");
+            ResultSummary = $"{m.CandidatesWithLinkedIn} / {m.TotalCandidates} {Lang.T("admin.dashboard.candidatesTotal")}";
+        }
+        else if (FilterType == "portfolio")
+        {
+            ResultTitle = Lang.T("admin.dashboard.withPortfolio");
+            ResultSummary = $"{m.CandidatesWithPortfolio} / {m.TotalCandidates} {Lang.T("admin.dashboard.candidatesTotal")}";
+        }
+        else if (FilterType == "cv")
+        {
+            ResultTitle = Lang.T("admin.dashboard.withCV");
+            ResultSummary = $"{m.CandidatesWithCV} / {m.TotalCandidates} {Lang.T("admin.dashboard.candidatesTotal")}";
+        }
+        else if (RoleFilter == "company")
+        {
+            ResultTitle = Lang.T("admin.dashboard.companiesVacancies");
+            ResultSummary = $"{m.CompaniesWithVacancies} {Lang.T("admin.dashboard.companiesWithVacancies")} / {m.CompaniesWithVacancies + m.CompaniesWithoutVacancies} {Lang.T("admin.dashboard.total")}";
+        }
+        else if (Section == "vacancies")
+        {
+            ResultTitle = Lang.T("admin.dashboard.vacanciesByStatus");
+            var total = m.OpenVacancies + m.ClosedVacancies + m.DraftVacancies;
+            ResultSummary = $"{total} {Lang.T("admin.dashboard.total")}: {m.OpenVacancies} {Lang.T("admin.dashboard.openVacancies")}, {m.ClosedVacancies} {Lang.T("admin.dashboard.closedVacancies")}, {m.DraftVacancies} {Lang.T("admin.dashboard.draftVacancies")}";
+        }
+        else
+        {
+            ResultTitle = Lang.T("admin.dashboard.title");
+            ResultSummary = "";
+        }
+    }
+
+    private void GoBack() => Nav.NavigateTo("/");
+
+    private void ViewProfile(Guid userId) => Nav.NavigateTo($"/user/{userId}");
+
+    private class ResultItem
+    {
+        public Guid UserId { get; set; }
+        public string AvatarText { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+        public string SubText { get; set; } = "";
+        public string StatusLabel { get; set; } = "";
+        public string StatusClass { get; set; } = "";
+        public List<BadgeItem> Badges { get; set; } = new();
+    }
+
+    private class BadgeItem
+    {
+        public string Label { get; set; } = "";
+        public string Class { get; set; } = "";
+    }
+}
