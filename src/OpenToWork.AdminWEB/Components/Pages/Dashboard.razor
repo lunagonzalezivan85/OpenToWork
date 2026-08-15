@@ -11,45 +11,53 @@
 
 @if (IsAuthenticated)
 {
-    <h1 class="mb-lg">@Lang.T("admin.dashboard.title")</h1>
-    <p class="mb-lg">@Lang.T("admin.dashboard.welcome")</p>
+    <div class="admin-page-header">
+        <div>
+            <h1>@Lang.T("admin.dashboard.title")</h1>
+            <p class="admin-page-header-subtitle">@Lang.T("admin.dashboard.welcome")</p>
+        </div>
+    </div>
 
     @if (Metrics != null)
     {
-        <div class="bento-grid">
-            <div class="bento-card stat-card">
-                <div class="stat-value">@Metrics.TotalUsers</div>
-                <div class="stat-label">@Lang.T("admin.dashboard.totalUsers")</div>
+        <div class="admin-stat-grid">
+            <div class="admin-stat-card">
+                <div class="admin-stat-label">@Lang.T("admin.dashboard.totalUsers")</div>
+                <div class="admin-stat-value">@Metrics.TotalUsers</div>
             </div>
-            <div class="bento-card stat-card">
-                <div class="stat-value">@Metrics.ActiveUsers</div>
-                <div class="stat-label">@Lang.T("admin.dashboard.activeUsers")</div>
+            <div class="admin-stat-card admin-stat-card--success">
+                <div class="admin-stat-label">@Lang.T("admin.dashboard.activeUsers")</div>
+                <div class="admin-stat-value">@Metrics.ActiveUsers</div>
             </div>
-            <div class="bento-card stat-card">
-                <div class="stat-value">@Metrics.TotalCandidates</div>
-                <div class="stat-label">@Lang.T("admin.dashboard.candidates")</div>
+            <div class="admin-stat-card admin-stat-card--info">
+                <div class="admin-stat-label">@Lang.T("admin.dashboard.candidates")</div>
+                <div class="admin-stat-value">@Metrics.TotalCandidates</div>
             </div>
-            <div class="bento-card stat-card">
-                <div class="stat-value">@Metrics.TotalCompanies</div>
-                <div class="stat-label">@Lang.T("admin.dashboard.companies")</div>
+            <div class="admin-stat-card admin-stat-card--info">
+                <div class="admin-stat-label">@Lang.T("admin.dashboard.companies")</div>
+                <div class="admin-stat-value">@Metrics.TotalCompanies</div>
             </div>
-            <div class="bento-card stat-card">
-                <div class="stat-value">@Metrics.TotalPermanentVacancies</div>
-                <div class="stat-label">@Lang.T("admin.dashboard.permanentVacancies")</div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-label">@Lang.T("admin.dashboard.permanentVacancies")</div>
+                <div class="admin-stat-value">@Metrics.TotalPermanentVacancies</div>
             </div>
-            <div class="bento-card stat-card">
-                <div class="stat-value">@Metrics.TotalTempVacancies</div>
-                <div class="stat-label">@Lang.T("admin.dashboard.tempVacancies")</div>
+            <div class="admin-stat-card admin-stat-card--warning">
+                <div class="admin-stat-label">@Lang.T("admin.dashboard.tempVacancies")</div>
+                <div class="admin-stat-value">@Metrics.TotalTempVacancies</div>
             </div>
-            <div class="bento-card stat-card">
-                <div class="stat-value">@Metrics.TotalSkills</div>
-                <div class="stat-label">@Lang.T("admin.dashboard.skills")</div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-label">@Lang.T("admin.dashboard.skills")</div>
+                <div class="admin-stat-value">@Metrics.TotalSkills</div>
             </div>
-            <div class="bento-card stat-card">
-                <div class="stat-value">@Metrics.TotalAuditLogEntries</div>
-                <div class="stat-label">@Lang.T("admin.dashboard.auditEntries")</div>
+            <div class="admin-stat-card admin-stat-card--danger">
+                <div class="admin-stat-label">@Lang.T("admin.dashboard.auditEntries")</div>
+                <div class="admin-stat-value">@Metrics.TotalAuditLogEntries</div>
             </div>
         </div>
+    }
+    else
+    {
+        <div class="admin-loading">@Lang.T("admin.common.loading")</div>
     }
 }
 

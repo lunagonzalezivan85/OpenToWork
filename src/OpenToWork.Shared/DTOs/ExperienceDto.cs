@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace OpenToWork.Shared.DTOs;
 
 public class CandidateExperienceDto
@@ -15,7 +17,9 @@ public class CandidateExperienceDto
 
 public class CreateExperienceDto
 {
+    [Required(ErrorMessage = "CompanyName is required")]
     public string CompanyName { get; set; } = string.Empty;
+    [Required(ErrorMessage = "JobTitle is required")]
     public string JobTitle { get; set; } = string.Empty;
     public string? Description { get; set; }
     public DateTime StartDate { get; set; }

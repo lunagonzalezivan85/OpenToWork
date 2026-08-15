@@ -8,23 +8,32 @@
 
 <PageTitle>@Lang.T("admin.skills.title")</PageTitle>
 
-<h1 class="mb-lg">@Lang.T("admin.skills.title")</h1>
+<div class="admin-page-header">
+    <h1>@Lang.T("admin.skills.title")</h1>
+</div>
 
-<EditForm Model="NewSkill" OnValidSubmit="AddSkill" class="mb-lg">
-    <div class="flex-center" style="gap: 0.5rem; justify-content: flex-start;">
+<EditForm Model="NewSkill" OnValidSubmit="AddSkill" class="admin-inline-form">
+    <div class="ot-input-group">
+        <label class="ot-input-label">@Lang.T("admin.skills.namePlaceholder")</label>
         <InputText class="ot-input-field" @bind-Value="NewSkill.Name" placeholder="@Lang.T("admin.skills.namePlaceholder")" />
-        <InputText class="ot-input-field" @bind-Value="NewSkill.Category" placeholder="@Lang.T("admin.skills.categoryPlaceholder")" />
-        <button type="submit" class="ot-btn ot-btn--primary ot-btn--small">@Lang.T("admin.skills.add")</button>
     </div>
+    <div class="ot-input-group">
+        <label class="ot-input-label">@Lang.T("admin.skills.categoryPlaceholder")</label>
+        <InputText class="ot-input-field" @bind-Value="NewSkill.Category" placeholder="@Lang.T("admin.skills.categoryPlaceholder")" />
+    </div>
+    <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium">@Lang.T("admin.skills.add")</button>
 </EditForm>
 
 @if (SkillsList == null)
 {
-    <p>@Lang.T("admin.common.loading")</p>
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
 }
 else if (SkillsList.Count == 0)
 {
-    <p>@Lang.T("admin.skills.empty")</p>
+    <div class="admin-empty">
+        <div class="admin-empty-icon">&#9632;</div>
+        <div class="admin-empty-text">@Lang.T("admin.skills.empty")</div>
+    </div>
 }
 else
 {
@@ -43,7 +52,9 @@ else
                     <td>@skill.Name</td>
                     <td>@(skill.Category ?? "-")</td>
                     <td>
-                        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => DeleteSkill(skill.Id)">@Lang.T("admin.skills.delete")</button>
+                        <div class="admin-table-actions">
+                            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => DeleteSkill(skill.Id)">@Lang.T("admin.skills.delete")</button>
+                        </div>
                     </td>
                 </tr>
             }

@@ -1,0 +1,395 @@
+@page "/my-vacancies/{Id:guid}"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>@(Vacancy?.Title ?? "Vacante")</PageTitle>
+
+@if (Vacancy == null)
+{
+    <div class="page-container">
+        <p>@Lang.T("common.labels.loading")</p>
+    </div>
+}
+else
+{
+    <div class="page-container">
+        <!-- Back button (outside hero) -->
+        <button class="vm-back-link" @onclick="GoBack">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+            </svg>
+            @Lang.T("vacancies.backToMyVacancies")
+        </button>
+
+        <!-- Hero Banner with Pills inside -->
+        <div class="vm-hero">
+            <div class="vm-hero-top">
+                <div class="vm-hero-company">
+                    <div class="home-vacancy-card-logo vm-hero-logo">@(GetInitials(Vacancy.CompanyName))</div>
+                    <div>
+                        <h1 class="vm-hero-title">@Vacancy.Title</h1>
+                        <span class="vm-hero-company-name">@(Vacancy.CompanyName ?? "Empresa")</span>
+                    </div>
+                </div>
+                <div class="vm-hero-right">
+                    <span class="vacancy-card-badge @GetStatusClass(Vacancy.Status)">@GetStatusLabel(Vacancy.Status)</span>
+                    <div class="vm-hero-actions">
+                        <button class="ot-btn ot-btn--secondary ot-btn--small" @onclick="EditVacancy">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                            @Lang.T("vacancies.edit")
+                        </button>
+                        @if (Vacancy.Status == 0)
+                        {
+                            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="PublishVacancy">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                                </svg>
+                                @Lang.T("vacancies.publish")
+                            </button>
+                        }
+                        @if (Vacancy.Status == 1)
+                        {
+                            <button class="ot-btn ot-btn--secondary ot-btn--small" @onclick="CloseVacancy">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <rect x="6" y="4" width="4" height="16" />
+                                    <rect x="14" y="4" width="4" height="16" />
+                                </svg>
+                                @Lang.T("vacancies.pause")
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pill Badges inside hero -->
+            <div class="vm-pills">
+                <span class="vm-pill">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    @(Vacancy.Location ?? "N/A")
+                </span>
+                <span class="vm-pill">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                    </svg>
+                    @GetWorkModeLabel(Vacancy.WorkMode)
+                </span>
+                @if (Vacancy.SalaryMin.HasValue || Vacancy.SalaryMax.HasValue)
+                {
+                    <span class="vm-pill vm-pill--accent">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <line x1="12" y1="1" x2="12" y2="23" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                        @FormatSalary(Vacancy.SalaryMin, Vacancy.SalaryMax)
+                    </span>
+                }
+                <span class="vm-pill">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    @Vacancy.ViewsCount @Lang.T("vacancies.views")
+                </span>
+            </div>
+        </div>
+
+        <!-- Asymmetric Layout 40/60 -->
+        <div class="vm-layout">
+            <!-- Left 40%: Technical Sheet -->
+            <div class="vm-left">
+                <div class="ot-card vm-card">
+                    @if (!string.IsNullOrEmpty(Vacancy.Description))
+                    {
+                        <div class="vm-section">
+                            <h3 class="vm-section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                                @Lang.T("vacancies.fields.description")
+                            </h3>
+                            <p class="vm-text">@Vacancy.Description</p>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Vacancy.Requirements))
+                    {
+                        <div class="vm-section">
+                            <h3 class="vm-section-title">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="9 11 12 14 22 4" />
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                </svg>
+                                @Lang.T("vacancies.fields.requirements")
+                            </h3>
+                            <ul class="vm-requirements">
+                                @foreach (var req in Vacancy.Requirements.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <li class="vm-requirement-item">
+                                        <span class="vm-requirement-bullet"></span>
+                                        @req.Trim()
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="vm-delete-zone">
+                        <button class="vm-delete-btn" @onclick="DeleteVacancy">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                            @Lang.T("common.buttons.delete")
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right 60%: Candidates Panel -->
+            <div class="vm-right">
+                <div class="ot-card vm-card">
+                    <!-- Filter Tabs -->
+                    <div class="vm-candidates-toolbar">
+                        <div class="vm-filter-tabs">
+                            <button class="vm-filter-tab @(CandidateFilter == "all" ? "vm-filter-tab--active" : "")" @onclick='() => SetFilter("all")'>
+                                @Lang.T("vacancies.candidateFilters.all")
+                                <span class="vm-filter-count">@Applications.Count</span>
+                            </button>
+                            <button class="vm-filter-tab @(CandidateFilter == "new" ? "vm-filter-tab--active" : "")" @onclick='() => SetFilter("new")'>
+                                @Lang.T("vacancies.candidateFilters.new")
+                                <span class="vm-filter-count">@Applications.Count(a => a.Status == 0)</span>
+                            </button>
+                            <button class="vm-filter-tab @(CandidateFilter == "shortlisted" ? "vm-filter-tab--active" : "")" @onclick='() => SetFilter("shortlisted")'>
+                                @Lang.T("vacancies.candidateFilters.shortlisted")
+                                <span class="vm-filter-count">@Applications.Count(a => a.Status == 1 || a.Status == 2)</span>
+                            </button>
+                            <button class="vm-filter-tab @(CandidateFilter == "rejected" ? "vm-filter-tab--active" : "")" @onclick='() => SetFilter("rejected")'>
+                                @Lang.T("vacancies.candidateFilters.rejected")
+                                <span class="vm-filter-count">@Applications.Count(a => a.Status == 3)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (FilteredApplications.Any())
+                    {
+                        <div class="vm-candidates-list">
+                            @foreach (var app in FilteredApplications)
+                            {
+                                <div class="vm-candidate">
+                                    <div class="vm-candidate-avatar">@(GetInitials(app.CandidateName))</div>
+                                    <div class="vm-candidate-body">
+                                        <div class="vm-candidate-main">
+                                            <span class="vm-candidate-name">@app.CandidateName</span>
+                                            @if (!string.IsNullOrEmpty(app.CandidateTitle))
+                                            {
+                                                <span class="vm-candidate-title">@app.CandidateTitle</span>
+                                            }
+                                        </div>
+                                        <div class="vm-candidate-meta">
+                                            @if (app.ExpectedSalary.HasValue)
+                                            {
+                                                <span class="vm-candidate-salary">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                                        <line x1="12" y1="1" x2="12" y2="23" />
+                                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                                                    </svg>
+                                                    $@app.ExpectedSalary.Value.ToString("N0")
+                                                </span>
+                                            }
+                                            <span class="vm-candidate-date">@app.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                        </div>
+                                    </div>
+                                    <div class="vm-candidate-actions">
+                                        <select class="ot-input-field vm-status-select" @bind="app.Status" @bind:after="() => UpdateApplicationStatus(app.Id, app.Status)">
+                                            <option value="0">@Lang.T("applications.status.pending")</option>
+                                            <option value="1">@Lang.T("applications.status.inReview")</option>
+                                            <option value="2">@Lang.T("applications.status.accepted")</option>
+                                            <option value="3">@Lang.T("applications.status.rejected")</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="vm-candidates-empty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                            </svg>
+                            <p class="vm-empty-text">@Lang.T("vacancies.noCandidates")</p>
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CopyPublicLink">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                                </svg>
+                                @Lang.T("vacancies.copyLink")
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private VacancyDto? Vacancy { get; set; }
+    private List<ApplicationDto> Applications { get; set; } = new();
+    private string CandidateFilter { get; set; } = "all";
+    private bool IsLoading { get; set; }
+
+    private List<ApplicationDto> FilteredApplications => CandidateFilter switch
+    {
+        "new" => Applications.Where(a => a.Status == 0).ToList(),
+        "shortlisted" => Applications.Where(a => a.Status == 1 || a.Status == 2).ToList(),
+        "rejected" => Applications.Where(a => a.Status == 3).ToList(),
+        _ => Applications
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        Vacancy = await AuthApi.GetPermanentVacancyAsync(Id);
+        Applications = await AuthApi.GetApplicationsByVacancyAsync(Id);
+        IsLoading = false;
+    }
+
+    private void SetFilter(string filter) => CandidateFilter = filter;
+
+    private void GoBack() => Nav.NavigateTo("/my-vacancies");
+
+    private void EditVacancy() => Nav.NavigateTo($"/my-vacancies/{Id}/edit");
+
+    private async Task PublishVacancy()
+    {
+        await AuthApi.PublishVacancyAsync(Id);
+        await LoadData();
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            icon = "success",
+            title = Lang.T("vacancies.success.published"),
+            showConfirmButton = false,
+            timer = 2000,
+            timerProgressBar = true
+        });
+    }
+
+    private async Task CloseVacancy()
+    {
+        await AuthApi.CloseVacancyAsync(Id);
+        await LoadData();
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            icon = "success",
+            title = Lang.T("vacancies.success.closed"),
+            showConfirmButton = false,
+            timer = 2000,
+            timerProgressBar = true
+        });
+    }
+
+    private async Task DeleteVacancy()
+    {
+        var confirmed = await JS.InvokeAsync<bool>("Swal.fire", new
+        {
+            icon = "warning",
+            title = Lang.T("vacancies.confirmDelete"),
+            showCancelButton = true,
+            confirmButtonColor = "#ef4444",
+            cancelButtonColor = "#6b7280",
+            confirmButtonText = Lang.T("common.buttons.delete"),
+            cancelButtonText = Lang.T("common.buttons.cancel")
+        });
+
+        if (confirmed)
+        {
+            await AuthApi.DeleteVacancyAsync(Id);
+            Nav.NavigateTo("/my-vacancies");
+        }
+    }
+
+    private async Task UpdateApplicationStatus(Guid appId, int status)
+    {
+        await AuthApi.UpdateApplicationStatusAsync(appId, status);
+    }
+
+    private async Task CopyPublicLink()
+    {
+        var url = $"{Nav.BaseUri}vacancy/{Id}";
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            icon = "success",
+            title = Lang.T("vacancies.linkCopied"),
+            showConfirmButton = false,
+            timer = 1500,
+            timerProgressBar = true
+        });
+    }
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "U";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
+
+    private static string FormatSalary(decimal? min, decimal? max)
+    {
+        if (!min.HasValue && !max.HasValue) return "";
+        var result = "";
+        if (min.HasValue) result += $"${min:N0}";
+        if (min.HasValue && max.HasValue) result += " - ";
+        if (max.HasValue) result += $"${max:N0}";
+        return result;
+    }
+
+    private string GetStatusLabel(int status) => status switch
+    {
+        0 => Lang.T("vacancies.status.draft"),
+        1 => Lang.T("vacancies.status.active"),
+        2 => Lang.T("vacancies.status.closed"),
+        _ => ""
+    };
+
+    private string GetStatusClass(int status) => status switch
+    {
+        0 => "badge-draft",
+        1 => "badge-active",
+        2 => "badge-closed",
+        _ => ""
+    };
+
+    private string GetWorkModeLabel(int mode) => mode switch
+    {
+        0 => Lang.T("vacancies.workMode.onSite"),
+        1 => Lang.T("vacancies.workMode.hybrid"),
+        2 => Lang.T("vacancies.workMode.remote"),
+        _ => ""
+    };
+}

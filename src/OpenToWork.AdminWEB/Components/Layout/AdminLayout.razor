@@ -23,25 +23,28 @@
                 <a href="/skills" class="nav-link">@Lang.T("admin.nav.skills")</a>
                 <a href="/audit-log" class="nav-link">@Lang.T("admin.nav.auditLog")</a>
             </div>
-            <div class="nav-actions">
-                <select @onchange="OnThemeChanged" class="nav-select">
+            <div class="admin-topbar-actions">
+                <select @onchange="OnThemeChanged" class="admin-select">
                     <option value="navy">Navy</option>
                     <option value="dark">Dark</option>
                     <option value="light">Light</option>
                 </select>
-                <select @onchange="OnLanguageChanged" class="nav-select">
+                <select @onchange="OnLanguageChanged" class="admin-select">
                     <option value="es">ES</option>
                     <option value="en">EN</option>
                 </select>
-                <button class="ot-btn ot-btn--ghost ot-btn--small" @onclick="HandleLogout">@Lang.T("admin.nav.logout")</button>
             </div>
-        </nav>
-    </header>
+        </header>
 
-    <main class="main-content">
-        @Body
-    </main>
+        <main class="admin-content">
+            <div class="admin-content-inner">
+                @Body
+            </div>
+        </main>
+    </div>
 </div>
+
+<div class="admin-sidebar-overlay" id="adminSidebarOverlay" @onclick="CloseSidebar"></div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -77,5 +80,15 @@
         await AuthApi.LogoutAsync();
         AuthProvider.NotifyAuthenticationStateChanged();
         Nav.NavigateTo("/login", forceLoad: true);
+    }
+
+    private async Task ToggleSidebar()
+    {
+        await JS.InvokeVoidAsync("adminLayout.toggleSidebar");
+    }
+
+    private async Task CloseSidebar()
+    {
+        await JS.InvokeVoidAsync("adminLayout.closeSidebar");
     }
 }

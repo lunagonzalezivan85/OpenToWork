@@ -5,18 +5,30 @@
         "profileCompletion": "Profile completion",
         "activeVacancies": "Active vacancies",
         "applications": "Applications",
-        "profileViews": "Profile views"
+        "profileViews": "Profile views",
+        "requests": "Requests",
+        "postulations": "Applications",
+        "publications": "Publications"
     },
     "sections": {
         "myProfile": "My Profile",
         "recommendedVacancies": "Recommended vacancies",
         "myApplications": "My applications",
-        "quickActions": "Quick actions"
+        "quickActions": "Quick actions",
+        "recommended": "Recommended for you",
+        "findJob": "Find your next job",
+        "profileProgress": "Profile progress"
     },
     "actions": {
         "completeProfile": "Complete profile",
         "searchVacancies": "Search vacancies",
-        "createVacancy": "Create vacancy"
+        "createVacancy": "Create vacancy",
+        "uploadCv": "Upload my CV",
+        "uploadCvDesc": "Attach your PDF resume",
+        "recordVideo": "Improve presentation",
+        "recordVideoDesc": "Record a presentation video",
+        "findJob": "Find your next job",
+        "findJobDesc": "Explore vacancies that match you"
     },
     "wizardPrompt": {
         "title": "Complete your profile",

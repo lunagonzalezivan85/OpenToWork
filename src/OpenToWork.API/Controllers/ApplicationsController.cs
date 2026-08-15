@@ -30,6 +30,10 @@ public class ApplicationsController : ControllerBase
         var candidateId = await GetCandidateIdAsync(userId.Value);
         if (candidateId == null) return BadRequest("Candidate profile not found");
 
+        var vacancyExists = await _context.PT_Vacancies
+            .AnyAsync(v => v.Id == dto.VacancyId && !v.IsDeleted);
+        if (!vacancyExists) return NotFound("Vacancy not found");
+
         if (await _applicationService.HasAlreadyAppliedAsync(candidateId.Value, dto.VacancyId))
             return Conflict("You have already applied to this vacancy");
 

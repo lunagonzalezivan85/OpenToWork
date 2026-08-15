@@ -1,74 +1,79 @@
 @page "/vacancies"
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
+@using Microsoft.AspNetCore.WebUtilities
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
+@inject NavigationManager Nav
 
 <PageTitle>@Lang.T("vacancies.title")</PageTitle>
 
 <div class="page-container">
-    <h1 class="mb-lg">@Lang.T("vacancies.title")</h1>
-
-    <div class="search-bar">
-        <input class="search-input" placeholder="@Lang.T("vacancies.searchPlaceholder")" @bind="SearchQuery" @bind:event="oninput" />
-        <input class="search-input" style="max-width: 200px;" placeholder="@Lang.T("vacancies.locationPlaceholder")" @bind="SearchLocation" @bind:event="oninput" />
-        <select class="search-input" style="max-width: 180px;" @bind="SearchContractType">
-            <option value="">@Lang.T("common.labels.contractType")</option>
-            <option value="0">@Lang.T("common.contract.fullTime")</option>
-            <option value="1">@Lang.T("common.contract.partTime")</option>
-            <option value="2">@Lang.T("common.contract.contract")</option>
-            <option value="3">@Lang.T("common.contract.remote")</option>
-        </select>
-        <button class="ot-btn ot-btn--primary ot-btn--medium" @onclick="Search">@Lang.T("common.buttons.search")</button>
+    <div class="vacancies-page-header">
+        <h1 class="vacancies-page-title">@Lang.T("vacancies.title")</h1>
+        <span class="vacancies-page-count">@TotalResults @Lang.T("vacancies.results")</span>
     </div>
 
-    <p class="auth-subtitle mb-md">@TotalResults @Lang.T("vacancies.results")</p>
+    @if (!string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory))
+    {
+        <div class="vacancies-active-filters">
+            @if (!string.IsNullOrEmpty(ActiveQuery))
+            {
+                <span class="vacancies-filter-tag">
+                    @ActiveQuery
+                    <button @onclick="ClearQuery" class="vacancies-filter-remove">×</button>
+                </span>
+            }
+            @if (!string.IsNullOrEmpty(ActiveLocation))
+            {
+                <span class="vacancies-filter-tag">
+                    📍 @ActiveLocation
+                    <button @onclick="ClearLocation" class="vacancies-filter-remove">×</button>
+                </span>
+            }
+            @if (!string.IsNullOrEmpty(ActiveCategory))
+            {
+                <span class="vacancies-filter-tag">
+                    @GetCategoryLabel(ActiveCategory)
+                    <button @onclick="ClearCategory" class="vacancies-filter-remove">×</button>
+                </span>
+            }
+        </div>
+    }
 
     @if (IsLoading)
     {
-        <p>@Lang.T("common.labels.loading")</p>
+        <div class="home-vacancies-loading">
+            <div class="home-skeleton-card"></div>
+            <div class="home-skeleton-card"></div>
+            <div class="home-skeleton-card"></div>
+            <div class="home-skeleton-card"></div>
+        </div>
     }
     else if (!VacancyList.Any())
     {
-        <div class="ot-card text-center">
-            <p class="auth-subtitle">@Lang.T("vacancies.noResults")</p>
+        <div class="home-vacancies-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                <path d="M21 21l-4.35-4.35M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" />
+            </svg>
+            <p>@Lang.T("vacancies.noResults")</p>
         </div>
     }
     else
     {
-        <div class="bento-grid">
+        <div class="home-vacancies-grid">
             @foreach (var vacancy in VacancyList)
             {
-                <div class="vacancy-card">
-                    <div class="vacancy-card-title">@vacancy.Title</div>
-                    <div class="vacancy-card-location">📍 @(vacancy.Location ?? "N/A")</div>
-                    <div class="vacancy-card-description">@(vacancy.Description ?? "")</div>
-                    <div class="vacancy-card-footer">
-                        <span class="vacancy-card-salary">
-                            @if (vacancy.SalaryMin.HasValue || vacancy.SalaryMax.HasValue)
-                            {
-                                var range = "";
-                                if (vacancy.SalaryMin.HasValue) range += $"${vacancy.SalaryMin:N0}";
-                                if (vacancy.SalaryMin.HasValue && vacancy.SalaryMax.HasValue) range += " - ";
-                                if (vacancy.SalaryMax.HasValue) range += $"${vacancy.SalaryMax:N0}";
-                                @range
-                            }
-                        </span>
-                        <span class="vacancy-card-badge">@GetContractTypeLabel(vacancy.ContractType)</span>
-                    </div>
-                    <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
-                        @Lang.T("vacancies.expiresIn"): @((vacancy.ExpiresAt - DateTime.UtcNow).Days) @Lang.T("vacancies.days")
-                    </div>
-                </div>
+                <VacancyCard Vacancy="vacancy" />
             }
         </div>
 
         @if (TotalPages > 1)
         {
-            <div class="flex-center gap-sm mt-lg" style="justify-content: center;">
+            <div class="vacancies-pagination">
                 @for (int i = 1; i <= TotalPages; i++)
                 {
-                    <button class="ot-btn @(i == CurrentPage ? "ot-btn--primary" : "ot-btn--secondary") ot-btn--small" @onclick="() => GoToPage(i)">
+                    <button class="vacancies-page-btn @(i == CurrentPage ? "vacancies-page-btn--active" : "")" @onclick="() => GoToPage(i)">
                         @i
                     </button>
                 }
@@ -78,60 +83,110 @@
 </div>
 
 @code {
-    private List<TempVacancyDto> VacancyList { get; set; } = new();
-    private string SearchQuery { get; set; } = "";
-    private string SearchLocation { get; set; } = "";
-    private string? SearchContractType { get; set; }
+    private List<VacancyDto> VacancyList { get; set; } = new();
+    private string ActiveQuery { get; set; } = "";
+    private string ActiveLocation { get; set; } = "";
+    private string ActiveCategory { get; set; } = "";
     private int CurrentPage { get; set; } = 1;
     private int TotalResults { get; set; }
-    private int TotalPages => (int)Math.Ceiling((double)TotalResults / 10);
+    private int TotalPages => (int)Math.Ceiling((double)TotalResults / 12);
     private bool IsLoading { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
-        await Search();
+
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("keyword", out var q))
+            ActiveQuery = q.ToString();
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("location", out var loc))
+            ActiveLocation = loc.ToString();
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("category", out var cat))
+            ActiveCategory = cat.ToString();
+
+        await LoadVacancies();
     }
 
-    private async Task Search()
+    private async Task LoadVacancies()
     {
         IsLoading = true;
-        CurrentPage = 1;
-        await LoadVacancies();
+        try
+        {
+            var dto = new SearchPermanentVacancyDto
+            {
+                Query = string.IsNullOrEmpty(ActiveQuery) ? null : ActiveQuery,
+                Location = string.IsNullOrEmpty(ActiveLocation) ? null : ActiveLocation,
+                Category = string.IsNullOrEmpty(ActiveCategory) ? null : ActiveCategory,
+                Page = CurrentPage,
+                PageSize = 12
+            };
+            var (items, total) = await AuthApi.SearchPermanentVacanciesAsync(dto);
+            VacancyList = items;
+            TotalResults = total;
+        }
+        catch
+        {
+            VacancyList = new();
+        }
         IsLoading = false;
     }
 
     private async Task GoToPage(int page)
     {
         CurrentPage = page;
-        IsLoading = true;
         await LoadVacancies();
-        IsLoading = false;
     }
 
-    private async Task LoadVacancies()
+    private void GoToVacancy(Guid id)
     {
-        var dto = new SearchVacancyDto
+        Nav.NavigateTo($"/vacancy/{id}");
+    }
+
+    private void ClearQuery()
+    {
+        ActiveQuery = "";
+        CurrentPage = 1;
+        UpdateUrl();
+    }
+
+    private void ClearLocation()
+    {
+        ActiveLocation = "";
+        CurrentPage = 1;
+        UpdateUrl();
+    }
+
+    private void ClearCategory()
+    {
+        ActiveCategory = "";
+        CurrentPage = 1;
+        UpdateUrl();
+    }
+
+    private void UpdateUrl()
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrEmpty(ActiveQuery)) query.Add($"keyword={Uri.EscapeDataString(ActiveQuery)}");
+        if (!string.IsNullOrEmpty(ActiveLocation)) query.Add($"location={Uri.EscapeDataString(ActiveLocation)}");
+        if (!string.IsNullOrEmpty(ActiveCategory)) query.Add($"category={ActiveCategory}");
+        var qs = query.Count > 0 ? "?" + string.Join("&", query) : "";
+        Nav.NavigateTo($"/vacancies{qs}", forceLoad: true);
+    }
+
+    private string GetCategoryLabel(string category)
+    {
+        return category switch
         {
-            Query = string.IsNullOrEmpty(SearchQuery) ? null : SearchQuery,
-            Location = string.IsNullOrEmpty(SearchLocation) ? null : SearchLocation,
-            ContractType = int.TryParse(SearchContractType, out var ct) ? ct : null,
-            Page = CurrentPage,
-            PageSize = 10
+            "Desarrollo" => Lang.T("common.nav.categoryIT"),
+            "Finanzas" => Lang.T("common.nav.categoryFinance"),
+            "Salud" => Lang.T("common.nav.categoryHealth"),
+            "Educacion" => Lang.T("common.nav.categoryEducation"),
+            "Marketing" => Lang.T("common.nav.categoryMarketing"),
+            "Ingenieria" => Lang.T("common.nav.categoryEngineering"),
+            "Ventas" => Lang.T("common.nav.categorySales"),
+            "Diseno" => Lang.T("common.nav.categoryDesign"),
+            _ => category
         };
-
-        var (items, total) = await AuthApi.SearchVacanciesAsync(dto);
-        VacancyList = items;
-        TotalResults = total;
     }
-
-    private string GetContractTypeLabel(int type) => type switch
-    {
-        0 => Lang.T("common.contract.fullTime"),
-        1 => Lang.T("common.contract.partTime"),
-        2 => Lang.T("common.contract.contract"),
-        3 => Lang.T("common.contract.remote"),
-        _ => ""
-    };
 }

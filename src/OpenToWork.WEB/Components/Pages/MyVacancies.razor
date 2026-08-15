@@ -3,47 +3,12 @@
 @using OpenToWork.WEB.Services
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
+@inject IJSRuntime JS
 
 <PageTitle>@Lang.T("vacancies.myTitle")</PageTitle>
 
 <div class="page-container">
-    <div class="flex-between mb-lg">
-        <h1>@Lang.T("vacancies.myTitle")</h1>
-        <button class="ot-btn ot-btn--primary ot-btn--medium" @onclick="() => ShowCreateForm = !ShowCreateForm">
-            @Lang.T("vacancies.create")
-        </button>
-    </div>
-
-    @if (ShowCreateForm)
-    {
-        <div class="ot-card mb-lg">
-            <h3 class="mb-md">@Lang.T("vacancies.createTitle")</h3>
-            <div class="form-grid">
-                <input class="ot-input" placeholder="@Lang.T("vacancies.fields.title")" @bind="NewVacancy.Title" />
-                <input class="ot-input" placeholder="@Lang.T("vacancies.fields.location")" @bind="NewVacancy.Location" />
-                <input class="ot-input" placeholder="@Lang.T("vacancies.fields.category")" @bind="NewVacancy.Category" />
-                <select class="ot-input" @bind="NewVacancy.ContractType">
-                    <option value="0">@Lang.T("common.contract.fullTime")</option>
-                    <option value="1">@Lang.T("common.contract.partTime")</option>
-                    <option value="2">@Lang.T("common.contract.contract")</option>
-                    <option value="3">@Lang.T("common.contract.remote")</option>
-                </select>
-                <select class="ot-input" @bind="NewVacancy.WorkMode">
-                    <option value="0">@Lang.T("vacancies.workMode.onSite")</option>
-                    <option value="1">@Lang.T("vacancies.workMode.hybrid")</option>
-                    <option value="2">@Lang.T("vacancies.workMode.remote")</option>
-                </select>
-                <input class="ot-input" type="number" placeholder="@Lang.T("vacancies.fields.salaryMin")" @bind="NewVacancy.SalaryMin" />
-                <input class="ot-input" type="number" placeholder="@Lang.T("vacancies.fields.salaryMax")" @bind="NewVacancy.SalaryMax" />
-            </div>
-            <textarea class="ot-input mt-md" rows="3" placeholder="@Lang.T("vacancies.fields.description")" @bind="NewVacancy.Description"></textarea>
-            <textarea class="ot-input mt-md" rows="3" placeholder="@Lang.T("vacancies.fields.requirements")" @bind="NewVacancy.Requirements"></textarea>
-            <div class="flex-center gap-sm mt-md">
-                <button class="ot-btn ot-btn--primary" @onclick="CreateVacancy">@Lang.T("common.buttons.save")</button>
-                <button class="ot-btn ot-btn--secondary" @onclick="() => ShowCreateForm = false">@Lang.T("common.buttons.cancel")</button>
-            </div>
-        </div>
-    }
+    <h1 class="mb-lg">@Lang.T("vacancies.myTitle")</h1>
 
     @if (IsLoading)
     {
@@ -57,54 +22,151 @@
     }
     else
     {
-        <div class="bento-grid">
+        <div class="home-vacancies-grid">
             @foreach (var vacancy in VacancyList)
             {
-                <div class="vacancy-card">
-                    <div class="vacancy-card-title">@vacancy.Title</div>
-                    <div class="vacancy-card-location">@(vacancy.Location ?? "N/A")</div>
-                    @if (vacancy.SalaryMin.HasValue || vacancy.SalaryMax.HasValue)
-                    {
-                        <div class="vacancy-card-salary">
-                            @if (vacancy.SalaryMin.HasValue)
-                            {
-                                <span>$@vacancy.SalaryMin.Value.ToString("N0")</span>
-                            }
-                            @if (vacancy.SalaryMin.HasValue && vacancy.SalaryMax.HasValue)
-                            {
-                                <span> - </span>
-                            }
-                            @if (vacancy.SalaryMax.HasValue)
-                            {
-                                <span>$@vacancy.SalaryMax.Value.ToString("N0")</span>
-                            }
-                        </div>
-                    }
-                    <div class="vacancy-card-footer">
-                        <span class="vacancy-card-badge @GetStatusClass(vacancy.Status)">@GetStatusLabel(vacancy.Status)</span>
-                    </div>
-                    <div class="flex-center gap-sm mt-md">
-                        @if (vacancy.Status == 0)
-                        {
-                            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => PublishVacancy(vacancy.Id)">@Lang.T("vacancies.publish")</button>
-                        }
-                        @if (vacancy.Status == 1)
-                        {
-                            <button class="ot-btn ot-btn--secondary ot-btn--small" @onclick="() => CloseVacancy(vacancy.Id)">@Lang.T("vacancies.close")</button>
-                        }
-                        <a href="/vacancy/@vacancy.Id" class="ot-btn ot-btn--secondary ot-btn--small">@Lang.T("common.buttons.view")</a>
-                        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => DeleteVacancy(vacancy.Id)">@Lang.T("common.buttons.delete")</button>
-                    </div>
-                </div>
+                <VacancyCard Vacancy="vacancy" ShowStatus="true" ShowActions="true"
+                    OnPublish="PublishVacancy" OnClose="CloseVacancy" OnDelete="DeleteVacancy" />
             }
         </div>
     }
 </div>
 
+<!-- FAB Button -->
+<button class="fab-btn" @onclick="() => ShowCreateForm = true" aria-label="@Lang.T("vacancies.create")">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+</button>
+
+<!-- Chat-style Modal -->
+@if (ShowCreateForm)
+{
+    <div class="fab-overlay" @onclick="() => ShowCreateForm = false">
+        <div class="fab-modal" @onclick:stopPropagation="true">
+            <!-- Modal Header -->
+            <div class="fab-modal-header">
+                <div class="fab-modal-header-info">
+                    <div class="fab-modal-avatar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <path d="M3 9h18M9 21V9" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="fab-modal-title">@Lang.T("vacancies.createTitle")</h3>
+                        <p class="fab-modal-subtitle">@Lang.T("vacancies.createSubtitle")</p>
+                    </div>
+                </div>
+                <button class="fab-modal-close" @onclick="() => ShowCreateForm = false" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body - Chat style fields -->
+            <div class="fab-modal-body">
+                <div class="fab-chat-step">
+                    <div class="fab-chat-bubble fab-chat-bubble--bot">
+                        <p>@Lang.T("vacancies.wizard.titlePrompt")</p>
+                    </div>
+                    <input class="ot-input-field fab-chat-input" placeholder="@Lang.T("vacancies.fields.title")" @bind="NewVacancy.Title" />
+                </div>
+
+                <div class="fab-chat-step">
+                    <div class="fab-chat-bubble fab-chat-bubble--bot">
+                        <p>@Lang.T("vacancies.wizard.locationPrompt")</p>
+                    </div>
+                    <input class="ot-input-field fab-chat-input" placeholder="@Lang.T("vacancies.fields.location")" @bind="NewVacancy.Location" />
+                </div>
+
+                <div class="fab-chat-step">
+                    <div class="fab-chat-bubble fab-chat-bubble--bot">
+                        <p>@Lang.T("vacancies.wizard.categoryPrompt")</p>
+                    </div>
+                    <input class="ot-input-field fab-chat-input" placeholder="@Lang.T("vacancies.fields.category")" @bind="NewVacancy.Category" />
+                </div>
+
+                <div class="fab-chat-step">
+                    <div class="fab-chat-bubble fab-chat-bubble--bot">
+                        <p>@Lang.T("vacancies.wizard.contractPrompt")</p>
+                    </div>
+                    <select class="ot-input-field fab-chat-input" @bind="NewVacancy.ContractType">
+                        <option value="0">@Lang.T("common.contract.fullTime")</option>
+                        <option value="1">@Lang.T("common.contract.partTime")</option>
+                        <option value="2">@Lang.T("common.contract.contract")</option>
+                        <option value="3">@Lang.T("common.contract.remote")</option>
+                    </select>
+                </div>
+
+                <div class="fab-chat-step">
+                    <div class="fab-chat-bubble fab-chat-bubble--bot">
+                        <p>@Lang.T("vacancies.wizard.workModePrompt")</p>
+                    </div>
+                    <select class="ot-input-field fab-chat-input" @bind="NewVacancy.WorkMode">
+                        <option value="0">@Lang.T("vacancies.workMode.onSite")</option>
+                        <option value="1">@Lang.T("vacancies.workMode.hybrid")</option>
+                        <option value="2">@Lang.T("vacancies.workMode.remote")</option>
+                    </select>
+                </div>
+
+                <div class="fab-chat-step">
+                    <div class="fab-chat-bubble fab-chat-bubble--bot">
+                        <p>@Lang.T("vacancies.wizard.salaryPrompt")</p>
+                    </div>
+                    <div class="fab-chat-row">
+                        <input class="ot-input-field fab-chat-input" type="number" placeholder="@Lang.T("vacancies.fields.salaryMin")" @bind="NewVacancy.SalaryMin" />
+                        <input class="ot-input-field fab-chat-input" type="number" placeholder="@Lang.T("vacancies.fields.salaryMax")" @bind="NewVacancy.SalaryMax" />
+                    </div>
+                </div>
+
+                <div class="fab-chat-step">
+                    <div class="fab-chat-bubble fab-chat-bubble--bot">
+                        <p>@Lang.T("vacancies.wizard.descriptionPrompt")</p>
+                    </div>
+                    <textarea class="ot-input-field fab-chat-input" rows="3" placeholder="@Lang.T("vacancies.fields.description")" @bind="NewVacancy.Description"></textarea>
+                </div>
+
+                <div class="fab-chat-step">
+                    <div class="fab-chat-bubble fab-chat-bubble--bot">
+                        <p>@Lang.T("vacancies.wizard.requirementsPrompt")</p>
+                    </div>
+                    <textarea class="ot-input-field fab-chat-input" rows="3" placeholder="@Lang.T("vacancies.fields.requirements")" @bind="NewVacancy.Requirements"></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="fab-modal-footer">
+                <button class="ot-btn ot-btn--secondary" @onclick="() => ShowCreateForm = false" disabled="@IsSaving">@Lang.T("common.buttons.cancel")</button>
+                <button class="ot-btn ot-btn--primary" @onclick="CreateVacancy" disabled="@IsSaving">
+                    @if (IsSaving)
+                    {
+                        <svg class="fab-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                        </svg>
+                        @Lang.T("common.labels.saving")
+                    }
+                    else
+                    {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        @Lang.T("common.buttons.save")
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<VacancyDto> VacancyList { get; set; } = new();
     private bool IsLoading { get; set; }
     private bool ShowCreateForm { get; set; }
+    private bool IsSaving { get; set; }
     private CreateVacancyDto NewVacancy { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
@@ -123,12 +185,64 @@
 
     private async Task CreateVacancy()
     {
-        var result = await AuthApi.CreateVacancyAsync(NewVacancy);
-        if (result != null)
+        if (string.IsNullOrWhiteSpace(NewVacancy.Title))
         {
-            NewVacancy = new CreateVacancyDto();
-            ShowCreateForm = false;
-            await LoadVacancies();
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                icon = "error",
+                title = Lang.T("common.labels.error"),
+                text = Lang.T("vacancies.errors.titleRequired"),
+                confirmButtonColor = "#6366f1",
+                timer = 3000
+            });
+            return;
+        }
+
+        IsSaving = true;
+
+        try
+        {
+            var result = await AuthApi.CreateVacancyAsync(NewVacancy);
+            if (result != null)
+            {
+                NewVacancy = new CreateVacancyDto();
+                ShowCreateForm = false;
+                await LoadVacancies();
+                await JS.InvokeVoidAsync("Swal.fire", new
+                {
+                    icon = "success",
+                    title = Lang.T("vacancies.success.created"),
+                    showConfirmButton = false,
+                    timer = 2000,
+                    timerProgressBar = true
+                });
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("Swal.fire", new
+                {
+                    icon = "error",
+                    title = Lang.T("common.labels.error"),
+                    text = Lang.T("vacancies.errors.createFailed"),
+                    confirmButtonColor = "#6366f1",
+                    timer = 4000
+                });
+            }
+        }
+        catch (Exception)
+        {
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                icon = "error",
+                title = Lang.T("common.labels.error"),
+                text = Lang.T("vacancies.errors.createFailed"),
+                confirmButtonColor = "#6366f1",
+                timer = 4000
+            });
+        }
+        finally
+        {
+            IsSaving = false;
         }
     }
 
@@ -149,20 +263,4 @@
         await AuthApi.DeleteVacancyAsync(id);
         await LoadVacancies();
     }
-
-    private string GetStatusLabel(int status) => status switch
-    {
-        0 => Lang.T("vacancies.status.draft"),
-        1 => Lang.T("vacancies.status.active"),
-        2 => Lang.T("vacancies.status.closed"),
-        _ => ""
-    };
-
-    private string GetStatusClass(int status) => status switch
-    {
-        0 => "badge-draft",
-        1 => "badge-active",
-        2 => "badge-closed",
-        _ => ""
-    };
 }

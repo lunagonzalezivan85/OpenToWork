@@ -8,15 +8,20 @@
 
 <PageTitle>@Lang.T("admin.auditLog.title")</PageTitle>
 
-<h1>@Lang.T("admin.auditLog.title")</h1>
+<div class="admin-page-header">
+    <h1>@Lang.T("admin.auditLog.title")</h1>
+</div>
 
 @if (Logs == null)
 {
-    <p>@Lang.T("admin.common.loading")</p>
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
 }
 else if (Logs.Count == 0)
 {
-    <p>@Lang.T("admin.auditLog.empty")</p>
+    <div class="admin-empty">
+        <div class="admin-empty-icon">&#9632;</div>
+        <div class="admin-empty-text">@Lang.T("admin.auditLog.empty")</div>
+    </div>
 }
 else
 {
@@ -34,7 +39,7 @@ else
             {
                 <tr>
                     <td>@log.AdminEmail</td>
-                    <td>@log.Action</td>
+                    <td><span class="admin-status admin-status--active">@log.Action</span></td>
                     <td>@log.EntityType</td>
                     <td>@log.CreatedAt.ToLocalTime()</td>
                 </tr>

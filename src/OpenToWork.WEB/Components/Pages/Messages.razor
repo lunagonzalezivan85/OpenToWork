@@ -1,0 +1,233 @@
+@page "/messages"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+
+<PageTitle>@Lang.T("common.messages.title")</PageTitle>
+
+<div class="page-container">
+    <div class="messages-layout @(SelectedConversation != null ? "show-chat" : "")">
+        <!-- Left: Conversations sidebar -->
+        <div class="messages-sidebar">
+            <div class="messages-sidebar-header">
+                <div class="messages-filter-tabs">
+                    <button class="messages-filter-tab @(MessageFilter == "all" ? "active" : "")" @onclick='() => SetFilter("all")'>
+                        @Lang.T("common.messages.all")
+                    </button>
+                    <button class="messages-filter-tab @(MessageFilter == "unread" ? "active" : "")" @onclick='() => SetFilter("unread")'>
+                        @Lang.T("common.messages.unread")
+                        @if (UnreadCount > 0)
+                        {
+                            <span class="messages-filter-badge">@UnreadCount</span>
+                        }
+                    </button>
+                    <button class="messages-filter-tab @(MessageFilter == "read" ? "active" : "")" @onclick='() => SetFilter("read")'>
+                        @Lang.T("common.messages.read")
+                    </button>
+                </div>
+                <div class="messages-search-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <input type="text" @bind="SearchQuery" placeholder="@Lang.T("common.messages.search")" class="messages-search-input" />
+                </div>
+            </div>
+
+            <div class="messages-list">
+                @if (FilteredConversations.Count == 0)
+                {
+                    <div class="messages-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.3">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        <p>@Lang.T("common.messages.noConversations")</p>
+                    </div>
+                }
+                else
+                {
+                    foreach (var conv in FilteredConversations)
+                    {
+                        <div class="conversation-item @(SelectedConversationId == conv.Id ? "selected" : "") @(conv.IsRead ? "" : "unread")" @onclick='() => SelectConversation(conv)'>
+                            <div class="conversation-avatar">@conv.ParticipantAvatar</div>
+                            <div class="conversation-content">
+                                <div class="conversation-top-row">
+                                    <span class="conversation-name">@conv.ParticipantName</span>
+                                    <span class="conversation-time">@FormatTime(conv.LastMessageAt)</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(conv.VacancyTitle))
+                                {
+                                    <span class="conversation-vacancy">@conv.VacancyTitle</span>
+                                }
+                                <div class="conversation-bottom-row">
+                                    <span class="conversation-preview">@(conv.LastMessage.Length > 50 ? conv.LastMessage[..50] + "..." : conv.LastMessage)</span>
+                                    @if (conv.UnreadCount > 0)
+                                    {
+                                        <span class="conversation-unread-badge">@conv.UnreadCount</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Right: Chat panel -->
+        <div class="messages-chat">
+            @if (SelectedConversation == null)
+            {
+                <div class="messages-chat-empty">
+                    <div class="messages-chat-empty-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="messages-chat-empty-title">@Lang.T("common.messages.title")</h3>
+                    <p class="messages-chat-empty-text">@Lang.T("common.messages.selectConversation")</p>
+                </div>
+            }
+            else
+            {
+                <div class="chat-header">
+                    <button class="chat-back-btn" @onclick="BackToList">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <div class="chat-header-avatar">@SelectedConversation.ParticipantAvatar</div>
+                    <div class="chat-header-info">
+                        <h3 class="chat-header-name">@SelectedConversation.ParticipantName</h3>
+                        @if (!string.IsNullOrEmpty(SelectedConversation.VacancyTitle))
+                        {
+                            <span class="chat-header-vacancy">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                                </svg>
+                                @SelectedConversation.VacancyTitle
+                            </span>
+                        }
+                    </div>
+                    <span class="chat-header-status">
+                        <span class="chat-status-dot"></span>
+                        @Lang.T("common.messages.online")
+                    </span>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    @foreach (var msg in ChatMessages)
+                    {
+                        <div class="chat-message @(msg.IsMine ? "mine" : "theirs")">
+                            <div class="chat-message-bubble">
+                                <p class="chat-message-text">@msg.Content</p>
+                                <span class="chat-message-time">@FormatTime(msg.SentAt)</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="chat-input-area">
+                    <input type="text" @bind="NewMessage" @onkeypress="OnKeyPress" placeholder="@Lang.T("common.messages.typeMessage")" class="chat-input" />
+                    <button class="chat-send-btn" @onclick="SendMessage" disabled="@string.IsNullOrEmpty(NewMessage?.Trim())">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ConversationDto> Conversations { get; set; } = new();
+    private List<MessageDto> ChatMessages { get; set; } = new();
+    private string MessageFilter { get; set; } = "all";
+    private string SearchQuery { get; set; } = "";
+    private Guid? SelectedConversationId { get; set; }
+    private ConversationDto? SelectedConversation { get; set; }
+    private string NewMessage { get; set; } = "";
+    private int UnreadCount => Conversations.Count(c => !c.IsRead);
+
+    private List<ConversationDto> FilteredConversations => Conversations
+        .Where(c => MessageFilter switch
+        {
+            "unread" => !c.IsRead,
+            "read" => c.IsRead,
+            _ => true
+        })
+        .Where(c => string.IsNullOrEmpty(SearchQuery) || c.ParticipantName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        Conversations = await AuthApi.GetConversationsAsync();
+    }
+
+    private async Task SelectConversation(ConversationDto conv)
+    {
+        SelectedConversation = conv;
+        SelectedConversationId = conv.Id;
+        ChatMessages = await AuthApi.GetMessagesAsync(conv.Id);
+
+        if (!conv.IsRead)
+        {
+            conv.IsRead = true;
+            conv.UnreadCount = 0;
+            await AuthApi.MarkConversationReadAsync(conv.Id);
+        }
+    }
+
+    private void SetFilter(string filter) => MessageFilter = filter;
+
+    private void BackToList()
+    {
+        SelectedConversation = null;
+        SelectedConversationId = null;
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrEmpty(NewMessage?.Trim()) || SelectedConversationId == null) return;
+
+        var dto = new SendMessageDto
+        {
+            ConversationId = SelectedConversationId.Value,
+            Content = NewMessage.Trim()
+        };
+
+        var msg = await AuthApi.SendMessageAsync(dto);
+        if (msg != null)
+        {
+            ChatMessages.Add(msg);
+            if (SelectedConversation != null)
+            {
+                SelectedConversation.LastMessage = msg.Content;
+                SelectedConversation.LastMessageAt = msg.SentAt;
+            }
+        }
+
+        NewMessage = "";
+    }
+
+    private async Task OnKeyPress(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrEmpty(NewMessage?.Trim()))
+        {
+            await SendMessage();
+        }
+    }
+
+    private static string FormatTime(DateTime time)
+    {
+        var diff = DateTime.UtcNow - time;
+        return diff.TotalMinutes < 1 ? "ahora"
+            : diff.TotalHours < 1 ? $"{(int)diff.TotalMinutes}m"
+            : diff.TotalDays < 1 ? $"{(int)diff.TotalHours}h"
+            : diff.TotalDays < 7 ? $"{(int)diff.TotalDays}d"
+            : time.ToString("dd/MM");
+    }
+}

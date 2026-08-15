@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPermanentVacancyService, PermanentVacancyService>();
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<IAlertService, AlertService>();
 
         return services;
     }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
+using OpenToWork.Models.Entities;
 using OpenToWork.Shared.DTOs;
 
 namespace OpenToWork.API.Controllers;
@@ -28,7 +29,10 @@ public class PermanentVacanciesController : ControllerBase
         if (userId == null) return Unauthorized();
 
         var companyId = await GetCompanyIdAsync(userId.Value);
-        if (companyId == null) return BadRequest("Company profile not found");
+        if (companyId == null)
+        {
+            companyId = await GetOrCreateCompanyAsync(userId.Value);
+        }
 
         var result = await _vacancyService.CreateVacancyAsync(companyId.Value, dto, userId.Value);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
@@ -56,7 +60,10 @@ public class PermanentVacanciesController : ControllerBase
         if (userId == null) return Unauthorized();
 
         var companyId = await GetCompanyIdAsync(userId.Value);
-        if (companyId == null) return BadRequest("Company profile not found");
+        if (companyId == null)
+        {
+            companyId = await GetOrCreateCompanyAsync(userId.Value);
+        }
 
         var result = await _vacancyService.GetVacanciesByCompanyAsync(companyId.Value);
         return Ok(result);
@@ -131,5 +138,20 @@ public class PermanentVacanciesController : ControllerBase
         var company = await _context.PT_Companies
             .FirstOrDefaultAsync(c => c.SCUserId == userId && !c.IsDeleted);
         return company?.Id;
+    }
+
+    private async Task<Guid> GetOrCreateCompanyAsync(Guid userId)
+    {
+        var user = await _context.SC_Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var company = new PTCompany
+        {
+            SCUserId = userId,
+            Name = user?.Email?.Split('@')[0] ?? "Mi Empresa",
+            ContactEmail = user?.Email,
+            CreatedBy = userId
+        };
+        _context.PT_Companies.Add(company);
+        await _context.SaveChangesAsync();
+        return company.Id;
     }
 }

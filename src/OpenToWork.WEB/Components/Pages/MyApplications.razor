@@ -21,24 +21,10 @@
     }
     else
     {
-        <div class="bento-grid">
+        <div class="home-vacancies-grid">
             @foreach (var app in Applications)
             {
-                <div class="vacancy-card">
-                    <div class="vacancy-card-title">@app.VacancyTitle</div>
-                    <div class="vacancy-card-location">@(app.CompanyName ?? "")</div>
-                    @if (app.ExpectedSalary.HasValue)
-                    {
-                        <div class="vacancy-card-salary">$@app.ExpectedSalary.Value.ToString("N0")</div>
-                    }
-                    <div class="vacancy-card-footer">
-                        <span class="vacancy-card-badge @GetStatusClass(app.Status)">@GetStatusLabel(app.Status)</span>
-                    </div>
-                    <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
-                        @app.CreatedAt.ToString("MMM dd, yyyy")
-                    </div>
-                    <a href="/vacancy/@app.VacancyId" class="ot-btn ot-btn--secondary ot-btn--small mt-md">@Lang.T("common.buttons.view")</a>
-                </div>
+                <VacancyCard Vacancy="MapToVacancyDto(app)" ShowStatus="true" StatusMode="application" />
             }
         </div>
     }
@@ -62,21 +48,17 @@
         IsLoading = false;
     }
 
-    private string GetStatusLabel(int status) => status switch
+    private VacancyDto MapToVacancyDto(ApplicationDto app)
     {
-        0 => Lang.T("applications.status.pending"),
-        1 => Lang.T("applications.status.inReview"),
-        2 => Lang.T("applications.status.accepted"),
-        3 => Lang.T("applications.status.rejected"),
-        _ => ""
-    };
-
-    private string GetStatusClass(int status) => status switch
-    {
-        0 => "badge-draft",
-        1 => "badge-active",
-        2 => "badge-active",
-        3 => "badge-closed",
-        _ => ""
-    };
+        return new VacancyDto
+        {
+            Id = app.VacancyId,
+            Title = app.VacancyTitle,
+            CompanyName = app.CompanyName ?? "",
+            SalaryMin = app.ExpectedSalary,
+            SalaryMax = null,
+            Status = app.Status,
+            ViewsCount = 0
+        };
+    }
 }

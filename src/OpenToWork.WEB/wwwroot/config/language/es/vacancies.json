@@ -12,6 +12,7 @@
     "myTitle": "Mis Vacantes",
     "create": "Nueva Vacante",
     "createTitle": "Crear Nueva Vacante",
+    "createSubtitle": "Completa los detalles de tu vacante paso a paso",
     "noVacancies": "No tienes vacantes publicadas",
     "publish": "Publicar",
     "close": "Cerrar",
@@ -41,6 +42,40 @@
         "advanced": "Avanzado",
         "native": "Nativo"
     },
+    "wizard": {
+        "titlePrompt": "¿Cuál es el título de la vacante?",
+        "locationPrompt": "¿Dónde se ubicará el puesto?",
+        "categoryPrompt": "¿Qué categoría describe mejor la vacante?",
+        "contractPrompt": "¿Qué tipo de contrato ofreces?",
+        "workModePrompt": "¿Cuál es la modalidad de trabajo?",
+        "salaryPrompt": "¿Cuál es el rango salarial?",
+        "descriptionPrompt": "Describe la vacante y sus responsabilidades",
+        "requirementsPrompt": "¿Qué requisitos necesita el candidato?"
+    },
+    "errors": {
+        "titleRequired": "El título de la vacante es obligatorio",
+        "createFailed": "No se pudo crear la vacante. Verifica que tienes permisos de empresa."
+    },
+    "success": {
+        "created": "Vacante creada correctamente",
+        "published": "Vacante publicada correctamente",
+        "closed": "Vacante cerrada correctamente"
+    },
+    "candidates": "Candidatos",
+    "noCandidates": "Aún no hay candidatos para esta vacante",
+    "confirmDelete": "¿Estás seguro de eliminar esta vacante?",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
+    "edit": "Editar vacante",
+    "backToMyVacancies": "Volver a mis vacantes",
+    "pause": "Pausar",
+    "views": "vistas",
+    "candidateFilters": {
+        "all": "Todos",
+        "new": "Nuevos",
+        "shortlisted": "Preseleccionados",
+        "rejected": "Descartados"
+    },
     "fields": {
         "title": "Título",
         "description": "Descripción",
@@ -49,5 +84,6 @@
         "salaryMax": "Salario máximo",
         "location": "Ubicación",
         "category": "Categoría"
-    }
+    },
+    "notFound": "No se pudo cargar la vacante. Es posible que no exista o haya sido eliminada."
 }

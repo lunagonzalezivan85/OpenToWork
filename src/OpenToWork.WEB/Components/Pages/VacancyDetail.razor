@@ -8,75 +8,133 @@
 <PageTitle>@(Vacancy?.Title ?? Lang.T("vacancies.detail"))</PageTitle>
 
 <div class="page-container">
-    @if (Vacancy == null)
+    @if (Vacancy == null && !LoadFailed)
     {
         <p>@Lang.T("common.labels.loading")</p>
     }
+    else if (LoadFailed)
+    {
+        <div class="vacancy-detail-error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="80" height="80">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+            <h2 class="vacancy-detail-error-title">@Lang.T("vacancies.notFound")</h2>
+            <a href="/vacancies" class="ot-btn ot-btn--primary ot-btn--small">@Lang.T("common.buttons.back")</a>
+        </div>
+    }
     else
     {
-        <div class="ot-card">
-            <div class="flex-between mb-md">
-                <h1>@Vacancy.Title</h1>
+        <div class="vacancy-detail">
+            <!-- Header -->
+            <div class="vacancy-detail-header">
+                <div class="vacancy-detail-header-info">
+                    <h1 class="vacancy-detail-title">@Vacancy.Title</h1>
+                    <p class="vacancy-detail-company">@Vacancy.CompanyName</p>
+                </div>
                 @if (Vacancy.CompanyIsVerified)
                 {
-                    <span class="vacancy-card-badge badge-active">@Lang.T("vacancies.verified")</span>
+                    <span class="vacancy-detail-verified">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <path d="M22 4L12 14.01l-3-3" />
+                        </svg>
+                        @Lang.T("vacancies.verified")
+                    </span>
                 }
             </div>
-            <p class="auth-subtitle mb-md">@Vacancy.CompanyName</p>
 
-            <div class="vacancy-detail-info mb-md">
-                <div>📍 @(Vacancy.Location ?? "N/A")</div>
-                <div>💼 @GetContractTypeLabel(Vacancy.ContractType)</div>
-                <div>🏠 @GetWorkModeLabel(Vacancy.WorkMode)</div>
+            <!-- Info badges -->
+            <div class="vacancy-detail-badges">
+                <span class="vacancy-detail-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    @(Vacancy.Location ?? "N/A")
+                </span>
+                <span class="vacancy-detail-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                    </svg>
+                    @GetContractTypeLabel(Vacancy.ContractType)
+                </span>
+                <span class="vacancy-detail-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    @GetWorkModeLabel(Vacancy.WorkMode)
+                </span>
                 @if (Vacancy.SalaryMin.HasValue || Vacancy.SalaryMax.HasValue)
                 {
-                    <div>💰
-                        @if (Vacancy.SalaryMin.HasValue)
-                        {
-                            <span>$@Vacancy.SalaryMin.Value.ToString("N0")</span>
-                        }
-                        @if (Vacancy.SalaryMin.HasValue && Vacancy.SalaryMax.HasValue)
-                        {
-                            <span> - </span>
-                        }
-                        @if (Vacancy.SalaryMax.HasValue)
-                        {
-                            <span>$@Vacancy.SalaryMax.Value.ToString("N0")</span>
-                        }
-                    </div>
+                    <span class="vacancy-detail-badge vacancy-detail-badge--accent">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <line x1="12" y1="1" x2="12" y2="23" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                        @if (Vacancy.SalaryMin.HasValue) { <text>$@Vacancy.SalaryMin.Value.ToString("N0")</text> }
+                        @if (Vacancy.SalaryMin.HasValue && Vacancy.SalaryMax.HasValue) { <text> - </text> }
+                        @if (Vacancy.SalaryMax.HasValue) { <text>$@Vacancy.SalaryMax.Value.ToString("N0")</text> }
+                    </span>
                 }
                 @if (!string.IsNullOrEmpty(Vacancy.Category))
                 {
-                    <div>🏷️ @Vacancy.Category</div>
+                    <span class="vacancy-detail-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                            <line x1="7" y1="7" x2="7.01" y2="7" />
+                        </svg>
+                        @Vacancy.Category
+                    </span>
                 }
                 @if (Vacancy.ExperienceLevel.HasValue)
                 {
-                    <div>📊 @GetExperienceLevelLabel(Vacancy.ExperienceLevel.Value)</div>
+                    <span class="vacancy-detail-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
+                        </svg>
+                        @GetExperienceLevelLabel(Vacancy.ExperienceLevel.Value)
+                    </span>
                 }
                 @if (Vacancy.EnglishLevel.HasValue)
                 {
-                    <div>🌐 @GetEnglishLevelLabel(Vacancy.EnglishLevel.Value)</div>
+                    <span class="vacancy-detail-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                        </svg>
+                        @GetEnglishLevelLabel(Vacancy.EnglishLevel.Value)
+                    </span>
                 }
             </div>
 
+            <!-- Description -->
             @if (!string.IsNullOrEmpty(Vacancy.Description))
             {
-                <h3 class="mb-sm">@Lang.T("vacancies.fields.description")</h3>
-                <p class="mb-md">@Vacancy.Description</p>
+                <div class="vacancy-detail-section">
+                    <h3 class="vacancy-detail-section-title">@Lang.T("vacancies.fields.description")</h3>
+                    <p class="vacancy-detail-section-text">@Vacancy.Description</p>
+                </div>
             }
 
+            <!-- Requirements -->
             @if (!string.IsNullOrEmpty(Vacancy.Requirements))
             {
-                <h3 class="mb-sm">@Lang.T("vacancies.fields.requirements")</h3>
-                <p class="mb-md">@Vacancy.Requirements</p>
+                <div class="vacancy-detail-section">
+                    <h3 class="vacancy-detail-section-title">@Lang.T("vacancies.fields.requirements")</h3>
+                    <p class="vacancy-detail-section-text">@Vacancy.Requirements</p>
+                </div>
             }
 
-            <div class="ot-card mt-lg" style="background: var(--bg-secondary);">
-                <h3 class="mb-md">@Lang.T("applications.applyTitle")</h3>
-                <textarea class="ot-input mb-md" rows="4" placeholder="@Lang.T("applications.coverLetter")" @bind="CoverLetter"></textarea>
+            <!-- Apply section (no nested card, just a divider + form) -->
+            <div class="vacancy-detail-apply">
+                <h3 class="vacancy-detail-section-title">@Lang.T("applications.applyTitle")</h3>
+                <textarea class="ot-input-field mb-md" rows="4" placeholder="@Lang.T("applications.coverLetter")" @bind="CoverLetter"></textarea>
                 <div class="form-grid mb-md">
-                    <input class="ot-input" type="number" placeholder="@Lang.T("applications.expectedSalary")" @bind="ExpectedSalary" />
-                    <input class="ot-input" type="date" placeholder="@Lang.T("applications.availableFrom")" @bind="AvailableFromDate" />
+                    <input class="ot-input-field" type="number" placeholder="@Lang.T("applications.expectedSalary")" @bind="ExpectedSalary" />
+                    <input class="ot-input-field" type="date" placeholder="@Lang.T("applications.availableFrom")" @bind="AvailableFromDate" />
                 </div>
                 <button class="ot-btn ot-btn--primary" @onclick="ApplyToVacancy">@Lang.T("applications.apply")</button>
             </div>
@@ -87,6 +145,7 @@
 @code {
     [Parameter] public Guid Id { get; set; }
     private VacancyDto? Vacancy { get; set; }
+    private bool LoadFailed { get; set; }
     private string CoverLetter { get; set; } = "";
     private decimal? ExpectedSalary { get; set; }
     private DateTime? AvailableFromDate { get; set; }
@@ -95,7 +154,15 @@
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
-        Vacancy = await AuthApi.GetPermanentVacancyAsync(Id);
+        try
+        {
+            Vacancy = await AuthApi.GetPermanentVacancyAsync(Id);
+            if (Vacancy == null) LoadFailed = true;
+        }
+        catch
+        {
+            LoadFailed = true;
+        }
     }
 
     private async Task ApplyToVacancy()

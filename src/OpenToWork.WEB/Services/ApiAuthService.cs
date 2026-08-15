@@ -163,6 +163,7 @@ public class ApiAuthService
 
     public async Task<VacancyDto?> GetPermanentVacancyAsync(Guid id)
     {
+        await SetAuthHeaderAsync();
         var response = await _httpClient.GetAsync($"api/permanentvacancies/{id}");
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<VacancyDto>();
@@ -307,6 +308,44 @@ public class ApiAuthService
         await SetAuthHeaderAsync();
         var response = await _httpClient.DeleteAsync($"api/profile/certification/{id}");
         return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<AlertDto>> GetAlertsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/alerts");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<AlertDto>>() ?? new();
+    }
+
+    public async Task<List<ConversationDto>> GetConversationsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/messages/conversations");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<ConversationDto>>() ?? new();
+    }
+
+    public async Task<List<MessageDto>> GetMessagesAsync(Guid conversationId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/messages/{conversationId}/messages");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<MessageDto>>() ?? new();
+    }
+
+    public async Task<MessageDto?> SendMessageAsync(SendMessageDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/messages/send", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<MessageDto>();
+    }
+
+    public async Task MarkConversationReadAsync(Guid conversationId)
+    {
+        await SetAuthHeaderAsync();
+        await _httpClient.PutAsync($"api/messages/{conversationId}/read", null);
     }
 
     public async Task SetAuthHeaderAsync()

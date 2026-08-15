@@ -1,118 +1,229 @@
 ﻿@page "/"
+@using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
 @inject LanguageService Lang
+@inject ApiAuthService AuthApi
 @inject NavigationManager Nav
 
 <PageTitle>OpenToWork</PageTitle>
 
-<div class="hero-section">
-    <div class="hero-container">
-        <h1 class="hero-title">@Lang.T("common.home.heroTitle")</h1>
-        <p class="hero-subtitle">@Lang.T("common.home.heroSubtitle")</p>
+<div class="home-hero">
+    <div class="home-hero-container">
+        <h1 class="home-hero-title">@Lang.T("common.home.heroTitle")</h1>
+        <p class="home-hero-subtitle">@Lang.T("common.home.heroSubtitle")</p>
 
-        <div class="hero-search-capsule">
-            <div class="hero-search-segment hero-search-segment--keyword">
-                <span class="hero-search-segment-icon">🔍</span>
-                <div class="hero-search-segment-content">
-                    <label class="hero-search-segment-label">@Lang.T("common.search.placeholder")</label>
-                    <input type="text" @bind="SearchKeyword" placeholder="Developer, Designer..." class="hero-search-segment-input" />
+        <!-- Command Prompt Search Bar -->
+        <div class="cmd-search-wrapper">
+            <div class="cmd-search-bar" id="cmdSearchBar">
+                <div class="cmd-search-prefix">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
                 </div>
-            </div>
-            <div class="hero-search-divider"></div>
-            <div class="hero-search-segment hero-search-segment--location">
-                <span class="hero-search-segment-icon">📍</span>
-                <div class="hero-search-segment-content">
-                    <label class="hero-search-segment-label">@Lang.T("common.search.location")</label>
-                    <input type="text" @bind="SearchLocation" placeholder="@Lang.T("common.search.locationPlaceholder")" class="hero-search-segment-input" />
+                <input type="text" class="cmd-search-input" @bind="SearchKeyword" @bind:event="oninput"
+                       placeholder="@Lang.T("common.home.searchPlaceholder")"
+                       @onkeydown="HandleKeyDown" />
+                <div class="cmd-search-location">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <input type="text" class="cmd-search-location-input" @bind="SearchLocation" @bind:event="oninput"
+                           placeholder="@Lang.T("common.home.locationPlaceholder")" />
                 </div>
+                <button class="cmd-search-btn" @onclick="HandleSearch">
+                    <span>@Lang.T("common.buttons.search")</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
             </div>
-            <div class="hero-search-divider"></div>
-            <div class="hero-search-segment hero-search-segment--category">
-                <span class="hero-search-segment-icon">📂</span>
-                <div class="hero-search-segment-content">
-                    <label class="hero-search-segment-label">@Lang.T("common.search.category")</label>
-                    <select @bind="SearchCategory" class="hero-search-segment-select">
-                        <option value="">@Lang.T("common.search.allCategories")</option>
-                        <option value="it">@Lang.T("common.nav.categoryIT")</option>
-                        <option value="finance">@Lang.T("common.nav.categoryFinance")</option>
-                        <option value="health">@Lang.T("common.nav.categoryHealth")</option>
-                        <option value="education">@Lang.T("common.nav.categoryEducation")</option>
-                        <option value="marketing">@Lang.T("common.nav.categoryMarketing")</option>
-                        <option value="engineering">@Lang.T("common.nav.categoryEngineering")</option>
-                        <option value="sales">@Lang.T("common.nav.categorySales")</option>
-                        <option value="design">@Lang.T("common.nav.categoryDesign")</option>
-                    </select>
-                </div>
-            </div>
-            <button class="hero-search-btn" @onclick="HandleSearch">
-                <span>@Lang.T("common.search.button")</span>
-                <span class="hero-search-btn-icon">→</span>
-            </button>
-        </div>
 
-        <div class="hero-pills">
-            <span class="hero-pills-label">@Lang.T("common.search.popular")</span>
-            <a href="/vacancies?keyword=developer" class="hero-pill">Developer</a>
-            <a href="/vacancies?keyword=designer" class="hero-pill">Designer</a>
-            <a href="/vacancies?keyword=manager" class="hero-pill">Manager</a>
-            <a href="/vacancies?keyword=remote" class="hero-pill">Remote</a>
+            <!-- Category Chips -->
+            <div class="cmd-chips">
+                <span class="cmd-chips-label">@Lang.T("common.home.categories")</span>
+                <div class="cmd-chips-list">
+                    @foreach (var cat in Categories)
+                    {
+                        <button class="cmd-chip @(SelectedCategories.Contains(cat.Key) ? "cmd-chip--active" : "")"
+                                @onclick="() => ToggleCategory(cat.Key)">
+                            <span class="cmd-chip-check">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12">
+                                    <path d="M20 6L9 17l-5-5" />
+                                </svg>
+                            </span>
+                            @cat.Value
+                        </button>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="hero-bento-section">
-    <div class="hero-bento-container">
-        <div class="hero-bento-card" @onclick="() => GoToRegister(0)">
-            <div class="hero-bento-card-icon hero-bento-card-icon--candidate">🔍</div>
-            <div class="hero-bento-card-body">
-                <h3 class="hero-bento-card-title">@Lang.T("common.roles.searchJob")</h3>
-                <p class="hero-bento-card-desc">@Lang.T("common.roles.searchJobDesc")</p>
-            </div>
-            <div class="hero-bento-card-actions">
-                <span class="hero-bento-card-action">@Lang.T("common.buttons.login")</span>
-                <span class="hero-bento-card-arrow">→</span>
-            </div>
+<!-- Vacancies Section -->
+<div class="home-vacancies-section">
+    <div class="home-vacancies-container">
+        <div class="home-vacancies-header">
+            <h2 class="home-vacancies-title">@Lang.T("common.home.featuredVacancies")</h2>
+            <a href="/vacancies" class="home-vacancies-view-all">
+                @Lang.T("common.home.viewAllVacancies")
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+            </a>
         </div>
-        <div class="hero-bento-card" @onclick="() => GoToRegister(1)">
-            <div class="hero-bento-card-icon hero-bento-card-icon--company">💼</div>
-            <div class="hero-bento-card-body">
-                <h3 class="hero-bento-card-title">@Lang.T("common.roles.createVacancy")</h3>
-                <p class="hero-bento-card-desc">@Lang.T("common.roles.createVacancyDesc")</p>
+
+        @if (IsLoading)
+        {
+            <div class="home-vacancies-loading">
+                <div class="home-skeleton-card"></div>
+                <div class="home-skeleton-card"></div>
+                <div class="home-skeleton-card"></div>
+                <div class="home-skeleton-card"></div>
             </div>
-            <div class="hero-bento-card-actions">
-                <span class="hero-bento-card-action">@Lang.T("common.buttons.register")</span>
-                <span class="hero-bento-card-arrow">→</span>
+        }
+        else if (!VacancyList.Any())
+        {
+            <div class="home-vacancies-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                    <path d="M21 21l-4.35-4.35M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" />
+                </svg>
+                <p>@Lang.T("common.home.noVacancies")</p>
             </div>
-        </div>
+        }
+        else
+        {
+            <div class="home-vacancies-grid">
+                @foreach (var vacancy in VacancyList)
+                {
+                    <VacancyCard Vacancy="vacancy" />
+                }
+            </div>
+        }
     </div>
 </div>
 
 @code {
     private string SearchKeyword { get; set; } = string.Empty;
     private string SearchLocation { get; set; } = string.Empty;
-    private string SearchCategory { get; set; } = string.Empty;
+    private HashSet<string> SelectedCategories { get; set; } = new();
+    private List<VacancyDto> VacancyList { get; set; } = new();
+    private bool IsLoading { get; set; }
+
+    private Dictionary<string, string> Categories => new()
+    {
+        { "Desarrollo", Lang.T("common.nav.categoryIT") },
+        { "Finanzas", Lang.T("common.nav.categoryFinance") },
+        { "Salud", Lang.T("common.nav.categoryHealth") },
+        { "Educacion", Lang.T("common.nav.categoryEducation") },
+        { "Marketing", Lang.T("common.nav.categoryMarketing") },
+        { "Ingenieria", Lang.T("common.nav.categoryEngineering") },
+        { "Ventas", Lang.T("common.nav.categorySales") },
+        { "Diseno", Lang.T("common.nav.categoryDesign") }
+    };
 
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
+        await LoadVacancies();
     }
 
-    private void HandleSearch()
+    private async Task LoadVacancies()
+    {
+        IsLoading = true;
+        try
+        {
+            var category = SelectedCategories.Count == 1 ? SelectedCategories.First() : null;
+            var dto = new SearchPermanentVacancyDto
+            {
+                Query = string.IsNullOrEmpty(SearchKeyword) ? null : SearchKeyword,
+                Location = string.IsNullOrEmpty(SearchLocation) ? null : SearchLocation,
+                Category = category,
+                Page = 1,
+                PageSize = 8
+            };
+            var (items, total) = await AuthApi.SearchPermanentVacanciesAsync(dto);
+            VacancyList = items;
+        }
+        catch
+        {
+            VacancyList = new();
+        }
+        IsLoading = false;
+    }
+
+    private async Task HandleSearch()
+    {
+        NavigateToVacancies();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            NavigateToVacancies();
+        }
+    }
+
+    private async Task ToggleCategory(string category)
+    {
+        if (SelectedCategories.Contains(category))
+            SelectedCategories.Remove(category);
+        else
+            SelectedCategories.Add(category);
+        NavigateToVacancies();
+    }
+
+    private void NavigateToVacancies()
     {
         var query = new List<string>();
         if (!string.IsNullOrWhiteSpace(SearchKeyword))
             query.Add($"keyword={Uri.EscapeDataString(SearchKeyword)}");
         if (!string.IsNullOrWhiteSpace(SearchLocation))
             query.Add($"location={Uri.EscapeDataString(SearchLocation)}");
-        if (!string.IsNullOrWhiteSpace(SearchCategory))
-            query.Add($"category={SearchCategory}");
+        if (SelectedCategories.Count == 1)
+            query.Add($"category={SelectedCategories.First()}");
         var qs = query.Count > 0 ? "?" + string.Join("&", query) : "";
         Nav.NavigateTo($"/vacancies{qs}");
     }
 
-    private void GoToRegister(int role)
+    private void GoToVacancy(Guid id)
     {
-        Nav.NavigateTo($"/register?role={role}");
+        Nav.NavigateTo($"/vacancy/{id}");
     }
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "E";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
+
+    private static string TruncateText(string? text, int max)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        return text.Length <= max ? text : text[..max] + "...";
+    }
+
+    private static string FormatSalary(decimal? min, decimal? max)
+    {
+        if (!min.HasValue && !max.HasValue) return "";
+        var result = "";
+        if (min.HasValue) result += $"${min:N0}";
+        if (min.HasValue && max.HasValue) result += " - ";
+        if (max.HasValue) result += $"${max:N0}";
+        return result;
+    }
+
+    private string GetWorkModeLabel(int mode) => mode switch
+    {
+        0 => "Presencial",
+        1 => "Hibrido",
+        2 => "Remoto",
+        _ => ""
+    };
 }

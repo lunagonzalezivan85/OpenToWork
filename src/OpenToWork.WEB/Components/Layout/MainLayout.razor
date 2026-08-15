@@ -1,91 +1,145 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Routing
 @inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject ApiAuthService AuthApi
 @inject Microsoft.JSInterop.IJSRuntime JS
+@inject NavigationManager Nav
 
 <div class="app-layout">
     <header class="nav-header">
         <nav class="nav-bar">
+            <!-- Left: Logo -->
             <div class="nav-brand">
                 <a href="/">
                     <span class="nav-brand-logo">OTW</span>
                     <span class="nav-brand-text">OpenToWork</span>
                 </a>
             </div>
+
+            <!-- Mobile: Dynamic screen title (center) -->
+            <span class="nav-screen-title">@GetScreenTitle()</span>
+
+            <!-- Center: App navigation tabs (desktop only) -->
             <div class="nav-links">
-                <a href="/" class="nav-link">@Lang.T("common.nav.home")</a>
-                <a href="/about" class="nav-link">@Lang.T("common.nav.about")</a>
+                <a href="/dashboard" class="nav-link @(CurrentPage == "dashboard" ? "active" : "")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                    @Lang.T("common.nav.panel")
+                </a>
+                <a href="/my-applications" class="nav-link @(CurrentPage == "my-applications" ? "active" : "")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                    </svg>
+                    @Lang.T("common.nav.myApplications")
+                </a>
+                <a href="/vacancies" class="nav-link @(CurrentPage == "vacancies" ? "active" : "")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                    </svg>
+                    @Lang.T("common.nav.searchJobs")
+                </a>
+                <a href="/messages" class="nav-link @(CurrentPage == "messages" ? "active" : "")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    @Lang.T("common.nav.messages")
+                </a>
             </div>
+
+            <!-- Right: User cluster (settings moved to avatar dropdown) -->
             <div class="nav-actions">
-                <select @onchange="OnThemeChanged" class="nav-select">
-                    <option value="navy">Navy</option>
-                    <option value="dark">Dark</option>
-                    <option value="light">Light</option>
-                </select>
-                <select @onchange="OnLanguageChanged" class="nav-select">
-                    <option value="es">ES</option>
-                    <option value="en">EN</option>
-                </select>
-                <a href="/login" class="ot-btn ot-btn--ghost ot-btn--small">@Lang.T("common.buttons.login")</a>
-                <a href="/register" class="ot-btn ot-btn--primary ot-btn--small">@Lang.T("common.buttons.register")</a>
+                <!-- Settings pill: theme + language (desktop only) -->
+                <div class="nav-settings-pill">
+                    <button class="nav-settings-btn" @onclick="ToggleSettingsMenu">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                        <span class="nav-settings-label">@(CurrentLang.ToUpper())</span>
+                    </button>
+                    @if (ShowSettingsMenu)
+                    {
+                        <div class="nav-settings-dropdown">
+                            <div class="nav-settings-group">
+                                <span class="nav-settings-group-title">@Lang.T("common.nav.settings")</span>
+                                <div class="nav-settings-row">
+                                    <select @onchange="OnThemeChanged" class="nav-select">
+                                        <option value="navy">Navy</option>
+                                        <option value="dark">Dark</option>
+                                        <option value="light">Light</option>
+                                    </select>
+                                    <select @onchange="OnLanguageChanged" class="nav-select">
+                                        <option value="es">ES</option>
+                                        <option value="en">EN</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (IsLoggedIn)
+                {
+                    <!-- User cluster: notifications + avatar -->
+                    <div class="nav-user-cluster">
+                        <button class="nav-notification-btn" @onclick="ToggleNotifications">
+                            <svg class="nav-notification-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            </svg>
+                            @if (Alerts.Count > 0)
+                            {
+                                <span class="nav-notification-badge">@Alerts.Count</span>
+                            }
+                        </button>
+                        <div class="nav-user-profile">
+                            <a href="/dashboard" class="nav-user-avatar">
+                                @(UserInitials)
+                            </a>
+                            <div class="nav-user-dropdown">
+                                <a href="/dashboard" class="nav-user-dropdown-item">@Lang.T("common.nav.dashboard")</a>
+                                <a href="/my-vacancies" class="nav-user-dropdown-item">@Lang.T("common.nav.myVacancies")</a>
+                                <a href="/profile" class="nav-user-dropdown-item">@Lang.T("common.nav.profile")</a>
+                                <a href="/my-applications" class="nav-user-dropdown-item">@Lang.T("common.nav.myApplications")</a>
+                                <!-- Settings inside dropdown (mobile) -->
+                                <div class="nav-user-dropdown-settings">
+                                    <select @onchange="OnThemeChanged" class="nav-select">
+                                        <option value="navy">Navy</option>
+                                        <option value="dark">Dark</option>
+                                        <option value="light">Light</option>
+                                    </select>
+                                    <select @onchange="OnLanguageChanged" class="nav-select">
+                                        <option value="es">ES</option>
+                                        <option value="en">EN</option>
+                                    </select>
+                                </div>
+                                <button class="nav-user-dropdown-item nav-user-logout" @onclick="HandleLogout">
+                                    @Lang.T("common.buttons.logout")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <a href="/login" class="ot-btn ot-btn--ghost ot-btn--small">@Lang.T("common.buttons.login")</a>
+                    <a href="/register" class="ot-btn ot-btn--primary ot-btn--small">@Lang.T("common.buttons.register")</a>
+                }
             </div>
-        </nav>
-        <nav class="nav-categories">
-            <a href="/vacancies?category=it" class="nav-category-link">@Lang.T("common.nav.categoryIT")</a>
-            <a href="/vacancies?category=finance" class="nav-category-link">@Lang.T("common.nav.categoryFinance")</a>
-            <a href="/vacancies?category=health" class="nav-category-link">@Lang.T("common.nav.categoryHealth")</a>
-            <a href="/vacancies?category=education" class="nav-category-link">@Lang.T("common.nav.categoryEducation")</a>
-            <a href="/vacancies?category=marketing" class="nav-category-link">@Lang.T("common.nav.categoryMarketing")</a>
-            <a href="/vacancies?category=engineering" class="nav-category-link">@Lang.T("common.nav.categoryEngineering")</a>
-            <a href="/vacancies?category=sales" class="nav-category-link">@Lang.T("common.nav.categorySales")</a>
-            <a href="/vacancies?category=design" class="nav-category-link">@Lang.T("common.nav.categoryDesign")</a>
         </nav>
     </header>
 
     <main class="main-content">
         @Body
     </main>
-
-    <section class="footer-vacancies-strip">
-        <div class="footer-vacancies-strip-header">
-            <h3 class="footer-vacancies-strip-title">@Lang.T("common.home.featuredVacancies")</h3>
-            <a href="/vacancies" class="footer-vacancies-strip-link">@Lang.T("common.home.viewAllVacancies") →</a>
-        </div>
-        <div class="footer-vacancies-strip-track">
-            <div class="footer-vacancy-chip">
-                <span class="footer-vacancy-chip-title">Senior React Developer</span>
-                <span class="footer-vacancy-chip-meta">Remoto · $5,000/mes</span>
-            </div>
-            <div class="footer-vacancy-chip">
-                <span class="footer-vacancy-chip-title">UX Designer</span>
-                <span class="footer-vacancy-chip-meta">Bogotá · $3,200/mes</span>
-            </div>
-            <div class="footer-vacancy-chip">
-                <span class="footer-vacancy-chip-title">Backend Engineer (Node.js)</span>
-                <span class="footer-vacancy-chip-meta">Medellín · $4,500/mes</span>
-            </div>
-            <div class="footer-vacancy-chip">
-                <span class="footer-vacancy-chip-title">Data Analyst</span>
-                <span class="footer-vacancy-chip-meta">Remoto · $3,800/mes</span>
-            </div>
-            <div class="footer-vacancy-chip">
-                <span class="footer-vacancy-chip-title">Marketing Manager</span>
-                <span class="footer-vacancy-chip-meta">Cali · $4,000/mes</span>
-            </div>
-            <div class="footer-vacancy-chip">
-                <span class="footer-vacancy-chip-title">DevOps Engineer</span>
-                <span class="footer-vacancy-chip-meta">Remoto · $5,500/mes</span>
-            </div>
-            <div class="footer-vacancy-chip">
-                <span class="footer-vacancy-chip-title">Product Manager</span>
-                <span class="footer-vacancy-chip-meta">Barranquilla · $6,000/mes</span>
-            </div>
-            <div class="footer-vacancy-chip">
-                <span class="footer-vacancy-chip-title">Mobile Developer (Flutter)</span>
-                <span class="footer-vacancy-chip-meta">Remoto · $4,200/mes</span>
-            </div>
-        </div>
-    </section>
 
     <footer class="site-footer">
         <div class="footer-container">
@@ -128,7 +182,120 @@
             <span>&copy; @DateTime.Now.Year OpenToWork. @Lang.T("common.footer.rights")</span>
         </div>
     </footer>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="bottom-nav-item @(CurrentPage == "dashboard" ? "active" : "")">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <span>@Lang.T("common.nav.panel")</span>
+        </a>
+        <a href="/vacancies" class="bottom-nav-item @(CurrentPage == "vacancies" ? "active" : "")">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+            </svg>
+            <span>@Lang.T("common.nav.vacancies")</span>
+        </a>
+        <a href="/my-applications" class="bottom-nav-item @(CurrentPage == "my-applications" ? "active" : "")">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+            </svg>
+            <span>@Lang.T("common.nav.myApplications")</span>
+        </a>
+        <a href="/messages" class="bottom-nav-item @(CurrentPage == "messages" ? "active" : "")">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>@Lang.T("common.nav.messages")</span>
+        </a>
+    </nav>
 </div>
+
+<!-- Notification Sidebar (Right Drawer) -->
+<div class="notif-overlay" id="notifOverlay" @onclick="CloseNotifications"></div>
+<aside class="notif-sidebar" id="notifSidebar">
+    <div class="notif-sidebar-header">
+        <h3 class="notif-sidebar-title">@Lang.T("common.notifications.title")</h3>
+        <button class="notif-sidebar-close" @onclick="CloseNotifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+    <div class="notif-sidebar-body">
+        @if (Alerts == null || Alerts.Count == 0)
+        {
+            <div class="notif-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                <p>@Lang.T("common.notifications.empty")</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var alert in Alerts)
+            {
+                <div class="notif-item notif-item--@alert.AlertType.ToString().ToLower()">
+                    <div class="notif-item-icon notif-item-icon--@alert.AlertType.ToString().ToLower()">
+                        @if (alert.AlertType == AlertType.Warning)
+                        {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                        }
+                        else if (alert.AlertType == AlertType.Success)
+                        {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <path d="M22 4L12 14.01l-3-3" />
+                            </svg>
+                        }
+                        else if (alert.AlertType == AlertType.Danger)
+                        {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="15" y1="9" x2="9" y2="15" />
+                                <line x1="9" y1="9" x2="15" y2="15" />
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                        }
+                    </div>
+                    <div class="notif-item-content">
+                        <div class="notif-item-title">@alert.Title</div>
+                        <div class="notif-item-text">@alert.Description</div>
+                        @if (alert.Quantity.HasValue)
+                        {
+                            <div class="notif-item-progress">
+                                <div class="notif-item-progress-bar">
+                                    <div class="notif-item-progress-fill" style="width: @(alert.Quantity.Value)%"></div>
+                                </div>
+                                <span class="notif-item-progress-text">@(alert.Quantity.Value)%</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(alert.Url))
+                        {
+                            <a href="@alert.Url" class="notif-item-link">@Lang.T("common.notifications.goTo")</a>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</aside>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -137,10 +304,72 @@
 </div>
 
 @code {
+    private bool IsLoggedIn { get; set; }
+    private string UserName { get; set; } = "";
+    private string UserEmail { get; set; } = "";
+    private string UserInitials { get; set; } = "U";
+    private List<AlertDto> Alerts { get; set; } = new();
+    private bool ShowSettingsMenu { get; set; }
+    private string CurrentLang { get; set; } = "es";
+    private string CurrentPage { get; set; } = "";
+
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
+
+        var token = await LocalStorage.GetItemAsync("opentowork-token");
+        IsLoggedIn = !string.IsNullOrEmpty(token);
+
+        CurrentLang = await LocalStorage.GetItemAsync("opentowork-lang") ?? "es";
+
+        UpdateCurrentPage();
+        Nav.LocationChanged += OnLocationChanged;
+
+        if (IsLoggedIn)
+        {
+            try
+            {
+                var payload = token.Split('.')[1];
+                var jsonBytes = Convert.FromBase64String(payload + (payload.Length % 4 == 2 ? "==" : payload.Length % 4 == 3 ? "=" : ""));
+                var claims = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+
+                if (claims != null)
+                {
+                    UserEmail = claims.TryGetValue("email", out var email) ? email.ToString() ?? "" : "";
+                    var name = claims.TryGetValue("name", out var n) ? n.ToString() : null;
+                    var givenName = claims.TryGetValue("given_name", out var gn) ? gn.ToString() : null;
+
+                    if (!string.IsNullOrEmpty(givenName))
+                        UserName = givenName;
+                    else if (!string.IsNullOrEmpty(name))
+                        UserName = name;
+                    else
+                        UserName = UserEmail;
+
+                    UserInitials = GetInitials(UserName);
+                }
+
+                try
+                {
+                    Alerts = await AuthApi.GetAlertsAsync();
+                }
+                catch { }
+            }
+            catch
+            {
+                IsLoggedIn = false;
+            }
+        }
+    }
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "U";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "U";
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
     }
 
     private async Task OnThemeChanged(ChangeEventArgs e)
@@ -157,5 +386,55 @@
         {
             await Lang.SetLanguageAsync(lang);
         }
+    }
+
+    private async Task ToggleNotifications()
+    {
+        await JS.InvokeVoidAsync("notifSidebar.toggle");
+    }
+
+    private async Task CloseNotifications()
+    {
+        await JS.InvokeVoidAsync("notifSidebar.close");
+    }
+
+    private async Task HandleLogout()
+    {
+        await LocalStorage.RemoveItemAsync("opentowork-token");
+        Nav.NavigateTo("/login", forceLoad: true);
+    }
+
+    private void ToggleSettingsMenu() => ShowSettingsMenu = !ShowSettingsMenu;
+
+    private void UpdateCurrentPage()
+    {
+        var uri = Nav.ToBaseRelativePath(Nav.Uri);
+        CurrentPage = uri.Split('/')[0];
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        UpdateCurrentPage();
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+
+    private string GetScreenTitle()
+    {
+        return CurrentPage switch
+        {
+            "" => Lang.T("common.nav.home"),
+            "dashboard" => Lang.T("common.nav.panel"),
+            "vacancies" => Lang.T("common.nav.vacancies"),
+            "my-vacancies" => Lang.T("common.nav.myVacancies"),
+            "my-applications" => Lang.T("common.nav.myApplications"),
+            "profile" => Lang.T("common.nav.profile"),
+            "messages" => Lang.T("common.nav.messages"),
+            _ => Lang.T("common.nav.home")
+        };
     }
 }

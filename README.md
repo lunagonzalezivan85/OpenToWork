@@ -190,6 +190,48 @@ dotnet run --project src/OpenToWork.WEB
 - Perfil: `http://localhost:5100/profile`
 - Wizard (10 pasos): `http://localhost:5100/wizard`
 
+**Terminal 3 - AdminAPI (puerto 5001):**
+
+```bash
+dotnet run --project src/OpenToWork.AdminAPI
+```
+
+- Swagger: `http://localhost:5001/swagger`
+- Login admin: `POST http://localhost:5001/api/admin/auth/login`
+- Dashboard: `GET http://localhost:5001/api/admin/dashboard/metrics`
+- Usuarios: `GET http://localhost:5001/api/admin/users`
+- Vacantes: `GET http://localhost:5001/api/admin/vacancies`
+- Skills: `GET http://localhost:5001/api/admin/skills`
+- Auditoria: `GET http://localhost:5001/api/admin/audit-log`
+- Export CSV: `GET http://localhost:5001/api/admin/export/users`
+
+**Terminal 4 - AdminWEB Blazor Server (puerto 5101):**
+
+```bash
+dotnet run --project src/OpenToWork.AdminWEB
+```
+
+- Portal admin: `http://localhost:5101`
+- Login: `http://localhost:5101/login`
+- Dashboard: `http://localhost:5101/`
+- Usuarios: `http://localhost:5101/users`
+- Vacantes: `http://localhost:5101/vacancies`
+- Skills: `http://localhost:5101/skills`
+- Auditoria: `http://localhost:5101/audit-log`
+
+**Credenciales de prueba (Portal Admin):**
+
+| Campo | Valor |
+|-------|-------|
+| URL | `http://localhost:5101` |
+| Email | `admin@opentowork.com` |
+| Password | `Admin123!` |
+
+> **Nota:** El usuario admin debe tener `PrimaryRole = 2` (Admin) en `SC_Users`. Para crearlo, registra un usuario via la API principal y luego actualiza el rol en MySQL:
+> ```sql
+> UPDATE SC_Users SET PrimaryRole = 2 WHERE Email = 'admin@opentowork.com';
+> ```
+
 ### 6. Migraciones (solo si se modifican entidades)
 
 Crear nueva migracion:
@@ -489,6 +531,191 @@ Antes de marcar cualquier fase como completada, se debe validar:
 | 2026-08-13 | Dsiezar | Fase 4 | QA+SEC: 6 bugs corregidos (enumeracion cuentas, paginacion, CSV injection, vacantes temporales, auto-bloqueo, i18n) |
 | 2026-08-13 | Dsiezar | Fase 4 | Fix fuera de alcance: Google OAuth config en API, #blazor-error-ui en WEB |
 | 2026-08-14 | Iluna | Docs | README: notas de actualizacion, ruta de trabajo, fases paralelas, criterios de validacion |
+| 2026-08-14 | Iluna | Docs | DEPLOYMENT.md: guia de despliegue a Windows Server/IIS (Web Deploy, PSRemoting, GitHub Actions) |
+| 2026-08-14 | Iluna | Docs | README: instrucciones de ejecucion AdminAPI + AdminWEB, credenciales de prueba admin |
+| 2026-08-14 | Iluna | Fase 4 | AdminWEB: rediseno layout sidebar + topbar profesional, admin.css, tablas con status badges, empty/loading states |
+| 2026-08-14 | Iluna | Fase 4 | AdminWEB: pendiente - mejorar tablas con filtros, pulir diseno inspirado en Cazvid (pipeline visual, cards de aplicantes) |
+| 2026-08-14 | Iluna | Fase 4 | Seed data: 3 empresas, 10 vacantes permanentes, 3 vacantes temporales, 20 skills, 3 postulantes, 5 aplicaciones |
+| 2026-08-14 | Iluna | Docs | seed-data.sql: script de datos de prueba con credenciales para todos los roles |
+
+---
+
+## Datos de prueba (Seed Data)
+
+> **Importante:** Ejecutar `docs/seed-data.sql` despues de aplicar todas las migraciones. Los hashes BCrypt se deben generar registrando los usuarios via API y copiando el hash. Ver procedimiento en el script.
+
+### Pasos para cargar los datos de prueba (instrucciones para el equipo)
+
+> **Nota para Dsiezar:** Corre estos pasos en tu maquina local para tener los mismos datos de prueba. Ya el script `docs/seed-data.sql` esta en `main`.
+
+#### Paso 1: Hacer pull de main
+
+```bash
+git pull origin main
+```
+
+#### Paso 2: Aplicar migraciones (si faltan)
+
+```bash
+dotnet ef database update --project src/OpenToWork.Models --startup-project src/OpenToWork.API
+```
+
+Esto aplica las migraciones `InitialCreate`, `Phase2`, `Phase2Security` y `AdminAuditLog`.
+
+#### Paso 3: Ejecutar el script seed-data.sql en MySQL
+
+```powershell
+Get-Content docs\seed-data.sql -Raw | C:\xampp\mysql\bin\mysql.exe -u root OpenToWorkDb
+```
+
+> Si tienes MySQL en otra ruta, ajusta la ruta del ejecutable. En Linux/Mac: `mysql -u root OpenToWorkDb < docs/seed-data.sql`
+
+#### Paso 4: Generar hashes BCrypt validos
+
+El script inserta usuarios con un hash temporal que no es BCrypt valido. Para que el login funcione, hay que registrar usuarios temporales via la API y copiar el hash:
+
+1. **Iniciar la API principal:**
+   ```bash
+   dotnet run --project src/OpenToWork.API
+   ```
+
+2. **Registrar usuarios temporales (postulantes):**
+   ```powershell
+   $candidates = @(
+       @{email="juan.perez.test@gmail.com";firstName="Juan";lastName="Perez"},
+       @{email="maria.gonzalez.test@hotmail.com";firstName="Maria";lastName="Gonzalez"},
+       @{email="carlos.rodriguez.test@outlook.com";firstName="Carlos";lastName="Rodriguez"}
+   )
+   foreach ($c in $candidates) {
+       $body = @{email=$c.email;password="Candidato123!";firstName=$c.firstName;lastName=$c.lastName} | ConvertTo-Json
+       Invoke-RestMethod -Uri "http://localhost:5000/api/auth/register" -Method Post -Body $body -ContentType "application/json"
+   }
+   ```
+
+3. **Registrar usuarios temporales (empresas):**
+   ```powershell
+   $companies = @(
+       @{email="techcorp.test@gmail.com";firstName="Tech";lastName="Corp"},
+       @{email="innovate.test@gmail.com";firstName="Innovate";lastName="Labs"},
+       @{email="globalsoft.test@gmail.com";firstName="Global";lastName="Soft"}
+   )
+   foreach ($c in $companies) {
+       $body = @{email=$c.email;password="Empresa123!";firstName=$c.firstName;lastName=$c.lastName} | ConvertTo-Json
+       Invoke-RestMethod -Uri "http://localhost:5000/api/auth/register" -Method Post -Body $body -ContentType "application/json"
+   }
+   ```
+
+4. **Copiar los hashes a los usuarios reales y eliminar los temporales:**
+   ```sql
+   -- Ejecutar en MySQL
+   UPDATE SC_Users u1 JOIN SC_Users u2 ON u2.Email = 'juan.perez.test@gmail.com'
+       SET u1.PasswordHash = u2.PasswordHash WHERE u1.Email = 'juan.perez@gmail.com';
+   UPDATE SC_Users u1 JOIN SC_Users u2 ON u2.Email = 'maria.gonzalez.test@hotmail.com'
+       SET u1.PasswordHash = u2.PasswordHash WHERE u1.Email = 'maria.gonzalez@hotmail.com';
+   UPDATE SC_Users u1 JOIN SC_Users u2 ON u2.Email = 'carlos.rodriguez.test@outlook.com'
+       SET u1.PasswordHash = u2.PasswordHash WHERE u1.Email = 'carlos.rodriguez@outlook.com';
+   UPDATE SC_Users u1 JOIN SC_Users u2 ON u2.Email = 'techcorp.test@gmail.com'
+       SET u1.PasswordHash = u2.PasswordHash WHERE u1.Email = 'empresa@techcorp.com';
+   UPDATE SC_Users u1 JOIN SC_Users u2 ON u2.Email = 'innovate.test@gmail.com'
+       SET u1.PasswordHash = u2.PasswordHash WHERE u1.Email = 'contacto@innovatelabs.com';
+   UPDATE SC_Users u1 JOIN SC_Users u2 ON u2.Email = 'globalsoft.test@gmail.com'
+       SET u1.PasswordHash = u2.PasswordHash WHERE u1.Email = 'rrhh@globalsoft.com';
+
+   DELETE FROM SC_Users WHERE Email LIKE '%.test.%';
+   DELETE FROM PT_Candidates WHERE SCUserId NOT IN (SELECT Id FROM SC_Users);
+   ```
+
+5. **Crear usuario admin (si no existe):**
+   ```powershell
+   $body = @{email="admin@opentowork.com";password="Admin123!";firstName="Admin";lastName="System"} | ConvertTo-Json
+   Invoke-RestMethod -Uri "http://localhost:5000/api/auth/register" -Method Post -Body $body -ContentType "application/json"
+   ```
+   Luego en MySQL:
+   ```sql
+   UPDATE SC_Users SET PrimaryRole = 2 WHERE Email = 'admin@opentowork.com';
+   ```
+
+#### Paso 5: Verificar
+
+```powershell
+C:\xampp\mysql\bin\mysql.exe -u root -e "SELECT Email, PrimaryRole, IsActive FROM SC_Users WHERE IsDeleted=0 ORDER BY Email;" OpenToWorkDb
+```
+
+Deberias ver 7 usuarios: 1 admin, 3 empresas, 3 postulantes. Todos con `IsActive = 1`.
+
+#### Paso 6: Ejecutar los 4 proyectos y probar
+
+```bash
+# Terminal 1
+dotnet run --project src/OpenToWork.API
+# Terminal 2
+dotnet run --project src/OpenToWork.WEB
+# Terminal 3
+dotnet run --project src/OpenToWork.AdminAPI
+# Terminal 4
+dotnet run --project src/OpenToWork.AdminWEB
+```
+
+- Portal candidatos: `http://localhost:5100` (login con juan.perez@gmail.com / Candidato123!)
+- Portal admin: `http://localhost:5101` (login con admin@opentowork.com / Admin123!)
+
+### Credenciales de prueba
+
+#### Portal Admin (AdminWEB - puerto 5101)
+
+| Campo | Valor |
+|-------|-------|
+| URL | `http://localhost:5101` |
+| Email | `admin@opentowork.com` |
+| Password | `Admin123!` |
+
+#### Portal de Candidatos (WEB - puerto 5100)
+
+| Postulante | Email | Password |
+|------------|-------|----------|
+| Juan Perez | `juan.perez@gmail.com` | `Candidato123!` |
+| Maria Gonzalez | `maria.gonzalez@hotmail.com` | `Candidato123!` |
+| Carlos Rodriguez | `carlos.rodriguez@outlook.com` | `Candidato123!` |
+
+#### Empresas (para probar portal corporativo cuando este listo)
+
+| Empresa | Email | Password |
+|---------|-------|----------|
+| TechCorp Solutions | `empresa@techcorp.com` | `Empresa123!` |
+| Innovate Labs | `contacto@innovatelabs.com` | `Empresa123!` |
+| GlobalSoft Inc. | `rrhh@globalsoft.com` | `Empresa123!` |
+
+### Datos disponibles en la BD
+
+| Tabla | Cantidad | Detalle |
+|-------|----------|---------|
+| `SC_Users` | 7 | 1 admin, 3 empresas, 3 postulantes |
+| `PT_Companies` | 3 | TechCorp, Innovate Labs, GlobalSoft |
+| `PT_Vacancies` | 10 | 8 activas, 1 draft, 1 cerrada |
+| `PT_TempVacancies` | 3 | Freelance UX, contrato full stack, part-time CM |
+| `PT_Skills` | 20 | C#, .NET, React, Python, Docker, etc. |
+| `PT_Candidates` | 3 | 2 con wizard completo, 1 incompleto |
+| `PT_Applications` | 5 | 1 reviewing, 1 aceptada, 3 pendientes |
+
+---
+
+## Notas de diseno (referencia Cazvid)
+
+El panel administrativo debe inspirarse en **Cazvid** (cazvid.com/features/ats) para los flujos de gestion:
+
+- **Pipeline visual:** Aplicantes movidos entre estados (Applied, Screening, Interview, Offer, Hired) con drag-and-drop
+- **Card de aplicante:** Resume, skills, score, info de contacto en una sola vista
+- **Filtros rapidos:** Por rating, por estado, por score - un solo clic
+- **Notas y seguimiento:** Notas internas, log de llamadas, recordatorios
+- **Mensajeria integrada:** Conversaciones adjuntas al historial del aplicante
+
+### Pendiente de diseno en AdminWEB
+
+1. **Filtros en todas las tablas** - busqueda por texto, filtro por estado, filtro por fecha
+2. **Mejorar tablas** - columnas ordenables, paginacion visible, densidad configurable
+3. **Vista de aplicaciones** - pipeline visual estilo Kanban en vez de tabla
+4. **Card de usuario/detalle** - panel lateral con info completa al hacer clic
+5. **Dashboard avanzado** - graficos, tendencias, no solo numeros
 
 ---
 
@@ -505,6 +732,7 @@ Antes de marcar cualquier fase como completada, se debe validar:
 | `docs/DATABASE_DESIGN.md` | Diseno completo de la base de datos |
 | `docs/DESIGN_SYSTEM.md` | Sistema de diseno (UI/UX, temas, componentes) |
 | `docs/NEURAL_MAP.md` | Mapa neuronal del proyecto para IA |
+| `docs/DEPLOYMENT.md` | Guia de despliegue a Windows Server / IIS (Web Deploy, PSRemoting, CI/CD) |
 | `docs/OpenToWork_InitialCreate.sql` | Script SQL inicial de la base de datos |
 
 ---
@@ -576,3 +804,299 @@ Ver `docs/GIT_BRANCHES.md` para mas detalles.
 ### 6. Tratemos de no usar muchas dependencias entre fases
 
 Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear al otro. Diseñen las tareas de manera que las dependencias cruzadas sean minimas. Si una dependencia es inevitable, definan un contrato (interface, DTO, endpoint) antes de empezar para que ambos puedan trabajar contra el contrato.
+
+---
+
+## Bitacora de Cambios
+
+### Sesión 14-Ago-2026 — Rediseño de Dashboard, About, VacancyDetail, Navbar y Messages
+
+> **Nota:** Este Ivan se esmero. Dale el premio.
+
+#### Dashboard (`Dashboard.razor`)
+- Reemplazado el saludo suelto por **Bento Welcome Banner Card** con avatar de iniciales, rol del usuario, saludo y boton de acceso directo al perfil.
+- Agregado **grafico circular de completion de perfil** que ocupa 2 columnas del grid.
+- Agregado **card de indicadores** con 3 metricas: Solicitudes, Postulaciones, Publicaciones.
+- Agregadas **acciones rapidas** como cards con iconos y texto centrado: Subir CV, Grabar Video, Buscar Empleo, Completar Perfil.
+- Agregada seccion de **vacantes recomendadas**.
+- Corregido truncamiento de texto en "Completar perfil" (layout flex column, sin nowrap).
+
+#### About Page (`About.razor` — nuevo)
+- Creada pagina `/about` con hero header centrado.
+- **Fila 1**: Card izquierda con SVG transparente (personas conectadas) + Card derecha con texto "Nosotros".
+- **Fila 2**: Card izquierda con texto "Que hacemos" + Card derecha con SVG transparente (maletin, lupa, documento, video).
+- **Fila 3**: Dos cards de texto lado a lado — "Mision" (icono target) y "Valores" (icono capas).
+- Cards de imagen **sin fondo, sin borde, sin sombra**. SVGs con strokes transparentes/accent.
+- Layout responsive: a 768px las filas se apilan en una columna.
+- Traducciones agregadas en `common.json` (es + en) bajo seccion `about`.
+
+#### Vacancy Detail (`VacancyDetail.razor`)
+- **Eliminado el card dentro de card** (ot-card anidado).
+- Rediseño a layout plano con:
+  - Header con titulo grande + empresa + badge de verificacion (pill verde).
+  - Badges con iconos SVG: ubicacion, tipo de contrato, modalidad, salario (accent), categoria, nivel de experiencia, nivel de ingles.
+  - Secciones de descripcion y requisitos con separadores `border-top` sutiles.
+  - Formulario de postulacion separado con `border-top` accent (2px), sin card envolvente.
+- Corregido el uso de `ot-input` → `ot-input-field` (clase CSS correcta con estilos definidos).
+
+#### Navbar (`MainLayout.razor`)
+- Reorganizado en **3 bloques equilibrados con Flexbox**:
+  - **Izquierda**: Logo OTW + OpenToWork.
+  - **Centro**: 4 pestañas de navegacion con iconos SVG e indicador de estado activo:
+    - Panel (dashboard), Mis Postulaciones, Buscar Empleos, Mensajes.
+  - **Derecha**: Settings pill (boton compacto con engranaje + idioma, dropdown con tema e idioma agrupados) + User cluster (campana + avatar, separados por `border-left`).
+- Agregada deteccion de pagina activa (`CurrentPage`) basada en `NavigationManager.Uri`.
+- Eliminados los enlaces centrales anteriores (Inicio, Vacantes, Sobre Nosotros).
+
+#### Messages Page (`Messages.razor` — nuevo)
+- Creada pagina `/messages` con layout de 2 columnas (340px sidebar + 1fr chat).
+- **Sidebar**: Bandeja de conversaciones con:
+  - Filtros tipo pestaña: Todos | No leidos (con badge) | Leidos.
+  - Buscador de conversaciones por nombre.
+  - Lista con avatar, nombre, vacante asociada, preview, tiempo relativo, badge de no leidos.
+- **Panel de chat**: Header con avatar, nombre, vacante, indicador "En linea". Burbujas alternadas (mias accent derecha, suyas gris izquierda). Input redondo + boton circular de enviar. Enter para enviar.
+- Al seleccionar conversacion no leida, se marca como leida automaticamente.
+- Responsive: a 768px se apila en una columna.
+
+#### Backend — Messages
+- **`MessageDto.cs`** (Shared): DTOs `ConversationDto`, `MessageDto`, `SendMessageDto`.
+- **`MessagesController.cs`** (API): Endpoints `GET conversations`, `GET messages/{id}`, `POST send`, `PUT read`. Datos mock por ahora.
+- **`ApiAuthService.cs`** (WEB): Metodos `GetConversationsAsync`, `GetMessagesAsync`, `SendMessageAsync`, `MarkConversationReadAsync`.
+
+#### Traducciones (`common.json` es + en)
+- Seccion `about`: titulos, descripciones, mision, valores.
+- Seccion `nav`: `messages`, `searchJobs`, `panel`.
+- Seccion `messages`: title, all, unread, read, noConversations, noMessages, typeMessage, send, vacancy, online, offline, search.
+
+#### CSS (`components.css`)
+- Estilos `.dash-banner-card` y relacionados del dashboard.
+- Estilos `.about-*` para About page.
+- Estilos `.vacancy-detail-*` para VacancyDetail.
+- Estilos `.nav-settings-pill`, `.nav-settings-btn`, `.nav-settings-dropdown`, `.nav-user-cluster`, `.nav-link` con iconos.
+- Estilos `.messages-*` y `.chat-*` para Messages page.
+- Cache-buster actualizado a `v=11`.
+
+#### Archivos nuevos
+- `src/OpenToWork.WEB/Components/Pages/About.razor`
+- `src/OpenToWork.WEB/Components/Pages/Messages.razor`
+- `src/OpenToWork.Shared/DTOs/MessageDto.cs`
+- `src/OpenToWork.API/Controllers/MessagesController.cs`
+
+#### Archivos modificados
+- `src/OpenToWork.WEB/Components/Pages/Dashboard.razor`
+- `src/OpenToWork.WEB/Components/Pages/VacancyDetail.razor`
+- `src/OpenToWork.WEB/Components/Layout/MainLayout.razor`
+- `src/OpenToWork.WEB/Components/App.razor`
+- `src/OpenToWork.WEB/Services/ApiAuthService.cs`
+- `src/OpenToWork.WEB/wwwroot/css/components.css`
+- `src/OpenToWork.WEB/wwwroot/config/language/es/common.json`
+- `src/OpenToWork.WEB/wwwroot/config/language/en/common.json`
+
+---
+
+### Sesión 14-Ago-2026 — Suite de Pruebas de Integración (OpenToWork.Tests)
+
+> **QA (Sr. Smith):** Pruebas automatizadas de integración contra la API real (localhost:5000) con xUnit.
+
+#### Proyecto creado
+- `src/OpenToWork.Tests/OpenToWork.Tests.csproj` — xUnit, .NET 10, referencia a `OpenToWork.Shared`.
+
+#### Arquitectura de pruebas
+- **`BaseTest.cs`** — Clase base abstracta que crea un `HttpClient` propio por test, hace login automático con `juan.perez@gmail.com` y setea el Bearer token. Cada test es independiente.
+- Cada clase de test hereda de `BaseTest` y tiene su propio `HttpClient` aislado.
+
+#### Pruebas de Auth (`AuthTests.cs`) — 10 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `Login_ConCredencialesValidas_RetornaTokenYUsuario` | Login con juan.perez@gmail.com valida token, refresh y email | ✅ |
+| `Login_ConPasswordIncorrecta_RetornaUnauthorized` | Password incorrecta retorna 401 | ✅ |
+| `Login_ConEmailInexistente_RetornaUnauthorized` | Email inexistente retorna 401 | ✅ |
+| `Login_ConEmailVacio_RetornaUnauthorized` | Email vacío retorna 401 (ver bug #4) | ✅ |
+| `Login_ConPasswordVacia_RetornaUnauthorized` | Password vacía retorna 401 (ver bug #4) | ✅ |
+| `Refresh_ConTokenValido_RetornaNuevoToken` | Refresh token genera nuevo JWT | ✅ |
+| `CheckDevice_SinAutenticar_RetornaUnauthorized` | Endpoint protegido sin token retorna 401 | ✅ |
+| `Login_ConMariaGonzalez_RetornaTokenValido` | Login con segundo usuario de prueba | ✅ |
+| `Login_ConCarlosRodriguez_RetornaTokenValido` | Login con tercer usuario de prueba | ✅ |
+
+#### Pruebas de Profile (`ProfileTests.cs`) — 8 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `GetProfile_ConTokenValido_RetornaPerfil` | GET /api/profile retorna datos del candidato | ✅ |
+| `GetProfile_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `UpdateProfile_ConDatosValidos_RetornaPerfilActualizado` | PUT /api/profile actualiza título | ✅ |
+| `AddExperience_ConDatosValidos_RetornaExperienciaCreada` | POST experience crea y retorna | ✅ |
+| `AddExperience_ConCompanyNameVacio_LoCreaSinValidar` | CompanyName vacío aceptado (ver bug #2) | ✅ |
+| `AddEducation_ConDatosValidos_RetornaEducacionCreada` | POST education crea y retorna | ✅ |
+| `AddCertification_ConDatosValidos_RetornaCertificacionCreada` | POST certification crea y retorna | ✅ |
+| `DeleteExperience_ConIdInexistente_RetornaNotFound` | Delete con GUID inexistente retorna 404 | ✅ |
+| `DeleteEducation_ConIdInexistente_RetornaNotFound` | Delete con GUID inexistente retorna 404 | ✅ |
+
+#### Pruebas de Vacancies (`VacancyTests.cs`) — 9 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `Search_Vacantes_RetornaListaYTotal` | GET /search retorna items y total | ✅ |
+| `Search_ConFiltroTexto_RetornaResultadosFiltrados` | Filtro por query=desarrollador | ✅ |
+| `Search_ConPaginaGrande_RetornaResultados` | PageSize=100 funciona | ✅ |
+| `GetById_ConIdInexistente_RetornaNotFound` | GUID inexistente retorna 404 | ✅ |
+| `GetById_ConIdValido_RetornaVacante` | Búsqueda + GET por ID real | ✅ |
+| `GetMyCompanyVacancies_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `Create_SinToken_RetornaUnauthorized` | POST sin token retorna 401 | ✅ |
+| `Create_ConTokenValido_RetornaCreatedOBadRequest` | POST con token (Created si es empresa, BadRequest si candidato) | ✅ |
+| `Create_ConTituloVacio_RetornaBadRequest` | Título vacío retorna 400 | ✅ |
+
+#### Pruebas de Applications (`ApplicationTests.cs`) — 6 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `GetMyApplications_ConTokenValido_RetornaLista` | GET /my retorna lista de postulaciones | ✅ |
+| `GetMyApplications_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `Apply_ConVacancyIdInexistente_RetornaError` | Vacancy inexistente retorna 500 (ver bug #1) | ✅ |
+| `Apply_SinToken_RetornaUnauthorized` | POST sin token retorna 401 | ✅ |
+| `Apply_ConDatosValidos_RetornaCreatedOConflict` | Postulación real (Created o Conflict si ya aplicó) | ✅ |
+| `Apply_DosVecesALaMismaVacante_RetornaConflict` | Doble postulación retorna 409 | ✅ |
+| `UpdateStatus_ConIdInexistente_RetornaNotFound` | Update status con GUID inexistente retorna 404 | ✅ |
+
+#### Pruebas de Messages (`MessagesTests.cs`) — 11 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `GetConversations_ConTokenValido_RetornaLista` | GET conversations retorna lista no vacía | ✅ |
+| `GetConversations_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `GetConversations_RetornaDatosConEstructuraCorrecta` | Valida ParticipantName, Avatar, LastMessage | ✅ |
+| `GetMessages_ConConversationIdValido_RetornaMensajes` | GET messages por conversación retorna mensajes | ✅ |
+| `GetMessages_ConIdInexistente_RetornaListaVacia` | ID inexistente retorna lista vacía | ✅ |
+| `SendMessage_ConDatosValidos_RetornaMensajeCreado` | POST send crea mensaje con IsMine=true | ✅ |
+| `SendMessage_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `SendMessage_ConContenidoVacio_LoAceptaSinValidar` | Content vacío aceptado (ver bug #3) | ✅ |
+| `MarkAsRead_ConConversationIdValido_RetornaOk` | PUT read marca conversación como leída | ✅ |
+| `MarkAsRead_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+
+#### Bugs encontrados por QA (4 items)
+
+1. **`POST /api/applications` con VacancyId inexistente** — Retorna `500 InternalServerError` en lugar de `404 NotFound`. El `ApplicationService` no valida que la vacante exista antes de crear la postulación.
+   - **Fix:** Agregar validación `if (vacancy == null) return NotFound()` en `ApplicationsController.Apply` o en `ApplicationService.ApplyAsync`.
+
+2. **`POST /api/profile/experience` con CompanyName vacío** — La API no valida campos requeridos. Acepta experiencia sin empresa.
+   - **Fix:** Agregar `[Required]` en `CreateExperienceDto.CompanyName` y `JobTitle`, o validación manual en `ProfileService`.
+
+3. **`POST /api/messages/send` con Content vacío** — El controller mock no valida contenido vacío.
+   - **Fix:** Agregar validación `if (string.IsNullOrWhiteSpace(dto.Content)) return BadRequest()` en `MessagesController.Send`.
+
+4. **`POST /api/auth/login` con email/password vacío** — Retorna `401 Unauthorized` en lugar de `400 BadRequest`. No hay validación de modelo.
+   - **Fix:** Agregar `[Required]` en `LoginDto.Email` y `LoginDto.Password`, o validación manual en `AuthController.Login`.
+
+#### Cómo ejecutar las pruebas
+
+```bash
+# 1. Asegurar que la API esté corriendo en localhost:5000
+dotnet run --project src/OpenToWork.API
+
+# 2. Ejecutar todas las pruebas
+dotnet test src/OpenToWork.Tests/OpenToWork.Tests.csproj --verbosity normal
+
+# 3. Ejecutar solo una clase de tests
+dotnet test src/OpenToWork.Tests/OpenToWork.Tests.csproj --filter "FullyQualifiedName~AuthTests"
+```
+
+#### Resultado final
+```
+Pruebas totales: 44
+     Correcto: 44
+ Tiempo total: ~5s
+```
+
+---
+
+## Tareas Pendientes — Portal Administrativo
+
+> **Contexto:** El portal administrativo está al 85%. Lo que falta está bloqueado por la Fase 3 (Motor de Evaluación) o requiere desarrollo independiente.
+
+### Pendientes bloqueados por Fase 3 (Motor de Scoring)
+
+- [ ] **Verificaciones manuales** — Aprobar/rechazar `PTVerification` desde el panel admin. Requiere que existan entidades de verificación (Fase 3).
+- [ ] **Revisión de validaciones automáticas** — Ver el resultado de validaciones automáticas (LinkedIn, portafolio, coherencia cronológica) desde el admin. Requiere `ValidationService` (Fase 3).
+- [ ] **Gestión de scores de candidatos** — Ver y gestionar los índices de Estabilidad, Confiabilidad y Evidencia de cada candidato desde el admin.
+
+### Pendientes independientes (se pueden hacer ahora)
+
+- [ ] **Gestión de roles de usuario** — Actualmente el admin solo puede activar/desactivar usuarios. Falta poder cambiar el `PrimaryRole` (Candidato → Empresa → Admin) desde el panel.
+- [ ] **Pruebas unitarias para AdminAPI** — Crear `OpenToWork.AdminTests` con pruebas de integración contra `localhost:5001` (login admin, dashboard metrics, users CRUD, vacancies moderation, skills CRUD, audit log, export CSV).
+- [ ] **Pruebas de seguridad admin** — Verificar que un candidato no puede acceder a endpoints admin, que el auto-bloqueo funciona, que la paginación no acepta valores negativos.
+
+### Deuda técnica documentada (4 items)
+
+- [ ] Unificar `AdminAuthService` con `AuthService` (lógica duplicada)
+- [ ] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar)
+- [ ] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI
+- [ ] Centralizar guard de autenticación en `AdminLayout` (copiado en 5 páginas)
+
+---
+
+## Bitácora de Cambios
+
+### Sesión 2026-08-14 — Rediseño Samsung One UI + Bento Grid + PWA
+
+**Autorización de diseño:** Iluna (diseño visual) · Darwin (supervisión de procesos)
+
+#### Rediseño de Perfil (Profile Sidebar)
+- Eliminado el header azul sólido, reemplazado por tarjeta blanca `#FFFFFF` con banner suave `#F0F7FF`
+- Avatar rediseñado como squircle (`border-radius: 20px`) con fondo `#0066FF` y borde blanco
+- Nombre en `#0B132B` con `font-weight: 800`
+- Rol como pill badge con fondo `#F1F5F9` y texto `#3A506B`
+- Email con icono de sobre en `#778DA9`
+- Skills como chips grises (`#F1F5F9`), modalidad como pill azul tenue (`#E8F1FF` / `#0066FF`)
+
+#### Rediseño de Navegación Móvil (MainLayout)
+- **Top App Bar**: Logo oculto en móvil, título dinámico de pantalla alineado a la izquierda, campana + avatar a la derecha
+- **Título dinámico**: `GetScreenTitle()` con suscripción a `NavigationManager.LocationChanged` para actualizar al navegar
+- **Bottom Navigation Bar**: Barra fija de 64px con 4 pestañas (Panel, Vacantes, Postulaciones, Mensajes)
+- **Settings relocados**: Botón de idioma/tema movido del top bar al dropdown del avatar (solo móvil)
+- **Footer oculto** en móvil, padding inferior de 64px para bottom nav
+- `viewport-fit=cover` para soporte de notch con `env(safe-area-inset-bottom)`
+
+#### Rediseño de Messages (Bento Inbox)
+- Eliminado título duplicado "Mensajes" del sidebar (ya está en top bar)
+- Filtros rediseñados como pills sutiles: inactivos transparentes, activos con `#E8F1FF` / `#0066FF`
+- Avatares squircle (`border-radius: 14px`) en `#0066FF`
+- Conversación seleccionada: borde izquierdo azul 3px + fondo `#F0F7FF`
+- Estado vacío: icono en contenedor squircle 80px con fondo `#F0F7FF` y texto descriptivo
+- **Móvil**: Lista de conversaciones a pantalla completa → al seleccionar, chat full-screen con botón flecha ← para regresar
+- Bubbles: propias `#0066FF`, ajenas `#F1F5F9` con texto `#0B132B`
+- Botón enviar: squircle `14px` con hover `#0052CC`
+
+#### Componente VacancyCard Reutilizable
+- Creado `Components/Shared/VacancyCard.razor` para evitar duplicación de código
+- Usado en `MyVacancies.razor`, `Dashboard.razor`, `Home.razor`, `MyApplications.razor`
+- Props: `Vacancy`, `ShowActions`, `OnEdit`
+
+#### Página VacancyManage
+- Nueva página para gestión de vacantes (`/my-vacancies/{Id}`)
+- Hero banner con pills de estado, columnas asimétricas, lista de candidatos con filtros
+
+#### PWA (Progressive Web App)
+- **Icono SVG**: Maletín blanco con siglas "OTW" en azul royal sobre fondo `#0066FF`
+- **manifest.json**: `name: OpenToWork`, `short_name: OTW`, `display: standalone`, `theme_color: #0066FF`
+- **Service Worker** (`sw.js`): Cache de assets estáticos, cache-first para recursos, network-first para navegación
+- **Meta tags**: `apple-mobile-web-app-capable`, `theme-color`, `apple-touch-icon`
+- **Program.cs**: MIME types configurados para `.webmanifest`
+
+#### Bug Fixes
+- **`GetPermanentVacancyAsync`**: Faltaba `SetAuthHeaderAsync()` → la API devolvía 401 y la página se quedaba cargando indefinidamente
+- **VacancyDetail**: Agregado manejo de error con `LoadFailed` y estado visual centrado (icono grande + mensaje + botón volver)
+- **`MainLayout`**: Suscripción a `LocationChanged` para que el título dinámico se actualice al navegar entre páginas
+
+#### Traducciones (ES/EN)
+- `common.nav.myVacancies` — "Mis Vacantes" / "My Vacancies"
+- `common.messages.selectConversation` — "Selecciona una conversación de la lista para comenzar a chatear" / "Select a conversation from the list to start chatting"
+- `common.buttons.back` — "Volver" / "Back"
+- `vacancies.notFound` — "No se pudo cargar la vacante..." / "Could not load the vacancy..."
+- `vacancies.edit` / `vacancies.backToMyVacancies`
+
+#### Documentación
+- Creado `DESIGN-SYSTEM.md` con:
+  - Regla de autorización de diseño (Iluna autoriza, Darwin supervisa)
+  - Paleta de colores completa con tokens hex
+  - Especificaciones de tipografía, componentes UI, navegación móvil, PWA
+  - Reglas para nuevos componentes (reutilizar, no duplicar, usar tokens)
+
+#### Archivos modificados/creados
+- **Modificados**: `MainLayout.razor`, `App.razor`, `Program.cs`, `ApiAuthService.cs`, `Messages.razor`, `VacancyDetail.razor`, `Profile.razor`, `Dashboard.razor`, `Home.razor`, `MyApplications.razor`, `MyVacancies.razor`, `Vacancies.razor`, `_Imports.razor`, `components.css`, `portal-nav.css`, `wizard-profile.css`, traducciones ES/EN
+- **Creados**: `DESIGN-SYSTEM.md`, `VacancyManage.razor`, `VacancyCard.razor`, `icon.svg`, `manifest.json`, `sw.js`

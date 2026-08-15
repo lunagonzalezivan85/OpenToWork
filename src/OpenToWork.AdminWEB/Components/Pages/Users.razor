@@ -10,18 +10,23 @@
 
 <PageTitle>@Lang.T("admin.users.title")</PageTitle>
 
-<div class="flex-center" style="justify-content: space-between;">
-    <h1 class="mb-lg">@Lang.T("admin.users.title")</h1>
-    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ExportCsv">@Lang.T("admin.users.exportCsv")</button>
+<div class="admin-page-header">
+    <h1>@Lang.T("admin.users.title")</h1>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ExportCsv">@Lang.T("admin.users.exportCsv")</button>
+    </div>
 </div>
 
 @if (UsersList == null)
 {
-    <p>@Lang.T("admin.common.loading")</p>
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
 }
 else if (UsersList.Count == 0)
 {
-    <p>@Lang.T("admin.users.empty")</p>
+    <div class="admin-empty">
+        <div class="admin-empty-icon">&#9632;</div>
+        <div class="admin-empty-text">@Lang.T("admin.users.empty")</div>
+    </div>
 }
 else
 {
@@ -41,18 +46,29 @@ else
                 <tr>
                     <td>@user.Email</td>
                     <td>@((UserRole)user.PrimaryRole)</td>
-                    <td>@(user.IsActive ? Lang.T("admin.users.active") : Lang.T("admin.users.inactive"))</td>
-                    <td>@user.CreatedAt.ToLocalTime().ToShortDateString()</td>
                     <td>
                         @if (user.IsActive)
                         {
-                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Deactivate(user.Id)">@Lang.T("admin.users.deactivate")</button>
+                            <span class="admin-status admin-status--active">@Lang.T("admin.users.active")</span>
                         }
                         else
                         {
-                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Activate(user.Id)">@Lang.T("admin.users.activate")</button>
+                            <span class="admin-status admin-status--inactive">@Lang.T("admin.users.inactive")</span>
                         }
-                        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Delete(user.Id)">@Lang.T("admin.users.delete")</button>
+                    </td>
+                    <td>@user.CreatedAt.ToLocalTime().ToShortDateString()</td>
+                    <td>
+                        <div class="admin-table-actions">
+                            @if (user.IsActive)
+                            {
+                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Deactivate(user.Id)">@Lang.T("admin.users.deactivate")</button>
+                            }
+                            else
+                            {
+                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Activate(user.Id)">@Lang.T("admin.users.activate")</button>
+                            }
+                            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Delete(user.Id)">@Lang.T("admin.users.delete")</button>
+                        </div>
                     </td>
                 </tr>
             }

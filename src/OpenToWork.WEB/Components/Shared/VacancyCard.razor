@@ -1,0 +1,161 @@
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<div class="home-vacancy-card" @onclick="OnClick">
+    <div class="home-vacancy-card-top">
+        <div class="home-vacancy-card-company">
+            <div class="home-vacancy-card-logo">@(GetInitials(Vacancy.CompanyName))</div>
+            <div class="home-vacancy-card-company-info">
+                <span class="home-vacancy-card-company-name">@(Vacancy.CompanyName ?? "Empresa")</span>
+                @if (Vacancy.CompanyIsVerified)
+                {
+                    <span class="home-vacancy-card-verified" title="Verificada">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </span>
+                }
+            </div>
+        </div>
+        <span class="home-vacancy-card-badge">@GetWorkModeLabel(Vacancy.WorkMode)</span>
+    </div>
+    <h3 class="home-vacancy-card-title">@Vacancy.Title</h3>
+    <p class="home-vacancy-card-desc">@(TruncateText(Vacancy.Description, 120))</p>
+    <div class="home-vacancy-card-meta">
+        <span class="home-vacancy-card-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+            </svg>
+            @(Vacancy.Location ?? "N/A")
+        </span>
+        @if (Vacancy.SalaryMin.HasValue || Vacancy.SalaryMax.HasValue)
+        {
+            <span class="home-vacancy-card-meta-item home-vacancy-card-salary">
+                @FormatSalary(Vacancy.SalaryMin, Vacancy.SalaryMax)
+            </span>
+        }
+    </div>
+    <div class="home-vacancy-card-footer">
+        <span class="home-vacancy-card-views">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+            </svg>
+            @Vacancy.ViewsCount
+        </span>
+        @if (ShowStatus)
+        {
+            <span class="vacancy-card-badge @GetStatusClass(Vacancy.Status)">@GetStatusLabel(Vacancy.Status)</span>
+        }
+        else
+        {
+            <span class="home-vacancy-card-action">@Lang.T("common.buttons.view") →</span>
+        }
+    </div>
+    @if (ShowActions)
+    {
+        <div class="flex-center gap-sm" style="margin-top: 0.75rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+            @if (Vacancy.Status == 0)
+            {
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => OnPublish.InvokeAsync(Vacancy.Id)" @onclick:stopPropagation="true">@Lang.T("vacancies.publish")</button>
+            }
+            @if (Vacancy.Status == 1)
+            {
+                <button class="ot-btn ot-btn--secondary ot-btn--small" @onclick="() => OnClose.InvokeAsync(Vacancy.Id)" @onclick:stopPropagation="true">@Lang.T("vacancies.close")</button>
+            }
+            <a href="/vacancy/@Vacancy.Id" class="ot-btn ot-btn--secondary ot-btn--small" @onclick:stopPropagation="true">@Lang.T("common.buttons.view")</a>
+            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => OnDelete.InvokeAsync(Vacancy.Id)" @onclick:stopPropagation="true">@Lang.T("common.buttons.delete")</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public VacancyDto Vacancy { get; set; } = null!;
+    [Parameter] public bool ShowStatus { get; set; }
+    [Parameter] public bool ShowActions { get; set; }
+    [Parameter] public string StatusMode { get; set; } = "vacancy";
+    [Parameter] public EventCallback<Guid> OnPublish { get; set; }
+    [Parameter] public EventCallback<Guid> OnClose { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
+
+    private void OnClick()
+    {
+        if (ShowActions)
+            Nav.NavigateTo($"/my-vacancies/{Vacancy.Id}");
+        else
+            Nav.NavigateTo($"/vacancy/{Vacancy.Id}");
+    }
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "E";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
+
+    private static string TruncateText(string? text, int max)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        return text.Length <= max ? text : text[..max] + "...";
+    }
+
+    private static string FormatSalary(decimal? min, decimal? max)
+    {
+        if (!min.HasValue && !max.HasValue) return "";
+        var result = "";
+        if (min.HasValue) result += $"${min:N0}";
+        if (min.HasValue && max.HasValue) result += " - ";
+        if (max.HasValue) result += $"${max:N0}";
+        return result;
+    }
+
+    private string GetWorkModeLabel(int mode) => mode switch
+    {
+        0 => Lang.T("vacancies.workMode.onSite"),
+        1 => Lang.T("vacancies.workMode.hybrid"),
+        2 => Lang.T("vacancies.workMode.remote"),
+        _ => ""
+    };
+
+    private string GetStatusLabel(int status) => StatusMode switch
+    {
+        "application" => status switch
+        {
+            0 => Lang.T("applications.status.pending"),
+            1 => Lang.T("applications.status.inReview"),
+            2 => Lang.T("applications.status.accepted"),
+            3 => Lang.T("applications.status.rejected"),
+            _ => ""
+        },
+        _ => status switch
+        {
+            0 => Lang.T("vacancies.status.draft"),
+            1 => Lang.T("vacancies.status.active"),
+            2 => Lang.T("vacancies.status.closed"),
+            _ => ""
+        }
+    };
+
+    private string GetStatusClass(int status) => StatusMode switch
+    {
+        "application" => status switch
+        {
+            0 => "badge-draft",
+            1 => "badge-active",
+            2 => "badge-active",
+            3 => "badge-closed",
+            _ => ""
+        },
+        _ => status switch
+        {
+            0 => "badge-draft",
+            1 => "badge-active",
+            2 => "badge-closed",
+            _ => ""
+        }
+    };
+}

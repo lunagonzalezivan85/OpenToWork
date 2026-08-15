@@ -1,0 +1,106 @@
+@page "/about"
+@using OpenToWork.WEB.Services
+@inject LanguageService Lang
+
+<PageTitle>@Lang.T("common.about.title")</PageTitle>
+
+<div class="page-container">
+    <!-- Hero Header -->
+    <div class="about-hero">
+        <h1 class="about-hero-title">@Lang.T("common.about.title")</h1>
+        <p class="about-hero-subtitle">@Lang.T("common.about.subtitle")</p>
+    </div>
+
+    <!-- Row 1: Image left (transparent SVG) + Text right (Nosotros) -->
+    <div class="about-row">
+        <div class="about-card about-card--image">
+            <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" class="about-svg">
+                <circle cx="200" cy="150" r="120" stroke="var(--accent-primary)" stroke-width="2" opacity="0.15" />
+                <circle cx="200" cy="150" r="80" stroke="var(--accent-primary)" stroke-width="2" opacity="0.25" />
+                <circle cx="200" cy="150" r="40" stroke="var(--accent-primary)" stroke-width="2" opacity="0.4" />
+                <circle cx="120" cy="100" r="24" fill="var(--accent-primary)" opacity="0.1" />
+                <circle cx="280" cy="200" r="32" fill="var(--accent-primary)" opacity="0.08" />
+                <circle cx="320" cy="80" r="16" fill="var(--accent-primary)" opacity="0.12" />
+                <circle cx="80" cy="220" r="20" fill="var(--accent-primary)" opacity="0.1" />
+                <!-- Connection lines -->
+                <line x1="120" y1="100" x2="200" y2="150" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.2" />
+                <line x1="280" y1="200" x2="200" y2="150" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.2" />
+                <line x1="320" y1="80" x2="200" y2="150" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.15" />
+                <line x1="80" y1="220" x2="200" y2="150" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.15" />
+                <!-- People icons -->
+                <g transform="translate(185, 130)">
+                    <circle cx="15" cy="10" r="8" stroke="var(--accent-primary)" stroke-width="2" fill="none" />
+                    <path d="M3 30 Q15 18 27 30" stroke="var(--accent-primary)" stroke-width="2" fill="none" />
+                </g>
+                <g transform="translate(100, 85)">
+                    <circle cx="10" cy="8" r="6" stroke="var(--accent-primary)" stroke-width="2" fill="none" opacity="0.6" />
+                    <path d="M2 22 Q10 13 18 22" stroke="var(--accent-primary)" stroke-width="2" fill="none" opacity="0.6" />
+                </g>
+                <g transform="translate(265, 185)">
+                    <circle cx="10" cy="8" r="6" stroke="var(--accent-primary)" stroke-width="2" fill="none" opacity="0.6" />
+                    <path d="M2 22 Q10 13 18 22" stroke="var(--accent-primary)" stroke-width="2" fill="none" opacity="0.6" />
+                </g>
+            </svg>
+        </div>
+        <div class="about-card about-card--text">
+            <h2 class="about-card-title">@Lang.T("common.about.usTitle")</h2>
+            <p class="about-card-description">@Lang.T("common.about.usDescription")</p>
+        </div>
+    </div>
+
+    <!-- Row 2: Text left (Qué hacemos) + Image right (transparent SVG) -->
+    <div class="about-row about-row--reverse">
+        <div class="about-card about-card--text">
+            <h2 class="about-card-title">@Lang.T("common.about.whatTitle")</h2>
+            <p class="about-card-description">@Lang.T("common.about.whatDescription")</p>
+        </div>
+        <div class="about-card about-card--image">
+            <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg" class="about-svg">
+                <!-- Briefcase -->
+                <rect x="140" y="120" width="120" height="80" rx="8" stroke="var(--accent-primary)" stroke-width="2" fill="none" opacity="0.5" />
+                <path d="M170 120 V105 Q170 95 180 95 H220 Q230 95 230 105 V120" stroke="var(--accent-primary)" stroke-width="2" fill="none" opacity="0.5" />
+                <line x1="140" y1="150" x2="260" y2="150" stroke="var(--accent-primary)" stroke-width="2" opacity="0.3" />
+                <circle cx="200" cy="150" r="4" fill="var(--accent-primary)" opacity="0.4" />
+                <!-- Search magnifier -->
+                <circle cx="310" cy="90" r="28" stroke="var(--accent-primary)" stroke-width="2" fill="none" opacity="0.3" />
+                <line x1="330" y1="110" x2="345" y2="125" stroke="var(--accent-primary)" stroke-width="3" opacity="0.3" stroke-linecap="round" />
+                <!-- Document -->
+                <rect x="70" y="80" width="50" height="65" rx="4" stroke="var(--accent-primary)" stroke-width="2" fill="none" opacity="0.25" />
+                <line x1="78" y1="95" x2="112" y2="95" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.2" />
+                <line x1="78" y1="105" x2="112" y2="105" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.2" />
+                <line x1="78" y1="115" x2="100" y2="115" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.2" />
+                <!-- Video play -->
+                <circle cx="90" cy="220" r="22" stroke="var(--accent-primary)" stroke-width="2" fill="none" opacity="0.25" />
+                <path d="M82 212 L100 220 L82 228 Z" fill="var(--accent-primary)" opacity="0.2" />
+                <!-- Arrows connecting -->
+                <path d="M120 110 Q150 100 145 120" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.15" fill="none" stroke-dasharray="4 4" />
+                <path d="M280 130 Q300 120 295 100" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.15" fill="none" stroke-dasharray="4 4" />
+                <path d="M140 180 Q120 200 110 210" stroke="var(--accent-primary)" stroke-width="1.5" opacity="0.15" fill="none" stroke-dasharray="4 4" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- Row 3: Mission + Values (two text cards side by side) -->
+    <div class="about-row about-row--two-text">
+        <div class="about-card about-card--text about-card--accent">
+            <div class="about-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="6" />
+                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                </svg>
+            </div>
+            <h2 class="about-card-title">@Lang.T("common.about.missionTitle")</h2>
+            <p class="about-card-description">@Lang.T("common.about.missionDescription")</p>
+        </div>
+        <div class="about-card about-card--text about-card--accent">
+            <div class="about-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+            </div>
+            <h2 class="about-card-title">@Lang.T("common.about.valuesTitle")</h2>
+            <p class="about-card-description">@Lang.T("common.about.valuesDescription")</p>
+        </div>
+    </div>
+</div>

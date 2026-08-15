@@ -8,7 +8,21 @@
 <PageTitle>@Lang.T("dashboard.title")</PageTitle>
 
 <div class="page-container">
-    <h1 class="mb-lg">@Lang.T("dashboard.title")</h1>
+    <!-- Bento Welcome Banner Card -->
+    <div class="dash-banner-card">
+        <div class="dash-banner-avatar">@UserInitials</div>
+        <div class="dash-banner-info">
+            <h1 class="dash-banner-title">@Lang.T("dashboard.welcome"), @UserName 👋</h1>
+            <p class="dash-banner-role">@(CandidateProfile?.Title ?? Lang.T("dashboard.sections.profileProgress"))</p>
+        </div>
+        <button class="ot-btn ot-btn--outline ot-btn--small dash-banner-btn" @onclick="GoToProfile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+            </svg>
+            @Lang.T("common.nav.profile")
+        </button>
+    </div>
 
     @if (ShowWizardPrompt)
     {
@@ -17,76 +31,154 @@
                 <h3>@Lang.T("dashboard.wizardPrompt.title")</h3>
                 <p>@Lang.T("dashboard.wizardPrompt.message")</p>
             </div>
-            <button class="ot-btn ot-btn--primary ot-btn--medium" @onclick="GoToWizard">
+            <button class="ot-btn ot-btn--primary" @onclick="GoToWizard">
                 @Lang.T("dashboard.wizardPrompt.button")
             </button>
         </div>
     }
 
+    <!-- Row 1: Profile Completion Chart (2 cols) + Indicators Card (2 cols) -->
     <div class="bento-grid">
-        <div class="bento-card stat-card">
-            <div class="stat-value">@ProfileCompletion%</div>
-            <div class="stat-label">@Lang.T("dashboard.stats.profileCompletion")</div>
-        </div>
-        <div class="bento-card stat-card">
-            <div class="stat-value">@VacanciesCount</div>
-            <div class="stat-label">@Lang.T("dashboard.stats.activeVacancies")</div>
-        </div>
-        <div class="bento-card stat-card">
-            <div class="stat-value">0</div>
-            <div class="stat-label">@Lang.T("dashboard.stats.applications")</div>
-        </div>
-        <div class="bento-card stat-card">
-            <div class="stat-value">0</div>
-            <div class="stat-label">@Lang.T("dashboard.stats.profileViews")</div>
-        </div>
-    </div>
-
-    <h2 class="mt-lg mb-md">@Lang.T("dashboard.sections.quickActions")</h2>
-    <div class="bento-grid">
-        <div class="bento-card" @onclick="GoToWizard" style="cursor: pointer;">
-            <div class="bento-card-header">
-                <span class="bento-card-icon">📝</span>
-                <span class="bento-card-title">@Lang.T("dashboard.actions.completeProfile")</span>
+        <!-- Profile Completion Circular Chart -->
+        <div class="bento-card bento-card--medium dash-chart-card">
+            <div class="dash-chart-header">
+                <span class="bento-card-title">@Lang.T("dashboard.stats.profileCompletion")</span>
             </div>
-            <div class="bento-card-body">Completa tu información profesional</div>
-        </div>
-        <div class="bento-card" @onclick="GoToVacancies" style="cursor: pointer;">
-            <div class="bento-card-header">
-                <span class="bento-card-icon">🔍</span>
-                <span class="bento-card-title">@Lang.T("dashboard.actions.searchVacancies")</span>
-            </div>
-            <div class="bento-card-body">Explora vacantes disponibles</div>
-        </div>
-        <div class="bento-card" @onclick="GoToCreateVacancy" style="cursor: pointer;">
-            <div class="bento-card-header">
-                <span class="bento-card-icon">➕</span>
-                <span class="bento-card-title">@Lang.T("dashboard.actions.createVacancy")</span>
-            </div>
-            <div class="bento-card-body">Publica una nueva vacante</div>
-        </div>
-    </div>
-
-    @if (RecommendedVacancies.Any())
-    {
-        <h2 class="mt-lg mb-md">@Lang.T("dashboard.sections.recommendedVacancies")</h2>
-        <div class="bento-grid">
-            @foreach (var vacancy in RecommendedVacancies.Take(3))
-            {
-                <div class="vacancy-card">
-                    <div class="vacancy-card-title">@vacancy.Title</div>
-                    <div class="vacancy-card-location">📍 @vacancy.Location</div>
-                    <div class="vacancy-card-description">@vacancy.Description</div>
-                    <div class="vacancy-card-footer">
-                        <span class="vacancy-card-salary">
-                            @(vacancy.SalaryMin.HasValue ? $"${vacancy.SalaryMin:N0}" : "")
-                        </span>
-                        <span class="vacancy-card-badge">@GetContractTypeLabel(vacancy.ContractType)</span>
+            <div class="dash-chart-body">
+                <div class="dash-chart-ring" style="--progress: @(ProfileCompletion); --deg: @(ProfileCompletion * 3.6)deg">
+                    <div class="dash-chart-ring-inner">
+                        <span class="dash-chart-percent">@ProfileCompletion%</span>
                     </div>
                 </div>
-            }
+                <div class="dash-chart-info">
+                    <p class="dash-chart-info-text">
+                        @(ProfileCompletion < 100 ? Lang.T("dashboard.wizardPrompt.message") : "¡Perfil completo!")
+                    </p>
+                    @if (ProfileCompletion < 100)
+                    {
+                        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="GoToWizard">
+                            @Lang.T("dashboard.wizardPrompt.button")
+                        </button>
+                    }
+                </div>
+            </div>
         </div>
-    }
+
+        <!-- Indicators Card: 3 stats -->
+        <div class="bento-card bento-card--medium dash-indicators-card">
+            <div class="dash-indicators-header">
+                <span class="bento-card-title">@Lang.T("dashboard.sections.myApplications")</span>
+            </div>
+            <div class="dash-indicators-grid">
+                <div class="dash-indicator">
+                    <div class="dash-indicator-icon dash-indicator-icon--blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M9 11l3 3L22 4" />
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                        </svg>
+                    </div>
+                    <div class="dash-indicator-data">
+                        <span class="dash-indicator-value">@RequestsCount</span>
+                        <span class="dash-indicator-label">@Lang.T("dashboard.stats.requests")</span>
+                    </div>
+                </div>
+                <div class="dash-indicator">
+                    <div class="dash-indicator-icon dash-indicator-icon--green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                        </svg>
+                    </div>
+                    <div class="dash-indicator-data">
+                        <span class="dash-indicator-value">@PostulationsCount</span>
+                        <span class="dash-indicator-label">@Lang.T("dashboard.stats.postulations")</span>
+                    </div>
+                </div>
+                <div class="dash-indicator">
+                    <div class="dash-indicator-icon dash-indicator-icon--purple">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                    </div>
+                    <div class="dash-indicator-data">
+                        <span class="dash-indicator-value">@PublicationsCount</span>
+                        <span class="dash-indicator-label">@Lang.T("dashboard.stats.publications")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Quick Actions -->
+    <h2 class="dash-section-title">@Lang.T("dashboard.sections.quickActions")</h2>
+    <div class="bento-grid">
+        <div class="bento-card dash-action-card" @onclick="GoToWizard" style="cursor: pointer;">
+            <div class="dash-action-icon dash-action-icon--blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+            </div>
+            <div class="dash-action-content">
+                <span class="dash-action-title">@Lang.T("dashboard.actions.completeProfile")</span>
+                <span class="dash-action-desc">@Lang.T("dashboard.wizardPrompt.message")</span>
+            </div>
+        </div>
+
+        <div class="bento-card dash-action-card" @onclick="GoToUploadCv" style="cursor: pointer;">
+            <div class="dash-action-icon dash-action-icon--green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+            </div>
+            <div class="dash-action-content">
+                <span class="dash-action-title">@Lang.T("dashboard.actions.uploadCv")</span>
+                <span class="dash-action-desc">@Lang.T("dashboard.actions.uploadCvDesc")</span>
+            </div>
+        </div>
+
+        <div class="bento-card dash-action-card" @onclick="GoToRecordVideo" style="cursor: pointer;">
+            <div class="dash-action-icon dash-action-icon--purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" />
+                </svg>
+            </div>
+            <div class="dash-action-content">
+                <span class="dash-action-title">@Lang.T("dashboard.actions.recordVideo")</span>
+                <span class="dash-action-desc">@Lang.T("dashboard.actions.recordVideoDesc")</span>
+            </div>
+        </div>
+
+        <div class="bento-card dash-action-card" @onclick="GoToVacancies" style="cursor: pointer;">
+            <div class="dash-action-icon dash-action-icon--orange">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+            </div>
+            <div class="dash-action-content">
+                <span class="dash-action-title">@Lang.T("dashboard.actions.findJob")</span>
+                <span class="dash-action-desc">@Lang.T("dashboard.actions.findJobDesc")</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 3: Recommended Vacancies -->
+    <h2 class="dash-section-title">@Lang.T("dashboard.sections.recommended")</h2>
+    <div class="home-vacancies-grid">
+        @if (RecommendedVacancies.Any())
+        {
+            @foreach (var vacancy in RecommendedVacancies.Take(4))
+            {
+                <VacancyCard Vacancy="MapToVacancyDto(vacancy)" />
+            }
+        }
+        else
+        {
+            <div class="bento-card bento-card--full dash-empty">
+                <p>@Lang.T("dashboard.sections.recommended")</p>
+            </div>
+        }
+    </div>
 </div>
 
 @code {
@@ -95,6 +187,11 @@
     private bool ShowWizardPrompt { get; set; }
     private int ProfileCompletion { get; set; }
     private int VacanciesCount { get; set; }
+    private int RequestsCount { get; set; }
+    private int PostulationsCount { get; set; }
+    private int PublicationsCount { get; set; }
+    private string UserName { get; set; } = "";
+    private string UserInitials { get; set; } = "U";
 
     protected override async Task OnInitializedAsync()
     {
@@ -107,6 +204,8 @@
         {
             ShowWizardPrompt = !CandidateProfile.WizardCompleted;
             ProfileCompletion = CalculateProfileCompletion(CandidateProfile);
+            UserName = CandidateProfile.FirstName;
+            UserInitials = GetInitials($"{CandidateProfile.FirstName} {CandidateProfile.LastName}".Trim());
         }
         else
         {
@@ -114,7 +213,7 @@
             ProfileCompletion = 0;
         }
 
-        var (vacancies, total) = await AuthApi.SearchVacanciesAsync(new SearchVacancyDto { Page = 1, PageSize = 3 });
+        var (vacancies, total) = await AuthApi.SearchVacanciesAsync(new SearchVacancyDto { Page = 1, PageSize = 4 });
         RecommendedVacancies = vacancies;
         VacanciesCount = total;
     }
@@ -136,16 +235,35 @@
         return (int)((double)filled / total * 100);
     }
 
-    private string GetContractTypeLabel(int type) => type switch
-    {
-        0 => Lang.T("common.contract.fullTime"),
-        1 => Lang.T("common.contract.partTime"),
-        2 => Lang.T("common.contract.contract"),
-        3 => Lang.T("common.contract.remote"),
-        _ => ""
-    };
-
-    private void GoToWizard() => Nav.NavigateTo("/wizard");
+    private void GoToWizard() => Nav.NavigateTo("/profile");
+    private void GoToProfile() => Nav.NavigateTo("/profile");
     private void GoToVacancies() => Nav.NavigateTo("/vacancies");
     private void GoToCreateVacancy() => Nav.NavigateTo("/vacancies/create");
+    private void GoToUploadCv() => Nav.NavigateTo("/profile");
+    private void GoToRecordVideo() => Nav.NavigateTo("/profile");
+
+    private static VacancyDto MapToVacancyDto(TempVacancyDto v)
+    {
+        return new VacancyDto
+        {
+            Id = v.Id,
+            Title = v.Title,
+            Description = v.Description,
+            Location = v.Location,
+            SalaryMin = v.SalaryMin,
+            SalaryMax = v.SalaryMax,
+            ContractType = v.ContractType,
+            CompanyName = "OpenToWork",
+            ViewsCount = 0
+        };
+    }
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "U";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "U";
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
 }

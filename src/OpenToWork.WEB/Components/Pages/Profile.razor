@@ -3,236 +3,776 @@
 @using OpenToWork.WEB.Services
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
+@inject LocalStorageService LocalStorage
 
 <PageTitle>@Lang.T("profile.title")</PageTitle>
 
-<div class="page-container">
-    <h1 class="mb-lg">@Lang.T("profile.title")</h1>
-
+<div class="wizard-page">
     @if (ProfileData == null)
     {
-        <p>@Lang.T("common.labels.loading")</p>
+        <div class="wizard-loading">
+            <div class="wizard-skeleton-sidebar"></div>
+            <div class="wizard-skeleton-main"></div>
+        </div>
     }
     else
     {
-        <div class="profile-tabs mb-lg">
-            <button class="@(ActiveTab == "personal" ? "ot-btn ot-btn--primary ot-btn--small" : "ot-btn ot-btn--secondary ot-btn--small")" @onclick='() => ActiveTab = "personal"'>@Lang.T("profile.tabs.personal")</button>
-            <button class="@(ActiveTab == "experience" ? "ot-btn ot-btn--primary ot-btn--small" : "ot-btn ot-btn--secondary ot-btn--small")" @onclick='() => ActiveTab = "experience"'>@Lang.T("profile.tabs.experience")</button>
-            <button class="@(ActiveTab == "education" ? "ot-btn ot-btn--primary ot-btn--small" : "ot-btn ot-btn--secondary ot-btn--small")" @onclick='() => ActiveTab = "education"'>@Lang.T("profile.tabs.education")</button>
-            <button class="@(ActiveTab == "certifications" ? "ot-btn ot-btn--primary ot-btn--small" : "ot-btn ot-btn--secondary ot-btn--small")" @onclick='() => ActiveTab = "certifications"'>@Lang.T("profile.tabs.certifications")</button>
-        </div>
-
-        @if (ActiveTab == "personal")
-        {
-            <div class="ot-card">
-                <div class="form-grid">
-                    <div>
-                        <label class="ot-label">@Lang.T("profile.fields.title")</label>
-                        <input class="ot-input" @bind="ProfileData.Title" />
-                    </div>
-                    <div>
-                        <label class="ot-label">@Lang.T("profile.fields.yearsExperience")</label>
-                        <input class="ot-input" type="number" @bind="ProfileData.YearsOfExperience" />
-                    </div>
-                    <div>
-                        <label class="ot-label">@Lang.T("profile.fields.linkedin")</label>
-                        <input class="ot-input" @bind="ProfileData.LinkedInUrl" />
-                    </div>
-                    <div>
-                        <label class="ot-label">@Lang.T("profile.fields.portfolio")</label>
-                        <input class="ot-input" @bind="ProfileData.PortfolioUrl" />
-                    </div>
-                    <div>
-                        <label class="ot-label">@Lang.T("profile.fields.availability")</label>
-                        <select class="ot-input" @bind="ProfileData.Availability">
-                            <option value="">--</option>
-                            <option value="0">@Lang.T("profile.availability.immediate")</option>
-                            <option value="1">@Lang.T("profile.availability.twoWeeks")</option>
-                            <option value="2">@Lang.T("profile.availability.oneMonth")</option>
-                            <option value="3">@Lang.T("profile.availability.notAvailable")</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="ot-label">@Lang.T("profile.fields.workAuthorization")</label>
-                        <select class="ot-input" @bind="ProfileData.WorkAuthorization">
-                            <option value="">--</option>
-                            <option value="0">@Lang.T("profile.workAuth.citizen")</option>
-                            <option value="1">@Lang.T("profile.workAuth.workVisa")</option>
-                            <option value="2">@Lang.T("profile.workAuth.studentVisa")</option>
-                            <option value="3">@Lang.T("profile.workAuth.none")</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-md">
-                    <label class="ot-label">@Lang.T("profile.fields.summary")</label>
-                    <textarea class="ot-input" rows="3" @bind="ProfileData.Summary"></textarea>
-                </div>
-                <div class="mt-md">
-                    <label class="ot-label">@Lang.T("profile.fields.cvUrl")</label>
-                    <input class="ot-input" @bind="ProfileData.CvUrl" />
-                </div>
-                <div class="flex-center gap-sm mt-md">
-                    <label class="flex-center gap-sm">
-                        <input type="checkbox" @bind="ProfileData.IsProfilePublic" />
-                        @Lang.T("profile.fields.isPublic")
-                    </label>
-                    <button class="ot-btn ot-btn--primary" @onclick="SaveProfileData">@Lang.T("common.buttons.save")</button>
-                </div>
-            </div>
-        }
-
-        @if (ActiveTab == "experience")
-        {
-            <div class="ot-card mb-lg">
-                <h3 class="mb-md">@Lang.T("profile.experience.add")</h3>
-                <div class="form-grid">
-                    <input class="ot-input" placeholder="@Lang.T("profile.experience.company")" @bind="NewExp.CompanyName" />
-                    <input class="ot-input" placeholder="@Lang.T("profile.experience.jobTitle")" @bind="NewExp.JobTitle" />
-                    <input class="ot-input" placeholder="@Lang.T("profile.experience.location")" @bind="NewExp.Location" />
-                    <input class="ot-input" type="date" @bind="NewExp.StartDate" />
-                    <input class="ot-input" type="date" @bind="NewExp.EndDate" />
-                    <label class="flex-center gap-sm">
-                        <input type="checkbox" @bind="NewExp.IsCurrentJob" />
-                        @Lang.T("profile.experience.current")
-                    </label>
-                </div>
-                <textarea class="ot-input mt-md" rows="2" placeholder="@Lang.T("profile.experience.description")" @bind="NewExp.Description"></textarea>
-                <button class="ot-btn ot-btn--primary mt-md" @onclick="AddExperience">@Lang.T("common.buttons.add")</button>
-            </div>
-
-            @foreach (var exp in ProfileData.Experiences)
-            {
-                <div class="ot-card mb-sm">
-                    <div class="flex-between">
-                        <div>
-                            <strong>@exp.JobTitle</strong> - @exp.CompanyName
-                            <div style="font-size: 0.85rem; color: var(--text-muted);">
-                                @exp.StartDate.ToString("MMM yyyy") - @(exp.IsCurrentJob ? Lang.T("profile.experience.present") : exp.EndDate?.ToString("MMM yyyy"))
-                            </div>
-                            @if (!string.IsNullOrEmpty(exp.Description))
-                            {
-                                <p class="mt-sm">@exp.Description</p>
-                            }
-                        </div>
-                        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => DeleteExperience(exp.Id)">X</button>
-                    </div>
-                </div>
-            }
-        }
-
-        @if (ActiveTab == "education")
-        {
-            <div class="ot-card mb-lg">
-                <h3 class="mb-md">@Lang.T("profile.education.add")</h3>
-                <div class="form-grid">
-                    <input class="ot-input" placeholder="@Lang.T("profile.education.institution")" @bind="NewEdu.Institution" />
-                    <input class="ot-input" placeholder="@Lang.T("profile.education.degree")" @bind="NewEdu.Degree" />
-                    <input class="ot-input" placeholder="@Lang.T("profile.education.fieldOfStudy")" @bind="NewEdu.FieldOfStudy" />
-                    <input class="ot-input" type="date" @bind="NewEdu.StartDate" />
-                    <input class="ot-input" type="date" @bind="NewEdu.EndDate" />
-                    <label class="flex-center gap-sm">
-                        <input type="checkbox" @bind="NewEdu.IsInProgress" />
-                        @Lang.T("profile.education.inProgress")
-                    </label>
-                </div>
-                <button class="ot-btn ot-btn--primary mt-md" @onclick="AddEducation">@Lang.T("common.buttons.add")</button>
-            </div>
-
-            @foreach (var edu in ProfileData.Educations)
-            {
-                <div class="ot-card mb-sm">
-                    <div class="flex-between">
-                        <div>
-                            <strong>@edu.Degree</strong> - @edu.Institution
-                            @if (!string.IsNullOrEmpty(edu.FieldOfStudy))
-                            {
-                                <span style="color: var(--text-muted);"> | @edu.FieldOfStudy</span>
-                            }
-                            <div style="font-size: 0.85rem; color: var(--text-muted);">
-                                @(edu.StartDate?.ToString("MMM yyyy") ?? "") - @(edu.IsInProgress ? Lang.T("profile.education.inProgress") : edu.EndDate?.ToString("MMM yyyy"))
-                            </div>
-                        </div>
-                        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => DeleteEducation(edu.Id)">X</button>
-                    </div>
-                </div>
-            }
-        }
-
-        @if (ActiveTab == "certifications")
-        {
-            <div class="ot-card mb-lg">
-                <h3 class="mb-md">@Lang.T("profile.certification.add")</h3>
-                <div class="form-grid">
-                    <input class="ot-input" placeholder="@Lang.T("profile.certification.name")" @bind="NewCert.Name" />
-                    <input class="ot-input" placeholder="@Lang.T("profile.certification.issuer")" @bind="NewCert.Issuer" />
-                    <input class="ot-input" type="date" @bind="NewCert.IssueDate" />
-                    <input class="ot-input" type="date" @bind="NewCert.ExpiryDate" />
-                    <input class="ot-input" placeholder="@Lang.T("profile.certification.credentialId")" @bind="NewCert.CredentialId" />
-                    <input class="ot-input" placeholder="@Lang.T("profile.certification.credentialUrl")" @bind="NewCert.CredentialUrl" />
-                </div>
-                <button class="ot-btn ot-btn--primary mt-md" @onclick="AddCertification">@Lang.T("common.buttons.add")</button>
-            </div>
-
-            @foreach (var cert in ProfileData.Certifications)
-            {
-                <div class="ot-card mb-sm">
-                    <div class="flex-between">
-                        <div>
-                            <strong>@cert.Name</strong>
-                            @if (!string.IsNullOrEmpty(cert.Issuer))
-                            {
-                                <span style="color: var(--text-muted);"> | @cert.Issuer</span>
-                            }
-                            <div style="font-size: 0.85rem; color: var(--text-muted);">
-                                @cert.IssueDate?.ToString("MMM yyyy")
-                                @if (cert.ExpiryDate.HasValue)
+        <div class="wizard-layout">
+            <!-- Main Wizard Area -->
+            <div class="wizard-main">
+                <!-- Progress Steps -->
+                <div class="wizard-steps">
+                    @for (int i = 0; i < WizardSteps.Count; i++)
+                    {
+                        var stepIndex = i;
+                        <button class="wizard-step-btn @(CurrentStep == stepIndex ? "wizard-step-btn--active" : "") @(CurrentStep > stepIndex ? "wizard-step-btn--done" : "")"
+                                @onclick="() => GoToStep(stepIndex)">
+                            <span class="wizard-step-num">
+                                @if (CurrentStep > stepIndex)
                                 {
-                                    @: - @cert.ExpiryDate?.ToString("MMM yyyy")
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14">
+                                        <path d="M20 6L9 17l-5-5" />
+                                    </svg>
+                                }
+                                else
+                                {
+                                    @(stepIndex + 1)
+                                }
+                            </span>
+                            <span class="wizard-step-label">@WizardSteps[stepIndex]</span>
+                        </button>
+                    }
+                </div>
+
+                <!-- Step Content -->
+                <div class="wizard-content">
+                    @if (CurrentStep == 0)
+                    {
+                        <h2 class="wizard-step-title">@Lang.T("common.wizard.step1Title")</h2>
+                        <p class="wizard-step-desc">@Lang.T("common.wizard.step1Desc")</p>
+
+                        <div class="wizard-field">
+                            <label class="wizard-field-label">@Lang.T("common.wizard.jobPositions")</label>
+                            <p class="wizard-field-hint">@Lang.T("common.wizard.jobPositionsHint")</p>
+
+                            <!-- Position chips -->
+                            @if (JobPositions.Any(p => !string.IsNullOrWhiteSpace(p)))
+                            {
+                                <div class="wizard-position-chips">
+                                    @for (int i = 0; i < JobPositions.Count; i++)
+                                    {
+                                        var idx = i;
+                                        if (!string.IsNullOrWhiteSpace(JobPositions[idx]))
+                                        {
+                                            <span class="wizard-position-chip @(i == 0 ? "wizard-position-chip--primary" : "")">
+                                                @if (i == 0)
+                                                {
+                                                    <span class="wizard-position-chip-badge">@Lang.T("common.wizard.primary")</span>
+                                                }
+                                                @JobPositions[idx]
+                                                <button class="wizard-position-chip-remove" @onclick="() => RemovePosition(idx)">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                                        <path d="M18 6L6 18M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </span>
+                                        }
+                                    }
+                                </div>
+                            }
+
+                            <!-- Position input -->
+                            @if (JobPositions.Count < 5)
+                            {
+                                <div class="wizard-position-add">
+                                    <input class="wizard-input" @bind="NewPositionInput" placeholder="@Lang.T("common.wizard.positionPlaceholder")"
+                                           @onkeydown="HandlePositionKeyDown" list="popularPositions" />
+                                    <datalist id="popularPositions">
+                                        <option value="Desarrollador Backend Senior" />
+                                        <option value="Desarrollador Frontend" />
+                                        <option value="Desarrollador Full Stack" />
+                                        <option value="Diseñador UX/UI" />
+                                        <option value="Product Manager" />
+                                        <option value="Data Analyst" />
+                                        <option value="DevOps Engineer" />
+                                        <option value="Marketing Digital" />
+                                        <option value="Contador" />
+                                        <option value="Enfermero/a" />
+                                    </datalist>
+                                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="AddPositionFromInput">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M12 5v14M5 12h14" />
+                                        </svg>
+                                        @Lang.T("common.wizard.addPosition")
+                                    </button>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="wizard-field">
+                            <label class="wizard-field-label">@Lang.T("common.wizard.workMode")</label>
+                            <div class="wizard-choice-cards">
+                                <button class="wizard-choice-card @(SelectedWorkMode == 2 ? "wizard-choice-card--active" : "")" @onclick='() => SelectedWorkMode = 2'>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                    </svg>
+                                    <span>@Lang.T("common.wizard.remote")</span>
+                                </button>
+                                <button class="wizard-choice-card @(SelectedWorkMode == 1 ? "wizard-choice-card--active" : "")" @onclick='() => SelectedWorkMode = 1'>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                                        <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+                                        <path d="M9 9h2M9 13h2M9 17h2" />
+                                    </svg>
+                                    <span>@Lang.T("common.wizard.hybrid")</span>
+                                </button>
+                                <button class="wizard-choice-card @(SelectedWorkMode == 0 ? "wizard-choice-card--active" : "")" @onclick='() => SelectedWorkMode = 0'>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                                        <rect x="4" y="2" width="16" height="20" rx="2" />
+                                        <path d="M9 22V12h6v10M9 6h6M9 9h.01M15 9h.01" />
+                                    </svg>
+                                    <span>@Lang.T("common.wizard.onsite")</span>
+                                </button>
+                            </div>
+
+                            <!-- Dynamic location field for Hybrid/Onsite -->
+                            @if (SelectedWorkMode != 2)
+                            {
+                                <div class="wizard-location-field">
+                                    <label class="wizard-field-label">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                            <circle cx="12" cy="10" r="3" />
+                                        </svg>
+                                        @Lang.T("common.wizard.locationLabel")
+                                    </label>
+                                    <input class="wizard-input" @bind="PreferredLocation" placeholder="@Lang.T("common.wizard.locationPlaceholder")" />
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (CurrentStep == 1)
+                    {
+                        <h2 class="wizard-step-title">@Lang.T("common.wizard.step2Title")</h2>
+                        <p class="wizard-step-desc">@Lang.T("common.wizard.step2Desc")</p>
+
+                        <div class="wizard-add-form">
+                            <div class="wizard-form-grid">
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("profile.experience.jobTitle")</label>
+                                    <input class="wizard-input" @bind="NewExp.JobTitle" placeholder="Ej: Senior Developer" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("profile.experience.company")</label>
+                                    <input class="wizard-input" @bind="NewExp.CompanyName" placeholder="Ej: TechCorp" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("profile.experience.location")</label>
+                                    <input class="wizard-input" @bind="NewExp.Location" placeholder="Ciudad, Pais" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">Inicio</label>
+                                    <input class="wizard-input" type="date" @bind="NewExp.StartDate" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">Fin</label>
+                                    <input class="wizard-input" type="date" @bind="NewExp.EndDate" />
+                                </div>
+                                <div class="wizard-form-field wizard-form-field--checkbox">
+                                    <label class="wizard-checkbox">
+                                        <input type="checkbox" @bind="NewExp.IsCurrentJob" />
+                                        <span>@Lang.T("profile.experience.current")</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">@Lang.T("profile.experience.description")</label>
+                                <textarea class="wizard-input wizard-textarea" rows="2" @bind="NewExp.Description" placeholder="Describe tus logros..."></textarea>
+                            </div>
+                            <button class="ot-btn ot-btn--primary" @onclick="AddExperience">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                @Lang.T("common.buttons.add")
+                            </button>
+                        </div>
+
+                        @if (ProfileData.Experiences.Any())
+                        {
+                            <div class="wizard-timeline">
+                                @foreach (var exp in ProfileData.Experiences)
+                                {
+                                    <div class="wizard-timeline-item">
+                                        <div class="wizard-timeline-dot"></div>
+                                        <div class="wizard-timeline-card">
+                                            <div class="wizard-timeline-card-header">
+                                                <div>
+                                                    <h4 class="wizard-timeline-title">@exp.JobTitle</h4>
+                                                    <span class="wizard-timeline-subtitle">@exp.CompanyName @(string.IsNullOrEmpty(exp.Location) ? "" : $" · {exp.Location}")</span>
+                                                </div>
+                                                <button class="wizard-card-delete" @onclick="() => DeleteExperience(exp.Id)">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <span class="wizard-timeline-date">@exp.StartDate.ToString("MMM yyyy") - @(exp.IsCurrentJob ? Lang.T("profile.experience.present") : exp.EndDate?.ToString("MMM yyyy"))</span>
+                                            @if (!string.IsNullOrEmpty(exp.Description))
+                                            {
+                                                <p class="wizard-timeline-desc">@exp.Description</p>
+                                            }
+                                        </div>
+                                    </div>
                                 }
                             </div>
-                            @if (!string.IsNullOrEmpty(cert.CredentialUrl))
+                        }
+                    }
+
+                    @if (CurrentStep == 2)
+                    {
+                        <h2 class="wizard-step-title">@Lang.T("common.wizard.step3Title")</h2>
+                        <p class="wizard-step-desc">@Lang.T("common.wizard.step3Desc")</p>
+
+                        <div class="wizard-field">
+                            <label class="wizard-field-label">@Lang.T("common.wizard.skills")</label>
+                            <p class="wizard-field-hint">@Lang.T("common.wizard.skillsHint")</p>
+                            <div class="wizard-skills-input">
+                                <div class="wizard-skills-tags">
+                                    @for (int i = 0; i < Skills.Count; i++)
+                                    {
+                                        var idx = i;
+                                        <span class="wizard-skill-tag">
+                                            @Skills[idx]
+                                            <button class="wizard-skill-remove" @onclick="() => Skills.RemoveAt(idx)">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                                    <path d="M18 6L6 18M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    }
+                                </div>
+                                <div class="wizard-skill-add-row">
+                                    <input class="wizard-input" @bind="NewSkill" placeholder="@Lang.T("common.wizard.skillPlaceholder")" @onkeydown="HandleSkillKeyDown" />
+                                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="AddSkill" disabled="@(Skills.Count >= 10)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M12 5v14M5 12h14" />
+                                        </svg>
+                                        @Lang.T("common.buttons.add")
+                                    </button>
+                                </div>
+                                <span class="wizard-counter">@Skills.Count / 10</span>
+                            </div>
+                        </div>
+                    }
+
+                    @if (CurrentStep == 3)
+                    {
+                        <h2 class="wizard-step-title">@Lang.T("common.wizard.step4Title")</h2>
+                        <p class="wizard-step-desc">@Lang.T("common.wizard.step4Desc")</p>
+
+                        <div class="wizard-add-form">
+                            <div class="wizard-form-grid wizard-form-grid--2">
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("common.wizard.language")</label>
+                                    <input class="wizard-input" @bind="NewLanguage.Name" placeholder="Ej: Ingles" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("common.wizard.level")</label>
+                                    <select class="wizard-input" @bind="NewLanguage.Level">
+                                        <option value="">--</option>
+                                        <option value="0">@Lang.T("common.wizard.levelBasic")</option>
+                                        <option value="1">@Lang.T("common.wizard.levelIntermediate")</option>
+                                        <option value="2">@Lang.T("common.wizard.levelAdvanced")</option>
+                                        <option value="3">@Lang.T("common.wizard.levelNative")</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="ot-btn ot-btn--primary" @onclick="AddLanguage">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                @Lang.T("common.buttons.add")
+                            </button>
+                        </div>
+
+                        @if (Languages.Any())
+                        {
+                            <div class="wizard-languages-list">
+                                @for (int i = 0; i < Languages.Count; i++)
+                                {
+                                    var idx = i;
+                                    <div class="wizard-language-row">
+                                        <div class="wizard-language-info">
+                                            <span class="wizard-language-name">@Languages[idx].Name</span>
+                                            <span class="wizard-language-level">@GetLevelLabel(Languages[idx].Level)</span>
+                                        </div>
+                                        <div class="wizard-language-bar">
+                                            <div class="wizard-language-bar-fill" style="width: @GetLevelPercent(Languages[idx].Level)%"></div>
+                                        </div>
+                                        <button class="wizard-card-delete" @onclick="() => Languages.RemoveAt(idx)">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+
+                    @if (CurrentStep == 4)
+                    {
+                        <h2 class="wizard-step-title">@Lang.T("common.wizard.step5Title")</h2>
+                        <p class="wizard-step-desc">@Lang.T("common.wizard.step5Desc")</p>
+
+                        <div class="wizard-add-form">
+                            <div class="wizard-form-grid">
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("profile.education.institution")</label>
+                                    <input class="wizard-input" @bind="NewEdu.Institution" placeholder="Universidad / Institucion" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("profile.education.degree")</label>
+                                    <input class="wizard-input" @bind="NewEdu.Degree" placeholder="Titulo obtenido" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("profile.education.fieldOfStudy")</label>
+                                    <input class="wizard-input" @bind="NewEdu.FieldOfStudy" placeholder="Area de estudio" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">Inicio</label>
+                                    <input class="wizard-input" type="date" @bind="NewEdu.StartDate" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">Fin</label>
+                                    <input class="wizard-input" type="date" @bind="NewEdu.EndDate" />
+                                </div>
+                                <div class="wizard-form-field wizard-form-field--checkbox">
+                                    <label class="wizard-checkbox">
+                                        <input type="checkbox" @bind="NewEdu.IsInProgress" />
+                                        <span>@Lang.T("profile.education.inProgress")</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="ot-btn ot-btn--primary" @onclick="AddEducation">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                @Lang.T("common.buttons.add")
+                            </button>
+                        </div>
+
+                        @if (ProfileData.Educations.Any())
+                        {
+                            <div class="wizard-timeline">
+                                @foreach (var edu in ProfileData.Educations)
+                                {
+                                    <div class="wizard-timeline-item">
+                                        <div class="wizard-timeline-dot wizard-timeline-dot--education"></div>
+                                        <div class="wizard-timeline-card">
+                                            <div class="wizard-timeline-card-header">
+                                                <div>
+                                                    <h4 class="wizard-timeline-title">@edu.Degree</h4>
+                                                    <span class="wizard-timeline-subtitle">@edu.Institution @(string.IsNullOrEmpty(edu.FieldOfStudy) ? "" : $" · {edu.FieldOfStudy}")</span>
+                                                </div>
+                                                <button class="wizard-card-delete" @onclick="() => DeleteEducation(edu.Id)">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <span class="wizard-timeline-date">@(edu.StartDate?.ToString("MMM yyyy") ?? "") - @(edu.IsInProgress ? Lang.T("profile.education.inProgress") : edu.EndDate?.ToString("MMM yyyy"))</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+
+                    @if (CurrentStep == 5)
+                    {
+                        <h2 class="wizard-step-title">@Lang.T("common.wizard.step6Title")</h2>
+                        <p class="wizard-step-desc">@Lang.T("common.wizard.step6Desc")</p>
+
+                        <div class="wizard-field">
+                            <div class="wizard-summary-actions">
+                                <button class="wizard-auto-btn" @onclick="AutoGenerateSummary">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <path d="M12 2L9.5 8.5L3 11l6.5 2.5L12 20l2.5-6.5L21 11l-6.5-2.5L12 2z" />
+                                    </svg>
+                                    @Lang.T("common.wizard.autoGenerate")
+                                </button>
+                            </div>
+                            <textarea class="wizard-input wizard-textarea wizard-summary-textarea" rows="8" @bind="ProfileData.Summary"
+                                      placeholder="@Lang.T("common.wizard.summaryPlaceholder")"></textarea>
+                        </div>
+                    }
+
+                    @if (CurrentStep == 6)
+                    {
+                        <h2 class="wizard-step-title">@Lang.T("common.wizard.step7Title")</h2>
+                        <p class="wizard-step-desc">@Lang.T("common.wizard.step7Desc")</p>
+
+                        <div class="wizard-form-grid wizard-form-grid--2">
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="vertical-align: middle;">
+                                        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.24 1.3v-1.11h-2.61v7.37h2.61v-4.05c0-.95.17-1.87 1.35-1.87 1.18 0 1.18 1.1 1.18 1.93v3.99h2.61M6.87 9.56h2.61v7.37H6.87V9.56m1.3-4.17a1.51 1.51 0 1 0 0 3.02 1.51 1.51 0 0 0 0-3.02z" />
+                                    </svg>
+                                    LinkedIn
+                                </label>
+                                <input class="wizard-input" @bind="ProfileData.LinkedInUrl" placeholder="https://linkedin.com/in/..." />
+                            </div>
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle;">
+                                        <path d="M2 7L12 2l10 5-10 5z" />
+                                        <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+                                    </svg>
+                                    @Lang.T("profile.fields.portfolio")
+                                </label>
+                                <input class="wizard-input" @bind="ProfileData.PortfolioUrl" placeholder="https://mi-portafolio.com" />
+                            </div>
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle;">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                    </svg>
+                                    @Lang.T("common.wizard.website")
+                                </label>
+                                <input class="wizard-input" @bind="WebsiteUrl" placeholder="https://mi-sitio.com" />
+                            </div>
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle;">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                                    </svg>
+                                    CV (URL)
+                                </label>
+                                <input class="wizard-input" @bind="ProfileData.CvUrl" placeholder="https://...cv.pdf" />
+                            </div>
+                        </div>
+
+                        <div class="wizard-form-field">
+                            <label class="wizard-field-label">@Lang.T("profile.fields.title")</label>
+                            <input class="wizard-input" @bind="ProfileData.Title" placeholder="Ej: Senior Backend Developer" />
+                        </div>
+
+                        <div class="wizard-form-grid wizard-form-grid--2">
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">@Lang.T("profile.fields.yearsExperience")</label>
+                                <input class="wizard-input" type="number" @bind="ProfileData.YearsOfExperience" />
+                            </div>
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">@Lang.T("profile.fields.availability")</label>
+                                <select class="wizard-input" @bind="ProfileData.Availability">
+                                    <option value="">--</option>
+                                    <option value="0">@Lang.T("profile.availability.immediate")</option>
+                                    <option value="1">@Lang.T("profile.availability.twoWeeks")</option>
+                                    <option value="2">@Lang.T("profile.availability.oneMonth")</option>
+                                    <option value="3">@Lang.T("profile.availability.notAvailable")</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="wizard-final-actions">
+                            <label class="wizard-checkbox">
+                                <input type="checkbox" @bind="ProfileData.IsProfilePublic" />
+                                <span>@Lang.T("profile.fields.isPublic")</span>
+                            </label>
+                            <button class="ot-btn ot-btn--primary" @onclick="SaveProfileData">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                    <path d="M17 21v-8H7v8M7 3v5h8" />
+                                </svg>
+                                @Lang.T("common.buttons.save")
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="wizard-nav">
+                    <button class="ot-btn ot-btn--secondary" @onclick="PrevStep" disabled="@(CurrentStep == 0)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                        @Lang.T("common.buttons.previous")
+                    </button>
+                    <span class="wizard-nav-progress">@(CurrentStep + 1) / @WizardSteps.Count</span>
+                    @if (CurrentStep < WizardSteps.Count - 1)
+                    {
+                        <button class="ot-btn ot-btn--primary" @onclick="NextStep">
+                            @Lang.T("common.buttons.next")
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="ot-btn ot-btn--primary" @onclick="FinishWizard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                            @Lang.T("common.wizard.finish")
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Right Sidebar: Summary -->
+            <aside class="wizard-sidebar">
+                <div class="wizard-summary-card">
+                    <!-- One UI Header: soft banner + squircle avatar -->
+                    <div class="wizard-summary-header">
+                        <div class="wizard-summary-header-banner"></div>
+                        <div class="wizard-summary-avatar">
+                            @if (!string.IsNullOrEmpty(ProfileData.ProfilePictureUrl))
                             {
-                                <a href="@cert.CredentialUrl" target="_blank" style="font-size: 0.85rem;">@Lang.T("profile.certification.verify")</a>
+                                <img src="@ProfileData.ProfilePictureUrl" alt="avatar" class="wizard-summary-avatar-img" />
+                            }
+                            else
+                            {
+                                <span>@UserInitials</span>
                             }
                         </div>
-                        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => DeleteCertification(cert.Id)">X</button>
+                        <h3 class="wizard-summary-name">@(ProfileData.FirstName) @(ProfileData.LastName)</h3>
+                        <span class="wizard-summary-role-pill">@(ProfileData.Title ?? "Sin título profesional")</span>
+                        <span class="wizard-summary-email">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                                <rect x="2" y="4" width="20" height="16" rx="2" />
+                                <path d="m22 7-10 5L2 7" />
+                            </svg>
+                            @(UserEmail)
+                        </span>
+                    </div>
+
+                    <!-- Bento Tags: Looking For -->
+                    <div class="wizard-summary-section">
+                        <h4 class="wizard-summary-section-title">@Lang.T("common.wizard.lookingFor")</h4>
+                        <div class="wizard-summary-tags">
+                            @if (JobPositions.Any(p => !string.IsNullOrWhiteSpace(p)))
+                            {
+                                @foreach (var pos in JobPositions.Where(p => !string.IsNullOrWhiteSpace(p)))
+                                {
+                                    <span class="wizard-summary-tag wizard-summary-tag--highlight">@(pos)</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="wizard-summary-empty">@Lang.T("common.wizard.notSpecified")</span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Bento Tags: Work Mode -->
+                    <div class="wizard-summary-section">
+                        <h4 class="wizard-summary-section-title">@Lang.T("common.wizard.workModeLabel")</h4>
+                        <span class="wizard-summary-mode-pill">@GetWorkModeLabel(SelectedWorkMode)</span>
+                        @if (SelectedWorkMode != 2 && !string.IsNullOrWhiteSpace(PreferredLocation))
+                        {
+                            <span class="wizard-summary-location">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                </svg>
+                                @PreferredLocation
+                            </span>
+                        }
+                    </div>
+
+                    <!-- Bento Tags: Skills as chips -->
+                    <div class="wizard-summary-section">
+                        <h4 class="wizard-summary-section-title">@Lang.T("common.wizard.skills")</h4>
+                        <div class="wizard-summary-tags">
+                            @if (Skills.Any())
+                            {
+                                @foreach (var skill in Skills)
+                                {
+                                    <span class="wizard-summary-tag wizard-summary-tag--skill">@skill</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="wizard-summary-empty">@Lang.T("common.wizard.notSpecified")</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="wizard-summary-section">
+                        <h4 class="wizard-summary-section-title">@Lang.T("common.wizard.step4Title")</h4>
+                        @if (Languages.Any())
+                        {
+                            @foreach (var lang in Languages)
+                            {
+                                <div class="wizard-summary-lang">
+                                    <span>@lang.Name</span>
+                                    <span class="wizard-summary-lang-level">@GetLevelLabel(lang.Level)</span>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <span class="wizard-summary-empty">@Lang.T("common.wizard.notSpecified")</span>
+                        }
+                    </div>
+
+                    <div class="wizard-summary-section">
+                        <h4 class="wizard-summary-section-title">@Lang.T("common.wizard.experience")</h4>
+                        <span class="wizard-summary-stat">@(ProfileData.Experiences.Count) @Lang.T("common.wizard.jobs")</span>
+                    </div>
+
+                    <div class="wizard-summary-section">
+                        <h4 class="wizard-summary-section-title">@Lang.T("common.wizard.step5Title")</h4>
+                        <span class="wizard-summary-stat">@(ProfileData.Educations.Count) @Lang.T("common.wizard.studies")</span>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(ProfileData.Summary))
+                    {
+                        <div class="wizard-summary-section">
+                            <h4 class="wizard-summary-section-title">@Lang.T("common.wizard.step6Title")</h4>
+                            <p class="wizard-summary-text">@TruncateText(ProfileData.Summary, 150)</p>
+                        </div>
+                    }
+
+                    <div class="wizard-summary-section">
+                        <a href="/my-vacancies" class="ot-btn ot-btn--outline ot-btn--small" style="width: 100%;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <path d="M3 9h18M9 21V9" />
+                            </svg>
+                            @Lang.T("vacancies.myTitle")
+                        </a>
                     </div>
                 </div>
-            }
-        }
+            </aside>
+        </div>
     }
 </div>
 
 @code {
     private CandidateProfileDto? ProfileData { get; set; }
-    private string ActiveTab { get; set; } = "personal";
+    private int CurrentStep { get; set; } = 0;
+    private string UserName { get; set; } = "";
+    private string UserInitials { get; set; } = "U";
+    private string UserEmail { get; set; } = "";
+
+    // Wizard local state
+    private List<string> JobPositions { get; set; } = new();
+    private string NewPositionInput { get; set; } = "";
+    private int SelectedWorkMode { get; set; } = 2;
+    private string PreferredLocation { get; set; } = "";
+    private List<string> Skills { get; set; } = new();
+    private string NewSkill { get; set; } = "";
+    private List<LanguageItem> Languages { get; set; } = new();
+    private LanguageItem NewLanguage { get; set; } = new();
+    private string WebsiteUrl { get; set; } = "";
+
+    // Form DTOs
     private CreateExperienceDto NewExp { get; set; } = new();
     private CreateEducationDto NewEdu { get; set; } = new();
-    private CreateCertificationDto NewCert { get; set; } = new();
+
+    private List<string> WizardSteps => new()
+    {
+        Lang.T("common.wizard.step1"),
+        Lang.T("common.wizard.step2"),
+        Lang.T("common.wizard.step3"),
+        Lang.T("common.wizard.step4"),
+        Lang.T("common.wizard.step5"),
+        Lang.T("common.wizard.step6"),
+        Lang.T("common.wizard.step7")
+    };
+
+    public class LanguageItem
+    {
+        public string Name { get; set; } = "";
+        public int Level { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
+
+        var token = await LocalStorage.GetItemAsync("opentowork-token");
+        if (!string.IsNullOrEmpty(token))
+        {
+            try
+            {
+                var payload = token.Split('.')[1];
+                var jsonBytes = Convert.FromBase64String(payload + (payload.Length % 4 == 2 ? "==" : payload.Length % 4 == 3 ? "=" : ""));
+                var claims = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+                if (claims != null)
+                {
+                    UserEmail = claims.TryGetValue("email", out var e) ? e.ToString() ?? "" : "";
+                    var givenName = claims.TryGetValue("given_name", out var gn) ? gn.ToString() : null;
+                    var familyName = claims.TryGetValue("family_name", out var fn) ? fn.ToString() : null;
+                    UserName = givenName ?? UserEmail ?? "Usuario";
+                    UserInitials = GetInitials(UserName);
+                    if (ProfileData != null && string.IsNullOrEmpty(ProfileData.FirstName))
+                    {
+                        ProfileData.FirstName = givenName ?? "";
+                        ProfileData.LastName = familyName ?? "";
+                    }
+                }
+            }
+            catch { }
+        }
+
         ProfileData = await AuthApi.GetProfileAsync();
     }
 
-    private async Task SaveProfileData()
+    private void GoToStep(int step) => CurrentStep = step;
+    private void NextStep() { if (CurrentStep < WizardSteps.Count - 1) CurrentStep++; }
+    private void PrevStep() { if (CurrentStep > 0) CurrentStep--; }
+
+    private void AddPositionFromInput()
     {
-        if (ProfileData == null) return;
-        var dto = new UpdateCandidateProfileDto
+        if (!string.IsNullOrWhiteSpace(NewPositionInput) && JobPositions.Count < 5)
         {
-            Title = ProfileData.Title,
-            Summary = ProfileData.Summary,
-            YearsOfExperience = ProfileData.YearsOfExperience,
-            LinkedInUrl = ProfileData.LinkedInUrl,
-            PortfolioUrl = ProfileData.PortfolioUrl,
-            Availability = ProfileData.Availability,
-            WorkAuthorization = ProfileData.WorkAuthorization,
-            IsProfilePublic = ProfileData.IsProfilePublic,
-            CvUrl = ProfileData.CvUrl
-        };
-        ProfileData = await AuthApi.UpdateProfileAsync(dto);
+            JobPositions.Add(NewPositionInput.Trim());
+            NewPositionInput = "";
+        }
+    }
+
+    private void HandlePositionKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            AddPositionFromInput();
+        }
+    }
+
+    private void RemovePosition(int idx) { if (idx >= 0 && idx < JobPositions.Count) JobPositions.RemoveAt(idx); }
+
+    private void AddSkill()
+    {
+        if (!string.IsNullOrWhiteSpace(NewSkill) && !Skills.Contains(NewSkill.Trim()) && Skills.Count < 10)
+        {
+            Skills.Add(NewSkill.Trim());
+            NewSkill = "";
+        }
+    }
+
+    private void HandleSkillKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            AddSkill();
+        }
+    }
+
+    private void AddLanguage()
+    {
+        if (!string.IsNullOrWhiteSpace(NewLanguage.Name) && NewLanguage.Level >= 0)
+        {
+            Languages.Add(new LanguageItem { Name = NewLanguage.Name.Trim(), Level = NewLanguage.Level });
+            NewLanguage = new LanguageItem();
+        }
     }
 
     private async Task AddExperience()
@@ -267,19 +807,87 @@
         ProfileData = await AuthApi.GetProfileAsync();
     }
 
-    private async Task AddCertification()
+    private void AutoGenerateSummary()
     {
-        var result = await AuthApi.AddCertificationAsync(NewCert);
-        if (result != null)
-        {
-            NewCert = new CreateCertificationDto();
-            ProfileData = await AuthApi.GetProfileAsync();
-        }
+        if (ProfileData == null) return;
+        var positions = JobPositions.Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
+        var primary = positions.FirstOrDefault() ?? "profesional";
+        var expCount = ProfileData.Experiences.Count;
+        var expYears = ProfileData.YearsOfExperience ?? 0;
+        var skillsText = Skills.Any() ? string.Join(", ", Skills.Take(5)) : "";
+        var langText = Languages.Any() ? string.Join(", ", Languages.Select(l => l.Name)) : "";
+
+        var summary = $"{UserName} es un {primary}";
+        if (expYears > 0) summary += $" con {expYears} años de experiencia";
+        if (expCount > 0) summary += $", ha trabajado en {expCount} puesto{(expCount > 1 ? "s" : "")}";
+        summary += ".";
+        if (skillsText.Any()) summary += $" Destaca en: {skillsText}.";
+        if (langText.Any()) summary += $" Habla: {langText}.";
+        summary += $" Busca modalidad {GetWorkModeLabel(SelectedWorkMode).ToLower()}.";
+
+        ProfileData.Summary = summary;
     }
 
-    private async Task DeleteCertification(Guid id)
+    private async Task SaveProfileData()
     {
-        await AuthApi.DeleteCertificationAsync(id);
-        ProfileData = await AuthApi.GetProfileAsync();
+        if (ProfileData == null) return;
+        var dto = new UpdateCandidateProfileDto
+        {
+            Title = ProfileData.Title,
+            Summary = ProfileData.Summary,
+            YearsOfExperience = ProfileData.YearsOfExperience,
+            LinkedInUrl = ProfileData.LinkedInUrl,
+            PortfolioUrl = ProfileData.PortfolioUrl,
+            Availability = ProfileData.Availability,
+            WorkAuthorization = ProfileData.WorkAuthorization,
+            IsProfilePublic = ProfileData.IsProfilePublic,
+            CvUrl = ProfileData.CvUrl
+        };
+        ProfileData = await AuthApi.UpdateProfileAsync(dto);
     }
+
+    private async Task FinishWizard()
+    {
+        await SaveProfileData();
+    }
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "U";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
+
+    private static string TruncateText(string? text, int max)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        return text.Length <= max ? text : text[..max] + "...";
+    }
+
+    private string GetWorkModeLabel(int mode) => mode switch
+    {
+        0 => Lang.T("common.wizard.onsite"),
+        1 => Lang.T("common.wizard.hybrid"),
+        2 => Lang.T("common.wizard.remote"),
+        _ => "-"
+    };
+
+    private string GetLevelLabel(int level) => level switch
+    {
+        0 => Lang.T("common.wizard.levelBasic"),
+        1 => Lang.T("common.wizard.levelIntermediate"),
+        2 => Lang.T("common.wizard.levelAdvanced"),
+        3 => Lang.T("common.wizard.levelNative"),
+        _ => "-"
+    };
+
+    private static int GetLevelPercent(int level) => level switch
+    {
+        0 => 25,
+        1 => 50,
+        2 => 75,
+        3 => 100,
+        _ => 0
+    };
 }

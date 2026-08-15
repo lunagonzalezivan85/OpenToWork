@@ -5,18 +5,30 @@
         "profileCompletion": "Perfil completado",
         "activeVacancies": "Vacantes activas",
         "applications": "Solicitudes",
-        "profileViews": "Vistas del perfil"
+        "profileViews": "Vistas del perfil",
+        "requests": "Solicitudes",
+        "postulations": "Postulaciones",
+        "publications": "Publicaciones"
     },
     "sections": {
         "myProfile": "Mi Perfil",
         "recommendedVacancies": "Vacantes recomendadas",
         "myApplications": "Mis solicitudes",
-        "quickActions": "Acciones rápidas"
+        "quickActions": "Acciones rápidas",
+        "recommended": "Recomendados para ti",
+        "findJob": "Encuentra tu próximo empleo",
+        "profileProgress": "Progreso del perfil"
     },
     "actions": {
         "completeProfile": "Completar perfil",
         "searchVacancies": "Buscar vacantes",
-        "createVacancy": "Crear vacante"
+        "createVacancy": "Crear vacante",
+        "uploadCv": "Subir mi CV",
+        "uploadCvDesc": "Adjunta tu currículum en PDF",
+        "recordVideo": "Mejorar presentación",
+        "recordVideoDesc": "Graba un video de presentación",
+        "findJob": "Encuentra tu próximo empleo",
+        "findJobDesc": "Explora vacantes que coinciden contigo"
     },
     "wizardPrompt": {
         "title": "Completa tu perfil",
