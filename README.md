@@ -1106,6 +1106,79 @@ Pruebas totales: 44
 
 ## Bitácora de Cambios
 
+### Sesión 2026-08-15 — Dashboard clickeable, vista de resultados, perfil de usuario y análisis RH
+
+#### ⚠️ Ojo Darwin — Necesito que respondas las preguntas del experto en RH
+
+> **Darwin:** El agente RH (ver `/rh`) publicó un análisis completo del portafolio de candidatos en `docs/rh/analisis-portafolio-candidatos.md`. Antes de seguir avanzando, necesito que leas las **17 preguntas estratégicas** que hizo RH y respondas cada una. Las preguntas están agrupadas en:
+>
+> - **Modelo de negocio** (3 preguntas): planes gratuito vs. premium, modelo de cobro
+> - **Datos y privacidad** (3 preguntas): GDPR/Ley 25.326, ownership de datos, notas internas
+> - **Evaluación y scoring** (4 preguntas): transparencia del score, apelaciones, recálculo
+> - **Competencia y escalabilidad** (5 preguntas): diferenciadores vs. LinkedIn/Computrabajo, video pitch vs. scoring, soporte multiidioma
+>
+> **Pregunta clave:** ¿Crees que estas preguntas se alinean a lo que estamos haciendo? ¿O hay alguna que no aplica o que cambiarías?
+>
+> Tu respuesta va a definir el alcance de la Fase 3 (Motor de Evaluación) y la Fase 4 (ATS + Video). Responde en `docs/dsiezar/respuesta-rh.md` o directo en este README.
+
+---
+
+#### Dashboard clickeable (`Dashboard.razor`)
+- Gráficos del dashboard ahora son clickeables y redirigen a vista de resultados
+- Cada chart navega con query params: `role`, `filter`, `section`
+
+#### Vista de resultados (`DashboardResults.razor` — nuevo)
+- Página `/dashboard/results` que muestra datos filtrados según el gráfico clickeado
+- Cards con avatar, nombre, email, estado y badges (evaluado, LinkedIn, portfolio, CV)
+- Filtros: evaluated, pending, scores, linkedin, portfolio, cv, companies, vacancies
+- Cards clickeables que navegan al perfil del usuario
+
+#### Vista de perfil de usuario (`UserProfile.razor` — nuevo)
+- Página `/user/{id}` con perfil completo en modo lectura
+- **Candidatos:** header con avatar + donut de completitud, info de contacto, resumen, skills, experiencia (timeline), educación (timeline), certificaciones (cards), info de cuenta
+- **Empresas:** header con logo, info de contacto, descripción, industria, tamaño, vacantes activas
+- Donut chart SVG de progreso de completitud del perfil (14 campos para candidatos, 10 para empresas)
+- Botón de volver al dashboard
+
+#### Vista de usuarios rediseñada (`Users.razor`)
+- Reemplazada tabla por grid de cards
+- Búsqueda en tiempo real por nombre o email
+- Chips por rol: Todos, Candidatos, Empresas, Admins (con contador)
+- Cards clickeables que navegan al perfil del usuario
+- Badges en cada card: rol, evaluado/pendiente, LinkedIn, portfolio, CV
+- Acciones de activar/desactivar/eliminar con `@onclick:stopPropagation`
+
+#### Backend — API
+- `AdminUserProfileDto`: DTO con todos los datos del candidato (skills, experiencia, educación, certificaciones) y empresa
+- `AdminUserService.GetUserProfileAsync`: carga perfil con includes anidados
+- Endpoint `GET /api/admin/users/{id}/profile`
+- `AdminAuthApiService.GetUserProfileAsync`: método cliente en AdminWEB
+
+#### Análisis RH (`docs/rh/analisis-portafolio-candidatos.md` — nuevo)
+- 15 módulos faltantes priorizados (críticos, alta, media)
+- 17 preguntas estratégicas para el equipo
+- Recomendación: Fase 3 es el bloque crítico
+
+#### Archivos nuevos
+- `src/OpenToWork.AdminWEB/Components/Pages/DashboardResults.razor`
+- `src/OpenToWork.AdminWEB/Components/Pages/UserProfile.razor`
+- `docs/rh/analisis-portafolio-candidatos.md`
+
+#### Archivos modificados
+- `src/OpenToWork.AdminWEB/Components/Pages/Dashboard.razor`
+- `src/OpenToWork.AdminWEB/Components/Pages/Users.razor`
+- `src/OpenToWork.AdminWEB/Services/AdminAuthApiService.cs`
+- `src/OpenToWork.Core/Services/AdminUserService.cs`
+- `src/OpenToWork.Core/Interfaces/IAdminUserService.cs`
+- `src/OpenToWork.AdminAPI/Controllers/UsersController.cs`
+- `src/OpenToWork.Shared/DTOs/AdminDtos.cs`
+- `src/OpenToWork.AdminWEB/wwwroot/css/admin.css`
+- `src/OpenToWork.AdminWEB/wwwroot/config/language/es/admin.json`
+- `src/OpenToWork.AdminWEB/wwwroot/config/language/en/admin.json`
+- `README.md`
+
+---
+
 ### Sesión 2026-08-14 — Rediseño Samsung One UI + Bento Grid + PWA
 
 **Autorización de diseño:** Iluna (diseño visual) · Darwin (supervisión de procesos)
