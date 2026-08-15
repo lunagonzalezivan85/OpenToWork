@@ -1005,6 +1005,80 @@ Pruebas totales: 44
 
 ---
 
+## RH — Análisis: Portafolio de Candidatos de Calidad
+
+> **Soy RH.** Análisis del proyecto desde Reclutamiento y Selección.
+> Ver documento completo: [`docs/rh/analisis-portafolio-candidatos.md`](docs/rh/analisis-portafolio-candidatos.md)
+
+### Lo que YA existe
+
+- Registro de candidato (Wizard 10 pasos)
+- Perfil con experiencia, educación, certificaciones y skills
+- URLs de LinkedIn, portafolio y CV (sin verificación real)
+- Vacantes, postulaciones y mensajería (mock)
+- Dashboard admin con métricas y vista de perfil en modo lectura
+
+### Módulos FALTANTES (priorizados)
+
+#### 🔴 Críticos — Sin esto no hay portafolio de calidad
+
+| Módulo | Descripción | Fase |
+|--------|-------------|------|
+| **Scorecard de Competencias** | Escala 1-5 por competencia técnica y blanda, rubrica objetiva, comparación candidato vs. vacante | Fase 3 |
+| **Evaluación Práctica (Retos)** | Banco de retos técnicos por categoría, timer, anti-copia, puntaje automático | Fase 3 |
+| **Verificaciones Reales** | Identidad (documento/video), experiencia (referencias), educación (instituciones), badges de confianza | Fase 3 |
+| **Índices de Scoring** | Estabilidad, Confiabilidad, Evidencia, Compatibilidad — los 4 índices que diferencian a OpenToWork | Fase 3 |
+| **Pipeline ATS (Kanban)** | Applied → Screening → Interview → Offer → Hired, drag-and-drop, notas, log de actividad | Fase 4 |
+
+#### 🟡 Alta prioridad — Diferenciador competitivo
+
+| Módulo | Descripción | Fase |
+|--------|-------------|------|
+| **Video Pitch** | Grabación 30-60s desde el portal, almacenamiento cloud, moderación admin | Fase 4 |
+| **Referencias Laborales** | Candidato agrega 2-3 contactos, sistema envía solicitud, resultado en perfil | Fase 3 |
+| **People Analytics** | Time-to-Hire, Quality of Hire, costo por contratación, funnel de conversión, tendencias | Fase 4 |
+| **Búsqueda Avanzada** | Booleana (AND/OR/NOT), filtros múltiples, ranking por match, alertas, shortlist | Fase 5 |
+| **Match Inteligente** | Algoritmo de compatibilidad candidato-vacante, score 0-100%, recomendaciones automáticas | Fase 5 |
+
+#### 🟢 Media prioridad — Optimización y experiencia
+
+| Módulo | Descripción | Fase |
+|--------|-------------|------|
+| **Candidate Experience** | Notificaciones automáticas, feedback de rechazo, timeline del proceso, NPS | Fase 4 |
+| **Entrevistas Integradas** | Agendamiento, videoentrevistas, plantillas STAR/CAR, evaluación post-entrevista | Fase 5 |
+| **Ofertas y Onboarding** | Carta de oferta, firma digital, checklist onboarding, seguimiento 30/60/90 días | Fase 5 |
+| **Detección de Red Flags** | Análisis de saltos laborales, incongruencias, score de riesgo de rotación | Fase 3 |
+| **Employer Branding** | Perfil de empresa con cultura, reseñas, rating, estadísticas públicas | Fase 5 |
+
+### Preguntas estratégicas para el equipo
+
+> Ver las 17 preguntas completas en [`docs/rh/analisis-portafolio-candidatos.md`](docs/rh/analisis-portafolio-candidatos.md#4-preguntas-estratégicas-para-el-equipo)
+
+**Modelo de negocio:**
+1. ¿El portafolio es gratuito para candidatos y pago para empresas?
+2. ¿Qué módulos son del plan gratuito vs. premium?
+3. ¿Se cobra por candidato contratado o por suscripción mensual?
+
+**Datos y privacidad:**
+4. ¿Quién es dueño de los datos del candidato?
+5. ¿El candidato puede eliminar su perfil y todos sus datos? (GDPR/Ley 25.326)
+6. ¿Las notas internas de reclutadores son accesibles al candidato?
+
+**Evaluación y scoring:**
+7. ¿El scoring es transparente para el candidato?
+8. ¿El candidato puede apelar un score bajo?
+9. ¿Con qué frecuencia se recalcula el score?
+
+**Competencia:**
+10. ¿Qué nos diferencia de LinkedIn, Computrabajo, Bumeran?
+11. ¿El video pitch o el scoring es el diferenciador principal?
+
+### Recomendación de RH
+
+> **OpenToWork tiene una base sólida de datos del candidato, pero le falta la capa de evaluación y confianza que justifica su propuesta de valor.** Sin scoring, sin verificaciones reales y sin evaluación práctica, la plataforma es una bolsa de empleo más. La Fase 3 (Motor de Evaluación) es el bloque crítico que convierte los datos en decisiones de contratación confiables.
+
+---
+
 ## Tareas Pendientes — Portal Administrativo
 
 > **Contexto:** El portal administrativo está al 85%. Lo que falta está bloqueado por la Fase 3 (Motor de Evaluación) o requiere desarrollo independiente.
