@@ -255,8 +255,7 @@ public class AdminAuthApiService
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");
-        if (!string.IsNullOrEmpty(token))
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _httpClient.DefaultRequestHeaders.Authorization = string.IsNullOrEmpty(token) ? null : new AuthenticationHeaderValue("Bearer", token);
     }
 
     private async Task PersistAuthAsync(AuthResponseDto auth)

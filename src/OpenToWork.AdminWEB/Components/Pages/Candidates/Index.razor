@@ -310,7 +310,7 @@ else
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
         await LoadData();
-        _ = LoadTabCounts();
+        await LoadTabCounts();
     }
 
     private async Task LoadData()
@@ -524,7 +524,7 @@ else
         {
             ShowAssign = false;
             await LoadData();
-            _ = LoadTabCounts();
+            await LoadTabCounts();
         }
     }
 }
