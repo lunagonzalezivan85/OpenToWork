@@ -2739,6 +2739,44 @@
     color: var(--accent-primary);
 }
 
+.admin-cultural-panel {
+    margin-bottom: var(--space-md);
+}
+
+.admin-cultural-recommendation {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+}
+
+.admin-recommendation-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+    border-radius: var(--radius-sm);
+}
+
+.admin-recommendation--0 {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+
+.admin-recommendation--1 {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+}
+
+.admin-recommendation--2 {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.admin-recommendation--3 {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+}
+
 /* ============================================
    Stage History
    ============================================ */

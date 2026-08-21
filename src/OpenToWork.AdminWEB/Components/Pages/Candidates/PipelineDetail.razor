@@ -530,6 +530,60 @@ else
         }
     }
 
+    @* === Cultural Interview (stage 3) === *@
+    @if (Detail.CurrentStage == 3 && Detail.Dismissal == null)
+    {
+        <h2 class="admin-section-title">@Lang.T("admin.recruitment.culturalInterview")</h2>
+
+        <div class="admin-cultural-panel">
+            @if (CulturalInterview != null)
+            {
+                <div class="admin-evaluation-card">
+                    <div class="admin-evaluation-header">
+                        <div class="admin-evaluation-name">@CulturalInterview.EvaluationName</div>
+                        <div class="admin-evaluation-score @(CulturalInterview.Score >= 70 ? "admin-evaluation-score--pass" : "admin-evaluation-score--fail")">
+                            @CulturalInterview.Score.ToString("0.#")/100
+                        </div>
+                    </div>
+
+                    <div class="admin-cultural-recommendation">
+                        <span class="admin-step-context-label">@Lang.T("admin.recruitment.recommendation"):</span>
+                        <span class="admin-recommendation-badge admin-recommendation--@CulturalInterview.Recommendation">
+                            @GetRecommendationLabel(CulturalInterview.Recommendation)
+                        </span>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(CulturalInterview.Description))
+                    {
+                        <div class="admin-evaluation-desc">@CulturalInterview.Description</div>
+                    }
+                    @if (!string.IsNullOrEmpty(CulturalInterview.Notes))
+                    {
+                        <div class="admin-evaluation-notes">@CulturalInterview.Notes</div>
+                    }
+                    <div class="admin-evaluation-meta">
+                        <span>@CulturalInterview.EvaluatedAt?.ToString("yyyy-MM-dd HH:mm")</span>
+                        @if (!string.IsNullOrEmpty(CulturalInterview.EvaluatedByName))
+                        {
+                            <span>· @CulturalInterview.EvaluatedByName</span>
+                        }
+                    </div>
+                    <div class="admin-evaluation-actions">
+                        <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.7rem;" @onclick='() => StartEditCultural()'>@Lang.T("admin.common.edit")</button>
+                        <button class="ot-btn ot-btn--outline ot-btn--small ot-btn--danger" style="font-size: 0.7rem;" @onclick='() => DeleteEvaluation(CulturalInterview.Id)'>@Lang.T("admin.common.delete")</button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="admin-empty-text" style="margin-bottom: 0.5rem;">@Lang.T("admin.recruitment.noCulturalInterview")</div>
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenAddCulturalModal">
+                    + @Lang.T("admin.recruitment.addCulturalInterview")
+                </button>
+            }
+        </div>
+    }
+
     @* === Stage history === *@
     @if (Detail.StageLogs.Count > 0)
     {
@@ -546,6 +600,40 @@ else
                     }
                 </div>
             }
+        </div>
+    }
+
+    @* === Cultural interview modal === *@
+    @if (ShowCulturalModal)
+    {
+        <div class="admin-modal-overlay" @onclick="CloseCulturalModal">
+            <div class="admin-modal" @onclick:stopPropagation="true">
+                <h3 class="admin-modal-title">@(EditingCulturalId == null ? Lang.T("admin.recruitment.addCulturalInterview") : Lang.T("admin.recruitment.editCulturalInterview"))</h3>
+                <div class="admin-modal-body">
+                    <label>@Lang.T("admin.recruitment.interviewTitle")</label>
+                    <input type="text" @bind="CulturalName" class="admin-modal-input" placeholder="@Lang.T("admin.recruitment.interviewTitle")" />
+                    <label>@Lang.T("admin.recruitment.evalScore")</label>
+                    <div style="display: flex; gap: 0.3rem; align-items: center;">
+                        <input type="number" @bind="CulturalScore" min="0" max="100" step="1" class="admin-modal-input" style="width: 120px;" />
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">/100</span>
+                    </div>
+                    <label>@Lang.T("admin.recruitment.recommendation")</label>
+                    <select @bind="CulturalRecommendation" class="admin-modal-input">
+                        <option value="0">@Lang.T("admin.recruitment.recPending")</option>
+                        <option value="1">@Lang.T("admin.recruitment.recRecommended")</option>
+                        <option value="2">@Lang.T("admin.recruitment.recNotRecommended")</option>
+                        <option value="3">@Lang.T("admin.recruitment.recUndecided")</option>
+                    </select>
+                    <label>@Lang.T("admin.recruitment.evalDesc")</label>
+                    <input type="text" @bind="CulturalDesc" class="admin-modal-input" placeholder="@Lang.T("admin.recruitment.evalDesc")" />
+                    <label>@Lang.T("admin.recruitment.interviewNotes")</label>
+                    <textarea @bind="CulturalNotes" rows="4" class="admin-modal-textarea" placeholder="@Lang.T("admin.recruitment.interviewNotesPlaceholder")"></textarea>
+                </div>
+                <div class="admin-modal-actions">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseCulturalModal">@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(CulturalName)" @onclick="SaveCulturalModal">@Lang.T("admin.common.save")</button>
+                </div>
+            </div>
         </div>
     }
 
@@ -629,6 +717,13 @@ else
     private decimal ModalEvalScore { get; set; }
     private string ModalEvalUrl { get; set; } = "";
     private string ModalEvalNotes { get; set; } = "";
+    private bool ShowCulturalModal { get; set; }
+    private Guid? EditingCulturalId { get; set; }
+    private string CulturalName { get; set; } = "";
+    private string CulturalDesc { get; set; } = "";
+    private decimal CulturalScore { get; set; }
+    private int CulturalRecommendation { get; set; }
+    private string CulturalNotes { get; set; } = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -642,8 +737,91 @@ else
         IsLoading = true;
         StateHasChanged();
         Detail = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        if (Detail != null && Detail.CurrentStage == 3)
+        {
+            CulturalInterview = await AuthApi.GetCulturalInterviewAsync(Detail.Id);
+        }
+        else
+        {
+            CulturalInterview = null;
+        }
         IsLoading = false;
         StateHasChanged();
+    }
+
+    private TechnicalEvaluationDto? CulturalInterview { get; set; }
+
+    private string GetRecommendationLabel(int rec)
+    {
+        return rec switch
+        {
+            1 => Lang.T("admin.recruitment.recRecommended"),
+            2 => Lang.T("admin.recruitment.recNotRecommended"),
+            3 => Lang.T("admin.recruitment.recUndecided"),
+            _ => Lang.T("admin.recruitment.recPending")
+        };
+    }
+
+    private void OpenAddCulturalModal()
+    {
+        EditingCulturalId = null;
+        CulturalName = Lang.T("admin.recruitment.culturalInterview");
+        CulturalDesc = "";
+        CulturalScore = 0;
+        CulturalRecommendation = 0;
+        CulturalNotes = "";
+        ShowCulturalModal = true;
+    }
+
+    private void StartEditCultural()
+    {
+        if (CulturalInterview == null) return;
+        EditingCulturalId = CulturalInterview.Id;
+        CulturalName = CulturalInterview.EvaluationName;
+        CulturalDesc = CulturalInterview.Description ?? "";
+        CulturalScore = CulturalInterview.Score;
+        CulturalRecommendation = CulturalInterview.Recommendation;
+        CulturalNotes = CulturalInterview.Notes ?? "";
+        ShowCulturalModal = true;
+    }
+
+    private void CloseCulturalModal()
+    {
+        ShowCulturalModal = false;
+        EditingCulturalId = null;
+    }
+
+    private async Task SaveCulturalModal()
+    {
+        if (Detail == null || string.IsNullOrWhiteSpace(CulturalName)) return;
+
+        if (EditingCulturalId != null)
+        {
+            await AuthApi.UpdateTechnicalEvaluationAsync(EditingCulturalId.Value, new UpdateTechnicalEvaluationDto
+            {
+                EvaluationName = CulturalName.Trim(),
+                Description = CulturalDesc?.Trim(),
+                Score = CulturalScore,
+                Notes = CulturalNotes?.Trim(),
+                Recommendation = CulturalRecommendation
+            });
+        }
+        else
+        {
+            await AuthApi.AddTechnicalEvaluationAsync(Detail.Id, new AddTechnicalEvaluationDto
+            {
+                EvaluationName = CulturalName.Trim(),
+                Description = string.IsNullOrWhiteSpace(CulturalDesc) ? null : CulturalDesc.Trim(),
+                Score = CulturalScore,
+                Notes = string.IsNullOrWhiteSpace(CulturalNotes) ? null : CulturalNotes.Trim(),
+                Type = 1,
+                Recommendation = CulturalRecommendation
+            });
+        }
+
+        ShowCulturalModal = false;
+        EditingCulturalId = null;
+        await LoadDetail();
     }
 
     private async Task MoveToNextStage()

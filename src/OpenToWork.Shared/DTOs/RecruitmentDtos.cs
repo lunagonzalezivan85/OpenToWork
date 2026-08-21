@@ -117,6 +117,8 @@ public class TechnicalEvaluationDto
     public string? Notes { get; set; }
     public DateTime? EvaluatedAt { get; set; }
     public string? EvaluatedByName { get; set; }
+    public int Type { get; set; }
+    public int Recommendation { get; set; }
 }
 
 public class AddTechnicalEvaluationDto
@@ -126,6 +128,8 @@ public class AddTechnicalEvaluationDto
     public decimal Score { get; set; }
     public string? EvidenceUrl { get; set; }
     public string? Notes { get; set; }
+    public int Type { get; set; } = 0;
+    public int Recommendation { get; set; } = 0;
 }
 
 public class UpdateTechnicalEvaluationDto
@@ -135,6 +139,7 @@ public class UpdateTechnicalEvaluationDto
     public decimal? Score { get; set; }
     public string? EvidenceUrl { get; set; }
     public string? Notes { get; set; }
+    public int? Recommendation { get; set; }
 }
 
 public class AddCustomValidationDto

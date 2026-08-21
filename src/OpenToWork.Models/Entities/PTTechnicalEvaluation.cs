@@ -29,6 +29,10 @@ public class PTTechnicalEvaluation : BaseEntity
 
     public DateTime? EvaluatedAt { get; set; }
 
+    public int Type { get; set; } = 0;
+
+    public int Recommendation { get; set; } = 0;
+
     [Required]
     public Guid EvaluatedByUserId { get; set; }
 

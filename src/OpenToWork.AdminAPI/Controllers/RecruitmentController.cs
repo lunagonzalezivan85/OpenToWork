@@ -151,4 +151,11 @@ public class RecruitmentController : AdminControllerBase
         var result = await _recruitmentService.DeleteTechnicalEvaluationAsync(evaluationId, AdminId, ClientIp);
         return result ? NoContent() : NotFound();
     }
+
+    [HttpGet("{id}/cultural-interview")]
+    public async Task<IActionResult> GetCulturalInterview(Guid id)
+    {
+        var result = await _recruitmentService.GetCulturalInterviewAsync(id);
+        return result != null ? Ok(result) : Ok((object?)null);
+    }
 }

@@ -176,7 +176,7 @@ public class RecruitmentService : IRecruitmentService
                 EndDate = e.EndDate,
                 IsInProgress = e.IsInProgress
             }).ToList() ?? new(),
-            TechnicalEvaluations = recruitment.TechnicalEvaluations?.Where(t => !t.IsDeleted).OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt).Select(t => new TechnicalEvaluationDto
+            TechnicalEvaluations = recruitment.TechnicalEvaluations?.Where(t => !t.IsDeleted && t.Type == 0).OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt).Select(t => new TechnicalEvaluationDto
             {
                 Id = t.Id,
                 EvaluationName = t.EvaluationName,
@@ -185,7 +185,9 @@ public class RecruitmentService : IRecruitmentService
                 EvidenceUrl = t.EvidenceUrl,
                 Notes = t.Notes,
                 EvaluatedAt = t.EvaluatedAt,
-                EvaluatedByName = t.EvaluatedByUser?.Email
+                EvaluatedByName = t.EvaluatedByUser?.Email,
+                Type = t.Type,
+                Recommendation = t.Recommendation
             }).ToList() ?? new(),
             InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
@@ -302,7 +304,7 @@ public class RecruitmentService : IRecruitmentService
                 EndDate = e.EndDate,
                 IsInProgress = e.IsInProgress
             }).ToList() ?? new(),
-            TechnicalEvaluations = recruitment.TechnicalEvaluations?.Where(t => !t.IsDeleted).OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt).Select(t => new TechnicalEvaluationDto
+            TechnicalEvaluations = recruitment.TechnicalEvaluations?.Where(t => !t.IsDeleted && t.Type == 0).OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt).Select(t => new TechnicalEvaluationDto
             {
                 Id = t.Id,
                 EvaluationName = t.EvaluationName,
@@ -311,7 +313,9 @@ public class RecruitmentService : IRecruitmentService
                 EvidenceUrl = t.EvidenceUrl,
                 Notes = t.Notes,
                 EvaluatedAt = t.EvaluatedAt,
-                EvaluatedByName = t.EvaluatedByUser?.Email
+                EvaluatedByName = t.EvaluatedByUser?.Email,
+                Type = t.Type,
+                Recommendation = t.Recommendation
             }).ToList() ?? new(),
             InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
@@ -806,6 +810,8 @@ public class RecruitmentService : IRecruitmentService
             Notes = dto.Notes,
             EvaluatedAt = DateTime.UtcNow,
             EvaluatedByUserId = adminId,
+            Type = dto.Type,
+            Recommendation = dto.Recommendation,
             CreatedBy = adminId
         };
 
@@ -836,6 +842,7 @@ public class RecruitmentService : IRecruitmentService
         if (dto.Score.HasValue) evaluation.Score = dto.Score.Value;
         if (dto.EvidenceUrl != null) evaluation.EvidenceUrl = dto.EvidenceUrl;
         if (dto.Notes != null) evaluation.Notes = dto.Notes;
+        if (dto.Recommendation.HasValue) evaluation.Recommendation = dto.Recommendation.Value;
         evaluation.UpdatedAt = DateTime.UtcNow;
         evaluation.UpdatedBy = adminId;
 
@@ -856,5 +863,30 @@ public class RecruitmentService : IRecruitmentService
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "DeleteTechnicalEvaluation", "PT_TechnicalEvaluations", evaluationId, null, ipAddress);
         return true;
+    }
+
+    public async Task<TechnicalEvaluationDto?> GetCulturalInterviewAsync(Guid recruitmentId)
+    {
+        var evaluation = await _context.PT_TechnicalEvaluations
+            .Include(t => t.EvaluatedByUser)
+            .Where(t => t.PT_CandidateRecruitmentId == recruitmentId && t.Type == 1 && !t.IsDeleted)
+            .OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (evaluation == null) return null;
+
+        return new TechnicalEvaluationDto
+        {
+            Id = evaluation.Id,
+            EvaluationName = evaluation.EvaluationName,
+            Description = evaluation.Description,
+            Score = evaluation.Score,
+            EvidenceUrl = evaluation.EvidenceUrl,
+            Notes = evaluation.Notes,
+            EvaluatedAt = evaluation.EvaluatedAt,
+            EvaluatedByName = evaluation.EvaluatedByUser?.Email,
+            Type = evaluation.Type,
+            Recommendation = evaluation.Recommendation
+        };
     }
 }

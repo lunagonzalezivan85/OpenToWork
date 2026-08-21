@@ -40,4 +40,6 @@ public interface IRecruitmentService
     Task<TechnicalEvaluationDto?> AddTechnicalEvaluationAsync(Guid recruitmentId, AddTechnicalEvaluationDto dto, Guid adminId, string? ipAddress);
     Task<bool> UpdateTechnicalEvaluationAsync(Guid evaluationId, UpdateTechnicalEvaluationDto dto, Guid adminId, string? ipAddress);
     Task<bool> DeleteTechnicalEvaluationAsync(Guid evaluationId, Guid adminId, string? ipAddress);
+
+    Task<TechnicalEvaluationDto?> GetCulturalInterviewAsync(Guid recruitmentId);
 }
