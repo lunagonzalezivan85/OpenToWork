@@ -156,6 +156,6 @@ public class RecruitmentController : AdminControllerBase
     public async Task<IActionResult> GetCulturalInterview(Guid id)
     {
         var result = await _recruitmentService.GetCulturalInterviewAsync(id);
-        return result != null ? Ok(result) : Ok((object?)null);
+        return result != null ? Ok(result) : NotFound();
     }
 }
