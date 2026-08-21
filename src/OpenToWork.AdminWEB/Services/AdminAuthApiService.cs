@@ -238,6 +238,21 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<InvestigationChecklistDto?> AddCustomValidationAsync(Guid recruitmentId, string label)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment/{recruitmentId}/investigation/custom", new AddCustomValidationDto { Label = label });
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<InvestigationChecklistDto>();
+    }
+
+    public async Task<bool> DeleteCustomValidationAsync(Guid checklistId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/recruitment/investigation/{checklistId}");
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<bool> DismissCandidateAsync(Guid recruitmentId, int reason, string? notes = null)
     {
         await SetAuthHeaderAsync();

@@ -54,6 +54,20 @@ public class RecruitmentController : AdminControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    [HttpPost("{id}/investigation/custom")]
+    public async Task<IActionResult> AddCustomValidation(Guid id, [FromBody] AddCustomValidationDto dto)
+    {
+        var result = await _recruitmentService.AddCustomValidationAsync(id, dto, AdminId, ClientIp);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpDelete("investigation/{checklistId}")]
+    public async Task<IActionResult> DeleteCustomValidation(Guid checklistId)
+    {
+        var result = await _recruitmentService.DeleteCustomValidationAsync(checklistId, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpPost("{id}/dismiss")]
     public async Task<IActionResult> Dismiss(Guid id, [FromBody] DismissCandidateDto dto)
     {

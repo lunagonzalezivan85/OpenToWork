@@ -13,6 +13,11 @@ public class PTInvestigationChecklist : BaseEntity
 
     public int Step { get; set; }
 
+    [MaxLength(200)]
+    public string? Label { get; set; }
+
+    public bool IsCustom { get; set; } = false;
+
     public bool IsCompleted { get; set; } = false;
 
     public DateTime? CompletedAt { get; set; }

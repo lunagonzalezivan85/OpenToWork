@@ -135,10 +135,12 @@ public class RecruitmentService : IRecruitmentService
                 CreatedAt = l.CreatedAt,
                 Notes = l.Notes
             }).ToList() ?? new(),
-            InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).Select(c => new InvestigationChecklistDto
+            InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
                 Id = c.Id,
                 Step = c.Step,
+                Label = c.Label,
+                IsCustom = c.IsCustom,
                 IsCompleted = c.IsCompleted,
                 CompletedAt = c.CompletedAt,
                 CompletedByName = c.CompletedByUser?.Email,
@@ -188,17 +190,26 @@ public class RecruitmentService : IRecruitmentService
 
         await _context.SaveChangesAsync();
 
-        var checklistSteps = new[] { 0, 1, 2, 3, 4 };
-        foreach (var step in checklistSteps)
+        var defaultSteps = new[]
+        {
+            new { Step = 0, Label = "Llamar al candidato" },
+            new { Step = 1, Label = "Llamar a las referencias (mínimo 3)" },
+            new { Step = 2, Label = "Validar LinkedIn" },
+            new { Step = 3, Label = "Validar portafolio" },
+            new { Step = 4, Label = "Validar certificaciones" }
+        };
+        foreach (var s in defaultSteps)
         {
             var exists = await _context.PT_InvestigationChecklists
-                .AnyAsync(c => c.PT_CandidateRecruitmentId == existing.Id && c.Step == step && !c.IsDeleted);
+                .AnyAsync(c => c.PT_CandidateRecruitmentId == existing.Id && c.Step == s.Step && !c.IsDeleted);
             if (!exists)
             {
                 _context.PT_InvestigationChecklists.Add(new PTInvestigationChecklist
                 {
                     PT_CandidateRecruitmentId = existing.Id,
-                    Step = step,
+                    Step = s.Step,
+                    Label = s.Label,
+                    IsCustom = false,
                     IsCompleted = false,
                     CreatedBy = adminId
                 });
@@ -308,6 +319,56 @@ public class RecruitmentService : IRecruitmentService
 
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "ToggleInvestigationStep", "PT_InvestigationChecklists", item.Id, null, ipAddress);
+        return true;
+    }
+
+    public async Task<InvestigationChecklistDto?> AddCustomValidationAsync(Guid recruitmentId, AddCustomValidationDto dto, Guid adminId, string? ipAddress)
+    {
+        var recruitment = await _context.PT_CandidateRecruitments
+            .FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
+        if (recruitment == null) return null;
+
+        var maxStep = await _context.PT_InvestigationChecklists
+            .Where(c => c.PT_CandidateRecruitmentId == recruitmentId && !c.IsDeleted)
+            .MaxAsync(c => (int?)c.Step) ?? 4;
+
+        var item = new PTInvestigationChecklist
+        {
+            PT_CandidateRecruitmentId = recruitmentId,
+            Step = maxStep + 1,
+            Label = dto.Label,
+            IsCustom = true,
+            IsCompleted = false,
+            CreatedBy = adminId
+        };
+        _context.PT_InvestigationChecklists.Add(item);
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "AddCustomValidation", "PT_InvestigationChecklists", item.Id, null, ipAddress);
+
+        return new InvestigationChecklistDto
+        {
+            Id = item.Id,
+            Step = item.Step,
+            Label = item.Label,
+            IsCustom = item.IsCustom,
+            IsCompleted = false
+        };
+    }
+
+    public async Task<bool> DeleteCustomValidationAsync(Guid checklistId, Guid adminId, string? ipAddress)
+    {
+        var item = await _context.PT_InvestigationChecklists
+            .FirstOrDefaultAsync(c => c.Id == checklistId && !c.IsDeleted && c.IsCustom);
+        if (item == null) return false;
+
+        item.IsDeleted = true;
+        item.DeletedAt = DateTime.UtcNow;
+        item.DeletedBy = adminId;
+        item.UpdatedAt = DateTime.UtcNow;
+        item.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "DeleteCustomValidation", "PT_InvestigationChecklists", item.Id, null, ipAddress);
         return true;
     }
 

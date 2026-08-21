@@ -107,10 +107,10 @@ else
     }
 
     @* === Investigation checklist === *@
-    @if (Detail.InvestigationChecklist.Count > 0)
-    {
-        <h2 class="admin-section-title">@Lang.T("admin.recruitment.investigationChecklist")</h2>
-        <div class="admin-investigation-list">
+    <h2 class="admin-section-title">@Lang.T("admin.recruitment.investigationChecklist")</h2>
+    <div class="admin-investigation-list">
+        @if (Detail.InvestigationChecklist.Count > 0)
+        {
             @foreach (var item in Detail.InvestigationChecklist.OrderBy(c => c.Step))
             {
                 <div class="admin-investigation-item @(item.IsCompleted ? "admin-investigation-item--done" : "")">
@@ -118,7 +118,11 @@ else
                         <input type="checkbox" checked="@item.IsCompleted" @onchange="() => ToggleStep(item)" />
                     </div>
                     <div class="admin-investigation-content">
-                        <div class="admin-investigation-step-name">@GetInvestigationStepName(item.Step)</div>
+                        <div class="admin-investigation-step-name">@(item.Label ?? GetInvestigationStepName(item.Step))</div>
+                        @if (item.IsCustom)
+                        {
+                            <span class="admin-result-badge admin-result-badge--info" style="margin-left: 0.5rem;">Custom</span>
+                        }
                         @if (item.IsCompleted)
                         {
                             <div class="admin-investigation-meta">
@@ -134,10 +138,33 @@ else
                             <a href="@item.EvidenceUrl" target="_blank" class="admin-investigation-evidence">@Lang.T("admin.recruitment.viewEvidence")</a>
                         }
                     </div>
+                    @if (item.IsCustom)
+                    {
+                        <button class="admin-row-btn" title="Eliminar" @onclick="() => DeleteCustomValidation(item.Id)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                        </button>
+                    }
                 </div>
             }
-        </div>
-    }
+        }
+        else
+        {
+            <div class="admin-empty-text">@Lang.T("admin.recruitment.noChecklist")</div>
+        }
+
+        @* Add custom validation *@
+        @if (Detail.Dismissal == null)
+        {
+            <div class="admin-investigation-add">
+                <input type="text" @bind="NewValidationLabel" placeholder="@Lang.T("admin.recruitment.addValidationPlaceholder")" class="admin-investigation-add-input" />
+                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(NewValidationLabel)" @onclick="AddCustomValidation">
+                    @Lang.T("admin.recruitment.addValidation")
+                </button>
+            </div>
+        }
+    </div>
 
     @* === Stage history === *@
     @if (Detail.StageLogs.Count > 0)
@@ -192,6 +219,7 @@ else
     private bool ShowDismiss { get; set; }
     private int DismissReason { get; set; }
     private string DismissNotes { get; set; } = "";
+    private string NewValidationLabel { get; set; } = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -227,6 +255,23 @@ else
             Notes = item.Notes,
             EvidenceUrl = item.EvidenceUrl
         });
+        if (ok) await LoadDetail();
+    }
+
+    private async Task AddCustomValidation()
+    {
+        if (Detail == null || string.IsNullOrWhiteSpace(NewValidationLabel)) return;
+        var result = await AuthApi.AddCustomValidationAsync(Detail.Id, NewValidationLabel.Trim());
+        if (result != null)
+        {
+            NewValidationLabel = "";
+            await LoadDetail();
+        }
+    }
+
+    private async Task DeleteCustomValidation(Guid checklistId)
+    {
+        var ok = await AuthApi.DeleteCustomValidationAsync(checklistId);
         if (ok) await LoadDetail();
     }
 

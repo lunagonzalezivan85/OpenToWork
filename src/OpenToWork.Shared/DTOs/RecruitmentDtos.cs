@@ -54,11 +54,18 @@ public class InvestigationChecklistDto
 {
     public Guid Id { get; set; }
     public int Step { get; set; }
+    public string? Label { get; set; }
+    public bool IsCustom { get; set; }
     public bool IsCompleted { get; set; }
     public DateTime? CompletedAt { get; set; }
     public string? CompletedByName { get; set; }
     public string? Notes { get; set; }
     public string? EvidenceUrl { get; set; }
+}
+
+public class AddCustomValidationDto
+{
+    public string Label { get; set; } = string.Empty;
 }
 
 public class DismissalInfoDto

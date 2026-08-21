@@ -12,11 +12,11 @@ public enum RecruitmentStage
 
 public enum InvestigationStep
 {
-    IdentityValidation = 0,
-    WorkHistoryAudit = 1,
-    CredentialsVerification = 2,
-    LegalBackground = 3,
-    SalaryAgreement = 4
+    CallCandidate = 0,
+    CallReferences = 1,
+    ValidateLinkedIn = 2,
+    ValidatePortfolio = 3,
+    ValidateCertifications = 4
 }
 
 public enum DismissalReason
