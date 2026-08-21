@@ -357,6 +357,8 @@
     "evaluationsCount": "N\u00famero de evaluaciones",
     "viewDetail": "Ver detalle",
     "overallScore": "Puntuaci\u00f3n general",
+    "apt": "Apto",
+    "notApt": "No apto",
     "noPhoneAskCandidate": "Sin tel\u00e9fono \u2014 solicitar al candidato en la llamada",
     "suggestedFromWorkHistory": "Sugerencias de su historial laboral",
     "noProcess": "Sin proceso de reclutamiento",

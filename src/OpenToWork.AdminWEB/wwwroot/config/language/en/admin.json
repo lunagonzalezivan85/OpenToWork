@@ -357,6 +357,8 @@
     "evaluationsCount": "Number of evaluations",
     "viewDetail": "View detail",
     "overallScore": "Overall score",
+    "apt": "Suitable",
+    "notApt": "Not suitable",
     "noPhoneAskCandidate": "No phone \u2014 ask candidate during the call",
     "suggestedFromWorkHistory": "Suggestions from work history",
     "noProcess": "No recruitment process",
