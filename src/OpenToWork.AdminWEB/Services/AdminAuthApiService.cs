@@ -216,6 +216,14 @@ public class AdminAuthApiService
         return await response.Content.ReadFromJsonAsync<RecruitmentDetailDto>();
     }
 
+    public async Task<RecruitmentDetailDto?> GetRecruitmentByUserAsync(Guid userId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/recruitment/by-user/{userId}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<RecruitmentDetailDto>();
+    }
+
     public async Task<RecruitmentPipelineDto?> AssignCandidateAsync(AssignCandidateDto dto)
     {
         await SetAuthHeaderAsync();

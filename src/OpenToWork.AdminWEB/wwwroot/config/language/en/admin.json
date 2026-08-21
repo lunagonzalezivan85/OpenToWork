@@ -296,6 +296,8 @@
     "noChecklist": "No items in the checklist.",
     "addValidation": "Add validation",
     "addValidationPlaceholder": "Validation description...",
+    "noProcess": "No recruitment process",
+    "investigate": "Investigate",
     "investigationChecklist": "Investigation Checklist",
     "completedBy": "Completed by",
     "viewEvidence": "View evidence",

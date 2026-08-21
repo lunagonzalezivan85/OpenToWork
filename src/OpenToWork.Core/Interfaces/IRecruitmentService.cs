@@ -9,6 +9,8 @@ public interface IRecruitmentService
 
     Task<RecruitmentDetailDto?> GetDetailAsync(Guid id);
 
+    Task<RecruitmentDetailDto?> GetByUserIdAsync(Guid userId);
+
     Task<RecruitmentPipelineDto> AssignCandidateAsync(AssignCandidateDto dto, Guid adminId, string? ipAddress);
 
     Task<bool> MoveStageAsync(Guid recruitmentId, int toStage, string? notes, Guid adminId, string? ipAddress);

@@ -24,6 +24,63 @@
 }
 else
 {
+    @* === Pipeline stepper === *@
+    <div class="admin-candidate-pipeline-bar">
+        @if (Recruitment == null)
+        {
+            <div class="admin-pipeline-bar-empty">
+                <span>@Lang.T("admin.recruitment.noProcess")</span>
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="StartInvestigation">
+                    @Lang.T("admin.recruitment.investigate")
+                </button>
+            </div>
+        }
+        else if (Recruitment.Dismissal != null)
+        {
+            <div class="admin-pipeline-bar-dismissed">
+                <span class="admin-result-badge admin-result-badge--danger">@Lang.T("admin.recruitment.dismissed")</span>
+            </div>
+        }
+        else
+        {
+            <div class="admin-pipeline-stepper-inline">
+                @for (int i = 0; i <= 4; i++)
+                {
+                    var stageClass = i < Recruitment.CurrentStage ? "admin-pipeline-step--done" :
+                        i == Recruitment.CurrentStage ? "admin-pipeline-step--active" : "";
+                    <div class="admin-pipeline-step @stageClass">
+                        <div class="admin-pipeline-step-circle">
+                            @if (i < Recruitment.CurrentStage)
+                            {
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
+                            }
+                            else
+                            {
+                                @(i + 1)
+                            }
+                        </div>
+                        <span class="admin-pipeline-step-label">@GetStageName(i)</span>
+                    </div>
+                    @if (i < 4)
+                    {
+                        <div class="admin-pipeline-step-line @(i < Recruitment.CurrentStage ? "admin-pipeline-step-line--done" : "")"></div>
+                    }
+                }
+            </div>
+            <div class="admin-pipeline-bar-actions">
+                @if (Recruitment.CurrentStage < 4)
+                {
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="MoveToNextStage">
+                        @Lang.T("admin.recruitment.moveToNext") → @GetStageName(Recruitment.CurrentStage + 1)
+                    </button>
+                }
+                <a href="/candidates/pipeline/@Recruitment.Id" class="ot-btn ot-btn--outline ot-btn--small">
+                    @Lang.T("admin.recruitment.detailTitle")
+                </a>
+            </div>
+        }
+    </div>
+
     <div class="admin-candidate-profile-split">
         @* === Left panel 35% — Personal data === *@
         <div class="admin-candidate-profile-left">
@@ -290,11 +347,41 @@ else
             }
         </div>
     </div>
+
+    @* === Assign modal === *@
+    @if (ShowAssign)
+    {
+        <div class="admin-modal-overlay" @onclick='() => ShowAssign = false'>
+            <div class="admin-modal" @onclick:stopPropagation="true">
+                <h3 class="admin-modal-title">@Lang.T("admin.recruitment.assignCandidate")</h3>
+                <div class="admin-modal-body">
+                    <label>@Lang.T("admin.recruitment.assignTo")</label>
+                    <select @bind="SelectedAssignToUserId" class="admin-modal-select">
+                        <option value="">@Lang.T("admin.recruitment.selectUser")</option>
+                        @foreach (var u in AssignableUsers)
+                        {
+                            <option value="@u.Id">@u.Email</option>
+                        }
+                    </select>
+                </div>
+                <div class="admin-modal-actions">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => ShowAssign = false'>@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrEmpty(SelectedAssignToUserId)" @onclick="ConfirmAssign">
+                        @Lang.T("admin.recruitment.confirmAssign")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
     [Parameter] public Guid UserId { get; set; }
     private AdminUserProfileDto? Profile { get; set; }
+    private RecruitmentDetailDto? Recruitment { get; set; }
+    private List<AdminUserDto> AssignableUsers { get; set; } = new();
+    private bool ShowAssign { get; set; }
+    private string SelectedAssignToUserId { get; set; } = "";
 
     private string AvatarText
     {
@@ -318,9 +405,53 @@ else
         }
 
         Profile = await AuthApi.GetUserProfileAsync(UserId);
+        Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        AssignableUsers = await AuthApi.GetUsersAsync(1, 100, 2);
     }
 
     private void GoBack() => Nav.NavigateTo("/candidates");
+
+    private async Task StartInvestigation()
+    {
+        ShowAssign = true;
+    }
+
+    private async Task ConfirmAssign()
+    {
+        if (string.IsNullOrEmpty(SelectedAssignToUserId)) return;
+        var assignToId = Guid.Parse(SelectedAssignToUserId);
+        var result = await AuthApi.AssignCandidateAsync(new AssignCandidateDto
+        {
+            UserId = UserId,
+            AssignedToUserId = assignToId
+        });
+        if (result != null)
+        {
+            ShowAssign = false;
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private async Task MoveToNextStage()
+    {
+        if (Recruitment == null) return;
+        var ok = await AuthApi.MoveStageAsync(Recruitment.Id, Recruitment.CurrentStage + 1);
+        if (ok)
+        {
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private string GetStageName(int stage) => stage switch
+    {
+        0 => Lang.T("admin.recruitment.stage0"),
+        1 => Lang.T("admin.recruitment.stage1"),
+        2 => Lang.T("admin.recruitment.stage2"),
+        3 => Lang.T("admin.recruitment.stage3"),
+        4 => Lang.T("admin.recruitment.stage4"),
+        5 => Lang.T("admin.recruitment.stage5"),
+        _ => ""
+    };
 
     private string GetAvailability(int a) => a switch
     {

@@ -33,6 +33,13 @@ public class RecruitmentController : AdminControllerBase
         return detail == null ? NotFound() : Ok(detail);
     }
 
+    [HttpGet("by-user/{userId}")]
+    public async Task<IActionResult> GetByUser(Guid userId)
+    {
+        var detail = await _recruitmentService.GetByUserIdAsync(userId);
+        return detail == null ? NotFound() : Ok(detail);
+    }
+
     [HttpPost("assign")]
     public async Task<IActionResult> Assign([FromBody] AssignCandidateDto dto)
     {

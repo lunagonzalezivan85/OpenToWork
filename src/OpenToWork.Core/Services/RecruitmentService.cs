@@ -157,6 +157,68 @@ public class RecruitmentService : IRecruitmentService
         };
     }
 
+    public async Task<RecruitmentDetailDto?> GetByUserIdAsync(Guid userId)
+    {
+        var recruitment = await _context.PT_CandidateRecruitments
+            .Include(r => r.User).ThenInclude(u => u!.Candidate)
+            .Include(r => r.AssignedToUser)
+            .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
+            .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
+            .Include(r => r.Dismissal!).ThenInclude(d => d.DismissedByUser)
+            .FirstOrDefaultAsync(r => r.SCUserId == userId && !r.IsDeleted);
+
+        if (recruitment == null) return null;
+
+        var user = recruitment.User;
+        var candidate = user?.Candidate;
+
+        return new RecruitmentDetailDto
+        {
+            Id = recruitment.Id,
+            UserId = user!.Id,
+            FullName = candidate != null ? $"{candidate.FirstName} {candidate.LastName}" : user!.Email,
+            Email = user!.Email,
+            Title = candidate?.Title,
+            Phone = candidate?.Phone,
+            Country = candidate?.Country,
+            City = candidate?.City,
+            CurrentStage = recruitment.CurrentStage,
+            AssignedToName = recruitment.AssignedToUser?.Email,
+            AssignedToUserId = recruitment.AssignedToUserId,
+            AssignedAt = recruitment.AssignedAt,
+            StageEnteredAt = recruitment.StageEnteredAt,
+            CreatedAt = recruitment.CreatedAt,
+            Notes = recruitment.Notes,
+            StageLogs = recruitment.StageLogs?.Where(l => !l.IsDeleted).Select(l => new StageLogDto
+            {
+                FromStage = l.FromStage,
+                ToStage = l.ToStage,
+                ChangedByName = l.ChangedByUser?.Email ?? "",
+                CreatedAt = l.CreatedAt,
+                Notes = l.Notes
+            }).ToList() ?? new(),
+            InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
+            {
+                Id = c.Id,
+                Step = c.Step,
+                Label = c.Label,
+                IsCustom = c.IsCustom,
+                IsCompleted = c.IsCompleted,
+                CompletedAt = c.CompletedAt,
+                CompletedByName = c.CompletedByUser?.Email,
+                Notes = c.Notes,
+                EvidenceUrl = c.EvidenceUrl
+            }).ToList() ?? new(),
+            Dismissal = recruitment.Dismissal != null && !recruitment.Dismissal.IsDeleted ? new DismissalInfoDto
+            {
+                Reason = recruitment.Dismissal.Reason,
+                Notes = recruitment.Dismissal.Notes,
+                DismissedByName = recruitment.Dismissal.DismissedByUser?.Email ?? "",
+                CreatedAt = recruitment.Dismissal.CreatedAt
+            } : null
+        };
+    }
+
     public async Task<RecruitmentPipelineDto> AssignCandidateAsync(AssignCandidateDto dto, Guid adminId, string? ipAddress)
     {
         var existing = await _context.PT_CandidateRecruitments
