@@ -2,12 +2,9 @@
   "brand": "OpenToWork Admin",
   "nav": {
     "dashboard": "Dashboard",
-    "users": "Users",
-    "vacancies": "Vacancies",
-    "applications": "Applications",
-    "skills": "Skills",
-    "auditLog": "Audit Log",
+    "recruitment": "Recruitment",
     "candidates": "Candidates",
+    "assigned": "Assigned",
     "pipeline": "Pipeline",
     "logout": "Log out"
   },
@@ -163,6 +160,17 @@
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel"
+  },
+  "assigned": {
+    "title": "Assigned candidates",
+    "subtitle": "Candidates with active investigation process",
+    "empty": "No assigned candidates.",
+    "columnCandidate": "Candidate",
+    "columnEmail": "Email",
+    "columnStage": "Stage",
+    "columnAssignedTo": "Assigned to",
+    "columnInvestigation": "Investigation",
+    "columnAssignedDate": "Assigned date"
   },
   "candidates": {
     "title": "Candidates Console",

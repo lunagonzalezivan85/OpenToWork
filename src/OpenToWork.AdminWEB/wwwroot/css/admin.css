@@ -113,6 +113,24 @@
     white-space: nowrap;
 }
 
+.admin-nav-group {
+    margin-top: var(--space-sm);
+}
+
+.admin-nav-group-title {
+    padding: 0.5rem 1rem 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.admin-nav-item--sub {
+    padding-left: 1.75rem;
+    font-size: 0.85rem;
+}
+
 .admin-sidebar-footer {
     padding: var(--space-md) var(--space-sm);
     border-top: 1px solid rgba(255, 255, 255, 0.08);
