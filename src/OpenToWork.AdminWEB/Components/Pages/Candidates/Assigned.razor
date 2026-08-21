@@ -63,7 +63,7 @@ else
                         <td class="col-date">@(item.AssignedAt?.ToString("yyyy-MM-dd") ?? "—")</td>
                         <td>
                             <div class="admin-row-actions">
-                                <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.recruitment.detailTitle")" @onclick="() => ViewDetail(item.Id)">
+                                <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.candidates.viewProfile")" @onclick="() => ViewDetail(item)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
                                     </svg>
@@ -106,9 +106,9 @@ else
         StateHasChanged();
     }
 
-    private void ViewDetail(Guid recruitmentId)
+    private void ViewDetail(RecruitmentPipelineDto item)
     {
-        Nav.NavigateTo($"/candidates/pipeline/{recruitmentId}");
+        Nav.NavigateTo($"/candidates/profile/{item.UserId}");
     }
 
     private string GetStageName(int stage) => stage switch
