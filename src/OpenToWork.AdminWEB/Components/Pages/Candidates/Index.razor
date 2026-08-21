@@ -57,32 +57,6 @@
     <div class="admin-users-search">
         <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder="@Lang.T("admin.candidates.searchPlaceholder")" />
     </div>
-    <div class="admin-users-chips">
-        <button class="admin-chip @(ActiveFilter == "all" ? "admin-chip--active" : "")" @onclick='() => SetFilter("all")'>
-            @Lang.T("admin.candidates.filterAll")
-        </button>
-        <button class="admin-chip @(ActiveFilter == "evaluated" ? "admin-chip--active" : "")" @onclick='() => SetFilter("evaluated")'>
-            @Lang.T("admin.candidates.filterEvaluated")
-        </button>
-        <button class="admin-chip @(ActiveFilter == "pending" ? "admin-chip--active" : "")" @onclick='() => SetFilter("pending")'>
-            @Lang.T("admin.candidates.filterPending")
-        </button>
-        <button class="admin-chip @(ActiveFilter == "linkedin" ? "admin-chip--active" : "")" @onclick='() => SetFilter("linkedin")'>
-            @Lang.T("admin.candidates.filterLinkedIn")
-        </button>
-        <button class="admin-chip @(ActiveFilter == "portfolio" ? "admin-chip--active" : "")" @onclick='() => SetFilter("portfolio")'>
-            @Lang.T("admin.candidates.filterPortfolio")
-        </button>
-        <button class="admin-chip @(ActiveFilter == "cv" ? "admin-chip--active" : "")" @onclick='() => SetFilter("cv")'>
-            @Lang.T("admin.candidates.filterCV")
-        </button>
-        <button class="admin-chip @(ActiveFilter == "active" ? "admin-chip--active" : "")" @onclick='() => SetFilter("active")'>
-            @Lang.T("admin.candidates.filterActive")
-        </button>
-        <button class="admin-chip @(ActiveFilter == "inactive" ? "admin-chip--active" : "")" @onclick='() => SetFilter("inactive")'>
-            @Lang.T("admin.candidates.filterInactive")
-        </button>
-    </div>
 </div>
 
 @if (SelectedIds.Count > 0)
@@ -288,7 +262,6 @@ else
     private bool IsLoading { get; set; } = true;
     private bool IsExporting { get; set; }
     private string SearchTerm { get; set; } = "";
-    private string ActiveFilter { get; set; } = "all";
     private string ActiveTab { get; set; } = "notStarted";
     private int CurrentPage { get; set; } = 1;
     private int PageSize { get; set; } = 20;
@@ -318,27 +291,10 @@ else
         IsLoading = true;
         StateHasChanged();
 
-        bool? wizardCompleted = ActiveFilter switch
-        {
-            "evaluated" => true,
-            "pending" => false,
-            _ => null
-        };
-
-        bool? hasLinkedIn = ActiveFilter == "linkedin" ? true : null;
-        bool? hasPortfolio = ActiveFilter == "portfolio" ? true : null;
-        bool? hasCV = ActiveFilter == "cv" ? true : null;
-        bool? isActive = ActiveFilter switch
-        {
-            "active" => true,
-            "inactive" => false,
-            _ => null
-        };
-
         Result = await AuthApi.GetCandidatesAsync(
             CurrentPage, PageSize,
             string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm,
-            wizardCompleted, hasLinkedIn, hasPortfolio, hasCV, isActive,
+            null, null, null, null, null,
             null, SortColumn, SortDesc, ActiveTab);
 
         IsLoading = false;
@@ -361,7 +317,6 @@ else
     {
         ActiveTab = tab;
         CurrentPage = 1;
-        ActiveFilter = "all";
         SelectedIds.Clear();
         await LoadData();
     }
@@ -371,13 +326,6 @@ else
         if (e.Key != "Enter") return;
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
-        CurrentPage = 1;
-        await LoadData();
-    }
-
-    private async Task SetFilter(string filter)
-    {
-        ActiveFilter = filter;
         CurrentPage = 1;
         await LoadData();
     }
