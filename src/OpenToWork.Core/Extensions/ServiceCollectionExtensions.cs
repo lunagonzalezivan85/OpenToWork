@@ -33,6 +33,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<IAdminApplicationService, AdminApplicationService>();
         services.AddScoped<IAdminCandidateService, AdminCandidateService>();
+        services.AddScoped<IRecruitmentService, RecruitmentService>();
 
         return services;
     }

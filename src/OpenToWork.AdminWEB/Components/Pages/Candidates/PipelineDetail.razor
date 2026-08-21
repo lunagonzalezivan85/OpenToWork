@@ -1,0 +1,272 @@
+@page "/candidates/pipeline/{RecruitmentId}"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.recruitment.detailTitle")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.recruitment.detailTitle")</h1>
+        <p class="admin-page-header-subtitle">@(Detail?.FullName ?? "")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.dashboard.backToDashboard")</button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Detail == null)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.recruitment.notFound")</div></div>
+}
+else
+{
+    @* === Stepper === *@
+    <div class="admin-stepper">
+        @for (int i = 0; i <= 4; i++)
+        {
+            var stageClass = Detail.CurrentStage == 5 ? "admin-stepper-item--dismissed" :
+                i < Detail.CurrentStage ? "admin-stepper-item--done" :
+                i == Detail.CurrentStage ? "admin-stepper-item--active" : "";
+            <div class="admin-stepper-item @stageClass">
+                <div class="admin-stepper-circle">
+                    @if (i < Detail.CurrentStage && Detail.CurrentStage != 5)
+                    {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="16" height="16"><polyline points="20 6 9 17 4 12" /></svg>
+                    }
+                    else
+                    {
+                        @(i + 1)
+                    }
+                </div>
+                <div class="admin-stepper-label">@GetStageName(i)</div>
+            </div>
+            @if (i < 4)
+            {
+                <div class="admin-stepper-line @(i < Detail.CurrentStage ? "admin-stepper-line--done" : "")"></div>
+            }
+        }
+    </div>
+
+    @* === Info grid === *@
+    <div class="admin-recruitment-grid">
+        <div class="admin-recruitment-card">
+            <h3 class="admin-recruitment-card-title">@Lang.T("admin.recruitment.candidateInfo")</h3>
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.candidates.columnEmail")</span><strong>@Detail.Email</strong></div>
+            @if (!string.IsNullOrEmpty(Detail.Title))
+            {
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.candidates.columnTitle")</span><strong>@Detail.Title</strong></div>
+            }
+            @if (!string.IsNullOrEmpty(Detail.Phone))
+            {
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.profile.phone")</span><strong>@Detail.Phone</strong></div>
+            }
+            @if (!string.IsNullOrEmpty(Detail.Country))
+            {
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.profile.location")</span><strong>@(Detail.City), @Detail.Country</strong></div>
+            }
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.recruitment.currentStage")</span><strong>@GetStageName(Detail.CurrentStage)</strong></div>
+        </div>
+
+        <div class="admin-recruitment-card">
+            <h3 class="admin-recruitment-card-title">@Lang.T("admin.recruitment.assignment")</h3>
+            <div class="admin-recruitment-info-row">
+                <span>@Lang.T("admin.recruitment.assignedTo")</span>
+                <strong>@(Detail.AssignedToName ?? Lang.T("admin.recruitment.unassigned"))</strong>
+            </div>
+            @if (Detail.AssignedAt.HasValue)
+            {
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.recruitment.assignedAt")</span><strong>@Detail.AssignedAt.Value.ToString("yyyy-MM-dd HH:mm")</strong></div>
+            }
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.recruitment.stageEntered")</span><strong>@(Detail.StageEnteredAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</strong></div>
+        </div>
+    </div>
+
+    @* === Actions === *@
+    @if (Detail.Dismissal == null)
+    {
+        <div class="admin-recruitment-actions">
+            @if (Detail.CurrentStage < 4)
+            {
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => MoveToNextStage()">
+                    @Lang.T("admin.recruitment.moveToNext") → @GetStageName(Detail.CurrentStage + 1)
+                </button>
+            }
+            <button class="ot-btn ot-btn--outline ot-btn--small ot-btn--danger" @onclick="ShowDismissModal">
+                @Lang.T("admin.recruitment.dismiss")
+            </button>
+        </div>
+    }
+
+    @* === Investigation checklist === *@
+    @if (Detail.InvestigationChecklist.Count > 0)
+    {
+        <h2 class="admin-section-title">@Lang.T("admin.recruitment.investigationChecklist")</h2>
+        <div class="admin-investigation-list">
+            @foreach (var item in Detail.InvestigationChecklist.OrderBy(c => c.Step))
+            {
+                <div class="admin-investigation-item @(item.IsCompleted ? "admin-investigation-item--done" : "")">
+                    <div class="admin-investigation-check">
+                        <input type="checkbox" checked="@item.IsCompleted" @onchange="() => ToggleStep(item)" />
+                    </div>
+                    <div class="admin-investigation-content">
+                        <div class="admin-investigation-step-name">@GetInvestigationStepName(item.Step)</div>
+                        @if (item.IsCompleted)
+                        {
+                            <div class="admin-investigation-meta">
+                                @Lang.T("admin.recruitment.completedBy") @item.CompletedByName · @item.CompletedAt?.ToString("yyyy-MM-dd HH:mm")
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(item.Notes))
+                        {
+                            <div class="admin-investigation-notes">@item.Notes</div>
+                        }
+                        @if (!string.IsNullOrEmpty(item.EvidenceUrl))
+                        {
+                            <a href="@item.EvidenceUrl" target="_blank" class="admin-investigation-evidence">@Lang.T("admin.recruitment.viewEvidence")</a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* === Stage history === *@
+    @if (Detail.StageLogs.Count > 0)
+    {
+        <h2 class="admin-section-title">@Lang.T("admin.recruitment.stageHistory")</h2>
+        <div class="admin-stage-history">
+            @foreach (var log in Detail.StageLogs.OrderByDescending(l => l.CreatedAt))
+            {
+                <div class="admin-stage-history-item">
+                    <span class="admin-stage-history-arrow">@GetStageName(log.FromStage) → @GetStageName(log.ToStage)</span>
+                    <span class="admin-stage-history-meta">@log.ChangedByName · @log.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                    @if (!string.IsNullOrEmpty(log.Notes))
+                    {
+                        <div class="admin-stage-history-notes">@log.Notes</div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @* === Dismiss modal === *@
+    @if (ShowDismiss)
+    {
+        <div class="admin-modal-overlay" @onclick="CloseDismissModal">
+            <div class="admin-modal" @onclick:stopPropagation="true">
+                <h3 class="admin-modal-title">@Lang.T("admin.recruitment.dismissCandidate")</h3>
+                <div class="admin-modal-body">
+                    <label>@Lang.T("admin.recruitment.dismissReason")</label>
+                    <select @bind="DismissReason">
+                        <option value="0">@Lang.T("admin.recruitment.reasonTechnical")</option>
+                        <option value="1">@Lang.T("admin.recruitment.reasonReferences")</option>
+                        <option value="2">@Lang.T("admin.recruitment.reasonSalary")</option>
+                        <option value="3">@Lang.T("admin.recruitment.reasonNoShow")</option>
+                        <option value="4">@Lang.T("admin.recruitment.reasonOther")</option>
+                    </select>
+                    <label>@Lang.T("admin.recruitment.dismissNotes")</label>
+                    <textarea @bind="DismissNotes" rows="3" class="admin-modal-textarea"></textarea>
+                </div>
+                <div class="admin-modal-actions">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseDismissModal">@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small ot-btn--danger" @onclick="ConfirmDismiss">@Lang.T("admin.recruitment.confirmDismiss")</button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid RecruitmentId { get; set; }
+    private RecruitmentDetailDto? Detail { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private bool ShowDismiss { get; set; }
+    private int DismissReason { get; set; }
+    private string DismissNotes { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        await LoadDetail();
+    }
+
+    private async Task LoadDetail()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        Detail = await AuthApi.GetRecruitmentDetailAsync(RecruitmentId);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task MoveToNextStage()
+    {
+        if (Detail == null) return;
+        var next = Detail.CurrentStage + 1;
+        var ok = await AuthApi.MoveStageAsync(Detail.Id, next);
+        if (ok) await LoadDetail();
+    }
+
+    private async Task ToggleStep(InvestigationChecklistDto item)
+    {
+        if (Detail == null) return;
+        var ok = await AuthApi.ToggleInvestigationStepAsync(Detail.Id, new ToggleInvestigationStepDto
+        {
+            Step = item.Step,
+            IsCompleted = !item.IsCompleted,
+            Notes = item.Notes,
+            EvidenceUrl = item.EvidenceUrl
+        });
+        if (ok) await LoadDetail();
+    }
+
+    private void ShowDismissModal()
+    {
+        ShowDismiss = true;
+        DismissReason = 0;
+        DismissNotes = "";
+    }
+
+    private void CloseDismissModal() => ShowDismiss = false;
+
+    private async Task ConfirmDismiss()
+    {
+        if (Detail == null) return;
+        var ok = await AuthApi.DismissCandidateAsync(Detail.Id, DismissReason, DismissNotes);
+        ShowDismiss = false;
+        if (ok) await LoadDetail();
+    }
+
+    private void GoBack() => Nav.NavigateTo("/candidates/pipeline");
+
+    private string GetStageName(int stage) => stage switch
+    {
+        0 => Lang.T("admin.recruitment.stage0"),
+        1 => Lang.T("admin.recruitment.stage1"),
+        2 => Lang.T("admin.recruitment.stage2"),
+        3 => Lang.T("admin.recruitment.stage3"),
+        4 => Lang.T("admin.recruitment.stage4"),
+        5 => Lang.T("admin.recruitment.stage5"),
+        _ => ""
+    };
+
+    private string GetInvestigationStepName(int step) => step switch
+    {
+        0 => Lang.T("admin.recruitment.invStep0"),
+        1 => Lang.T("admin.recruitment.invStep1"),
+        2 => Lang.T("admin.recruitment.invStep2"),
+        3 => Lang.T("admin.recruitment.invStep3"),
+        4 => Lang.T("admin.recruitment.invStep4"),
+        _ => ""
+    };
+}

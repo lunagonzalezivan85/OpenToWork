@@ -192,6 +192,64 @@ public class AdminAuthApiService
         return await response.Content.ReadAsByteArrayAsync();
     }
 
+    public async Task<RecruitmentPipelineResultDto?> GetRecruitmentPipelineAsync(
+        int page = 1, int pageSize = 20, int? stage = null, Guid? assignedTo = null, string? search = null)
+    {
+        await SetAuthHeaderAsync();
+        var query = $"api/admin/recruitment?page={page}&pageSize={pageSize}";
+        if (stage.HasValue) query += $"&stage={stage.Value}";
+        if (assignedTo.HasValue) query += $"&assignedTo={assignedTo.Value}";
+        if (!string.IsNullOrEmpty(search)) query += $"&search={Uri.EscapeDataString(search)}";
+
+        var response = await _httpClient.GetAsync(query);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<RecruitmentPipelineResultDto>();
+    }
+
+    public async Task<RecruitmentDetailDto?> GetRecruitmentDetailAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/recruitment/{id}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<RecruitmentDetailDto>();
+    }
+
+    public async Task<RecruitmentPipelineDto?> AssignCandidateAsync(AssignCandidateDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/recruitment/assign", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<RecruitmentPipelineDto>();
+    }
+
+    public async Task<bool> MoveStageAsync(Guid recruitmentId, int toStage, string? notes = null)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/move-stage", new MoveStageDto { ToStage = toStage, Notes = notes });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ToggleInvestigationStepAsync(Guid recruitmentId, ToggleInvestigationStepDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/investigation", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DismissCandidateAsync(Guid recruitmentId, int reason, string? notes = null)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment/{recruitmentId}/dismiss", new DismissCandidateDto { Reason = reason, Notes = notes });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UnassignCandidateAsync(Guid recruitmentId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsync($"api/admin/recruitment/{recruitmentId}/unassign", null);
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");

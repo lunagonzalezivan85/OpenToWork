@@ -25,6 +25,10 @@ public class AppDbContext : DbContext
     public DbSet<PTCandidateCertification> PT_CandidateCertifications => Set<PTCandidateCertification>();
     public DbSet<PTVacancySkill> PT_VacancySkills => Set<PTVacancySkill>();
     public DbSet<ADAuditLog> AD_AuditLogs => Set<ADAuditLog>();
+    public DbSet<PTCandidateRecruitment> PT_CandidateRecruitments => Set<PTCandidateRecruitment>();
+    public DbSet<PTRecruitmentStageLog> PT_RecruitmentStageLogs => Set<PTRecruitmentStageLog>();
+    public DbSet<PTInvestigationChecklist> PT_InvestigationChecklists => Set<PTInvestigationChecklist>();
+    public DbSet<PTRecruitmentDismissal> PT_RecruitmentDismissals => Set<PTRecruitmentDismissal>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -189,6 +193,37 @@ public class AppDbContext : DbContext
             e.HasIndex(a => new { a.SCUserId, a.IsDeleted });
             e.HasIndex(a => new { a.EntityType, a.EntityId, a.IsDeleted });
             e.HasIndex(a => new { a.CreatedAt, a.IsDeleted });
+        });
+
+        modelBuilder.Entity<PTCandidateRecruitment>(e =>
+        {
+            e.ToTable("PT_CandidateRecruitments");
+            e.HasIndex(r => new { r.SCUserId, r.IsDeleted });
+            e.HasIndex(r => new { r.CurrentStage, r.IsDeleted });
+            e.HasIndex(r => new { r.AssignedToUserId, r.IsDeleted });
+            e.HasIndex(r => new { r.SCUserId, r.PT_VacancyId, r.IsDeleted });
+            e.Property(r => r.CurrentStage).HasDefaultValue(0);
+        });
+
+        modelBuilder.Entity<PTRecruitmentStageLog>(e =>
+        {
+            e.ToTable("PT_RecruitmentStageLogs");
+            e.HasIndex(l => new { l.PT_CandidateRecruitmentId, l.IsDeleted });
+            e.HasIndex(l => new { l.CreatedAt, l.IsDeleted });
+        });
+
+        modelBuilder.Entity<PTInvestigationChecklist>(e =>
+        {
+            e.ToTable("PT_InvestigationChecklists");
+            e.HasIndex(c => new { c.PT_CandidateRecruitmentId, c.Step, c.IsDeleted }).IsUnique();
+            e.HasIndex(c => new { c.IsCompleted, c.IsDeleted });
+            e.Property(c => c.IsCompleted).HasDefaultValue(false);
+        });
+
+        modelBuilder.Entity<PTRecruitmentDismissal>(e =>
+        {
+            e.ToTable("PT_RecruitmentDismissals");
+            e.HasIndex(d => new { d.PT_CandidateRecruitmentId, d.IsDeleted });
         });
 
         SeedWizardSteps(modelBuilder);
