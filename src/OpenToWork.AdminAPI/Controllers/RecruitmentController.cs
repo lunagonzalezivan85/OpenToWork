@@ -116,4 +116,11 @@ public class RecruitmentController : AdminControllerBase
         var result = await _recruitmentService.UnassignAsync(id, AdminId, ClientIp);
         return result ? NoContent() : NotFound();
     }
+
+    [HttpPut("{id}/candidate-phone")]
+    public async Task<IActionResult> UpdateCandidatePhone(Guid id, [FromBody] UpdateCandidatePhoneDto dto)
+    {
+        var result = await _recruitmentService.UpdateCandidatePhoneAsync(id, dto.Phone, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
 }

@@ -170,23 +170,32 @@ else
                                 <div class="admin-investigation-notes">@item.Notes</div>
                             }
 
-                            @* Step 0: Call candidate - show phone *@
+                            @* Step 0: Call candidate - show phone with edit *@
                             @if (item.Step == 0 && Detail.CurrentStage == 1)
                             {
                                 <div class="admin-candidate-contact-info">
-                                    @if (!string.IsNullOrEmpty(Detail.Phone))
-                                    {
-                                        <div class="admin-candidate-contact-row">
-                                            <span class="admin-candidate-contact-label">@Lang.T("admin.recruitment.candidatePhone"):</span>
-                                            <a href="tel:@Detail.Phone" class="admin-candidate-contact-value">📞 @Detail.Phone</a>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="admin-candidate-contact-row admin-candidate-contact-row--missing">
-                                            <span>@Lang.T("admin.recruitment.noPhoneRegistered")</span>
-                                        </div>
-                                    }
+                                    <div class="admin-candidate-contact-row">
+                                        <span class="admin-candidate-contact-label">@Lang.T("admin.recruitment.candidatePhone"):</span>
+                                        @if (EditingPhone)
+                                        {
+                                            <input type="text" @bind="PhoneEditValue" placeholder="@Lang.T("admin.recruitment.refContactPhone")" class="admin-investigation-add-input" style="flex: 1; max-width: 200px;" />
+                                            <button class="ot-btn ot-btn--primary ot-btn--small" style="font-size: 0.7rem; padding: 0.2rem 0.6rem;" @onclick="SavePhone">@Lang.T("admin.common.save")</button>
+                                            <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.7rem; padding: 0.2rem 0.6rem;" @onclick='() => EditingPhone = false'>@Lang.T("admin.common.cancel")</button>
+                                        }
+                                        else
+                                        {
+                                            @if (!string.IsNullOrEmpty(Detail.Phone))
+                                            {
+                                                <a href="tel:@Detail.Phone" class="admin-candidate-contact-value">📞 @Detail.Phone</a>
+                                                <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.65rem; padding: 0.15rem 0.5rem; margin-left: 0.3rem;" @onclick='() => { PhoneEditValue = Detail.Phone; EditingPhone = true; }'>✎</button>
+                                            }
+                                            else
+                                            {
+                                                <span class="admin-candidate-contact-row--missing">@Lang.T("admin.recruitment.noPhoneRegistered")</span>
+                                                <button class="ot-btn ot-btn--primary ot-btn--small" style="font-size: 0.65rem; padding: 0.15rem 0.5rem; margin-left: 0.3rem;" @onclick='() => { PhoneEditValue = ""; EditingPhone = true; }'>@Lang.T("admin.recruitment.addPhone")</button>
+                                            }
+                                        }
+                                    </div>
                                     <div class="admin-candidate-contact-row">
                                         <span class="admin-candidate-contact-label">@Lang.T("admin.recruitment.candidateEmail"):</span>
                                         <a href="mailto:@Detail.Email" class="admin-candidate-contact-value">✉ @Detail.Email</a>
@@ -390,6 +399,8 @@ else
     private string NewRefContactName { get; set; } = "";
     private string NewRefContactPhone { get; set; } = "";
     private string NewRefContactEmail { get; set; } = "";
+    private bool EditingPhone { get; set; }
+    private string PhoneEditValue { get; set; } = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -432,6 +443,14 @@ else
     {
         if (Detail == null) return;
         var ok = await AuthApi.StartInvestigationStepAsync(Detail.Id, step);
+        if (ok) await LoadDetail();
+    }
+
+    private async Task SavePhone()
+    {
+        if (Detail == null) return;
+        var ok = await AuthApi.UpdateCandidatePhoneAsync(Detail.Id, PhoneEditValue?.Trim());
+        EditingPhone = false;
         if (ok) await LoadDetail();
     }
 

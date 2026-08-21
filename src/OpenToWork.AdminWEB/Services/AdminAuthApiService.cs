@@ -304,6 +304,13 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> UpdateCandidatePhoneAsync(Guid recruitmentId, string? phone)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/candidate-phone", new UpdateCandidatePhoneDto { Phone = phone });
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");

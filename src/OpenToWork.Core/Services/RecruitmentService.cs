@@ -682,4 +682,21 @@ public class RecruitmentService : IRecruitmentService
         await _auditLog.LogAsync(adminId, "UnassignCandidate", "PT_CandidateRecruitments", recruitmentId, null, ipAddress);
         return true;
     }
+
+    public async Task<bool> UpdateCandidatePhoneAsync(Guid recruitmentId, string? phone, Guid adminId, string? ipAddress)
+    {
+        var recruitment = await _context.PT_CandidateRecruitments
+            .Include(r => r.User).ThenInclude(u => u!.Candidate)
+            .FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
+
+        if (recruitment?.User?.Candidate == null) return false;
+
+        recruitment.User.Candidate.Phone = phone;
+        recruitment.User.Candidate.UpdatedAt = DateTime.UtcNow;
+        recruitment.User.Candidate.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "UpdateCandidatePhone", "PT_Candidates", recruitment.User.Candidate.Id, null, ipAddress);
+        return true;
+    }
 }

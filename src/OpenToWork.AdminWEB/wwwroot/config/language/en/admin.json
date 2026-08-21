@@ -316,6 +316,7 @@
     "candidateEmail": "Candidate email",
     "candidateLocation": "Location",
     "noPhoneRegistered": "Candidate has no phone registered",
+    "addPhone": "Add phone",
     "noPhoneAskCandidate": "No phone \u2014 ask candidate during the call",
     "suggestedFromWorkHistory": "Suggestions from work history",
     "noProcess": "No recruitment process",

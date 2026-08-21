@@ -92,6 +92,11 @@ public class UpdateReferenceStatusDto
     public string? Notes { get; set; }
 }
 
+public class UpdateCandidatePhoneDto
+{
+    public string? Phone { get; set; }
+}
+
 public class AddCustomValidationDto
 {
     public string Label { get; set; } = string.Empty;
