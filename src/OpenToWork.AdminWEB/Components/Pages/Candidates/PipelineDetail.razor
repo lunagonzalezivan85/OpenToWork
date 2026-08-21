@@ -602,6 +602,127 @@ else
         }
     }
 
+    @* === Delivery summary (stage 4) === *@
+    @if (Detail.CurrentStage == 4 && Detail.Dismissal == null)
+    {
+        <h2 class="admin-section-title">@Lang.T("admin.recruitment.deliverySummary")</h2>
+
+        <div class="admin-delivery-summary">
+            @* Investigation *@
+            <div class="admin-delivery-card">
+                <div class="admin-delivery-card-header">
+                    <span class="admin-delivery-card-icon">1</span>
+                    <span class="admin-delivery-card-title">@Lang.T("admin.recruitment.stage1")</span>
+                </div>
+                <div class="admin-delivery-card-body">
+                    @{
+                        var completedSteps = Detail.InvestigationChecklist.Where(c => c.IsCompleted).Count();
+                        var totalSteps = Detail.InvestigationChecklist.Count;
+                    }
+                    <div class="admin-delivery-stat">
+                        <span class="admin-delivery-stat-label">@Lang.T("admin.recruitment.checklistProgress")</span>
+                        <span class="admin-delivery-stat-value">@completedSteps/@totalSteps</span>
+                    </div>
+                    <div class="admin-delivery-progress">
+                        <div class="admin-delivery-progress-bar" style="width: @(totalSteps > 0 ? (completedSteps * 100 / totalSteps) : 0)%"></div>
+                    </div>
+                </div>
+            </div>
+
+            @* Technical evaluations *@
+            <div class="admin-delivery-card">
+                <div class="admin-delivery-card-header">
+                    <span class="admin-delivery-card-icon">2</span>
+                    <span class="admin-delivery-card-title">@Lang.T("admin.recruitment.stage2")</span>
+                </div>
+                <div class="admin-delivery-card-body">
+                    @if (Detail.TechnicalEvaluations.Count > 0)
+                    {
+                        <div class="admin-delivery-stat">
+                            <span class="admin-delivery-stat-label">@Lang.T("admin.recruitment.averageScore")</span>
+                            <span class="admin-delivery-stat-value admin-delivery-stat-value--@(Detail.TechnicalEvaluations.Average(e => e.Score) >= 70 ? "pass" : "fail")">
+                                @Math.Round(Detail.TechnicalEvaluations.Average(e => e.Score), 1).ToString("0.#")/100
+                            </span>
+                        </div>
+                        <div class="admin-delivery-stat">
+                            <span class="admin-delivery-stat-label">@Lang.T("admin.recruitment.evaluationsCount")</span>
+                            <span class="admin-delivery-stat-value">@Detail.TechnicalEvaluations.Count</span>
+                        </div>
+                        <div class="admin-delivery-detail-toggle" @onclick="@(() => ToggleDeliveryDetail("tech"))">
+                            @Lang.T("admin.recruitment.viewDetail")
+                        </div>
+                        @if (ShowDeliveryDetail == "tech")
+                        {
+                            <div class="admin-delivery-detail-list">
+                                @foreach (var eval in Detail.TechnicalEvaluations)
+                                {
+                                    <div class="admin-delivery-detail-item">
+                                        <span>@eval.EvaluationName</span>
+                                        <span class="admin-delivery-detail-score @(eval.Score >= 70 ? "admin-delivery-detail-score--pass" : "admin-delivery-detail-score--fail")">@eval.Score.ToString("0.#")</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="admin-empty-text">@Lang.T("admin.recruitment.noEvaluations")</div>
+                    }
+                </div>
+            </div>
+
+            @* Cultural interviews *@
+            <div class="admin-delivery-card">
+                <div class="admin-delivery-card-header">
+                    <span class="admin-delivery-card-icon">3</span>
+                    <span class="admin-delivery-card-title">@Lang.T("admin.recruitment.stage3")</span>
+                </div>
+                <div class="admin-delivery-card-body">
+                    @if (Detail.CulturalInterviews.Count > 0)
+                    {
+                        <div class="admin-delivery-stat">
+                            <span class="admin-delivery-stat-label">@Lang.T("admin.recruitment.averageScore")</span>
+                            <span class="admin-delivery-stat-value admin-delivery-stat-value--@(Detail.CulturalInterviews.Average(e => e.Score) >= 70 ? "pass" : "fail")">
+                                @Math.Round(Detail.CulturalInterviews.Average(e => e.Score), 1).ToString("0.#")/100
+                            </span>
+                        </div>
+                        <div class="admin-delivery-stat">
+                            <span class="admin-delivery-stat-label">@Lang.T("admin.recruitment.recommendation")</span>
+                            <span class="admin-recommendation-badge admin-recommendation--@Detail.CulturalInterviews.First().Recommendation">
+                                @GetRecommendationLabel(Detail.CulturalInterviews.First().Recommendation)
+                            </span>
+                        </div>
+                        <div class="admin-delivery-detail-toggle" @onclick="@(() => ToggleDeliveryDetail("cultural"))">
+                            @Lang.T("admin.recruitment.viewDetail")
+                        </div>
+                        @if (ShowDeliveryDetail == "cultural")
+                        {
+                            <div class="admin-delivery-detail-list">
+                                @foreach (var interview in Detail.CulturalInterviews)
+                                {
+                                    <div class="admin-delivery-detail-item">
+                                        <span>@interview.EvaluationName</span>
+                                        <span class="admin-delivery-detail-score @(interview.Score >= 70 ? "admin-delivery-detail-score--pass" : "admin-delivery-detail-score--fail")">@interview.Score.ToString("0.#")</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="admin-empty-text">@Lang.T("admin.recruitment.noCulturalInterview")</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Overall summary *@
+        <div class="admin-delivery-overall">
+            <span class="admin-delivery-overall-label">@Lang.T("admin.recruitment.overallScore")</span>
+            <span class="admin-delivery-overall-value">@OverallScore.ToString("0.#")/100</span>
+        </div>
+    }
+
     @* === Stage history === *@
     @if (Detail.StageLogs.Count > 0)
     {
@@ -742,6 +863,20 @@ else
     private decimal CulturalScore { get; set; }
     private int CulturalRecommendation { get; set; }
     private string CulturalNotes { get; set; } = "";
+    private string? ShowDeliveryDetail { get; set; }
+
+    private decimal OverallScore
+    {
+        get
+        {
+            if (Detail == null) return 0;
+            var hasTech = Detail.TechnicalEvaluations.Count > 0;
+            var hasCultural = Detail.CulturalInterviews.Count > 0;
+            var techAvg = hasTech ? Detail.TechnicalEvaluations.Average(e => e.Score) : 0;
+            var culturalAvg = hasCultural ? Detail.CulturalInterviews.Average(e => e.Score) : 0;
+            return (hasTech && hasCultural) ? Math.Round((techAvg + culturalAvg) / 2, 1) : (hasTech ? Math.Round(techAvg, 1) : (hasCultural ? Math.Round(culturalAvg, 1) : 0));
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -768,6 +903,11 @@ else
             3 => Lang.T("admin.recruitment.recUndecided"),
             _ => Lang.T("admin.recruitment.recPending")
         };
+    }
+
+    private void ToggleDeliveryDetail(string key)
+    {
+        ShowDeliveryDetail = ShowDeliveryDetail == key ? null : key;
     }
 
     private void OpenAddCulturalModal()

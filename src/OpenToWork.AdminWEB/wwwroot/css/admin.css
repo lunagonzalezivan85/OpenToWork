@@ -2777,6 +2777,159 @@
     color: #d97706;
 }
 
+.admin-delivery-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: var(--space-md);
+}
+
+.admin-delivery-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.admin-delivery-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    background: #F0F7FF;
+    border-bottom: 1px solid var(--border);
+}
+
+.admin-delivery-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    color: #FFFFFF;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.admin-delivery-card-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-delivery-card-body {
+    padding: 0.6rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.admin-delivery-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.admin-delivery-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.admin-delivery-stat-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.admin-delivery-stat-value--pass {
+    color: #16a34a;
+}
+
+.admin-delivery-stat-value--fail {
+    color: #dc2626;
+}
+
+.admin-delivery-progress {
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.admin-delivery-progress-bar {
+    height: 100%;
+    background: var(--accent-primary);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.admin-delivery-detail-toggle {
+    font-size: 0.72rem;
+    color: var(--accent-primary);
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+}
+
+.admin-delivery-detail-toggle:hover {
+    text-decoration: underline;
+}
+
+.admin-delivery-detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding-top: 0.2rem;
+}
+
+.admin-delivery-detail-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    padding: 0.2rem 0;
+    border-top: 1px solid var(--border);
+}
+
+.admin-delivery-detail-score {
+    font-weight: 700;
+}
+
+.admin-delivery-detail-score--pass {
+    color: #16a34a;
+}
+
+.admin-delivery-detail-score--fail {
+    color: #dc2626;
+}
+
+.admin-delivery-overall {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: #F0F7FF;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-md);
+}
+
+.admin-delivery-overall-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-delivery-overall-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--accent-primary);
+}
+
 /* ============================================
    Stage History
    ============================================ */
