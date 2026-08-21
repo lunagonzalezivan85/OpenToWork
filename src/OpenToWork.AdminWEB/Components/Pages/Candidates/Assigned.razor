@@ -3,6 +3,7 @@
 @using OpenToWork.Shared.DTOs
 @inject LanguageService Lang
 @inject AdminAuthApiService AuthApi
+@inject LocalStorageService LocalStorage
 @inject NavigationManager Nav
 
 <PageTitle>@Lang.T("admin.assigned.title")</PageTitle>
@@ -93,9 +94,12 @@ else
         IsLoading = true;
         StateHasChanged();
 
-        var data = await AuthApi.GetRecruitmentPipelineAsync(1, 200, null, null, null);
+        var userIdStr = await LocalStorage.GetItemAsync("otwadmin-user-id");
+        Guid? userId = Guid.TryParse(userIdStr, out var parsed) ? parsed : null;
+
+        var data = await AuthApi.GetRecruitmentPipelineAsync(1, 200, null, userId, null);
         AssignedItems = data?.Items
-            .Where(i => i.AssignedToUserId.HasValue && i.CurrentStage != 5)
+            .Where(i => i.CurrentStage != 5)
             .ToList() ?? new();
 
         IsLoading = false;
