@@ -170,6 +170,37 @@ else
                                 <div class="admin-investigation-notes">@item.Notes</div>
                             }
 
+                            @* Step 0: Call candidate - show phone *@
+                            @if (item.Step == 0 && Detail.CurrentStage == 1)
+                            {
+                                <div class="admin-candidate-contact-info">
+                                    @if (!string.IsNullOrEmpty(Detail.Phone))
+                                    {
+                                        <div class="admin-candidate-contact-row">
+                                            <span class="admin-candidate-contact-label">@Lang.T("admin.recruitment.candidatePhone"):</span>
+                                            <a href="tel:@Detail.Phone" class="admin-candidate-contact-value">📞 @Detail.Phone</a>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="admin-candidate-contact-row admin-candidate-contact-row--missing">
+                                            <span>@Lang.T("admin.recruitment.noPhoneRegistered")</span>
+                                        </div>
+                                    }
+                                    <div class="admin-candidate-contact-row">
+                                        <span class="admin-candidate-contact-label">@Lang.T("admin.recruitment.candidateEmail"):</span>
+                                        <a href="mailto:@Detail.Email" class="admin-candidate-contact-value">✉ @Detail.Email</a>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(Detail.Country) || !string.IsNullOrEmpty(Detail.City))
+                                    {
+                                        <div class="admin-candidate-contact-row">
+                                            <span class="admin-candidate-contact-label">@Lang.T("admin.recruitment.candidateLocation"):</span>
+                                            <span class="admin-candidate-contact-value">@Detail.City, @Detail.Country</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+
                             @* References sub-panel for step 1 (Call references) *@
                             @if (item.Step == 1 && Detail.CurrentStage == 1)
                             {
@@ -195,7 +226,11 @@ else
                                                         }
                                                         @if (!string.IsNullOrEmpty(refItem.ContactPhone))
                                                         {
-                                                            <div class="admin-reference-contact">📞 @refItem.ContactPhone</div>
+                                                            <div class="admin-reference-contact">📞 <a href="tel:@refItem.ContactPhone">@refItem.ContactPhone</a></div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="admin-reference-contact admin-reference-contact--missing">@Lang.T("admin.recruitment.noPhoneAskCandidate")</div>
                                                         }
                                                         @if (!string.IsNullOrEmpty(refItem.ContactEmail))
                                                         {
@@ -230,6 +265,23 @@ else
                                     else
                                     {
                                         <div class="admin-empty-text" style="font-size: 0.78rem; padding: 0.5rem 0;">@Lang.T("admin.recruitment.noReferences")</div>
+                                    }
+
+                                    @* Show work experiences as suggestion if no references *@
+                                    @if (item.ReferenceChecks.Count == 0 && Detail.WorkExperiences.Count > 0)
+                                    {
+                                        <div class="admin-references-suggestion">
+                                            <div class="admin-references-suggestion-title">@Lang.T("admin.recruitment.suggestedFromWorkHistory"):</div>
+                                            @foreach (var exp in Detail.WorkExperiences.GroupBy(e => e.CompanyName).Select(g => g.First()))
+                                            {
+                                                <div class="admin-references-suggestion-item">
+                                                    <span>@exp.CompanyName</span>
+                                                    <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;" @onclick="() => AddReferenceFromExperience(item.Id, exp.CompanyName)">
+                                                        + @Lang.T("admin.recruitment.addReference")
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
                                     }
 
                                     @if (AddingReferenceTo == item.Id)
@@ -407,6 +459,15 @@ else
             AddingReferenceTo = null;
             await LoadDetail();
         }
+    }
+
+    private async Task AddReferenceFromExperience(Guid checklistId, string companyName)
+    {
+        var result = await AuthApi.AddReferenceAsync(checklistId, new AddReferenceDto
+        {
+            CompanyName = companyName
+        });
+        if (result != null) await LoadDetail();
     }
 
     private async Task UpdateReferenceStatus(Guid referenceId, int status)

@@ -38,6 +38,7 @@ public class RecruitmentDetailDto
     public string? Notes { get; set; }
     public List<StageLogDto> StageLogs { get; set; } = new();
     public List<InvestigationChecklistDto> InvestigationChecklist { get; set; } = new();
+    public List<CandidateExperienceDto> WorkExperiences { get; set; } = new();
     public DismissalInfoDto? Dismissal { get; set; }
 }
 

@@ -99,6 +99,7 @@ public class RecruitmentService : IRecruitmentService
     {
         var recruitment = await _context.PT_CandidateRecruitments
             .Include(r => r.User).ThenInclude(u => u!.Candidate)
+            .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Experiences)
             .Include(r => r.AssignedToUser)
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
@@ -135,6 +136,18 @@ public class RecruitmentService : IRecruitmentService
                 ChangedByName = l.ChangedByUser?.Email ?? "",
                 CreatedAt = l.CreatedAt,
                 Notes = l.Notes
+            }).ToList() ?? new(),
+            WorkExperiences = candidate?.Experiences?.Where(e => !e.IsDeleted).Select(e => new CandidateExperienceDto
+            {
+                Id = e.Id,
+                CandidateId = e.PT_CandidateId,
+                CompanyName = e.CompanyName,
+                JobTitle = e.JobTitle,
+                Description = e.Description,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                IsCurrentJob = e.IsCurrentJob,
+                Location = e.Location
             }).ToList() ?? new(),
             InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
@@ -174,6 +187,7 @@ public class RecruitmentService : IRecruitmentService
     {
         var recruitment = await _context.PT_CandidateRecruitments
             .Include(r => r.User).ThenInclude(u => u!.Candidate)
+            .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Experiences)
             .Include(r => r.AssignedToUser)
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
@@ -210,6 +224,18 @@ public class RecruitmentService : IRecruitmentService
                 ChangedByName = l.ChangedByUser?.Email ?? "",
                 CreatedAt = l.CreatedAt,
                 Notes = l.Notes
+            }).ToList() ?? new(),
+            WorkExperiences = candidate?.Experiences?.Where(e => !e.IsDeleted).Select(e => new CandidateExperienceDto
+            {
+                Id = e.Id,
+                CandidateId = e.PT_CandidateId,
+                CompanyName = e.CompanyName,
+                JobTitle = e.JobTitle,
+                Description = e.Description,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                IsCurrentJob = e.IsCurrentJob,
+                Location = e.Location
             }).ToList() ?? new(),
             InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
@@ -350,6 +376,49 @@ public class RecruitmentService : IRecruitmentService
                         IsCompleted = false,
                         CreatedBy = adminId
                     });
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            // Auto-generate references from candidate work experiences
+            var referencesChecklist = await _context.PT_InvestigationChecklists
+                .FirstOrDefaultAsync(c => c.PT_CandidateRecruitmentId == recruitmentId && c.Step == 1 && !c.IsDeleted);
+
+            if (referencesChecklist != null)
+            {
+                var candidate = await _context.SC_Users
+                    .Include(u => u.Candidate!).ThenInclude(c => c.Experiences)
+                    .FirstOrDefaultAsync(u => u.Id == recruitment.SCUserId);
+
+                var experiences = candidate?.Candidate?.Experiences?
+                    .Where(e => !e.IsDeleted)
+                    .GroupBy(e => e.CompanyName)
+                    .Select(g => g.First())
+                    .ToList();
+
+                if (experiences != null && experiences.Count > 0)
+                {
+                    var existingRefs = await _context.PT_ReferenceChecks
+                        .Where(r => r.PT_InvestigationChecklistId == referencesChecklist.Id && !r.IsDeleted)
+                        .Select(r => r.CompanyName)
+                        .ToListAsync();
+
+                    foreach (var exp in experiences)
+                    {
+                        if (!existingRefs.Contains(exp.CompanyName))
+                        {
+                            _context.PT_ReferenceChecks.Add(new PTReferenceCheck
+                            {
+                                PT_InvestigationChecklistId = referencesChecklist.Id,
+                                CompanyName = exp.CompanyName,
+                                ContactName = null,
+                                ContactPhone = null,
+                                ContactEmail = null,
+                                Status = 0,
+                                CreatedBy = adminId
+                            });
+                        }
+                    }
                 }
             }
         }
