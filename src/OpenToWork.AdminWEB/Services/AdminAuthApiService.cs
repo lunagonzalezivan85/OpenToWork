@@ -151,7 +151,8 @@ public class AdminAuthApiService
         int page = 1, int pageSize = 20, string? search = null,
         bool? wizardCompleted = null, bool? hasLinkedIn = null,
         bool? hasPortfolio = null, bool? hasCV = null, bool? isActive = null,
-        Guid? skillId = null, string? sortBy = null, bool sortDesc = true)
+        Guid? skillId = null, string? sortBy = null, bool sortDesc = true,
+        string? recruitmentStatus = null)
     {
         await SetAuthHeaderAsync();
         var query = $"api/admin/candidates?page={page}&pageSize={pageSize}";
@@ -164,6 +165,7 @@ public class AdminAuthApiService
         if (skillId.HasValue) query += $"&skillId={skillId.Value}";
         if (!string.IsNullOrEmpty(sortBy)) query += $"&sortBy={Uri.EscapeDataString(sortBy)}";
         query += $"&sortDesc={sortDesc.ToString().ToLower()}";
+        if (!string.IsNullOrEmpty(recruitmentStatus)) query += $"&recruitmentStatus={recruitmentStatus}";
 
         var response = await _httpClient.GetAsync(query);
         if (!response.IsSuccessStatusCode) return null;

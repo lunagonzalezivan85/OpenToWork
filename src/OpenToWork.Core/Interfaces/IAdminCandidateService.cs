@@ -15,7 +15,8 @@ public interface IAdminCandidateService
         bool? isActive = null,
         Guid? skillId = null,
         string? sortBy = null,
-        bool sortDesc = true);
+        bool sortDesc = true,
+        string? recruitmentStatus = null);
 
     Task<bool> BulkActivateAsync(List<Guid> ids, Guid adminId, string? ipAddress);
     Task<bool> BulkDeactivateAsync(List<Guid> ids, Guid adminId, string? ipAddress);

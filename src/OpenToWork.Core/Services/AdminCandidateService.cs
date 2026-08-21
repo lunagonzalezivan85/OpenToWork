@@ -29,7 +29,8 @@ public class AdminCandidateService : IAdminCandidateService
         bool? isActive = null,
         Guid? skillId = null,
         string? sortBy = null,
-        bool sortDesc = true)
+        bool sortDesc = true,
+        string? recruitmentStatus = null)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
@@ -37,6 +38,47 @@ public class AdminCandidateService : IAdminCandidateService
         var query = _context.SC_Users
             .Where(u => !u.IsDeleted && u.PrimaryRole == 0)
             .AsQueryable();
+
+        // Recruitment status filter:
+        // "notStarted" = no recruitment record
+        // "inProcess" = stage 0-3
+        // "finished" = stage 4
+        // "dismissed" = stage 5
+        if (!string.IsNullOrEmpty(recruitmentStatus))
+        {
+            var recruitmentQuery = _context.PT_CandidateRecruitments
+                .Where(r => !r.IsDeleted)
+                .Select(r => new { r.SCUserId, r.CurrentStage });
+
+            if (recruitmentStatus == "notStarted")
+            {
+                var userIdsWithRecruitment = _context.PT_CandidateRecruitments
+                    .Where(r => !r.IsDeleted)
+                    .Select(r => r.SCUserId);
+                query = query.Where(u => !userIdsWithRecruitment.Contains(u.Id));
+            }
+            else if (recruitmentStatus == "inProcess")
+            {
+                var userIdsInProcess = _context.PT_CandidateRecruitments
+                    .Where(r => !r.IsDeleted && r.CurrentStage >= 0 && r.CurrentStage <= 3)
+                    .Select(r => r.SCUserId);
+                query = query.Where(u => userIdsInProcess.Contains(u.Id));
+            }
+            else if (recruitmentStatus == "finished")
+            {
+                var userIdsFinished = _context.PT_CandidateRecruitments
+                    .Where(r => !r.IsDeleted && r.CurrentStage == 4)
+                    .Select(r => r.SCUserId);
+                query = query.Where(u => userIdsFinished.Contains(u.Id));
+            }
+            else if (recruitmentStatus == "dismissed")
+            {
+                var userIdsDismissed = _context.PT_CandidateRecruitments
+                    .Where(r => !r.IsDeleted && r.CurrentStage == 5)
+                    .Select(r => r.SCUserId);
+                query = query.Where(u => userIdsDismissed.Contains(u.Id));
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {

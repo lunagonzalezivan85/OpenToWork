@@ -21,92 +21,37 @@
     </div>
 </div>
 
-@if (Result?.Stats != null)
-{
-    var s = Result.Stats;
-    var evaluatedPct = s.TotalCandidates > 0 ? (int)Math.Round((double)s.EvaluatedProfiles / s.TotalCandidates * 100) : 0;
-    var linkedInPct = s.TotalCandidates > 0 ? (int)Math.Round((double)s.WithLinkedIn / s.TotalCandidates * 100) : 0;
-    var portfolioPct = s.TotalCandidates > 0 ? (int)Math.Round((double)s.WithPortfolio / s.TotalCandidates * 100) : 0;
-    var cvPct = s.TotalCandidates > 0 ? (int)Math.Round((double)s.WithCV / s.TotalCandidates * 100) : 0;
-
-    <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionProfiles")</h2>
-    <div class="admin-chart-grid">
-        <div class="admin-progress-card">
-            <div class="admin-progress-header">
-                <span class="admin-progress-title">@Lang.T("admin.candidates.statsTotal")</span>
-                <span class="admin-progress-numbers"><strong>@s.TotalCandidates</strong></span>
-            </div>
-            <div class="admin-progress-detail">
-                <span><span class="dot" style="background: var(--success)"></span>@Lang.T("admin.candidates.statsActive"): @s.ActiveCandidates</span>
-                <span><span class="dot" style="background: var(--text-muted)"></span>@Lang.T("admin.candidates.statsInactive"): @s.InactiveCandidates</span>
-            </div>
-        </div>
-
-        <div class="admin-progress-card">
-            <div class="admin-progress-header">
-                <span class="admin-progress-title">@Lang.T("admin.candidates.statsEvaluated")</span>
-                <span class="admin-progress-numbers"><strong>@s.EvaluatedProfiles</strong> / @s.TotalCandidates</span>
-            </div>
-            <div class="admin-progress-bar">
-                <div class="admin-progress-fill admin-progress-fill--success" style="width: @evaluatedPct%"></div>
-            </div>
-            <div class="admin-progress-detail">
-                <span><span class="dot" style="background: var(--success)"></span>@Lang.T("admin.candidates.statsEvaluated"): @s.EvaluatedProfiles</span>
-                <span><span class="dot" style="background: var(--bg-tertiary)"></span>@Lang.T("admin.candidates.statsPending"): @s.PendingProfiles</span>
-                <span>@evaluatedPct%</span>
-            </div>
-        </div>
-
-        <div class="admin-progress-card">
-            <div class="admin-progress-header">
-                <span class="admin-progress-title">@Lang.T("admin.candidates.statsLinkedIn")</span>
-                <span class="admin-progress-numbers"><strong>@s.WithLinkedIn</strong> / @s.TotalCandidates</span>
-            </div>
-            <div class="admin-progress-bar">
-                <div class="admin-progress-fill admin-progress-fill--info" style="width: @linkedInPct%"></div>
-            </div>
-            <div class="admin-progress-detail">
-                <span>@linkedInPct%</span>
-            </div>
-        </div>
-
-        <div class="admin-progress-card">
-            <div class="admin-progress-header">
-                <span class="admin-progress-title">@Lang.T("admin.candidates.statsPortfolio")</span>
-                <span class="admin-progress-numbers"><strong>@s.WithPortfolio</strong> / @s.TotalCandidates</span>
-            </div>
-            <div class="admin-progress-bar">
-                <div class="admin-progress-fill admin-progress-fill--info" style="width: @portfolioPct%"></div>
-            </div>
-            <div class="admin-progress-detail">
-                <span>@portfolioPct%</span>
-            </div>
-        </div>
-
-        <div class="admin-progress-card">
-            <div class="admin-progress-header">
-                <span class="admin-progress-title">@Lang.T("admin.candidates.statsCV")</span>
-                <span class="admin-progress-numbers"><strong>@s.WithCV</strong> / @s.TotalCandidates</span>
-            </div>
-            <div class="admin-progress-bar">
-                <div class="admin-progress-fill admin-progress-fill--info" style="width: @cvPct%"></div>
-            </div>
-            <div class="admin-progress-detail">
-                <span>@cvPct%</span>
-            </div>
-        </div>
-
-        <div class="admin-progress-card">
-            <div class="admin-progress-header">
-                <span class="admin-progress-title">@Lang.T("admin.candidates.statsApplications")</span>
-                <span class="admin-progress-numbers"><strong>@s.WithApplications</strong></span>
-            </div>
-            <div class="admin-progress-detail">
-                <span>@Lang.T("admin.candidates.statsActive"): @s.ActiveCandidates</span>
-            </div>
-        </div>
-    </div>
-}
+@* === Tabs === *@
+<div class="admin-tabs">
+    <button class="admin-tab @(ActiveTab == "notStarted" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("notStarted")'>
+        @Lang.T("admin.candidates.tabNotStarted")
+        @if (TabCounts.TryGetValue("notStarted", out var nsCount) && nsCount > 0)
+        {
+            <span class="admin-tab-badge">@nsCount</span>
+        }
+    </button>
+    <button class="admin-tab @(ActiveTab == "inProcess" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("inProcess")'>
+        @Lang.T("admin.candidates.tabInProcess")
+        @if (TabCounts.TryGetValue("inProcess", out var ipCount) && ipCount > 0)
+        {
+            <span class="admin-tab-badge admin-tab-badge--info">@ipCount</span>
+        }
+    </button>
+    <button class="admin-tab @(ActiveTab == "finished" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("finished")'>
+        @Lang.T("admin.candidates.tabFinished")
+        @if (TabCounts.TryGetValue("finished", out var fCount) && fCount > 0)
+        {
+            <span class="admin-tab-badge admin-tab-badge--success">@fCount</span>
+        }
+    </button>
+    <button class="admin-tab @(ActiveTab == "dismissed" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("dismissed")'>
+        @Lang.T("admin.candidates.tabDismissed")
+        @if (TabCounts.TryGetValue("dismissed", out var dCount) && dCount > 0)
+        {
+            <span class="admin-tab-badge admin-tab-badge--danger">@dCount</span>
+        }
+    </button>
+</div>
 
 <div class="admin-users-toolbar">
     <div class="admin-users-search">
@@ -259,11 +204,22 @@ else
                         <td class="col-date">@c.CreatedAt.ToString("yyyy-MM-dd")</td>
                         <td>
                             <div class="admin-row-actions">
-                                <button class="admin-row-btn" title="@Lang.T("admin.recruitment.assignCandidate")" @onclick="() => ShowAssignModal(c.Id, c.FullName)">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
-                                    </svg>
-                                </button>
+                                @if (ActiveTab == "notStarted")
+                                {
+                                    <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.recruitment.assignCandidate")" @onclick="() => ShowAssignModal(c.Id, c.FullName)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
+                                        </svg>
+                                    </button>
+                                }
+                                @if (ActiveTab == "inProcess" || ActiveTab == "finished")
+                                {
+                                    <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.recruitment.detailTitle")" @onclick="() => ViewPipeline(c.Id)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <rect x="3" y="3" width="6" height="18" rx="1" /><rect x="9" y="3" width="6" height="12" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" />
+                                        </svg>
+                                    </button>
+                                }
                                 <button class="admin-row-btn" title="@Lang.T("admin.candidates.viewProfile")" @onclick="() => ViewProfile(c.Id)">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
@@ -333,12 +289,14 @@ else
     private bool IsExporting { get; set; }
     private string SearchTerm { get; set; } = "";
     private string ActiveFilter { get; set; } = "all";
+    private string ActiveTab { get; set; } = "notStarted";
     private int CurrentPage { get; set; } = 1;
     private int PageSize { get; set; } = 20;
     private string SortColumn { get; set; } = "date";
     private bool SortDesc { get; set; } = true;
     private HashSet<Guid> SelectedIds { get; set; } = new();
     private CancellationTokenSource? _searchCts;
+    private Dictionary<string, int> TabCounts { get; set; } = new();
 
     private bool ShowAssign { get; set; }
     private Guid AssignCandidateId { get; set; }
@@ -352,6 +310,7 @@ else
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
         await LoadData();
+        _ = LoadTabCounts();
     }
 
     private async Task LoadData()
@@ -380,10 +339,31 @@ else
             CurrentPage, PageSize,
             string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm,
             wizardCompleted, hasLinkedIn, hasPortfolio, hasCV, isActive,
-            null, SortColumn, SortDesc);
+            null, SortColumn, SortDesc, ActiveTab);
 
         IsLoading = false;
         StateHasChanged();
+    }
+
+    private async Task LoadTabCounts()
+    {
+        TabCounts.Clear();
+        foreach (var tab in new[] { "notStarted", "inProcess", "finished", "dismissed" })
+        {
+            var data = await AuthApi.GetCandidatesAsync(1, 1, null, null, null, null, null, null, null, null, true, tab);
+            if (data != null)
+                TabCounts[tab] = data.TotalCount;
+        }
+        StateHasChanged();
+    }
+
+    private async Task SwitchTab(string tab)
+    {
+        ActiveTab = tab;
+        CurrentPage = 1;
+        ActiveFilter = "all";
+        SelectedIds.Clear();
+        await LoadData();
     }
 
     private async void OnSearchKeyUp(KeyboardEventArgs e)
@@ -485,6 +465,11 @@ else
         Nav.NavigateTo($"/user/{id}");
     }
 
+    private void ViewPipeline(Guid candidateId)
+    {
+        Nav.NavigateTo($"/candidates/pipeline");
+    }
+
     private async Task ExportCsv()
     {
         IsExporting = true;
@@ -538,7 +523,8 @@ else
         if (result != null)
         {
             ShowAssign = false;
-            Nav.NavigateTo("/candidates/pipeline");
+            await LoadData();
+            _ = LoadTabCounts();
         }
     }
 }

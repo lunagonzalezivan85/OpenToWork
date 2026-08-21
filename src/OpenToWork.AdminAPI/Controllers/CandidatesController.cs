@@ -27,11 +27,12 @@ public class CandidatesController : AdminControllerBase
         [FromQuery] bool? isActive = null,
         [FromQuery] Guid? skillId = null,
         [FromQuery] string? sortBy = null,
-        [FromQuery] bool sortDesc = true)
+        [FromQuery] bool sortDesc = true,
+        [FromQuery] string? recruitmentStatus = null)
     {
         var result = await _candidateService.GetCandidatesAsync(
             page, pageSize, search, wizardCompleted, hasLinkedIn,
-            hasPortfolio, hasCV, isActive, skillId, sortBy, sortDesc);
+            hasPortfolio, hasCV, isActive, skillId, sortBy, sortDesc, recruitmentStatus);
         return Ok(result);
     }
 
