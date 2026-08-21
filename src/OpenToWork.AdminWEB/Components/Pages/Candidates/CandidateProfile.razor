@@ -664,11 +664,21 @@ else
         get
         {
             if (Recruitment == null) return 0;
-            var hasTech = Recruitment.TechnicalEvaluations.Count > 0;
-            var hasCultural = Recruitment.CulturalInterviews.Count > 0;
-            var techAvg = hasTech ? Recruitment.TechnicalEvaluations.Average(e => e.Score) : 0;
-            var culturalAvg = hasCultural ? Recruitment.CulturalInterviews.Average(e => e.Score) : 0;
-            return (hasTech && hasCultural) ? Math.Round((techAvg + culturalAvg) / 2, 1) : (hasTech ? Math.Round(techAvg, 1) : (hasCultural ? Math.Round(culturalAvg, 1) : 0));
+
+            var scores = new List<decimal>();
+
+            var invTotal = Recruitment.InvestigationChecklist.Count;
+            var invCompleted = Recruitment.InvestigationChecklist.Count(c => c.IsCompleted);
+            if (invTotal > 0)
+                scores.Add((decimal)invCompleted / invTotal * 100);
+
+            if (Recruitment.TechnicalEvaluations.Count > 0)
+                scores.Add(Recruitment.TechnicalEvaluations.Average(e => e.Score));
+
+            if (Recruitment.CulturalInterviews.Count > 0)
+                scores.Add(Recruitment.CulturalInterviews.Average(e => e.Score));
+
+            return scores.Count > 0 ? Math.Round(scores.Average(), 1) : 0;
         }
     }
 

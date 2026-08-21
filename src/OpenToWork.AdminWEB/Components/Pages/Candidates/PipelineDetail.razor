@@ -870,11 +870,21 @@ else
         get
         {
             if (Detail == null) return 0;
-            var hasTech = Detail.TechnicalEvaluations.Count > 0;
-            var hasCultural = Detail.CulturalInterviews.Count > 0;
-            var techAvg = hasTech ? Detail.TechnicalEvaluations.Average(e => e.Score) : 0;
-            var culturalAvg = hasCultural ? Detail.CulturalInterviews.Average(e => e.Score) : 0;
-            return (hasTech && hasCultural) ? Math.Round((techAvg + culturalAvg) / 2, 1) : (hasTech ? Math.Round(techAvg, 1) : (hasCultural ? Math.Round(culturalAvg, 1) : 0));
+
+            var scores = new List<decimal>();
+
+            var invTotal = Detail.InvestigationChecklist.Count;
+            var invCompleted = Detail.InvestigationChecklist.Count(c => c.IsCompleted);
+            if (invTotal > 0)
+                scores.Add((decimal)invCompleted / invTotal * 100);
+
+            if (Detail.TechnicalEvaluations.Count > 0)
+                scores.Add(Detail.TechnicalEvaluations.Average(e => e.Score));
+
+            if (Detail.CulturalInterviews.Count > 0)
+                scores.Add(Detail.CulturalInterviews.Average(e => e.Score));
+
+            return scores.Count > 0 ? Math.Round(scores.Average(), 1) : 0;
         }
     }
 
