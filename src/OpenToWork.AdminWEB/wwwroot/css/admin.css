@@ -1999,9 +1999,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     margin-top: 0.75rem;
-    padding: 1rem;
+    padding: 1.25rem;
     background: #FFFFFF;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -2014,14 +2014,14 @@
 }
 
 .admin-profile-score-circle {
-    width: 64px;
-    height: 64px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: 3px solid;
+    border: 4px solid;
     transition: transform 0.2s ease;
 }
 
@@ -2040,7 +2040,7 @@
 }
 
 .admin-profile-score-circle-value {
-    font-size: 1.1rem;
+    font-size: 1.6rem;
     font-weight: 800;
     line-height: 1;
 }
@@ -2054,14 +2054,15 @@
 }
 
 .admin-profile-score-circle-max {
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
 }
 
 .admin-profile-score-circle-label {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
     font-weight: 600;
+    text-align: center;
 }
 
 .admin-score-summary-stage {
