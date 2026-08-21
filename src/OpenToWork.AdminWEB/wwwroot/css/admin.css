@@ -2640,9 +2640,9 @@
 }
 
 .admin-evaluation-card {
-    background: var(--bg-card);
+    background: #FFFFFF;
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: 0.75rem;
 }
 
