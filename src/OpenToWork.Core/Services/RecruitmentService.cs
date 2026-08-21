@@ -189,6 +189,19 @@ public class RecruitmentService : IRecruitmentService
                 Type = t.Type,
                 Recommendation = t.Recommendation
             }).ToList() ?? new(),
+            CulturalInterviews = recruitment.TechnicalEvaluations?.Where(t => !t.IsDeleted && t.Type == 1).OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt).Select(t => new TechnicalEvaluationDto
+            {
+                Id = t.Id,
+                EvaluationName = t.EvaluationName,
+                Description = t.Description,
+                Score = t.Score,
+                EvidenceUrl = t.EvidenceUrl,
+                Notes = t.Notes,
+                EvaluatedAt = t.EvaluatedAt,
+                EvaluatedByName = t.EvaluatedByUser?.Email,
+                Type = t.Type,
+                Recommendation = t.Recommendation
+            }).ToList() ?? new(),
             InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
                 Id = c.Id,
@@ -305,6 +318,19 @@ public class RecruitmentService : IRecruitmentService
                 IsInProgress = e.IsInProgress
             }).ToList() ?? new(),
             TechnicalEvaluations = recruitment.TechnicalEvaluations?.Where(t => !t.IsDeleted && t.Type == 0).OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt).Select(t => new TechnicalEvaluationDto
+            {
+                Id = t.Id,
+                EvaluationName = t.EvaluationName,
+                Description = t.Description,
+                Score = t.Score,
+                EvidenceUrl = t.EvidenceUrl,
+                Notes = t.Notes,
+                EvaluatedAt = t.EvaluatedAt,
+                EvaluatedByName = t.EvaluatedByUser?.Email,
+                Type = t.Type,
+                Recommendation = t.Recommendation
+            }).ToList() ?? new(),
+            CulturalInterviews = recruitment.TechnicalEvaluations?.Where(t => !t.IsDeleted && t.Type == 1).OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt).Select(t => new TechnicalEvaluationDto
             {
                 Id = t.Id,
                 EvaluationName = t.EvaluationName,

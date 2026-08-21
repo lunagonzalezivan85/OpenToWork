@@ -44,6 +44,7 @@ public class RecruitmentDetailDto
     public List<CandidateCertificationDto> Certifications { get; set; } = new();
     public List<CandidateEducationDto> Educations { get; set; } = new();
     public List<TechnicalEvaluationDto> TechnicalEvaluations { get; set; } = new();
+    public List<TechnicalEvaluationDto> CulturalInterviews { get; set; } = new();
     public DismissalInfoDto? Dismissal { get; set; }
 }
 
