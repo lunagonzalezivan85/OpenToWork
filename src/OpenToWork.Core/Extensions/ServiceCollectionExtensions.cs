@@ -32,6 +32,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminDashboardService, AdminDashboardService>();
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<IAdminApplicationService, AdminApplicationService>();
+        services.AddScoped<IAdminCandidateService, AdminCandidateService>();
 
         return services;
     }

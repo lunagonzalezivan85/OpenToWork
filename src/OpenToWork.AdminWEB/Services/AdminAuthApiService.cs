@@ -147,6 +147,51 @@ public class AdminAuthApiService
         return await response.Content.ReadAsByteArrayAsync();
     }
 
+    public async Task<CandidateConsoleResultDto?> GetCandidatesAsync(
+        int page = 1, int pageSize = 20, string? search = null,
+        bool? wizardCompleted = null, bool? hasLinkedIn = null,
+        bool? hasPortfolio = null, bool? hasCV = null, bool? isActive = null,
+        Guid? skillId = null, string? sortBy = null, bool sortDesc = true)
+    {
+        await SetAuthHeaderAsync();
+        var query = $"api/admin/candidates?page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrEmpty(search)) query += $"&search={Uri.EscapeDataString(search)}";
+        if (wizardCompleted.HasValue) query += $"&wizardCompleted={wizardCompleted.Value}";
+        if (hasLinkedIn.HasValue) query += $"&hasLinkedIn={hasLinkedIn.Value}";
+        if (hasPortfolio.HasValue) query += $"&hasPortfolio={hasPortfolio.Value}";
+        if (hasCV.HasValue) query += $"&hasCV={hasCV.Value}";
+        if (isActive.HasValue) query += $"&isActive={isActive.Value}";
+        if (skillId.HasValue) query += $"&skillId={skillId.Value}";
+        if (!string.IsNullOrEmpty(sortBy)) query += $"&sortBy={Uri.EscapeDataString(sortBy)}";
+        query += $"&sortDesc={sortDesc.ToString().ToLower()}";
+
+        var response = await _httpClient.GetAsync(query);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateConsoleResultDto>();
+    }
+
+    public async Task<bool> BulkActivateCandidatesAsync(List<Guid> ids)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/candidates/bulk-activate", new { Ids = ids });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> BulkDeactivateCandidatesAsync(List<Guid> ids)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/candidates/bulk-deactivate", new { Ids = ids });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<byte[]?> ExportCandidatesCsvAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/candidates/export");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadAsByteArrayAsync();
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");

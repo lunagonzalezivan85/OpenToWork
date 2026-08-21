@@ -1502,3 +1502,178 @@
         border-radius: var(--radius-lg);
     }
 }
+
+/* ============================================
+   Candidates Console
+   ============================================ */
+
+.admin-candidates-table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    background: #FFFFFF;
+}
+
+.admin-candidates-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.admin-candidates-table thead {
+    background: var(--bg-tertiary);
+}
+
+.admin-candidates-table th {
+    padding: 0.75rem 0.8rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+}
+
+.admin-candidates-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.admin-candidates-table th.sortable:hover {
+    color: var(--accent-primary);
+}
+
+.admin-candidates-table td {
+    padding: 0.7rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.admin-candidates-table tbody tr {
+    transition: background 0.15s;
+}
+
+.admin-candidates-table tbody tr:hover {
+    background: var(--bg-tertiary);
+}
+
+.admin-candidates-table .row-inactive {
+    opacity: 0.6;
+}
+
+.admin-candidates-table .col-check {
+    width: 36px;
+    text-align: center;
+}
+
+.admin-candidates-table .col-date {
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.admin-candidate-name {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+}
+
+.admin-candidate-fullname {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-candidate-name:hover .admin-candidate-fullname {
+    color: var(--accent-primary);
+}
+
+.admin-skill-count {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.admin-skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.admin-skill-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.admin-row-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.admin-row-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #FFFFFF;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.admin-row-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.admin-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--radius-md);
+    background: var(--accent-light);
+    border: 1px solid var(--accent-primary);
+}
+
+.admin-bulk-count {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--accent-primary);
+    margin-right: auto;
+}
+
+.admin-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    padding: var(--space-md) 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .admin-candidates-table {
+        font-size: 0.8rem;
+    }
+
+    .admin-candidates-table th,
+    .admin-candidates-table td {
+        padding: 0.5rem;
+    }
+
+    .admin-skill-tags {
+        display: none;
+    }
+}

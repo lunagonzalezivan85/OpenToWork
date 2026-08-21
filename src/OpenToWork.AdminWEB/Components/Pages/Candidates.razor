@@ -1,0 +1,462 @@
+@page "/candidates"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>@Lang.T("admin.candidates.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.candidates.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.candidates.subtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ExportCsv" disabled="@IsExporting">
+            @Lang.T("admin.candidates.exportCsv")
+        </button>
+    </div>
+</div>
+
+@if (Result?.Stats != null)
+{
+    var s = Result.Stats;
+    var evaluatedPct = s.TotalCandidates > 0 ? (int)Math.Round((double)s.EvaluatedProfiles / s.TotalCandidates * 100) : 0;
+    var linkedInPct = s.TotalCandidates > 0 ? (int)Math.Round((double)s.WithLinkedIn / s.TotalCandidates * 100) : 0;
+    var portfolioPct = s.TotalCandidates > 0 ? (int)Math.Round((double)s.WithPortfolio / s.TotalCandidates * 100) : 0;
+    var cvPct = s.TotalCandidates > 0 ? (int)Math.Round((double)s.WithCV / s.TotalCandidates * 100) : 0;
+
+    <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionProfiles")</h2>
+    <div class="admin-chart-grid">
+        <div class="admin-progress-card">
+            <div class="admin-progress-header">
+                <span class="admin-progress-title">@Lang.T("admin.candidates.statsTotal")</span>
+                <span class="admin-progress-numbers"><strong>@s.TotalCandidates</strong></span>
+            </div>
+            <div class="admin-progress-detail">
+                <span><span class="dot" style="background: var(--success)"></span>@Lang.T("admin.candidates.statsActive"): @s.ActiveCandidates</span>
+                <span><span class="dot" style="background: var(--text-muted)"></span>@Lang.T("admin.candidates.statsInactive"): @s.InactiveCandidates</span>
+            </div>
+        </div>
+
+        <div class="admin-progress-card">
+            <div class="admin-progress-header">
+                <span class="admin-progress-title">@Lang.T("admin.candidates.statsEvaluated")</span>
+                <span class="admin-progress-numbers"><strong>@s.EvaluatedProfiles</strong> / @s.TotalCandidates</span>
+            </div>
+            <div class="admin-progress-bar">
+                <div class="admin-progress-fill admin-progress-fill--success" style="width: @evaluatedPct%"></div>
+            </div>
+            <div class="admin-progress-detail">
+                <span><span class="dot" style="background: var(--success)"></span>@Lang.T("admin.candidates.statsEvaluated"): @s.EvaluatedProfiles</span>
+                <span><span class="dot" style="background: var(--bg-tertiary)"></span>@Lang.T("admin.candidates.statsPending"): @s.PendingProfiles</span>
+                <span>@evaluatedPct%</span>
+            </div>
+        </div>
+
+        <div class="admin-progress-card">
+            <div class="admin-progress-header">
+                <span class="admin-progress-title">@Lang.T("admin.candidates.statsLinkedIn")</span>
+                <span class="admin-progress-numbers"><strong>@s.WithLinkedIn</strong> / @s.TotalCandidates</span>
+            </div>
+            <div class="admin-progress-bar">
+                <div class="admin-progress-fill admin-progress-fill--info" style="width: @linkedInPct%"></div>
+            </div>
+            <div class="admin-progress-detail">
+                <span>@linkedInPct%</span>
+            </div>
+        </div>
+
+        <div class="admin-progress-card">
+            <div class="admin-progress-header">
+                <span class="admin-progress-title">@Lang.T("admin.candidates.statsPortfolio")</span>
+                <span class="admin-progress-numbers"><strong>@s.WithPortfolio</strong> / @s.TotalCandidates</span>
+            </div>
+            <div class="admin-progress-bar">
+                <div class="admin-progress-fill admin-progress-fill--info" style="width: @portfolioPct%"></div>
+            </div>
+            <div class="admin-progress-detail">
+                <span>@portfolioPct%</span>
+            </div>
+        </div>
+
+        <div class="admin-progress-card">
+            <div class="admin-progress-header">
+                <span class="admin-progress-title">@Lang.T("admin.candidates.statsCV")</span>
+                <span class="admin-progress-numbers"><strong>@s.WithCV</strong> / @s.TotalCandidates</span>
+            </div>
+            <div class="admin-progress-bar">
+                <div class="admin-progress-fill admin-progress-fill--info" style="width: @cvPct%"></div>
+            </div>
+            <div class="admin-progress-detail">
+                <span>@cvPct%</span>
+            </div>
+        </div>
+
+        <div class="admin-progress-card">
+            <div class="admin-progress-header">
+                <span class="admin-progress-title">@Lang.T("admin.candidates.statsApplications")</span>
+                <span class="admin-progress-numbers"><strong>@s.WithApplications</strong></span>
+            </div>
+            <div class="admin-progress-detail">
+                <span>@Lang.T("admin.candidates.statsActive"): @s.ActiveCandidates</span>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="admin-users-toolbar">
+    <div class="admin-users-search">
+        <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder="@Lang.T("admin.candidates.searchPlaceholder")" />
+    </div>
+    <div class="admin-users-chips">
+        <button class="admin-chip @(ActiveFilter == "all" ? "admin-chip--active" : "")" @onclick='() => SetFilter("all")'>
+            @Lang.T("admin.candidates.filterAll")
+        </button>
+        <button class="admin-chip @(ActiveFilter == "evaluated" ? "admin-chip--active" : "")" @onclick='() => SetFilter("evaluated")'>
+            @Lang.T("admin.candidates.filterEvaluated")
+        </button>
+        <button class="admin-chip @(ActiveFilter == "pending" ? "admin-chip--active" : "")" @onclick='() => SetFilter("pending")'>
+            @Lang.T("admin.candidates.filterPending")
+        </button>
+        <button class="admin-chip @(ActiveFilter == "linkedin" ? "admin-chip--active" : "")" @onclick='() => SetFilter("linkedin")'>
+            @Lang.T("admin.candidates.filterLinkedIn")
+        </button>
+        <button class="admin-chip @(ActiveFilter == "portfolio" ? "admin-chip--active" : "")" @onclick='() => SetFilter("portfolio")'>
+            @Lang.T("admin.candidates.filterPortfolio")
+        </button>
+        <button class="admin-chip @(ActiveFilter == "cv" ? "admin-chip--active" : "")" @onclick='() => SetFilter("cv")'>
+            @Lang.T("admin.candidates.filterCV")
+        </button>
+        <button class="admin-chip @(ActiveFilter == "active" ? "admin-chip--active" : "")" @onclick='() => SetFilter("active")'>
+            @Lang.T("admin.candidates.filterActive")
+        </button>
+        <button class="admin-chip @(ActiveFilter == "inactive" ? "admin-chip--active" : "")" @onclick='() => SetFilter("inactive")'>
+            @Lang.T("admin.candidates.filterInactive")
+        </button>
+    </div>
+</div>
+
+@if (SelectedIds.Count > 0)
+{
+    <div class="admin-bulk-actions">
+        <span class="admin-bulk-count">@SelectedIds.Count @Lang.T("admin.candidates.selected")</span>
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="BulkActivate">
+            @Lang.T("admin.candidates.bulkActivate")
+        </button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="BulkDeactivate">
+            @Lang.T("admin.candidates.bulkDeactivate")
+        </button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ClearSelection">
+            @Lang.T("admin.common.cancel")
+        </button>
+    </div>
+}
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.candidates.loading")</div>
+}
+else if (Result == null || Result.Items.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.candidates.empty")</div>
+    </div>
+}
+else
+{
+    <div class="admin-candidates-table-wrapper">
+        <table class="admin-candidates-table">
+            <thead>
+                <tr>
+                    <th class="col-check">
+                        <input type="checkbox" @onchange="ToggleSelectAll" checked="@IsAllSelected" />
+                    </th>
+                    <th @onclick='() => SortBy("name")' class="sortable">
+                        @Lang.T("admin.candidates.columnName")
+                        @(SortColumn == "name" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th @onclick='() => SortBy("email")' class="sortable">
+                        @Lang.T("admin.candidates.columnEmail")
+                        @(SortColumn == "email" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th>@Lang.T("admin.candidates.columnTitle")</th>
+                    <th>@Lang.T("admin.candidates.columnStatus")</th>
+                    <th @onclick='() => SortBy("skills")' class="sortable">
+                        @Lang.T("admin.candidates.columnSkills")
+                        @(SortColumn == "skills" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th @onclick='() => SortBy("experience")' class="sortable">
+                        @Lang.T("admin.candidates.columnExperience")
+                        @(SortColumn == "experience" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th @onclick='() => SortBy("applications")' class="sortable">
+                        @Lang.T("admin.candidates.columnApplications")
+                        @(SortColumn == "applications" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th>LinkedIn</th>
+                    <th>Portfolio</th>
+                    <th>CV</th>
+                    <th>@Lang.T("admin.candidates.columnCreated")</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Result.Items)
+                {
+                    <tr class="@(c.IsActive ? "" : "row-inactive")">
+                        <td class="col-check">
+                            <input type="checkbox" checked="@SelectedIds.Contains(c.Id)" @onchange="() => ToggleSelect(c.Id)" />
+                        </td>
+                        <td>
+                            <div class="admin-candidate-name" @onclick="() => ViewProfile(c.Id)">
+                                <div class="admin-result-avatar">@(GetInitials(c.FullName))</div>
+                                <div>
+                                    <div class="admin-candidate-fullname">@c.FullName</div>
+                                    @if (c.WizardCompleted)
+                                    {
+                                        <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.filterEvaluated")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.filterPending")</span>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>@c.Email</td>
+                        <td>@(c.Title ?? "—")</td>
+                        <td>
+                            @if (c.IsActive)
+                            {
+                                <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.active")</span>
+                            }
+                            else
+                            {
+                                <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.inactive")</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="admin-skill-count">@c.SkillCount</span>
+                            @if (c.TopSkills.Any())
+                            {
+                                <div class="admin-skill-tags">
+                                    @foreach (var skill in c.TopSkills)
+                                    {
+                                        <span class="admin-skill-tag">@skill</span>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td>@c.ExperienceCount</td>
+                        <td>@c.ApplicationCount</td>
+                        <td>@(c.HasLinkedIn ? "✓" : "—")</td>
+                        <td>@(c.HasPortfolio ? "✓" : "—")</td>
+                        <td>@(c.HasCV ? "✓" : "—")</td>
+                        <td class="col-date">@c.CreatedAt.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <div class="admin-row-actions">
+                                <button class="admin-row-btn" title="@Lang.T("admin.candidates.viewProfile")" @onclick="() => ViewProfile(c.Id)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Result.TotalPages > 1)
+    {
+        <div class="admin-pagination">
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage <= 1)" @onclick="PrevPage">
+                @Lang.T("admin.candidates.prev")
+            </button>
+            <span>@Lang.T("admin.candidates.page") @CurrentPage @Lang.T("admin.candidates.of") @Result.TotalPages</span>
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage >= Result.TotalPages)" @onclick="NextPage">
+                @Lang.T("admin.candidates.next")
+            </button>
+        </div>
+    }
+}
+
+@code {
+    private CandidateConsoleResultDto? Result { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private bool IsExporting { get; set; }
+    private string SearchTerm { get; set; } = "";
+    private string ActiveFilter { get; set; } = "all";
+    private int CurrentPage { get; set; } = 1;
+    private int PageSize { get; set; } = 20;
+    private string SortColumn { get; set; } = "date";
+    private bool SortDesc { get; set; } = true;
+    private HashSet<Guid> SelectedIds { get; set; } = new();
+    private CancellationTokenSource? _searchCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        StateHasChanged();
+
+        bool? wizardCompleted = ActiveFilter switch
+        {
+            "evaluated" => true,
+            "pending" => false,
+            _ => null
+        };
+
+        bool? hasLinkedIn = ActiveFilter == "linkedin" ? true : null;
+        bool? hasPortfolio = ActiveFilter == "portfolio" ? true : null;
+        bool? hasCV = ActiveFilter == "cv" ? true : null;
+        bool? isActive = ActiveFilter switch
+        {
+            "active" => true,
+            "inactive" => false,
+            _ => null
+        };
+
+        Result = await AuthApi.GetCandidatesAsync(
+            CurrentPage, PageSize,
+            string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm,
+            wizardCompleted, hasLinkedIn, hasPortfolio, hasCV, isActive,
+            null, SortColumn, SortDesc);
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter") return;
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        CurrentPage = 1;
+        await LoadData();
+    }
+
+    private async Task SetFilter(string filter)
+    {
+        ActiveFilter = filter;
+        CurrentPage = 1;
+        await LoadData();
+    }
+
+    private async Task SortByColumn(string column)
+    {
+        if (SortColumn == column)
+            SortDesc = !SortDesc;
+        else
+        {
+            SortColumn = column;
+            SortDesc = true;
+        }
+        await LoadData();
+    }
+
+    private void SortBy(string column) => _ = SortByColumn(column);
+
+    private async Task PrevPage()
+    {
+        if (CurrentPage > 1)
+        {
+            CurrentPage--;
+            await LoadData();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (Result != null && CurrentPage < Result.TotalPages)
+        {
+            CurrentPage++;
+            await LoadData();
+        }
+    }
+
+    private void ToggleSelect(Guid id)
+    {
+        if (SelectedIds.Contains(id))
+            SelectedIds.Remove(id);
+        else
+            SelectedIds.Add(id);
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        if (e.Value is bool isChecked && isChecked && Result != null)
+            SelectedIds = new HashSet<Guid>(Result.Items.Select(c => c.Id));
+        else
+            SelectedIds.Clear();
+    }
+
+    private bool IsAllSelected => Result != null && Result.Items.Count > 0 && Result.Items.All(c => SelectedIds.Contains(c.Id));
+
+    private void ClearSelection()
+    {
+        SelectedIds.Clear();
+        StateHasChanged();
+    }
+
+    private async Task BulkActivate()
+    {
+        if (SelectedIds.Count == 0) return;
+        var ok = await AuthApi.BulkActivateCandidatesAsync(SelectedIds.ToList());
+        if (ok)
+        {
+            SelectedIds.Clear();
+            await LoadData();
+        }
+    }
+
+    private async Task BulkDeactivate()
+    {
+        if (SelectedIds.Count == 0) return;
+        var ok = await AuthApi.BulkDeactivateCandidatesAsync(SelectedIds.ToList());
+        if (ok)
+        {
+            SelectedIds.Clear();
+            await LoadData();
+        }
+    }
+
+    private void ViewProfile(Guid id)
+    {
+        Nav.NavigateTo($"/user/{id}");
+    }
+
+    private async Task ExportCsv()
+    {
+        IsExporting = true;
+        StateHasChanged();
+        var bytes = await AuthApi.ExportCandidatesCsvAsync();
+        if (bytes != null)
+        {
+            var base64 = Convert.ToBase64String(bytes);
+            await JS.InvokeVoidAsync("fileDownload.save", $"candidates-{DateTime.UtcNow:yyyyMMddHHmmss}.csv", "text/csv", base64);
+        }
+        IsExporting = false;
+        StateHasChanged();
+    }
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[^1][..1]).ToUpper();
+    }
+}

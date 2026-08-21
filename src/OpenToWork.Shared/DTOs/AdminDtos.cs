@@ -165,3 +165,50 @@ public class AdminCandidateCertificationDto
     public string? CredentialId { get; set; }
     public string? CredentialUrl { get; set; }
 }
+
+public class CandidateConsoleDto
+{
+    public Guid Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string? Title { get; set; }
+    public bool IsActive { get; set; }
+    public bool WizardCompleted { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public bool HasLinkedIn { get; set; }
+    public bool HasPortfolio { get; set; }
+    public bool HasCV { get; set; }
+    public int? YearsOfExperience { get; set; }
+    public string? Country { get; set; }
+    public string? City { get; set; }
+    public int? Availability { get; set; }
+    public int SkillCount { get; set; }
+    public int ExperienceCount { get; set; }
+    public int ApplicationCount { get; set; }
+    public List<string> TopSkills { get; set; } = new();
+}
+
+public class CandidateConsoleResultDto
+{
+    public List<CandidateConsoleDto> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+    public CandidateConsoleStatsDto Stats { get; set; } = new();
+}
+
+public class CandidateConsoleStatsDto
+{
+    public int TotalCandidates { get; set; }
+    public int EvaluatedProfiles { get; set; }
+    public int PendingProfiles { get; set; }
+    public int WithLinkedIn { get; set; }
+    public int WithPortfolio { get; set; }
+    public int WithCV { get; set; }
+    public int WithApplications { get; set; }
+    public int ActiveCandidates { get; set; }
+    public int InactiveCandidates { get; set; }
+}
