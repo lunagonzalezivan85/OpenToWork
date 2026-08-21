@@ -36,13 +36,6 @@ public class AdminCandidateService : IAdminCandidateService
 
         var query = _context.SC_Users
             .Where(u => !u.IsDeleted && u.PrimaryRole == 0)
-            .Include(u => u.Candidate!)
-                .ThenInclude(c => c.CandidateSkills!)
-                    .ThenInclude(cs => cs.Skill)
-            .Include(u => u.Candidate!)
-                .ThenInclude(c => c.Experiences)
-            .Include(u => u.Candidate!)
-                .ThenInclude(c => c.Applications)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -127,11 +120,31 @@ public class AdminCandidateService : IAdminCandidateService
                 SkillCount = u.Candidate != null ? u.Candidate.CandidateSkills!.Count : 0,
                 ExperienceCount = u.Candidate != null ? u.Candidate.Experiences!.Count : 0,
                 ApplicationCount = u.Candidate != null ? u.Candidate.Applications!.Count : 0,
-                TopSkills = u.Candidate != null
-                    ? u.Candidate.CandidateSkills!.OrderByDescending(cs => cs.ProficiencyLevel ?? 0).Take(3).Select(cs => cs.Skill!.Name).ToList()
-                    : new List<string>()
+                TopSkills = new List<string>()
             })
             .ToListAsync();
+
+        var candidateIds = items.Select(i => i.Id).ToList();
+        var candidateSkillData = await _context.PT_CandidateSkills
+            .Where(cs => candidateIds.Contains(cs.PT_CandidateId) && !cs.IsDeleted)
+            .Include(cs => cs.Skill)
+            .ToListAsync();
+
+        var skillsByCandidate = candidateSkillData
+            .GroupBy(cs => cs.PT_CandidateId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(cs => cs.ProficiencyLevel ?? 0)
+                      .Take(3)
+                      .Select(cs => cs.Skill?.Name ?? "")
+                      .ToList()
+            );
+
+        foreach (var item in items)
+        {
+            if (skillsByCandidate.TryGetValue(item.Id, out var skills))
+                item.TopSkills = skills;
+        }
 
         var allCandidates = _context.SC_Users
             .Where(u => !u.IsDeleted && u.PrimaryRole == 0)
@@ -211,13 +224,6 @@ public class AdminCandidateService : IAdminCandidateService
     {
         var candidates = await _context.SC_Users
             .Where(u => !u.IsDeleted && u.PrimaryRole == 0)
-            .Include(u => u.Candidate!)
-                .ThenInclude(c => c.CandidateSkills!)
-                    .ThenInclude(cs => cs.Skill)
-            .Include(u => u.Candidate!)
-                .ThenInclude(c => c.Experiences)
-            .Include(u => u.Candidate!)
-                .ThenInclude(c => c.Applications)
             .OrderByDescending(u => u.CreatedAt)
             .Select(u => new CandidateConsoleDto
             {
@@ -240,11 +246,31 @@ public class AdminCandidateService : IAdminCandidateService
                 SkillCount = u.Candidate != null ? u.Candidate.CandidateSkills!.Count : 0,
                 ExperienceCount = u.Candidate != null ? u.Candidate.Experiences!.Count : 0,
                 ApplicationCount = u.Candidate != null ? u.Candidate.Applications!.Count : 0,
-                TopSkills = u.Candidate != null
-                    ? u.Candidate.CandidateSkills!.OrderByDescending(cs => cs.ProficiencyLevel ?? 0).Take(5).Select(cs => cs.Skill!.Name).ToList()
-                    : new List<string>()
+                TopSkills = new List<string>()
             })
             .ToListAsync();
+
+        var exportCandidateIds = candidates.Select(c => c.Id).ToList();
+        var exportSkillData = await _context.PT_CandidateSkills
+            .Where(cs => exportCandidateIds.Contains(cs.PT_CandidateId) && !cs.IsDeleted)
+            .Include(cs => cs.Skill)
+            .ToListAsync();
+
+        var exportSkillsMap = exportSkillData
+            .GroupBy(cs => cs.PT_CandidateId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderByDescending(cs => cs.ProficiencyLevel ?? 0)
+                      .Take(5)
+                      .Select(cs => cs.Skill?.Name ?? "")
+                      .ToList()
+            );
+
+        foreach (var c in candidates)
+        {
+            if (exportSkillsMap.TryGetValue(c.Id, out var skills))
+                c.TopSkills = skills;
+        }
 
         var sb = new StringBuilder();
         sb.AppendLine("Id,Email,FullName,Title,IsActive,WizardCompleted,CreatedAt,LastLoginAt,CompletedAt,HasLinkedIn,HasPortfolio,HasCV,YearsOfExperience,Country,City,SkillCount,ExperienceCount,ApplicationCount,TopSkills");
