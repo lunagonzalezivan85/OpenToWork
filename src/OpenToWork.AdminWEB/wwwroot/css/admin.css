@@ -2157,6 +2157,24 @@
     font-family: inherit;
 }
 
+.admin-assign-candidate-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+}
+
+.admin-modal-select {
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
 .admin-modal-actions {
     display: flex;
     justify-content: flex-end;
