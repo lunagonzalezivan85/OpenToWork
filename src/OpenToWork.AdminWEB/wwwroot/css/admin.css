@@ -2003,8 +2003,8 @@
     margin-top: 0.75rem;
     padding: 1.25rem;
     background: #FFFFFF;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
     cursor: pointer;
     transition: box-shadow 0.2s ease;
 }
