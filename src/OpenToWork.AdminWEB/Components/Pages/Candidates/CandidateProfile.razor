@@ -1,0 +1,342 @@
+@page "/candidates/profile/{UserId:guid}"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>@(Profile?.CandidateName ?? Lang.T("admin.profile.title"))</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@(Profile?.CandidateName ?? Lang.T("admin.profile.title"))</h1>
+        <p class="admin-page-header-subtitle">@(Profile?.Title ?? "")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.dashboard.backToDashboard")</button>
+    </div>
+</div>
+
+@if (Profile == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else
+{
+    <div class="admin-candidate-profile-split">
+        @* === Left panel 35% — Personal data === *@
+        <div class="admin-candidate-profile-left">
+            <div class="admin-profile-header-card">
+                <div class="admin-profile-avatar">
+                    @if (!string.IsNullOrEmpty(Profile.ProfilePictureUrl))
+                    {
+                        <img src="@Profile.ProfilePictureUrl" alt="avatar" />
+                    }
+                    else
+                    {
+                        <span>@AvatarText</span>
+                    }
+                </div>
+                <div class="admin-profile-header-info">
+                    <h2>@(Profile.CandidateName ?? Profile.Email)</h2>
+                    <p class="admin-profile-header-title">@(Profile.Title ?? "")</p>
+                    <div class="admin-profile-header-badges">
+                        @if (Profile.IsActive)
+                        {
+                            <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.active")</span>
+                        }
+                        else
+                        {
+                            <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.inactive")</span>
+                        }
+                        @if (Profile.WizardCompleted == true)
+                        {
+                            <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.dashboard.evaluated")</span>
+                        }
+                        else
+                        {
+                            <span class="admin-result-badge admin-result-badge--warning">@Lang.T("admin.dashboard.pending")</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-profile-section">
+                <h3 class="admin-profile-section-title">@Lang.T("admin.profile.contactInfo")</h3>
+                <div class="admin-profile-info-list">
+                    <div class="admin-profile-info-row">
+                        <span class="admin-profile-info-label">@Lang.T("admin.profile.email")</span>
+                        <span class="admin-profile-info-value">@Profile.Email</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Profile.Phone))
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.phone")</span>
+                            <span class="admin-profile-info-value">@Profile.Phone</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.Country))
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.location")</span>
+                            <span class="admin-profile-info-value">@(Profile.City), @(Profile.Country)</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.Address))
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.address")</span>
+                            <span class="admin-profile-info-value">@Profile.Address</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.Identification))
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.identification")</span>
+                            <span class="admin-profile-info-value">@Profile.Identification</span>
+                        </div>
+                    }
+                    @if (Profile.BirthDate.HasValue)
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.birthDate")</span>
+                            <span class="admin-profile-info-value">@Profile.BirthDate.Value.ToString("dd MMM yyyy")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="admin-profile-section">
+                <h3 class="admin-profile-section-title">@Lang.T("admin.profile.accountInfo")</h3>
+                <div class="admin-profile-info-list">
+                    <div class="admin-profile-info-row">
+                        <span class="admin-profile-info-label">@Lang.T("admin.profile.createdAt")</span>
+                        <span class="admin-profile-info-value">@Profile.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
+                    </div>
+                    @if (Profile.LastLoginAt.HasValue)
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.lastLogin")</span>
+                            <span class="admin-profile-info-value">@Profile.LastLoginAt.Value.ToLocalTime().ToString("dd MMM yyyy HH:mm")</span>
+                        </div>
+                    }
+                    @if (Profile.CompletedAt.HasValue)
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.completedAt")</span>
+                            <span class="admin-profile-info-value">@Profile.CompletedAt.Value.ToLocalTime().ToString("dd MMM yyyy")</span>
+                        </div>
+                    }
+                    @if (Profile.YearsOfExperience.HasValue)
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.yearsExperience")</span>
+                            <span class="admin-profile-info-value">@Profile.YearsOfExperience.Value</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* === Right panel 65% — Recruitment data === *@
+        <div class="admin-candidate-profile-right">
+            @if (!string.IsNullOrEmpty(Profile.Summary))
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.summary")</h3>
+                    <p class="admin-profile-summary">@Profile.Summary</p>
+                </div>
+            }
+
+            <div class="admin-profile-section">
+                <h3 class="admin-profile-section-title">@Lang.T("admin.recruitment.recruitmentInfo")</h3>
+                <div class="admin-profile-info-grid">
+                    @if (!string.IsNullOrEmpty(Profile.LinkedInUrl))
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">LinkedIn</span>
+                            <span class="admin-profile-info-value"><a href="@Profile.LinkedInUrl" target="_blank">@Lang.T("admin.recruitment.viewProfile")</a></span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.PortfolioUrl))
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.portfolio")</span>
+                            <span class="admin-profile-info-value"><a href="@Profile.PortfolioUrl" target="_blank">@Lang.T("admin.recruitment.viewProfile")</a></span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.CvUrl))
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">CV</span>
+                            <span class="admin-profile-info-value"><a href="@Profile.CvUrl" target="_blank">@Lang.T("admin.recruitment.viewCV")</a></span>
+                        </div>
+                    }
+                    @if (Profile.Availability.HasValue)
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.availability")</span>
+                            <span class="admin-profile-info-value">@GetAvailability(Profile.Availability.Value)</span>
+                        </div>
+                    }
+                    @if (Profile.WorkAuthorization.HasValue)
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.workAuthorization")</span>
+                            <span class="admin-profile-info-value">@GetWorkAuthorization(Profile.WorkAuthorization.Value)</span>
+                        </div>
+                    }
+                    @if (Profile.IsProfilePublic.HasValue)
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.profileVisibility")</span>
+                            <span class="admin-profile-info-value">@(Profile.IsProfilePublic.Value ? Lang.T("admin.recruitment.public") : Lang.T("admin.recruitment.private"))</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (Profile.Skills.Count > 0)
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.skills") (@Profile.Skills.Count)</h3>
+                    <div class="admin-profile-badges">
+                        @foreach (var skill in Profile.Skills)
+                        {
+                            <span class="admin-result-badge admin-result-badge--info">@skill.Name</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Profile.Experiences.Count > 0)
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.experience") (@Profile.Experiences.Count)</h3>
+                    <div class="admin-profile-timeline">
+                        @foreach (var exp in Profile.Experiences)
+                        {
+                            <div class="admin-profile-timeline-item">
+                                <div class="admin-profile-timeline-dot"></div>
+                                <div class="admin-profile-timeline-content">
+                                    <div class="admin-profile-timeline-title">@exp.JobTitle</div>
+                                    <div class="admin-profile-timeline-subtitle">@exp.CompanyName</div>
+                                    <div class="admin-profile-timeline-date">
+                                        @exp.StartDate.ToString("MMM yyyy") - @(exp.IsCurrentJob ? Lang.T("admin.profile.present") : exp.EndDate?.ToString("MMM yyyy"))
+                                        @if (!string.IsNullOrEmpty(exp.Location))
+                                        {
+                                            <span> · @exp.Location</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(exp.Description))
+                                    {
+                                        <p class="admin-profile-timeline-desc">@exp.Description</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Profile.Educations.Count > 0)
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.education") (@Profile.Educations.Count)</h3>
+                    <div class="admin-profile-timeline">
+                        @foreach (var edu in Profile.Educations)
+                        {
+                            <div class="admin-profile-timeline-item">
+                                <div class="admin-profile-timeline-dot"></div>
+                                <div class="admin-profile-timeline-content">
+                                    <div class="admin-profile-timeline-title">@edu.Degree</div>
+                                    <div class="admin-profile-timeline-subtitle">@edu.Institution</div>
+                                    @if (!string.IsNullOrEmpty(edu.FieldOfStudy))
+                                    {
+                                        <div class="admin-profile-timeline-subtitle">@edu.FieldOfStudy</div>
+                                    }
+                                    <div class="admin-profile-timeline-date">
+                                        @(edu.StartDate?.ToString("MMM yyyy") ?? "-") - @(edu.IsInProgress ? Lang.T("admin.profile.inProgress") : edu.EndDate?.ToString("MMM yyyy") ?? "-")
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Profile.Certifications.Count > 0)
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.certifications") (@Profile.Certifications.Count)</h3>
+                    <div class="admin-profile-cert-grid">
+                        @foreach (var cert in Profile.Certifications)
+                        {
+                            <div class="admin-profile-cert-card">
+                                <div class="admin-profile-cert-name">@cert.Name</div>
+                                @if (!string.IsNullOrEmpty(cert.Issuer))
+                                {
+                                    <div class="admin-profile-cert-issuer">@cert.Issuer</div>
+                                }
+                                @if (cert.IssueDate.HasValue)
+                                {
+                                    <div class="admin-profile-cert-date">@cert.IssueDate.Value.ToString("MMM yyyy")</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid UserId { get; set; }
+    private AdminUserProfileDto? Profile { get; set; }
+
+    private string AvatarText
+    {
+        get
+        {
+            var name = Profile?.CandidateName ?? Profile?.Email ?? "";
+            return name.Length >= 2 ? name.Substring(0, 2).ToUpper() : name.ToUpper();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var token = await LocalStorage.GetItemAsync("otwadmin-token");
+        if (string.IsNullOrEmpty(token))
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        Profile = await AuthApi.GetUserProfileAsync(UserId);
+    }
+
+    private void GoBack() => Nav.NavigateTo("/candidates");
+
+    private string GetAvailability(int a) => a switch
+    {
+        0 => Lang.T("admin.recruitment.availImmediate"),
+        1 => Lang.T("admin.recruitment.avail15"),
+        2 => Lang.T("admin.recruitment.avail30"),
+        3 => Lang.T("admin.recruitment.avail60"),
+        _ => "—"
+    };
+
+    private string GetWorkAuthorization(int w) => w switch
+    {
+        0 => Lang.T("admin.recruitment.authCitizen"),
+        1 => Lang.T("admin.recruitment.authResident"),
+        2 => Lang.T("admin.recruitment.authVisa"),
+        3 => Lang.T("admin.recruitment.authNone"),
+        _ => "—"
+    };
+}

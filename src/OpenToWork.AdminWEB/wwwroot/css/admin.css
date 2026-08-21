@@ -1775,6 +1775,72 @@
     color: var(--accent-primary);
 }
 
+.admin-candidate-profile-split {
+    display: flex;
+    gap: var(--space-md);
+    align-items: flex-start;
+}
+
+.admin-candidate-profile-left {
+    flex: 0 0 35%;
+    max-width: 35%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.admin-candidate-profile-right {
+    flex: 0 0 65%;
+    max-width: 65%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.admin-profile-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.admin-profile-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.admin-profile-info-row:last-child {
+    border-bottom: none;
+}
+
+.admin-profile-info-row .admin-profile-info-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.admin-profile-info-row .admin-profile-info-value {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    text-align: right;
+    word-break: break-word;
+}
+
+@media (max-width: 900px) {
+    .admin-candidate-profile-split {
+        flex-direction: column;
+    }
+    .admin-candidate-profile-left,
+    .admin-candidate-profile-right {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+}
+
 .admin-pipeline-kanban {
     display: flex;
     gap: var(--space-md);
