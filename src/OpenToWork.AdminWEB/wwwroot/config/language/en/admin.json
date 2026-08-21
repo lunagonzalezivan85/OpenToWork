@@ -357,6 +357,7 @@
     "evaluationsCount": "Number of evaluations",
     "viewDetail": "View detail",
     "overallScore": "Overall score",
+    "scoreSummary": "Score Summary",
     "apt": "Suitable",
     "notApt": "Not suitable",
     "noPhoneAskCandidate": "No phone \u2014 ask candidate during the call",

@@ -204,6 +204,17 @@ else
                     }
                 </div>
             </div>
+
+            @if (Recruitment != null && Recruitment.Dismissal == null && Recruitment.CurrentStage > 0)
+            {
+                <div class="admin-profile-score-circle-container" @onclick="OpenScoreModal">
+                    <div class="admin-profile-score-circle @(OverallScore >= 70 ? "admin-profile-score-circle--pass" : "admin-profile-score-circle--fail")">
+                        <span class="admin-profile-score-circle-value">@OverallScore.ToString("0.#")</span>
+                        <span class="admin-profile-score-circle-max">/100</span>
+                    </div>
+                    <span class="admin-profile-score-circle-label">@Lang.T("admin.recruitment.overallScore")</span>
+                </div>
+            }
         </div>
 
         @* === Right panel 65% — Recruitment data === *@
@@ -410,6 +421,90 @@ else
         }
     </div>
 
+    @* === Score summary modal === *@
+    @if (ShowScoreModal && Recruitment != null)
+    {
+        <div class="admin-modal-overlay" @onclick="CloseScoreModal">
+            <div class="admin-modal" @onclick:stopPropagation="true">
+                <h3 class="admin-modal-title">@Lang.T("admin.recruitment.scoreSummary")</h3>
+                <div class="admin-modal-body">
+                    @* Stage 1: Investigation *@
+                    <div class="admin-score-summary-stage">
+                        <div class="admin-score-summary-stage-header">
+                            <span class="admin-score-summary-stage-name">@GetStageName(1)</span>
+                            @{
+                                var invCompleted = Recruitment.InvestigationChecklist.Count(c => c.IsCompleted);
+                                var invTotal = Recruitment.InvestigationChecklist.Count;
+                                var invPct = invTotal > 0 ? (invCompleted * 100 / invTotal) : 0;
+                            }
+                            <span class="admin-score-summary-stage-score">@invPct%</span>
+                        </div>
+                        <div class="admin-score-summary-progress">
+                            <div class="admin-score-summary-progress-bar" style="width: @invPct%"></div>
+                        </div>
+                    </div>
+
+                    @* Stage 2: Technical *@
+                    <div class="admin-score-summary-stage">
+                        <div class="admin-score-summary-stage-header">
+                            <span class="admin-score-summary-stage-name">@GetStageName(2)</span>
+                            @if (Recruitment.TechnicalEvaluations.Count > 0)
+                            {
+                                var techAvg = Math.Round(Recruitment.TechnicalEvaluations.Average(e => e.Score), 1);
+                                <span class="admin-score-summary-stage-score @(techAvg >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">@techAvg.ToString("0.#")/100</span>
+                            }
+                            else
+                            {
+                                <span class="admin-score-summary-stage-score admin-score-summary-stage-score--muted">—</span>
+                            }
+                        </div>
+                        @if (Recruitment.TechnicalEvaluations.Count > 0)
+                        {
+                            <div class="admin-score-summary-badge">
+                                <span class="admin-recommendation-badge @(Recruitment.TechnicalEvaluations.Average(e => e.Score) >= 70 ? "admin-recommendation--1" : "admin-recommendation--2")">
+                                    @(Recruitment.TechnicalEvaluations.Average(e => e.Score) >= 70 ? Lang.T("admin.recruitment.apt") : Lang.T("admin.recruitment.notApt"))
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    @* Stage 3: Cultural *@
+                    <div class="admin-score-summary-stage">
+                        <div class="admin-score-summary-stage-header">
+                            <span class="admin-score-summary-stage-name">@GetStageName(3)</span>
+                            @if (Recruitment.CulturalInterviews.Count > 0)
+                            {
+                                var cultAvg = Math.Round(Recruitment.CulturalInterviews.Average(e => e.Score), 1);
+                                <span class="admin-score-summary-stage-score @(cultAvg >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">@cultAvg.ToString("0.#")/100</span>
+                            }
+                            else
+                            {
+                                <span class="admin-score-summary-stage-score admin-score-summary-stage-score--muted">—</span>
+                            }
+                        </div>
+                        @if (Recruitment.CulturalInterviews.Count > 0)
+                        {
+                            <div class="admin-score-summary-badge">
+                                <span class="admin-recommendation-badge admin-recommendation--@Recruitment.CulturalInterviews.First().Recommendation">
+                                    @GetRecommendationLabel(Recruitment.CulturalInterviews.First().Recommendation)
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    @* Overall *@
+                    <div class="admin-score-summary-overall">
+                        <span class="admin-score-summary-overall-label">@Lang.T("admin.recruitment.overallScore")</span>
+                        <span class="admin-score-summary-overall-value @(OverallScore >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">@OverallScore.ToString("0.#")/100</span>
+                    </div>
+                </div>
+                <div class="admin-modal-actions">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseScoreModal">@Lang.T("admin.common.cancel")</button>
+                </div>
+            </div>
+        </div>
+    }
+
     @* === Stage detail modal === *@
     @if (ShowStageDetail && Recruitment != null)
     {
@@ -562,6 +657,20 @@ else
     private string NewValidationLabel { get; set; } = "";
     private bool ShowStageDetail { get; set; }
     private int StageDetailIndex { get; set; }
+    private bool ShowScoreModal { get; set; }
+
+    private decimal OverallScore
+    {
+        get
+        {
+            if (Recruitment == null) return 0;
+            var hasTech = Recruitment.TechnicalEvaluations.Count > 0;
+            var hasCultural = Recruitment.CulturalInterviews.Count > 0;
+            var techAvg = hasTech ? Recruitment.TechnicalEvaluations.Average(e => e.Score) : 0;
+            var culturalAvg = hasCultural ? Recruitment.CulturalInterviews.Average(e => e.Score) : 0;
+            return (hasTech && hasCultural) ? Math.Round((techAvg + culturalAvg) / 2, 1) : (hasTech ? Math.Round(techAvg, 1) : (hasCultural ? Math.Round(culturalAvg, 1) : 0));
+        }
+    }
 
     private string AvatarText
     {
@@ -716,6 +825,16 @@ else
     private void CloseStageDetail()
     {
         ShowStageDetail = false;
+    }
+
+    private void OpenScoreModal()
+    {
+        ShowScoreModal = true;
+    }
+
+    private void CloseScoreModal()
+    {
+        ShowScoreModal = false;
     }
 
     private string GetRecommendationLabel(int rec)

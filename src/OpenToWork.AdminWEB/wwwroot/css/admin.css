@@ -1995,6 +1995,131 @@
     font-style: italic;
 }
 
+.admin-profile-score-circle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    cursor: pointer;
+}
+
+.admin-profile-score-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid;
+    transition: transform 0.2s ease;
+}
+
+.admin-profile-score-circle-container:hover .admin-profile-score-circle {
+    transform: scale(1.05);
+}
+
+.admin-profile-score-circle--pass {
+    border-color: #16a34a;
+    background: rgba(34, 197, 94, 0.08);
+}
+
+.admin-profile-score-circle--fail {
+    border-color: #dc2626;
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.admin-profile-score-circle-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.admin-profile-score-circle--pass .admin-profile-score-circle-value {
+    color: #16a34a;
+}
+
+.admin-profile-score-circle--fail .admin-profile-score-circle-value {
+    color: #dc2626;
+}
+
+.admin-profile-score-circle-max {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+}
+
+.admin-profile-score-circle-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.admin-score-summary-stage {
+    margin-bottom: 0.75rem;
+}
+
+.admin-score-summary-stage-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+
+.admin-score-summary-stage-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-score-summary-stage-score {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.admin-score-summary-stage-score--muted {
+    color: var(--text-muted);
+}
+
+.admin-score-summary-progress {
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.admin-score-summary-progress-bar {
+    height: 100%;
+    background: var(--accent-primary);
+    border-radius: 3px;
+}
+
+.admin-score-summary-badge {
+    margin-top: 0.3rem;
+}
+
+.admin-score-summary-overall {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    background: #F0F7FF;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-top: 0.5rem;
+}
+
+.admin-score-summary-overall-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-score-summary-overall-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
 .admin-pipeline-bar-actions {
     display: flex;
     gap: 0.5rem;
