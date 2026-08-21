@@ -481,7 +481,7 @@ else
                         <div class="admin-evaluation-header">
                             <div class="admin-evaluation-name">@eval.EvaluationName</div>
                             <div class="admin-evaluation-score @(eval.Score >= 70 ? "admin-evaluation-score--pass" : "admin-evaluation-score--fail")">
-                                @eval.Score/100
+                                @eval.Score.ToString("0.#")/100
                             </div>
                         </div>
                         @if (!string.IsNullOrEmpty(eval.Description))
@@ -525,7 +525,7 @@ else
         {
             <div class="admin-evaluation-summary">
                 <span class="admin-evaluation-summary-label">@Lang.T("admin.recruitment.averageScore"):</span>
-                <span class="admin-evaluation-summary-value">@Math.Round(Detail.TechnicalEvaluations.Average(e => e.Score), 1)/100</span>
+                <span class="admin-evaluation-summary-value">@Math.Round(Detail.TechnicalEvaluations.Average(e => e.Score), 1).ToString("0.#")/100</span>
             </div>
         }
     }

@@ -2861,12 +2861,13 @@
     gap: var(--space-sm);
 }
 
-.ot-btn--danger {
+.ot-btn--outline.ot-btn--danger {
     color: var(--danger);
     border-color: var(--danger);
+    background-color: transparent;
 }
 
-.ot-btn--danger:hover {
+.ot-btn--outline.ot-btn--danger:hover {
     background: var(--danger);
     color: #FFFFFF;
 }

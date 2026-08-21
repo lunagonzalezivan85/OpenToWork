@@ -159,7 +159,9 @@
     "password": "Contraseña",
     "loading": "Cargando...",
     "save": "Guardar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar"
   },
   "assigned": {
     "title": "Candidatos asignados",

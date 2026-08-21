@@ -159,7 +159,9 @@
     "password": "Password",
     "loading": "Loading...",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete"
   },
   "assigned": {
     "title": "Assigned candidates",
