@@ -20,6 +20,8 @@ public class PTInvestigationChecklist : BaseEntity
 
     public bool IsCompleted { get; set; } = false;
 
+    public DateTime? StartedAt { get; set; }
+
     public DateTime? CompletedAt { get; set; }
 
     public Guid? CompletedByUserId { get; set; }
@@ -31,4 +33,6 @@ public class PTInvestigationChecklist : BaseEntity
 
     [MaxLength(500)]
     public string? EvidenceUrl { get; set; }
+
+    public virtual ICollection<PTReferenceCheck>? ReferenceChecks { get; set; }
 }

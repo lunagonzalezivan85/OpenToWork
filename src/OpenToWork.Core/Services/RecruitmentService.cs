@@ -102,6 +102,7 @@ public class RecruitmentService : IRecruitmentService
             .Include(r => r.AssignedToUser)
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
+            .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.ReferenceChecks)
             .Include(r => r.Dismissal!).ThenInclude(d => d.DismissedByUser)
             .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
 
@@ -142,10 +143,22 @@ public class RecruitmentService : IRecruitmentService
                 Label = c.Label,
                 IsCustom = c.IsCustom,
                 IsCompleted = c.IsCompleted,
+                StartedAt = c.StartedAt,
                 CompletedAt = c.CompletedAt,
                 CompletedByName = c.CompletedByUser?.Email,
                 Notes = c.Notes,
-                EvidenceUrl = c.EvidenceUrl
+                EvidenceUrl = c.EvidenceUrl,
+                ReferenceChecks = c.ReferenceChecks != null ? c.ReferenceChecks.Where(r => !r.IsDeleted).Select(r => new ReferenceCheckDto
+                {
+                    Id = r.Id,
+                    CompanyName = r.CompanyName,
+                    ContactName = r.ContactName,
+                    ContactPhone = r.ContactPhone,
+                    ContactEmail = r.ContactEmail,
+                    Status = r.Status,
+                    CalledAt = r.CalledAt,
+                    Notes = r.Notes
+                }).ToList() : new()
             }).ToList() ?? new(),
             Dismissal = recruitment.Dismissal != null && !recruitment.Dismissal.IsDeleted ? new DismissalInfoDto
             {
@@ -164,6 +177,7 @@ public class RecruitmentService : IRecruitmentService
             .Include(r => r.AssignedToUser)
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
+            .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.ReferenceChecks)
             .Include(r => r.Dismissal!).ThenInclude(d => d.DismissedByUser)
             .FirstOrDefaultAsync(r => r.SCUserId == userId && !r.IsDeleted);
 
@@ -204,10 +218,22 @@ public class RecruitmentService : IRecruitmentService
                 Label = c.Label,
                 IsCustom = c.IsCustom,
                 IsCompleted = c.IsCompleted,
+                StartedAt = c.StartedAt,
                 CompletedAt = c.CompletedAt,
                 CompletedByName = c.CompletedByUser?.Email,
                 Notes = c.Notes,
-                EvidenceUrl = c.EvidenceUrl
+                EvidenceUrl = c.EvidenceUrl,
+                ReferenceChecks = c.ReferenceChecks != null ? c.ReferenceChecks.Where(r => !r.IsDeleted).Select(r => new ReferenceCheckDto
+                {
+                    Id = r.Id,
+                    CompanyName = r.CompanyName,
+                    ContactName = r.ContactName,
+                    ContactPhone = r.ContactPhone,
+                    ContactEmail = r.ContactEmail,
+                    Status = r.Status,
+                    CalledAt = r.CalledAt,
+                    Notes = r.Notes
+                }).ToList() : new()
             }).ToList() ?? new(),
             Dismissal = recruitment.Dismissal != null && !recruitment.Dismissal.IsDeleted ? new DismissalInfoDto
             {
@@ -360,6 +386,7 @@ public class RecruitmentService : IRecruitmentService
                 PT_CandidateRecruitmentId = recruitmentId,
                 Step = dto.Step,
                 IsCompleted = dto.IsCompleted,
+                StartedAt = dto.IsCompleted ? DateTime.UtcNow : null,
                 CompletedAt = dto.IsCompleted ? DateTime.UtcNow : null,
                 CompletedByUserId = dto.IsCompleted ? adminId : null,
                 Notes = dto.Notes,
@@ -370,6 +397,9 @@ public class RecruitmentService : IRecruitmentService
         }
         else
         {
+            if (dto.IsCompleted && !item.StartedAt.HasValue)
+                item.StartedAt = DateTime.UtcNow;
+
             item.IsCompleted = dto.IsCompleted;
             item.CompletedAt = dto.IsCompleted ? DateTime.UtcNow : null;
             item.CompletedByUserId = dto.IsCompleted ? adminId : null;
@@ -381,6 +411,92 @@ public class RecruitmentService : IRecruitmentService
 
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "ToggleInvestigationStep", "PT_InvestigationChecklists", item.Id, null, ipAddress);
+        return true;
+    }
+
+    public async Task<bool> StartInvestigationStepAsync(Guid recruitmentId, int step, Guid adminId, string? ipAddress)
+    {
+        var item = await _context.PT_InvestigationChecklists
+            .FirstOrDefaultAsync(c => c.PT_CandidateRecruitmentId == recruitmentId && c.Step == step && !c.IsDeleted);
+
+        if (item == null) return false;
+        if (item.StartedAt.HasValue) return true;
+
+        item.StartedAt = DateTime.UtcNow;
+        item.UpdatedAt = DateTime.UtcNow;
+        item.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "StartInvestigationStep", "PT_InvestigationChecklists", item.Id, null, ipAddress);
+        return true;
+    }
+
+    public async Task<ReferenceCheckDto?> AddReferenceAsync(Guid checklistId, AddReferenceDto dto, Guid adminId, string? ipAddress)
+    {
+        var checklist = await _context.PT_InvestigationChecklists
+            .FirstOrDefaultAsync(c => c.Id == checklistId && !c.IsDeleted);
+        if (checklist == null) return null;
+
+        if (!checklist.StartedAt.HasValue)
+        {
+            checklist.StartedAt = DateTime.UtcNow;
+        }
+
+        var reference = new PTReferenceCheck
+        {
+            PT_InvestigationChecklistId = checklistId,
+            CompanyName = dto.CompanyName,
+            ContactName = dto.ContactName,
+            ContactPhone = dto.ContactPhone,
+            ContactEmail = dto.ContactEmail,
+            Status = 0,
+            CreatedBy = adminId
+        };
+        _context.PT_ReferenceChecks.Add(reference);
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "AddReference", "PT_ReferenceChecks", reference.Id, null, ipAddress);
+
+        return new ReferenceCheckDto
+        {
+            Id = reference.Id,
+            CompanyName = reference.CompanyName,
+            ContactName = reference.ContactName,
+            ContactPhone = reference.ContactPhone,
+            ContactEmail = reference.ContactEmail,
+            Status = 0
+        };
+    }
+
+    public async Task<bool> UpdateReferenceStatusAsync(Guid referenceId, UpdateReferenceStatusDto dto, Guid adminId, string? ipAddress)
+    {
+        var reference = await _context.PT_ReferenceChecks
+            .FirstOrDefaultAsync(r => r.Id == referenceId && !r.IsDeleted);
+        if (reference == null) return false;
+
+        reference.Status = dto.Status;
+        reference.Notes = dto.Notes ?? reference.Notes;
+        if (dto.Status >= 1 && !reference.CalledAt.HasValue)
+            reference.CalledAt = DateTime.UtcNow;
+        reference.UpdatedAt = DateTime.UtcNow;
+        reference.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "UpdateReferenceStatus", "PT_ReferenceChecks", referenceId, null, ipAddress);
+        return true;
+    }
+
+    public async Task<bool> DeleteReferenceAsync(Guid referenceId, Guid adminId, string? ipAddress)
+    {
+        var reference = await _context.PT_ReferenceChecks
+            .FirstOrDefaultAsync(r => r.Id == referenceId && !r.IsDeleted);
+        if (reference == null) return false;
+
+        reference.IsDeleted = true;
+        reference.DeletedAt = DateTime.UtcNow;
+        reference.DeletedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "DeleteReference", "PT_ReferenceChecks", referenceId, null, ipAddress);
         return true;
     }
 

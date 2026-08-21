@@ -107,64 +107,177 @@ else
     }
 
     @* === Investigation checklist === *@
-    <h2 class="admin-section-title">@Lang.T("admin.recruitment.investigationChecklist")</h2>
-    <div class="admin-investigation-list">
-        @if (Detail.InvestigationChecklist.Count > 0)
-        {
-            @foreach (var item in Detail.InvestigationChecklist.OrderBy(c => c.Step))
-            {
-                <div class="admin-investigation-item @(item.IsCompleted ? "admin-investigation-item--done" : "")">
-                    <div class="admin-investigation-check">
-                        <input type="checkbox" checked="@item.IsCompleted" @onchange="() => ToggleStep(item)" />
-                    </div>
-                    <div class="admin-investigation-content">
-                        <div class="admin-investigation-step-name">@(item.Label ?? GetInvestigationStepName(item.Step))</div>
-                        @if (item.IsCustom)
-                        {
-                            <span class="admin-result-badge admin-result-badge--info" style="margin-left: 0.5rem;">Custom</span>
-                        }
-                        @if (item.IsCompleted)
-                        {
-                            <div class="admin-investigation-meta">
-                                @Lang.T("admin.recruitment.completedBy") @item.CompletedByName · @item.CompletedAt?.ToString("yyyy-MM-dd HH:mm")
-                            </div>
-                        }
-                        @if (!string.IsNullOrEmpty(item.Notes))
-                        {
-                            <div class="admin-investigation-notes">@item.Notes</div>
-                        }
-                        @if (!string.IsNullOrEmpty(item.EvidenceUrl))
-                        {
-                            <a href="@item.EvidenceUrl" target="_blank" class="admin-investigation-evidence">@Lang.T("admin.recruitment.viewEvidence")</a>
-                        }
-                    </div>
-                    @if (item.IsCustom)
-                    {
-                        <button class="admin-row-btn" title="Eliminar" @onclick="() => DeleteCustomValidation(item.Id)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            </svg>
-                        </button>
-                    }
-                </div>
-            }
-        }
-        else
-        {
-            <div class="admin-empty-text">@Lang.T("admin.recruitment.noChecklist")</div>
-        }
+    @if (Detail.CurrentStage == 1 && Detail.Dismissal == null)
+    {
+        <h2 class="admin-section-title">
+            @Lang.T("admin.recruitment.investigationChecklist")
+            <span class="admin-skill-count" style="margin-left: 0.5rem;">
+                @Detail.InvestigationChecklist.Count(c => c.IsCompleted) / @Detail.InvestigationChecklist.Count
+            </span>
+        </h2>
 
-        @* Add custom validation *@
-        @if (Detail.Dismissal == null)
+        @* Total investigation duration *@
+        @if (Detail.InvestigationChecklist.Any(c => c.StartedAt.HasValue))
         {
-            <div class="admin-investigation-add">
-                <input type="text" @bind="NewValidationLabel" placeholder="@Lang.T("admin.recruitment.addValidationPlaceholder")" class="admin-investigation-add-input" />
-                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(NewValidationLabel)" @onclick="AddCustomValidation">
-                    @Lang.T("admin.recruitment.addValidation")
-                </button>
+            <div class="admin-investigation-summary">
+                @Lang.T("admin.recruitment.totalDuration"): <strong>@GetTotalInvestigationDuration()</strong>
             </div>
         }
-    </div>
+
+        <div class="admin-investigation-list">
+            @if (Detail.InvestigationChecklist.Count > 0)
+            {
+                @foreach (var item in Detail.InvestigationChecklist.OrderBy(c => c.Step))
+                {
+                    <div class="admin-investigation-item @(item.IsCompleted ? "admin-investigation-item--done" : "") @(item.StartedAt.HasValue && !item.IsCompleted ? "admin-investigation-item--active" : "")">
+                        <div class="admin-investigation-check">
+                            <input type="checkbox" checked="@item.IsCompleted" disabled="@(Detail.CurrentStage != 1)" @onchange="() => ToggleStep(item)" />
+                        </div>
+                        <div class="admin-investigation-content">
+                            <div class="admin-investigation-step-name">@(item.Label ?? GetInvestigationStepName(item.Step))</div>
+                            @if (item.IsCustom)
+                            {
+                                <span class="admin-result-badge admin-result-badge--info" style="margin-left: 0.5rem; font-size: 0.65rem;">Custom</span>
+                            }
+
+                            @* Status badges *@
+                            <div class="admin-investigation-meta">
+                                @if (!item.StartedAt.HasValue && !item.IsCompleted)
+                                {
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.7rem; padding: 0.2rem 0.6rem;" @onclick="() => StartStep(item.Step)">
+                                        @Lang.T("admin.recruitment.startStep")
+                                    </button>
+                                }
+                                else if (item.StartedAt.HasValue && !item.IsCompleted)
+                                {
+                                    <span class="admin-result-badge admin-result-badge--warning">
+                                        @Lang.T("admin.recruitment.inProgress") · @GetElapsedDuration(item.StartedAt)
+                                    </span>
+                                }
+                                else if (item.IsCompleted && item.StartedAt.HasValue)
+                                {
+                                    <span class="admin-result-badge admin-result-badge--success">
+                                        @Lang.T("admin.recruitment.duration"): @GetStepDuration(item.StartedAt, item.CompletedAt)
+                                    </span>
+                                    <span class="admin-investigation-meta-text">
+                                        @Lang.T("admin.recruitment.completedBy") @item.CompletedByName · @item.CompletedAt?.ToString("yyyy-MM-dd HH:mm")
+                                    </span>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(item.Notes))
+                            {
+                                <div class="admin-investigation-notes">@item.Notes</div>
+                            }
+
+                            @* References sub-panel for step 1 (Call references) *@
+                            @if (item.Step == 1 && Detail.CurrentStage == 1)
+                            {
+                                <div class="admin-references-panel">
+                                    <div class="admin-references-header">
+                                        <span>@Lang.T("admin.recruitment.referencesTitle") (@item.ReferenceChecks.Count)</span>
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.7rem; padding: 0.2rem 0.6rem;" @onclick='() => ShowAddReference(item.Id)'>
+                                            + @Lang.T("admin.recruitment.addReference")
+                                        </button>
+                                    </div>
+
+                                    @if (item.ReferenceChecks.Count > 0)
+                                    {
+                                        <div class="admin-references-list">
+                                            @foreach (var refItem in item.ReferenceChecks)
+                                            {
+                                                <div class="admin-reference-card">
+                                                    <div class="admin-reference-info">
+                                                        <div class="admin-reference-company">@refItem.CompanyName</div>
+                                                        @if (!string.IsNullOrEmpty(refItem.ContactName))
+                                                        {
+                                                            <div class="admin-reference-contact">@refItem.ContactName</div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(refItem.ContactPhone))
+                                                        {
+                                                            <div class="admin-reference-contact">📞 @refItem.ContactPhone</div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(refItem.ContactEmail))
+                                                        {
+                                                            <div class="admin-reference-contact">✉ @refItem.ContactEmail</div>
+                                                        }
+                                                        @if (refItem.CalledAt.HasValue)
+                                                        {
+                                                            <div class="admin-reference-meta">@Lang.T("admin.recruitment.calledAt"): @refItem.CalledAt.Value.ToString("yyyy-MM-dd HH:mm")</div>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(refItem.Notes))
+                                                        {
+                                                            <div class="admin-reference-notes">@refItem.Notes</div>
+                                                        }
+                                                    </div>
+                                                    <div class="admin-reference-actions">
+                                                        <select class="admin-reference-status" value="@refItem.Status" @onchange="@(e => UpdateReferenceStatus(refItem.Id, int.Parse(e.Value?.ToString() ?? "0")))">
+                                                            <option value="0">@Lang.T("admin.recruitment.refPending")</option>
+                                                            <option value="1">@Lang.T("admin.recruitment.refCalled")</option>
+                                                            <option value="2">@Lang.T("admin.recruitment.refValidated")</option>
+                                                            <option value="3">@Lang.T("admin.recruitment.refNoResponse")</option>
+                                                        </select>
+                                                        <button class="admin-row-btn" title="Eliminar" @onclick="() => DeleteReference(refItem.Id)">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                                                <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="admin-empty-text" style="font-size: 0.78rem; padding: 0.5rem 0;">@Lang.T("admin.recruitment.noReferences")</div>
+                                    }
+
+                                    @if (AddingReferenceTo == item.Id)
+                                    {
+                                        <div class="admin-reference-add-form">
+                                            <input type="text" @bind="NewRefCompany" placeholder="@Lang.T("admin.recruitment.refCompany")" class="admin-investigation-add-input" />
+                                            <input type="text" @bind="NewRefContactName" placeholder="@Lang.T("admin.recruitment.refContactName")" class="admin-investigation-add-input" />
+                                            <input type="text" @bind="NewRefContactPhone" placeholder="@Lang.T("admin.recruitment.refContactPhone")" class="admin-investigation-add-input" />
+                                            <input type="text" @bind="NewRefContactEmail" placeholder="@Lang.T("admin.recruitment.refContactEmail")" class="admin-investigation-add-input" />
+                                            <div class="admin-reference-add-actions">
+                                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => AddingReferenceTo = null'>@Lang.T("admin.common.cancel")</button>
+                                                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(NewRefCompany)" @onclick="ConfirmAddReference">
+                                                    @Lang.T("admin.recruitment.addReference")
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        @if (item.IsCustom)
+                        {
+                            <button class="admin-row-btn" title="Eliminar" @onclick="() => DeleteCustomValidation(item.Id)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                            </button>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="admin-empty-text">@Lang.T("admin.recruitment.noChecklist")</div>
+            }
+
+            @* Add custom validation *@
+            @if (Detail.Dismissal == null)
+            {
+                <div class="admin-investigation-add">
+                    <input type="text" @bind="NewValidationLabel" placeholder="@Lang.T("admin.recruitment.addValidationPlaceholder")" class="admin-investigation-add-input" />
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(NewValidationLabel)" @onclick="AddCustomValidation">
+                        @Lang.T("admin.recruitment.addValidation")
+                    </button>
+                </div>
+            }
+        </div>
+    }
 
     @* === Stage history === *@
     @if (Detail.StageLogs.Count > 0)
@@ -220,6 +333,11 @@ else
     private int DismissReason { get; set; }
     private string DismissNotes { get; set; } = "";
     private string NewValidationLabel { get; set; } = "";
+    private Guid? AddingReferenceTo { get; set; }
+    private string NewRefCompany { get; set; } = "";
+    private string NewRefContactName { get; set; } = "";
+    private string NewRefContactPhone { get; set; } = "";
+    private string NewRefContactEmail { get; set; } = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -255,6 +373,51 @@ else
             Notes = item.Notes,
             EvidenceUrl = item.EvidenceUrl
         });
+        if (ok) await LoadDetail();
+    }
+
+    private async Task StartStep(int step)
+    {
+        if (Detail == null) return;
+        var ok = await AuthApi.StartInvestigationStepAsync(Detail.Id, step);
+        if (ok) await LoadDetail();
+    }
+
+    private void ShowAddReference(Guid checklistId)
+    {
+        AddingReferenceTo = checklistId;
+        NewRefCompany = "";
+        NewRefContactName = "";
+        NewRefContactPhone = "";
+        NewRefContactEmail = "";
+    }
+
+    private async Task ConfirmAddReference()
+    {
+        if (AddingReferenceTo == null || string.IsNullOrWhiteSpace(NewRefCompany)) return;
+        var result = await AuthApi.AddReferenceAsync(AddingReferenceTo.Value, new AddReferenceDto
+        {
+            CompanyName = NewRefCompany.Trim(),
+            ContactName = string.IsNullOrWhiteSpace(NewRefContactName) ? null : NewRefContactName.Trim(),
+            ContactPhone = string.IsNullOrWhiteSpace(NewRefContactPhone) ? null : NewRefContactPhone.Trim(),
+            ContactEmail = string.IsNullOrWhiteSpace(NewRefContactEmail) ? null : NewRefContactEmail.Trim()
+        });
+        if (result != null)
+        {
+            AddingReferenceTo = null;
+            await LoadDetail();
+        }
+    }
+
+    private async Task UpdateReferenceStatus(Guid referenceId, int status)
+    {
+        var ok = await AuthApi.UpdateReferenceStatusAsync(referenceId, new UpdateReferenceStatusDto { Status = status });
+        if (ok) await LoadDetail();
+    }
+
+    private async Task DeleteReference(Guid referenceId)
+    {
+        var ok = await AuthApi.DeleteReferenceAsync(referenceId);
         if (ok) await LoadDetail();
     }
 
@@ -314,4 +477,36 @@ else
         4 => Lang.T("admin.recruitment.invStep4"),
         _ => ""
     };
+
+    private string GetStepDuration(DateTime? startedAt, DateTime? completedAt)
+    {
+        if (!startedAt.HasValue || !completedAt.HasValue) return "—";
+        var span = completedAt.Value - startedAt.Value;
+        return FormatDuration(span);
+    }
+
+    private string GetElapsedDuration(DateTime? startedAt)
+    {
+        if (!startedAt.HasValue) return "—";
+        var span = DateTime.UtcNow - startedAt.Value;
+        return FormatDuration(span);
+    }
+
+    private string GetTotalInvestigationDuration()
+    {
+        if (Detail == null) return "—";
+        var items = Detail.InvestigationChecklist.Where(c => c.StartedAt.HasValue).ToList();
+        if (items.Count == 0) return "—";
+        var earliest = items.Min(c => c.StartedAt!.Value);
+        var latest = items.Max(c => c.CompletedAt ?? DateTime.UtcNow);
+        return FormatDuration(latest - earliest);
+    }
+
+    private static string FormatDuration(TimeSpan span)
+    {
+        if (span.TotalDays >= 1) return $"{(int)span.TotalDays}d {span.Hours}h {span.Minutes}m";
+        if (span.TotalHours >= 1) return $"{(int)span.TotalHours}h {span.Minutes}m";
+        if (span.TotalMinutes >= 1) return $"{(int)span.TotalMinutes}m";
+        return $"{(int)span.TotalSeconds}s";
+    }
 }

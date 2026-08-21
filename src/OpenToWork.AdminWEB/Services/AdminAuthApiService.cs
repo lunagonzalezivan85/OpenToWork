@@ -246,6 +246,35 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> StartInvestigationStepAsync(Guid recruitmentId, int step)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsync($"api/admin/recruitment/{recruitmentId}/investigation/{step}/start", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<ReferenceCheckDto?> AddReferenceAsync(Guid checklistId, AddReferenceDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment/investigation/{checklistId}/references", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<ReferenceCheckDto>();
+    }
+
+    public async Task<bool> UpdateReferenceStatusAsync(Guid referenceId, UpdateReferenceStatusDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/references/{referenceId}", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeleteReferenceAsync(Guid referenceId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/recruitment/references/{referenceId}");
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<InvestigationChecklistDto?> AddCustomValidationAsync(Guid recruitmentId, string label)
     {
         await SetAuthHeaderAsync();

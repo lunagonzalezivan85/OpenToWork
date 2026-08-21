@@ -61,6 +61,34 @@ public class RecruitmentController : AdminControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    [HttpPut("{id}/investigation/{step}/start")]
+    public async Task<IActionResult> StartInvestigationStep(Guid id, int step)
+    {
+        var result = await _recruitmentService.StartInvestigationStepAsync(id, step, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
+    [HttpPost("investigation/{checklistId}/references")]
+    public async Task<IActionResult> AddReference(Guid checklistId, [FromBody] AddReferenceDto dto)
+    {
+        var result = await _recruitmentService.AddReferenceAsync(checklistId, dto, AdminId, ClientIp);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpPut("references/{referenceId}")]
+    public async Task<IActionResult> UpdateReferenceStatus(Guid referenceId, [FromBody] UpdateReferenceStatusDto dto)
+    {
+        var result = await _recruitmentService.UpdateReferenceStatusAsync(referenceId, dto, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
+    [HttpDelete("references/{referenceId}")]
+    public async Task<IActionResult> DeleteReference(Guid referenceId)
+    {
+        var result = await _recruitmentService.DeleteReferenceAsync(referenceId, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpPost("{id}/investigation/custom")]
     public async Task<IActionResult> AddCustomValidation(Guid id, [FromBody] AddCustomValidationDto dto)
     {

@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<PTCandidateRecruitment> PT_CandidateRecruitments => Set<PTCandidateRecruitment>();
     public DbSet<PTRecruitmentStageLog> PT_RecruitmentStageLogs => Set<PTRecruitmentStageLog>();
     public DbSet<PTInvestigationChecklist> PT_InvestigationChecklists => Set<PTInvestigationChecklist>();
+    public DbSet<PTReferenceCheck> PT_ReferenceChecks => Set<PTReferenceCheck>();
     public DbSet<PTRecruitmentDismissal> PT_RecruitmentDismissals => Set<PTRecruitmentDismissal>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -218,6 +219,15 @@ public class AppDbContext : DbContext
             e.HasIndex(c => new { c.PT_CandidateRecruitmentId, c.Step, c.IsDeleted }).IsUnique();
             e.HasIndex(c => new { c.IsCompleted, c.IsDeleted });
             e.Property(c => c.IsCompleted).HasDefaultValue(false);
+            e.HasMany(c => c.ReferenceChecks)
+                .WithOne(r => r.Checklist)
+                .HasForeignKey(r => r.PT_InvestigationChecklistId);
+        });
+
+        modelBuilder.Entity<PTReferenceCheck>(e =>
+        {
+            e.ToTable("PT_ReferenceChecks");
+            e.HasIndex(r => new { r.PT_InvestigationChecklistId, r.IsDeleted });
         });
 
         modelBuilder.Entity<PTRecruitmentDismissal>(e =>

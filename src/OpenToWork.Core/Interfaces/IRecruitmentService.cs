@@ -17,6 +17,14 @@ public interface IRecruitmentService
 
     Task<bool> ToggleInvestigationStepAsync(Guid recruitmentId, ToggleInvestigationStepDto dto, Guid adminId, string? ipAddress);
 
+    Task<bool> StartInvestigationStepAsync(Guid recruitmentId, int step, Guid adminId, string? ipAddress);
+
+    Task<ReferenceCheckDto?> AddReferenceAsync(Guid checklistId, AddReferenceDto dto, Guid adminId, string? ipAddress);
+
+    Task<bool> UpdateReferenceStatusAsync(Guid referenceId, UpdateReferenceStatusDto dto, Guid adminId, string? ipAddress);
+
+    Task<bool> DeleteReferenceAsync(Guid referenceId, Guid adminId, string? ipAddress);
+
     Task<InvestigationChecklistDto?> AddCustomValidationAsync(Guid recruitmentId, AddCustomValidationDto dto, Guid adminId, string? ipAddress);
 
     Task<bool> DeleteCustomValidationAsync(Guid checklistId, Guid adminId, string? ipAddress);

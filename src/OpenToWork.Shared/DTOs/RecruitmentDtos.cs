@@ -57,10 +57,38 @@ public class InvestigationChecklistDto
     public string? Label { get; set; }
     public bool IsCustom { get; set; }
     public bool IsCompleted { get; set; }
+    public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public string? CompletedByName { get; set; }
     public string? Notes { get; set; }
     public string? EvidenceUrl { get; set; }
+    public List<ReferenceCheckDto> ReferenceChecks { get; set; } = new();
+}
+
+public class ReferenceCheckDto
+{
+    public Guid Id { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string? ContactName { get; set; }
+    public string? ContactPhone { get; set; }
+    public string? ContactEmail { get; set; }
+    public int Status { get; set; }
+    public DateTime? CalledAt { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class AddReferenceDto
+{
+    public string CompanyName { get; set; } = string.Empty;
+    public string? ContactName { get; set; }
+    public string? ContactPhone { get; set; }
+    public string? ContactEmail { get; set; }
+}
+
+public class UpdateReferenceStatusDto
+{
+    public int Status { get; set; }
+    public string? Notes { get; set; }
 }
 
 public class AddCustomValidationDto
