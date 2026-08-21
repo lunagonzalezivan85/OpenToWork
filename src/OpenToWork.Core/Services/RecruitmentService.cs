@@ -106,6 +106,7 @@ public class RecruitmentService : IRecruitmentService
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.ReferenceChecks)
+            .Include(r => r.TechnicalEvaluations!).ThenInclude(t => t.EvaluatedByUser)
             .Include(r => r.Dismissal!).ThenInclude(d => d.DismissedByUser)
             .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted);
 
@@ -175,6 +176,17 @@ public class RecruitmentService : IRecruitmentService
                 EndDate = e.EndDate,
                 IsInProgress = e.IsInProgress
             }).ToList() ?? new(),
+            TechnicalEvaluations = recruitment.TechnicalEvaluations?.Where(t => !t.IsDeleted).OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt).Select(t => new TechnicalEvaluationDto
+            {
+                Id = t.Id,
+                EvaluationName = t.EvaluationName,
+                Description = t.Description,
+                Score = t.Score,
+                EvidenceUrl = t.EvidenceUrl,
+                Notes = t.Notes,
+                EvaluatedAt = t.EvaluatedAt,
+                EvaluatedByName = t.EvaluatedByUser?.Email
+            }).ToList() ?? new(),
             InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
                 Id = c.Id,
@@ -220,6 +232,7 @@ public class RecruitmentService : IRecruitmentService
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.ReferenceChecks)
+            .Include(r => r.TechnicalEvaluations!).ThenInclude(t => t.EvaluatedByUser)
             .Include(r => r.Dismissal!).ThenInclude(d => d.DismissedByUser)
             .FirstOrDefaultAsync(r => r.SCUserId == userId && !r.IsDeleted);
 
@@ -288,6 +301,17 @@ public class RecruitmentService : IRecruitmentService
                 StartDate = e.StartDate,
                 EndDate = e.EndDate,
                 IsInProgress = e.IsInProgress
+            }).ToList() ?? new(),
+            TechnicalEvaluations = recruitment.TechnicalEvaluations?.Where(t => !t.IsDeleted).OrderByDescending(t => t.EvaluatedAt ?? t.CreatedAt).Select(t => new TechnicalEvaluationDto
+            {
+                Id = t.Id,
+                EvaluationName = t.EvaluationName,
+                Description = t.Description,
+                Score = t.Score,
+                EvidenceUrl = t.EvidenceUrl,
+                Notes = t.Notes,
+                EvaluatedAt = t.EvaluatedAt,
+                EvaluatedByName = t.EvaluatedByUser?.Email
             }).ToList() ?? new(),
             InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
@@ -764,6 +788,73 @@ public class RecruitmentService : IRecruitmentService
 
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "UpdateChecklistNotes", "PT_InvestigationChecklists", checklistId, null, ipAddress);
+        return true;
+    }
+
+    public async Task<TechnicalEvaluationDto?> AddTechnicalEvaluationAsync(Guid recruitmentId, AddTechnicalEvaluationDto dto, Guid adminId, string? ipAddress)
+    {
+        var recruitment = await _context.PT_CandidateRecruitments.FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
+        if (recruitment == null) return null;
+
+        var evaluation = new PTTechnicalEvaluation
+        {
+            PT_CandidateRecruitmentId = recruitmentId,
+            EvaluationName = dto.EvaluationName,
+            Description = dto.Description,
+            Score = dto.Score,
+            EvidenceUrl = dto.EvidenceUrl,
+            Notes = dto.Notes,
+            EvaluatedAt = DateTime.UtcNow,
+            EvaluatedByUserId = adminId,
+            CreatedBy = adminId
+        };
+
+        _context.PT_TechnicalEvaluations.Add(evaluation);
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "AddTechnicalEvaluation", "PT_TechnicalEvaluations", evaluation.Id, null, ipAddress);
+
+        return new TechnicalEvaluationDto
+        {
+            Id = evaluation.Id,
+            EvaluationName = evaluation.EvaluationName,
+            Description = evaluation.Description,
+            Score = evaluation.Score,
+            EvidenceUrl = evaluation.EvidenceUrl,
+            Notes = evaluation.Notes,
+            EvaluatedAt = evaluation.EvaluatedAt,
+            EvaluatedByName = ""
+        };
+    }
+
+    public async Task<bool> UpdateTechnicalEvaluationAsync(Guid evaluationId, UpdateTechnicalEvaluationDto dto, Guid adminId, string? ipAddress)
+    {
+        var evaluation = await _context.PT_TechnicalEvaluations.FirstOrDefaultAsync(t => t.Id == evaluationId && !t.IsDeleted);
+        if (evaluation == null) return false;
+
+        if (dto.EvaluationName != null) evaluation.EvaluationName = dto.EvaluationName;
+        if (dto.Description != null) evaluation.Description = dto.Description;
+        if (dto.Score.HasValue) evaluation.Score = dto.Score.Value;
+        if (dto.EvidenceUrl != null) evaluation.EvidenceUrl = dto.EvidenceUrl;
+        if (dto.Notes != null) evaluation.Notes = dto.Notes;
+        evaluation.UpdatedAt = DateTime.UtcNow;
+        evaluation.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "UpdateTechnicalEvaluation", "PT_TechnicalEvaluations", evaluationId, null, ipAddress);
+        return true;
+    }
+
+    public async Task<bool> DeleteTechnicalEvaluationAsync(Guid evaluationId, Guid adminId, string? ipAddress)
+    {
+        var evaluation = await _context.PT_TechnicalEvaluations.FirstOrDefaultAsync(t => t.Id == evaluationId && !t.IsDeleted);
+        if (evaluation == null) return false;
+
+        evaluation.IsDeleted = true;
+        evaluation.UpdatedAt = DateTime.UtcNow;
+        evaluation.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "DeleteTechnicalEvaluation", "PT_TechnicalEvaluations", evaluationId, null, ipAddress);
         return true;
     }
 }

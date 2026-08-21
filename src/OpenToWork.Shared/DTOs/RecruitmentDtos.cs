@@ -43,6 +43,7 @@ public class RecruitmentDetailDto
     public List<CandidateExperienceDto> WorkExperiences { get; set; } = new();
     public List<CandidateCertificationDto> Certifications { get; set; } = new();
     public List<CandidateEducationDto> Educations { get; set; } = new();
+    public List<TechnicalEvaluationDto> TechnicalEvaluations { get; set; } = new();
     public DismissalInfoDto? Dismissal { get; set; }
 }
 
@@ -103,6 +104,36 @@ public class UpdateCandidatePhoneDto
 
 public class UpdateChecklistNotesDto
 {
+    public string? Notes { get; set; }
+}
+
+public class TechnicalEvaluationDto
+{
+    public Guid Id { get; set; }
+    public string EvaluationName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public decimal Score { get; set; }
+    public string? EvidenceUrl { get; set; }
+    public string? Notes { get; set; }
+    public DateTime? EvaluatedAt { get; set; }
+    public string? EvaluatedByName { get; set; }
+}
+
+public class AddTechnicalEvaluationDto
+{
+    public string EvaluationName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public decimal Score { get; set; }
+    public string? EvidenceUrl { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class UpdateTechnicalEvaluationDto
+{
+    public string? EvaluationName { get; set; }
+    public string? Description { get; set; }
+    public decimal? Score { get; set; }
+    public string? EvidenceUrl { get; set; }
     public string? Notes { get; set; }
 }
 

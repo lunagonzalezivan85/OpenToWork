@@ -36,4 +36,8 @@ public interface IRecruitmentService
     Task<bool> UpdateCandidatePhoneAsync(Guid recruitmentId, string? phone, Guid adminId, string? ipAddress);
 
     Task<bool> UpdateChecklistNotesAsync(Guid checklistId, string? notes, Guid adminId, string? ipAddress);
+
+    Task<TechnicalEvaluationDto?> AddTechnicalEvaluationAsync(Guid recruitmentId, AddTechnicalEvaluationDto dto, Guid adminId, string? ipAddress);
+    Task<bool> UpdateTechnicalEvaluationAsync(Guid evaluationId, UpdateTechnicalEvaluationDto dto, Guid adminId, string? ipAddress);
+    Task<bool> DeleteTechnicalEvaluationAsync(Guid evaluationId, Guid adminId, string? ipAddress);
 }

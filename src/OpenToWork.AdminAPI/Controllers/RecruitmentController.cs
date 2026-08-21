@@ -130,4 +130,25 @@ public class RecruitmentController : AdminControllerBase
         var result = await _recruitmentService.UpdateChecklistNotesAsync(checklistId, dto.Notes, AdminId, ClientIp);
         return result ? NoContent() : NotFound();
     }
+
+    [HttpPost("{id}/evaluations")]
+    public async Task<IActionResult> AddEvaluation(Guid id, [FromBody] AddTechnicalEvaluationDto dto)
+    {
+        var result = await _recruitmentService.AddTechnicalEvaluationAsync(id, dto, AdminId, ClientIp);
+        return result != null ? Ok(result) : NotFound();
+    }
+
+    [HttpPut("evaluations/{evaluationId}")]
+    public async Task<IActionResult> UpdateEvaluation(Guid evaluationId, [FromBody] UpdateTechnicalEvaluationDto dto)
+    {
+        var result = await _recruitmentService.UpdateTechnicalEvaluationAsync(evaluationId, dto, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
+    [HttpDelete("evaluations/{evaluationId}")]
+    public async Task<IActionResult> DeleteEvaluation(Guid evaluationId)
+    {
+        var result = await _recruitmentService.DeleteTechnicalEvaluationAsync(evaluationId, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
 }

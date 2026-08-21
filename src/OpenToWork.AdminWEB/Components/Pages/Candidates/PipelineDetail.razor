@@ -461,6 +461,114 @@ else
         </div>
     }
 
+    @* === Technical Evaluations (stage 2) === *@
+    @if (Detail.CurrentStage == 2 && Detail.Dismissal == null)
+    {
+        <h2 class="admin-section-title">
+            @Lang.T("admin.recruitment.technicalEvaluations")
+            @if (Detail.TechnicalEvaluations.Count > 0)
+            {
+                <span class="admin-skill-count" style="margin-left: 0.5rem;">@Detail.TechnicalEvaluations.Count</span>
+            }
+        </h2>
+
+        @if (Detail.TechnicalEvaluations.Count > 0)
+        {
+            <div class="admin-evaluations-list">
+                @foreach (var eval in Detail.TechnicalEvaluations)
+                {
+                    <div class="admin-evaluation-card">
+                        <div class="admin-evaluation-header">
+                            <div class="admin-evaluation-name">@eval.EvaluationName</div>
+                            <div class="admin-evaluation-score @(eval.Score >= 70 ? "admin-evaluation-score--pass" : "admin-evaluation-score--fail")">
+                                @eval.Score/100
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(eval.Description))
+                        {
+                            <div class="admin-evaluation-desc">@eval.Description</div>
+                        }
+                        @if (!string.IsNullOrEmpty(eval.Notes))
+                        {
+                            <div class="admin-evaluation-notes">@eval.Notes</div>
+                        }
+                        <div class="admin-evaluation-meta">
+                            <span>@eval.EvaluatedAt?.ToString("yyyy-MM-dd HH:mm")</span>
+                            @if (!string.IsNullOrEmpty(eval.EvaluatedByName))
+                            {
+                                <span>· @eval.EvaluatedByName</span>
+                            }
+                            @if (!string.IsNullOrEmpty(eval.EvidenceUrl))
+                            {
+                                <a href="@eval.EvidenceUrl" target="_blank" class="admin-candidate-contact-value" style="margin-left: 0.5rem;">@Lang.T("admin.recruitment.viewEvidence")</a>
+                            }
+                        </div>
+                        <div class="admin-evaluation-actions">
+                            <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.7rem;" @onclick='() => StartEditEvaluation(eval)'>@Lang.T("admin.common.edit")</button>
+                            <button class="ot-btn ot-btn--outline ot-btn--small ot-btn--danger" style="font-size: 0.7rem;" @onclick='() => DeleteEvaluation(eval.Id)'>@Lang.T("admin.common.delete")</button>
+                        </div>
+
+                        @if (EditingEvaluationId == eval.Id)
+                        {
+                            <div class="admin-evaluation-edit-form">
+                                <input type="text" @bind="EditEvalName" placeholder="@Lang.T("admin.recruitment.evalName")" class="admin-investigation-add-input" style="width: 100%; margin-bottom: 0.3rem;" />
+                                <input type="text" @bind="EditEvalDesc" placeholder="@Lang.T("admin.recruitment.evalDesc")" class="admin-investigation-add-input" style="width: 100%; margin-bottom: 0.3rem;" />
+                                <div style="display: flex; gap: 0.3rem; margin-bottom: 0.3rem;">
+                                    <input type="number" @bind="EditEvalScore" min="0" max="100" step="1" placeholder="@Lang.T("admin.recruitment.evalScore")" class="admin-investigation-add-input" style="width: 120px;" />
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center;">/100</span>
+                                </div>
+                                <input type="text" @bind="EditEvalUrl" placeholder="@Lang.T("admin.recruitment.evalUrl")" class="admin-investigation-add-input" style="width: 100%; margin-bottom: 0.3rem;" />
+                                <textarea @bind="EditEvalNotes" rows="2" placeholder="@Lang.T("admin.recruitment.notesPlaceholder")" class="admin-investigation-add-input" style="width: 100%; resize: vertical; margin-bottom: 0.3rem;"></textarea>
+                                <div class="admin-reference-add-actions">
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => EditingEvaluationId = null'>@Lang.T("admin.common.cancel")</button>
+                                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SaveEditEvaluation">@Lang.T("admin.common.save")</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="admin-empty-text">@Lang.T("admin.recruitment.noEvaluations")</div>
+        }
+
+        @* Add new evaluation form *@
+        @if (ShowAddEvaluation)
+        {
+            <div class="admin-evaluation-add-form">
+                <input type="text" @bind="NewEvalName" placeholder="@Lang.T("admin.recruitment.evalName")" class="admin-investigation-add-input" style="width: 100%; margin-bottom: 0.3rem;" />
+                <input type="text" @bind="NewEvalDesc" placeholder="@Lang.T("admin.recruitment.evalDesc")" class="admin-investigation-add-input" style="width: 100%; margin-bottom: 0.3rem;" />
+                <div style="display: flex; gap: 0.3rem; margin-bottom: 0.3rem;">
+                    <input type="number" @bind="NewEvalScore" min="0" max="100" step="1" placeholder="@Lang.T("admin.recruitment.evalScore")" class="admin-investigation-add-input" style="width: 120px;" />
+                    <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center;">/100</span>
+                </div>
+                <input type="text" @bind="NewEvalUrl" placeholder="@Lang.T("admin.recruitment.evalUrl")" class="admin-investigation-add-input" style="width: 100%; margin-bottom: 0.3rem;" />
+                <textarea @bind="NewEvalNotes" rows="2" placeholder="@Lang.T("admin.recruitment.notesPlaceholder")" class="admin-investigation-add-input" style="width: 100%; resize: vertical; margin-bottom: 0.3rem;"></textarea>
+                <div class="admin-reference-add-actions">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => ShowAddEvaluation = false'>@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(NewEvalName)" @onclick="ConfirmAddEvaluation">@Lang.T("admin.recruitment.addEvaluation")</button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick='() => { ShowAddEvaluation = true; NewEvalName = ""; NewEvalDesc = ""; NewEvalScore = 0; NewEvalUrl = ""; NewEvalNotes = ""; }'>
+                + @Lang.T("admin.recruitment.addEvaluation")
+            </button>
+        }
+
+        @* Score summary *@
+        @if (Detail.TechnicalEvaluations.Count > 0)
+        {
+            <div class="admin-evaluation-summary">
+                <span class="admin-evaluation-summary-label">@Lang.T("admin.recruitment.averageScore"):</span>
+                <span class="admin-evaluation-summary-value">@Math.Round(Detail.TechnicalEvaluations.Average(e => e.Score), 1)/100</span>
+            </div>
+        }
+    }
+
     @* === Stage history === *@
     @if (Detail.StageLogs.Count > 0)
     {
@@ -524,6 +632,18 @@ else
     private string PhoneEditValue { get; set; } = "";
     private Guid? EditingNotesId { get; set; }
     private string NotesEditValue { get; set; } = "";
+    private bool ShowAddEvaluation { get; set; }
+    private string NewEvalName { get; set; } = "";
+    private string NewEvalDesc { get; set; } = "";
+    private decimal NewEvalScore { get; set; }
+    private string NewEvalUrl { get; set; } = "";
+    private string NewEvalNotes { get; set; } = "";
+    private Guid? EditingEvaluationId { get; set; }
+    private string EditEvalName { get; set; } = "";
+    private string EditEvalDesc { get; set; } = "";
+    private decimal EditEvalScore { get; set; }
+    private string EditEvalUrl { get; set; } = "";
+    private string EditEvalNotes { get; set; } = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -581,6 +701,55 @@ else
     {
         var ok = await AuthApi.UpdateChecklistNotesAsync(checklistId, NotesEditValue?.Trim());
         EditingNotesId = null;
+        if (ok) await LoadDetail();
+    }
+
+    private async Task ConfirmAddEvaluation()
+    {
+        if (Detail == null || string.IsNullOrWhiteSpace(NewEvalName)) return;
+        var result = await AuthApi.AddTechnicalEvaluationAsync(Detail.Id, new AddTechnicalEvaluationDto
+        {
+            EvaluationName = NewEvalName.Trim(),
+            Description = string.IsNullOrWhiteSpace(NewEvalDesc) ? null : NewEvalDesc.Trim(),
+            Score = NewEvalScore,
+            EvidenceUrl = string.IsNullOrWhiteSpace(NewEvalUrl) ? null : NewEvalUrl.Trim(),
+            Notes = string.IsNullOrWhiteSpace(NewEvalNotes) ? null : NewEvalNotes.Trim()
+        });
+        if (result != null)
+        {
+            ShowAddEvaluation = false;
+            await LoadDetail();
+        }
+    }
+
+    private void StartEditEvaluation(TechnicalEvaluationDto eval)
+    {
+        EditingEvaluationId = eval.Id;
+        EditEvalName = eval.EvaluationName;
+        EditEvalDesc = eval.Description ?? "";
+        EditEvalScore = eval.Score;
+        EditEvalUrl = eval.EvidenceUrl ?? "";
+        EditEvalNotes = eval.Notes ?? "";
+    }
+
+    private async Task SaveEditEvaluation()
+    {
+        if (EditingEvaluationId == null) return;
+        var ok = await AuthApi.UpdateTechnicalEvaluationAsync(EditingEvaluationId.Value, new UpdateTechnicalEvaluationDto
+        {
+            EvaluationName = EditEvalName.Trim(),
+            Description = EditEvalDesc?.Trim(),
+            Score = EditEvalScore,
+            EvidenceUrl = EditEvalUrl?.Trim(),
+            Notes = EditEvalNotes?.Trim()
+        });
+        EditingEvaluationId = null;
+        if (ok) await LoadDetail();
+    }
+
+    private async Task DeleteEvaluation(Guid evaluationId)
+    {
+        var ok = await AuthApi.DeleteTechnicalEvaluationAsync(evaluationId);
         if (ok) await LoadDetail();
     }
 
