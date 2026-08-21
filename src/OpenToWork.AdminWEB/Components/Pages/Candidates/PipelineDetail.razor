@@ -200,9 +200,9 @@ else
                                     }
                                     <div class="admin-step-context-row">
                                         <span class="admin-step-context-label">LinkedIn:</span>
-                                        @if (!string.IsNullOrEmpty(item.EvidenceUrl))
+                                        @if (!string.IsNullOrEmpty(Detail.LinkedInUrl))
                                         {
-                                            <a href="@item.EvidenceUrl" target="_blank" class="admin-candidate-contact-value">@item.EvidenceUrl</a>
+                                            <a href="@Detail.LinkedInUrl" target="_blank" class="admin-candidate-contact-value">@Detail.LinkedInUrl</a>
                                         }
                                         else
                                         {
@@ -218,9 +218,9 @@ else
                                 <div class="admin-step-context-panel">
                                     <div class="admin-step-context-row">
                                         <span class="admin-step-context-label">@Lang.T("admin.recruitment.portfolio"):</span>
-                                        @if (!string.IsNullOrEmpty(item.EvidenceUrl))
+                                        @if (!string.IsNullOrEmpty(Detail.PortfolioUrl))
                                         {
-                                            <a href="@item.EvidenceUrl" target="_blank" class="admin-candidate-contact-value">@Lang.T("admin.recruitment.viewPortfolio")</a>
+                                            <a href="@Detail.PortfolioUrl" target="_blank" class="admin-candidate-contact-value">@Lang.T("admin.recruitment.viewPortfolio")</a>
                                         }
                                         else
                                         {

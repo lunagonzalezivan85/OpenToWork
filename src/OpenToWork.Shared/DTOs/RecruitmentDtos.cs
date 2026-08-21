@@ -29,6 +29,8 @@ public class RecruitmentDetailDto
     public string? Phone { get; set; }
     public string? Country { get; set; }
     public string? City { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public string? PortfolioUrl { get; set; }
     public int CurrentStage { get; set; }
     public string? AssignedToName { get; set; }
     public Guid? AssignedToUserId { get; set; }
