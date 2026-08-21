@@ -39,6 +39,8 @@ public class RecruitmentDetailDto
     public List<StageLogDto> StageLogs { get; set; } = new();
     public List<InvestigationChecklistDto> InvestigationChecklist { get; set; } = new();
     public List<CandidateExperienceDto> WorkExperiences { get; set; } = new();
+    public List<CandidateCertificationDto> Certifications { get; set; } = new();
+    public List<CandidateEducationDto> Educations { get; set; } = new();
     public DismissalInfoDto? Dismissal { get; set; }
 }
 
@@ -95,6 +97,11 @@ public class UpdateReferenceStatusDto
 public class UpdateCandidatePhoneDto
 {
     public string? Phone { get; set; }
+}
+
+public class UpdateChecklistNotesDto
+{
+    public string? Notes { get; set; }
 }
 
 public class AddCustomValidationDto

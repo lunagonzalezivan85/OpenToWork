@@ -34,4 +34,6 @@ public interface IRecruitmentService
     Task<bool> UnassignAsync(Guid recruitmentId, Guid adminId, string? ipAddress);
 
     Task<bool> UpdateCandidatePhoneAsync(Guid recruitmentId, string? phone, Guid adminId, string? ipAddress);
+
+    Task<bool> UpdateChecklistNotesAsync(Guid checklistId, string? notes, Guid adminId, string? ipAddress);
 }

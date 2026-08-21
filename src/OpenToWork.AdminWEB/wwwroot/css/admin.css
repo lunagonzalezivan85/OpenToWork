@@ -2527,6 +2527,107 @@
     color: var(--text-secondary);
 }
 
+.admin-notes-edit-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.75rem;
+    margin-left: 0.3rem;
+    opacity: 0.6;
+}
+
+.admin-notes-edit-btn:hover {
+    opacity: 1;
+}
+
+.admin-notes-edit-form {
+    margin-top: 0.3rem;
+}
+
+.admin-notes-add-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+    margin-top: 0.2rem;
+}
+
+.admin-notes-add-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.admin-step-context-panel {
+    margin-top: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+}
+
+.admin-step-context-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    padding: 0.1rem 0;
+}
+
+.admin-step-context-label {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.admin-step-context-subtitle {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.3rem;
+}
+
+.admin-cert-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.admin-cert-item:last-child {
+    border-bottom: none;
+}
+
+.admin-cert-info {
+    flex: 1;
+}
+
+.admin-cert-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-cert-issuer {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.admin-cert-date {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+.admin-cert-meta {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
 /* ============================================
    Stage History
    ============================================ */

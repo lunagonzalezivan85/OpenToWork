@@ -165,9 +165,130 @@ else
                                 }
                             </div>
 
-                            @if (!string.IsNullOrEmpty(item.Notes))
+                            @if (!string.IsNullOrEmpty(item.Notes) && EditingNotesId != item.Id)
                             {
-                                <div class="admin-investigation-notes">@item.Notes</div>
+                                <div class="admin-investigation-notes">
+                                    @item.Notes
+                                    @if (Detail.CurrentStage == 1)
+                                    {
+                                        <button class="admin-notes-edit-btn" @onclick='() => { NotesEditValue = item.Notes ?? ""; EditingNotesId = item.Id; }'>✎</button>
+                                    }
+                                </div>
+                            }
+                            else if (EditingNotesId == item.Id)
+                            {
+                                <div class="admin-notes-edit-form">
+                                    <textarea @bind="NotesEditValue" rows="2" class="admin-investigation-add-input" style="resize: vertical; width: 100%;" placeholder="@Lang.T("admin.recruitment.notesPlaceholder")"></textarea>
+                                    <div class="admin-reference-add-actions">
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => EditingNotesId = null'>@Lang.T("admin.common.cancel")</button>
+                                        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick='() => SaveNotes(item.Id)'>@Lang.T("admin.common.save")</button>
+                                    </div>
+                                </div>
+                            }
+                            else if (Detail.CurrentStage == 1 && string.IsNullOrEmpty(item.Notes))
+                            {
+                                <button class="admin-notes-add-btn" @onclick='() => { NotesEditValue = ""; EditingNotesId = item.Id; }'>+ @Lang.T("admin.recruitment.addNote")</button>
+                            }
+
+                            @* Step 2: Validate LinkedIn - show link + notes *@
+                            @if (item.Step == 2 && Detail.CurrentStage == 1)
+                            {
+                                <div class="admin-step-context-panel">
+                                    @if (!string.IsNullOrEmpty(Detail.Title))
+                                    {
+                                        <div class="admin-step-context-row"><span class="admin-step-context-label">@Lang.T("admin.recruitment.candidateTitle"):</span> @Detail.Title</div>
+                                    }
+                                    <div class="admin-step-context-row">
+                                        <span class="admin-step-context-label">LinkedIn:</span>
+                                        @if (!string.IsNullOrEmpty(item.EvidenceUrl))
+                                        {
+                                            <a href="@item.EvidenceUrl" target="_blank" class="admin-candidate-contact-value">@item.EvidenceUrl</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="admin-reference-contact--missing">@Lang.T("admin.recruitment.searchOnLinkedIn")</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            @* Step 3: Validate portfolio - show link + notes *@
+                            @if (item.Step == 3 && Detail.CurrentStage == 1)
+                            {
+                                <div class="admin-step-context-panel">
+                                    <div class="admin-step-context-row">
+                                        <span class="admin-step-context-label">@Lang.T("admin.recruitment.portfolio"):</span>
+                                        @if (!string.IsNullOrEmpty(item.EvidenceUrl))
+                                        {
+                                            <a href="@item.EvidenceUrl" target="_blank" class="admin-candidate-contact-value">@Lang.T("admin.recruitment.viewPortfolio")</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="admin-reference-contact--missing">@Lang.T("admin.recruitment.noPortfolioRegistered")</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            @* Step 4: Validate certifications - show all certs and education *@
+                            @if (item.Step == 4 && Detail.CurrentStage == 1)
+                            {
+                                <div class="admin-step-context-panel">
+                                    @if (Detail.Certifications.Count > 0)
+                                    {
+                                        <div class="admin-step-context-subtitle">@Lang.T("admin.recruitment.certifications") (@Detail.Certifications.Count)</div>
+                                        @foreach (var cert in Detail.Certifications)
+                                        {
+                                            <div class="admin-cert-item">
+                                                <div class="admin-cert-info">
+                                                    <div class="admin-cert-name">@cert.Name</div>
+                                                    @if (!string.IsNullOrEmpty(cert.Issuer))
+                                                    {
+                                                        <div class="admin-cert-issuer">@cert.Issuer</div>
+                                                    }
+                                                    @if (cert.IssueDate.HasValue)
+                                                    {
+                                                        <div class="admin-cert-date">@cert.IssueDate.Value.ToString("MMM yyyy")</div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(cert.CredentialId))
+                                                    {
+                                                        <div class="admin-cert-meta">ID: @cert.CredentialId</div>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(cert.CredentialUrl))
+                                                {
+                                                    <a href="@cert.CredentialUrl" target="_blank" class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">@Lang.T("admin.recruitment.verify")</a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="admin-reference-contact--missing" style="font-size: 0.7rem;">@Lang.T("admin.recruitment.requestVerificationLink")</span>
+                                                }
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="admin-empty-text" style="font-size: 0.78rem; padding: 0.3rem 0;">@Lang.T("admin.recruitment.noCertifications")</div>
+                                    }
+
+                                    @if (Detail.Educations.Count > 0)
+                                    {
+                                        <div class="admin-step-context-subtitle" style="margin-top: 0.5rem;">@Lang.T("admin.recruitment.education") (@Detail.Educations.Count)</div>
+                                        @foreach (var edu in Detail.Educations)
+                                        {
+                                            <div class="admin-cert-item">
+                                                <div class="admin-cert-info">
+                                                    <div class="admin-cert-name">@edu.Degree</div>
+                                                    <div class="admin-cert-issuer">@edu.Institution</div>
+                                                    @if (edu.StartDate.HasValue)
+                                                    {
+                                                        <div class="admin-cert-date">@edu.StartDate.Value.ToString("yyyy") - @(edu.EndDate?.ToString("yyyy") ?? (edu.IsInProgress ? Lang.T("admin.recruitment.inProgress") : ""))</div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
                             }
 
                             @* Step 0: Call candidate - show phone with edit *@
@@ -401,6 +522,8 @@ else
     private string NewRefContactEmail { get; set; } = "";
     private bool EditingPhone { get; set; }
     private string PhoneEditValue { get; set; } = "";
+    private Guid? EditingNotesId { get; set; }
+    private string NotesEditValue { get; set; } = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -451,6 +574,13 @@ else
         if (Detail == null) return;
         var ok = await AuthApi.UpdateCandidatePhoneAsync(Detail.Id, PhoneEditValue?.Trim());
         EditingPhone = false;
+        if (ok) await LoadDetail();
+    }
+
+    private async Task SaveNotes(Guid checklistId)
+    {
+        var ok = await AuthApi.UpdateChecklistNotesAsync(checklistId, NotesEditValue?.Trim());
+        EditingNotesId = null;
         if (ok) await LoadDetail();
     }
 

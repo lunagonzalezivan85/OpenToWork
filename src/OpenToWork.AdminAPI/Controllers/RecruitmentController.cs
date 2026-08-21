@@ -123,4 +123,11 @@ public class RecruitmentController : AdminControllerBase
         var result = await _recruitmentService.UpdateCandidatePhoneAsync(id, dto.Phone, AdminId, ClientIp);
         return result ? NoContent() : NotFound();
     }
+
+    [HttpPut("investigation/{checklistId}/notes")]
+    public async Task<IActionResult> UpdateChecklistNotes(Guid checklistId, [FromBody] UpdateChecklistNotesDto dto)
+    {
+        var result = await _recruitmentService.UpdateChecklistNotesAsync(checklistId, dto.Notes, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
 }

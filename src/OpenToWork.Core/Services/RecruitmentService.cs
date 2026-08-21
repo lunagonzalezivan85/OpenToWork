@@ -100,6 +100,8 @@ public class RecruitmentService : IRecruitmentService
         var recruitment = await _context.PT_CandidateRecruitments
             .Include(r => r.User).ThenInclude(u => u!.Candidate)
             .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Experiences)
+            .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Certifications)
+            .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Educations)
             .Include(r => r.AssignedToUser)
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
@@ -149,6 +151,28 @@ public class RecruitmentService : IRecruitmentService
                 IsCurrentJob = e.IsCurrentJob,
                 Location = e.Location
             }).ToList() ?? new(),
+            Certifications = candidate?.Certifications?.Where(c => !c.IsDeleted).Select(c => new CandidateCertificationDto
+            {
+                Id = c.Id,
+                CandidateId = c.PT_CandidateId,
+                Name = c.Name,
+                Issuer = c.Issuer,
+                IssueDate = c.IssueDate,
+                ExpiryDate = c.ExpiryDate,
+                CredentialId = c.CredentialId,
+                CredentialUrl = c.CredentialUrl
+            }).ToList() ?? new(),
+            Educations = candidate?.Educations?.Where(e => !e.IsDeleted).Select(e => new CandidateEducationDto
+            {
+                Id = e.Id,
+                CandidateId = e.PT_CandidateId,
+                Institution = e.Institution,
+                Degree = e.Degree,
+                FieldOfStudy = e.FieldOfStudy,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                IsInProgress = e.IsInProgress
+            }).ToList() ?? new(),
             InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
                 Id = c.Id,
@@ -188,6 +212,8 @@ public class RecruitmentService : IRecruitmentService
         var recruitment = await _context.PT_CandidateRecruitments
             .Include(r => r.User).ThenInclude(u => u!.Candidate)
             .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Experiences)
+            .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Certifications)
+            .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Educations)
             .Include(r => r.AssignedToUser)
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
@@ -236,6 +262,28 @@ public class RecruitmentService : IRecruitmentService
                 EndDate = e.EndDate,
                 IsCurrentJob = e.IsCurrentJob,
                 Location = e.Location
+            }).ToList() ?? new(),
+            Certifications = candidate?.Certifications?.Where(c => !c.IsDeleted).Select(c => new CandidateCertificationDto
+            {
+                Id = c.Id,
+                CandidateId = c.PT_CandidateId,
+                Name = c.Name,
+                Issuer = c.Issuer,
+                IssueDate = c.IssueDate,
+                ExpiryDate = c.ExpiryDate,
+                CredentialId = c.CredentialId,
+                CredentialUrl = c.CredentialUrl
+            }).ToList() ?? new(),
+            Educations = candidate?.Educations?.Where(e => !e.IsDeleted).Select(e => new CandidateEducationDto
+            {
+                Id = e.Id,
+                CandidateId = e.PT_CandidateId,
+                Institution = e.Institution,
+                Degree = e.Degree,
+                FieldOfStudy = e.FieldOfStudy,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                IsInProgress = e.IsInProgress
             }).ToList() ?? new(),
             InvestigationChecklist = recruitment.InvestigationChecklist?.Where(c => !c.IsDeleted).OrderBy(c => c.Step).Select(c => new InvestigationChecklistDto
             {
@@ -697,6 +745,21 @@ public class RecruitmentService : IRecruitmentService
 
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "UpdateCandidatePhone", "PT_Candidates", recruitment.User.Candidate.Id, null, ipAddress);
+        return true;
+    }
+
+    public async Task<bool> UpdateChecklistNotesAsync(Guid checklistId, string? notes, Guid adminId, string? ipAddress)
+    {
+        var item = await _context.PT_InvestigationChecklists
+            .FirstOrDefaultAsync(c => c.Id == checklistId && !c.IsDeleted);
+        if (item == null) return false;
+
+        item.Notes = notes;
+        item.UpdatedAt = DateTime.UtcNow;
+        item.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "UpdateChecklistNotes", "PT_InvestigationChecklists", checklistId, null, ipAddress);
         return true;
     }
 }

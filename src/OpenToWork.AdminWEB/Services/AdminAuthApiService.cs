@@ -311,6 +311,13 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> UpdateChecklistNotesAsync(Guid checklistId, string? notes)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/investigation/{checklistId}/notes", new UpdateChecklistNotesDto { Notes = notes });
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");
