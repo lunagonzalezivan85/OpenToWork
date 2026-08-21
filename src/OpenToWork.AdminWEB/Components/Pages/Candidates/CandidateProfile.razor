@@ -207,7 +207,7 @@ else
 
             @if (Recruitment != null && Recruitment.Dismissal == null && Recruitment.CurrentStage > 0)
             {
-                <div class="admin-profile-score-circle-container" @onclick="OpenScoreModal">
+                <div class="admin-profile-score-card" @onclick="OpenScoreModal">
                     <div class="admin-profile-score-circle @(OverallScore >= 70 ? "admin-profile-score-circle--pass" : "admin-profile-score-circle--fail")">
                         <span class="admin-profile-score-circle-value">@OverallScore.ToString("0.#")</span>
                         <span class="admin-profile-score-circle-max">/100</span>

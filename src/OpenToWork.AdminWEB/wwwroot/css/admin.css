@@ -1995,13 +1995,22 @@
     font-style: italic;
 }
 
-.admin-profile-score-circle-container {
+.admin-profile-score-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
     margin-top: 0.75rem;
+    padding: 1rem;
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     cursor: pointer;
+    transition: box-shadow 0.2s ease;
+}
+
+.admin-profile-score-card:hover {
+    box-shadow: var(--shadow-md);
 }
 
 .admin-profile-score-circle {
@@ -2016,7 +2025,7 @@
     transition: transform 0.2s ease;
 }
 
-.admin-profile-score-circle-container:hover .admin-profile-score-circle {
+.admin-profile-score-card:hover .admin-profile-score-circle {
     transform: scale(1.05);
 }
 
