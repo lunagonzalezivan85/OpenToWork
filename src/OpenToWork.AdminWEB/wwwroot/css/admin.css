@@ -2822,7 +2822,8 @@
 }
 
 .admin-modal-body select,
-.admin-modal-textarea {
+.admin-modal-textarea,
+.admin-modal-input {
     padding: 0.5rem 0.75rem;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);

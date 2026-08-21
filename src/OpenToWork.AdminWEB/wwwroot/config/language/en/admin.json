@@ -332,6 +332,7 @@
     "technicalEvaluations": "Technical Evaluations",
     "noEvaluations": "No technical evaluations registered.",
     "addEvaluation": "Add evaluation",
+    "editEvaluation": "Edit evaluation",
     "evalName": "Evaluation name",
     "evalDesc": "Description",
     "evalScore": "Score",
