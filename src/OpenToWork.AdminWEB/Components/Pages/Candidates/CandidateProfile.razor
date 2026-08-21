@@ -346,6 +346,58 @@ else
                 </div>
             }
         </div>
+
+        @* === Investigation checklist (when in Investigation stage) === *@
+        @if (Recruitment != null && Recruitment.Dismissal == null && Recruitment.CurrentStage == 1)
+        {
+            <div class="admin-profile-section admin-investigation-section">
+                <h3 class="admin-profile-section-title">
+                    @Lang.T("admin.recruitment.investigationChecklist")
+                    <span class="admin-skill-count" style="margin-left: 0.5rem;">
+                        @Recruitment.InvestigationChecklist.Count(c => c.IsCompleted) / @Recruitment.InvestigationChecklist.Count
+                    </span>
+                </h3>
+                <div class="admin-investigation-list">
+                    @foreach (var item in Recruitment.InvestigationChecklist.OrderBy(c => c.Step))
+                    {
+                        <div class="admin-investigation-item @(item.IsCompleted ? "admin-investigation-item--done" : "")">
+                            <div class="admin-investigation-check">
+                                <input type="checkbox" checked="@item.IsCompleted" @onchange="() => ToggleStep(item)" />
+                            </div>
+                            <div class="admin-investigation-content">
+                                <div class="admin-investigation-step-name">@(item.Label ?? GetInvestigationStepName(item.Step))</div>
+                                @if (item.IsCustom)
+                                {
+                                    <span class="admin-result-badge admin-result-badge--info" style="margin-left: 0.5rem; font-size: 0.65rem;">Custom</span>
+                                }
+                                @if (item.IsCompleted)
+                                {
+                                    <div class="admin-investigation-meta">
+                                        @Lang.T("admin.recruitment.completedBy") @item.CompletedByName · @item.CompletedAt?.ToString("yyyy-MM-dd HH:mm")
+                                    </div>
+                                }
+                            </div>
+                            @if (item.IsCustom)
+                            {
+                                <button class="admin-row-btn" title="Eliminar" @onclick="() => DeleteCustomValidation(item.Id)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    @* Add custom validation *@
+                    <div class="admin-investigation-add">
+                        <input type="text" @bind="NewValidationLabel" placeholder="@Lang.T("admin.recruitment.addValidationPlaceholder")" class="admin-investigation-add-input" />
+                        <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(NewValidationLabel)" @onclick="AddCustomValidation">
+                            @Lang.T("admin.recruitment.addValidation")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 
     @* === Assign modal === *@
@@ -382,6 +434,7 @@ else
     private List<AdminUserDto> AssignableUsers { get; set; } = new();
     private bool ShowAssign { get; set; }
     private string SelectedAssignToUserId { get; set; } = "";
+    private string NewValidationLabel { get; set; } = "";
 
     private string AvatarText
     {
@@ -441,6 +494,50 @@ else
             Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
         }
     }
+
+    private async Task ToggleStep(InvestigationChecklistDto item)
+    {
+        if (Recruitment == null) return;
+        var ok = await AuthApi.ToggleInvestigationStepAsync(Recruitment.Id, new ToggleInvestigationStepDto
+        {
+            Step = item.Step,
+            IsCompleted = !item.IsCompleted
+        });
+        if (ok)
+        {
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private async Task AddCustomValidation()
+    {
+        if (Recruitment == null || string.IsNullOrWhiteSpace(NewValidationLabel)) return;
+        var result = await AuthApi.AddCustomValidationAsync(Recruitment.Id, NewValidationLabel.Trim());
+        if (result != null)
+        {
+            NewValidationLabel = "";
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private async Task DeleteCustomValidation(Guid checklistId)
+    {
+        var ok = await AuthApi.DeleteCustomValidationAsync(checklistId);
+        if (ok)
+        {
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private string GetInvestigationStepName(int step) => step switch
+    {
+        0 => Lang.T("admin.recruitment.invStep0"),
+        1 => Lang.T("admin.recruitment.invStep1"),
+        2 => Lang.T("admin.recruitment.invStep2"),
+        3 => Lang.T("admin.recruitment.invStep3"),
+        4 => Lang.T("admin.recruitment.invStep4"),
+        _ => ""
+    };
 
     private string GetStageName(int stage) => stage switch
     {
