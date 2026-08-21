@@ -1,4 +1,4 @@
-@page "/candidates/pipeline/{RecruitmentId}"
+@page "/candidates/pipeline/{UserId:guid}"
 @using OpenToWork.AdminWEB.Services
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.Shared.Enums
@@ -213,7 +213,7 @@ else
 }
 
 @code {
-    [Parameter] public Guid RecruitmentId { get; set; }
+    [Parameter] public Guid UserId { get; set; }
     private RecruitmentDetailDto? Detail { get; set; }
     private bool IsLoading { get; set; } = true;
     private bool ShowDismiss { get; set; }
@@ -232,7 +232,7 @@ else
     {
         IsLoading = true;
         StateHasChanged();
-        Detail = await AuthApi.GetRecruitmentDetailAsync(RecruitmentId);
+        Detail = await AuthApi.GetRecruitmentByUserAsync(UserId);
         IsLoading = false;
         StateHasChanged();
     }

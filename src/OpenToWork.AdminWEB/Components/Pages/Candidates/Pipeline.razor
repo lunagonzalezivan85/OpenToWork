@@ -48,7 +48,7 @@ else
                     }
                     @foreach (var item in stageItems)
                     {
-                        <div class="admin-kanban-card @(item.Dismissal != null ? "admin-kanban-card--dismissed" : "")" @onclick="() => ViewDetail(item.Id)">
+                        <div class="admin-kanban-card @(item.Dismissal != null ? "admin-kanban-card--dismissed" : "")" @onclick="() => ViewDetail(item.UserId)">
                             <div class="admin-kanban-card-header">
                                 <div class="admin-result-avatar">@(GetInitials(item.FullName))</div>
                                 <div class="admin-kanban-card-info">

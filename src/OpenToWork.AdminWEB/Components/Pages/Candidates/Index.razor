@@ -415,7 +415,7 @@ else
 
     private void ViewPipeline(Guid candidateId)
     {
-        Nav.NavigateTo($"/candidates/pipeline");
+        Nav.NavigateTo($"/candidates/pipeline/{candidateId}");
     }
 
     private async Task ExportCsv()
