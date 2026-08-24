@@ -1,0 +1,478 @@
+@page "/candidates"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>@Lang.T("admin.candidates.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.candidates.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.candidates.subtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ExportCsv" disabled="@IsExporting">
+            @Lang.T("admin.candidates.exportCsv")
+        </button>
+    </div>
+</div>
+
+@* === Tabs === *@
+<div class="admin-tabs">
+    <button class="admin-tab @(ActiveTab == "notStarted" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("notStarted")'>
+        @Lang.T("admin.candidates.tabNotStarted")
+        @if (TabCounts.TryGetValue("notStarted", out var nsCount) && nsCount > 0)
+        {
+            <span class="admin-tab-badge">@nsCount</span>
+        }
+    </button>
+    <button class="admin-tab @(ActiveTab == "inProcess" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("inProcess")'>
+        @Lang.T("admin.candidates.tabInProcess")
+        @if (TabCounts.TryGetValue("inProcess", out var ipCount) && ipCount > 0)
+        {
+            <span class="admin-tab-badge admin-tab-badge--info">@ipCount</span>
+        }
+    </button>
+    <button class="admin-tab @(ActiveTab == "finished" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("finished")'>
+        @Lang.T("admin.candidates.tabFinished")
+        @if (TabCounts.TryGetValue("finished", out var fCount) && fCount > 0)
+        {
+            <span class="admin-tab-badge admin-tab-badge--success">@fCount</span>
+        }
+    </button>
+    <button class="admin-tab @(ActiveTab == "dismissed" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("dismissed")'>
+        @Lang.T("admin.candidates.tabDismissed")
+        @if (TabCounts.TryGetValue("dismissed", out var dCount) && dCount > 0)
+        {
+            <span class="admin-tab-badge admin-tab-badge--danger">@dCount</span>
+        }
+    </button>
+</div>
+
+<div class="admin-users-toolbar">
+    <div class="admin-users-search">
+        <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder="@Lang.T("admin.candidates.searchPlaceholder")" />
+    </div>
+</div>
+
+@if (SelectedIds.Count > 0)
+{
+    <div class="admin-bulk-actions">
+        <span class="admin-bulk-count">@SelectedIds.Count @Lang.T("admin.candidates.selected")</span>
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="BulkActivate">
+            @Lang.T("admin.candidates.bulkActivate")
+        </button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="BulkDeactivate">
+            @Lang.T("admin.candidates.bulkDeactivate")
+        </button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ClearSelection">
+            @Lang.T("admin.common.cancel")
+        </button>
+    </div>
+}
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.candidates.loading")</div>
+}
+else if (Result == null || Result.Items.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.candidates.empty")</div>
+    </div>
+}
+else
+{
+    <div class="admin-candidates-table-wrapper">
+        <table class="admin-candidates-table">
+            <thead>
+                <tr>
+                    <th class="col-check">
+                        <input type="checkbox" @onchange="ToggleSelectAll" checked="@IsAllSelected" />
+                    </th>
+                    <th @onclick='() => SortBy("name")' class="sortable">
+                        @Lang.T("admin.candidates.columnName")
+                        @(SortColumn == "name" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th @onclick='() => SortBy("email")' class="sortable">
+                        @Lang.T("admin.candidates.columnEmail")
+                        @(SortColumn == "email" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th>@Lang.T("admin.candidates.columnTitle")</th>
+                    <th>@Lang.T("admin.candidates.columnStatus")</th>
+                    <th @onclick='() => SortBy("skills")' class="sortable">
+                        @Lang.T("admin.candidates.columnSkills")
+                        @(SortColumn == "skills" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th @onclick='() => SortBy("experience")' class="sortable">
+                        @Lang.T("admin.candidates.columnExperience")
+                        @(SortColumn == "experience" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th @onclick='() => SortBy("applications")' class="sortable">
+                        @Lang.T("admin.candidates.columnApplications")
+                        @(SortColumn == "applications" ? (SortDesc ? " ↓" : " ↑") : "")
+                    </th>
+                    <th>LinkedIn</th>
+                    <th>Portfolio</th>
+                    <th>CV</th>
+                    <th>@Lang.T("admin.candidates.columnCreated")</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Result.Items)
+                {
+                    <tr class="@(c.IsActive ? "" : "row-inactive")">
+                        <td class="col-check">
+                            <input type="checkbox" checked="@SelectedIds.Contains(c.Id)" @onchange="() => ToggleSelect(c.Id)" />
+                        </td>
+                        <td>
+                            <div class="admin-candidate-name" @onclick="() => ViewProfile(c.Id)">
+                                <div class="admin-result-avatar">@(GetInitials(c.FullName))</div>
+                                <div>
+                                    <div class="admin-candidate-fullname">@c.FullName</div>
+                                    @if (c.WizardCompleted)
+                                    {
+                                        <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.filterEvaluated")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.filterPending")</span>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>@c.Email</td>
+                        <td>@(c.Title ?? "—")</td>
+                        <td>
+                            @if (c.IsActive)
+                            {
+                                <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.active")</span>
+                            }
+                            else
+                            {
+                                <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.inactive")</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="admin-skill-count">@c.SkillCount</span>
+                            @if (c.TopSkills.Any())
+                            {
+                                <div class="admin-skill-tags">
+                                    @foreach (var skill in c.TopSkills)
+                                    {
+                                        <span class="admin-skill-tag">@skill</span>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td>@c.ExperienceCount</td>
+                        <td>@c.ApplicationCount</td>
+                        <td>@(c.HasLinkedIn ? "✓" : "—")</td>
+                        <td>@(c.HasPortfolio ? "✓" : "—")</td>
+                        <td>@(c.HasCV ? "✓" : "—")</td>
+                        <td class="col-date">@c.CreatedAt.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <div class="admin-row-actions">
+                                @if (ActiveTab == "notStarted")
+                                {
+                                    <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.recruitment.assignCandidate")" @onclick="() => ShowAssignModal(c.Id, c.FullName)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
+                                        </svg>
+                                    </button>
+                                }
+                                @if (ActiveTab == "inProcess" || ActiveTab == "finished")
+                                {
+                                    <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.recruitment.detailTitle")" @onclick="() => ViewPipeline(c.Id)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <rect x="3" y="3" width="6" height="18" rx="1" /><rect x="9" y="3" width="6" height="12" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" />
+                                        </svg>
+                                    </button>
+                                }
+                                <button class="admin-row-btn" title="@Lang.T("admin.candidates.viewProfile")" @onclick="() => ViewProfile(c.Id)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Result.TotalPages > 1)
+    {
+        <div class="admin-pagination">
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage <= 1)" @onclick="PrevPage">
+                @Lang.T("admin.candidates.prev")
+            </button>
+            <span>@Lang.T("admin.candidates.page") @CurrentPage @Lang.T("admin.candidates.of") @Result.TotalPages</span>
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage >= Result.TotalPages)" @onclick="NextPage">
+                @Lang.T("admin.candidates.next")
+            </button>
+        </div>
+    }
+}
+
+@* === Assign Modal === *@
+@if (ShowAssign)
+{
+    <div class="admin-modal-overlay" @onclick="CloseAssignModal">
+        <div class="admin-modal" @onclick:stopPropagation="true">
+            <h3 class="admin-modal-title">@Lang.T("admin.recruitment.assignCandidate")</h3>
+            <div class="admin-modal-body">
+                <div class="admin-assign-candidate-name">@AssignCandidateName</div>
+                <label>@Lang.T("admin.recruitment.assignTo")</label>
+                @if (AssignableUsers.Count == 0)
+                {
+                    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+                }
+                else
+                {
+                    <select @bind="SelectedAssignToUserId" class="admin-modal-select">
+                        <option value="">@Lang.T("admin.recruitment.selectUser")</option>
+                        @foreach (var u in AssignableUsers)
+                        {
+                            <option value="@u.Id.ToString()">@u.Email</option>
+                        }
+                    </select>
+                }
+                <label>@Lang.T("admin.recruitment.dismissNotes")</label>
+                <textarea @bind="AssignNotes" rows="2" class="admin-modal-textarea"></textarea>
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseAssignModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrEmpty(SelectedAssignToUserId)" @onclick="ConfirmAssign">
+                    @Lang.T("admin.recruitment.confirmAssign")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private CandidateConsoleResultDto? Result { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private bool IsExporting { get; set; }
+    private string SearchTerm { get; set; } = "";
+    private string ActiveTab { get; set; } = "notStarted";
+    private int CurrentPage { get; set; } = 1;
+    private int PageSize { get; set; } = 20;
+    private string SortColumn { get; set; } = "date";
+    private bool SortDesc { get; set; } = true;
+    private HashSet<Guid> SelectedIds { get; set; } = new();
+    private CancellationTokenSource? _searchCts;
+    private Dictionary<string, int> TabCounts { get; set; } = new();
+
+    private bool ShowAssign { get; set; }
+    private Guid AssignCandidateId { get; set; }
+    private string AssignCandidateName { get; set; } = "";
+    private List<AdminUserDto> AssignableUsers { get; set; } = new();
+    private string SelectedAssignToUserId { get; set; } = "";
+    private string AssignNotes { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        await LoadData();
+        await LoadTabCounts();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        StateHasChanged();
+
+        Result = await AuthApi.GetCandidatesAsync(
+            CurrentPage, PageSize,
+            string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm,
+            null, null, null, null, null,
+            null, SortColumn, SortDesc, ActiveTab);
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadTabCounts()
+    {
+        TabCounts.Clear();
+        foreach (var tab in new[] { "notStarted", "inProcess", "finished", "dismissed" })
+        {
+            var data = await AuthApi.GetCandidatesAsync(1, 1, null, null, null, null, null, null, null, null, true, tab);
+            if (data != null)
+                TabCounts[tab] = data.TotalCount;
+        }
+        StateHasChanged();
+    }
+
+    private async Task SwitchTab(string tab)
+    {
+        ActiveTab = tab;
+        CurrentPage = 1;
+        SelectedIds.Clear();
+        await LoadData();
+    }
+
+    private async void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter") return;
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        CurrentPage = 1;
+        await LoadData();
+    }
+
+    private async Task SortByColumn(string column)
+    {
+        if (SortColumn == column)
+            SortDesc = !SortDesc;
+        else
+        {
+            SortColumn = column;
+            SortDesc = true;
+        }
+        await LoadData();
+    }
+
+    private void SortBy(string column) => _ = SortByColumn(column);
+
+    private async Task PrevPage()
+    {
+        if (CurrentPage > 1)
+        {
+            CurrentPage--;
+            await LoadData();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (Result != null && CurrentPage < Result.TotalPages)
+        {
+            CurrentPage++;
+            await LoadData();
+        }
+    }
+
+    private void ToggleSelect(Guid id)
+    {
+        if (SelectedIds.Contains(id))
+            SelectedIds.Remove(id);
+        else
+            SelectedIds.Add(id);
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        if (e.Value is bool isChecked && isChecked && Result != null)
+            SelectedIds = new HashSet<Guid>(Result.Items.Select(c => c.Id));
+        else
+            SelectedIds.Clear();
+    }
+
+    private bool IsAllSelected => Result != null && Result.Items.Count > 0 && Result.Items.All(c => SelectedIds.Contains(c.Id));
+
+    private void ClearSelection()
+    {
+        SelectedIds.Clear();
+        StateHasChanged();
+    }
+
+    private async Task BulkActivate()
+    {
+        if (SelectedIds.Count == 0) return;
+        var ok = await AuthApi.BulkActivateCandidatesAsync(SelectedIds.ToList());
+        if (ok)
+        {
+            SelectedIds.Clear();
+            await LoadData();
+        }
+    }
+
+    private async Task BulkDeactivate()
+    {
+        if (SelectedIds.Count == 0) return;
+        var ok = await AuthApi.BulkDeactivateCandidatesAsync(SelectedIds.ToList());
+        if (ok)
+        {
+            SelectedIds.Clear();
+            await LoadData();
+        }
+    }
+
+    private void ViewProfile(Guid id)
+    {
+        Nav.NavigateTo($"/candidates/profile/{id}");
+    }
+
+    private void ViewPipeline(Guid candidateId)
+    {
+        Nav.NavigateTo($"/candidates/pipeline/{candidateId}");
+    }
+
+    private async Task ExportCsv()
+    {
+        IsExporting = true;
+        StateHasChanged();
+        var bytes = await AuthApi.ExportCandidatesCsvAsync();
+        if (bytes != null)
+        {
+            var base64 = Convert.ToBase64String(bytes);
+            await JS.InvokeVoidAsync("fileDownload.save", $"candidates-{DateTime.UtcNow:yyyyMMddHHmmss}.csv", "text/csv", base64);
+        }
+        IsExporting = false;
+        StateHasChanged();
+    }
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[^1][..1]).ToUpper();
+    }
+
+    private async Task ShowAssignModal(Guid candidateId, string candidateName)
+    {
+        AssignCandidateId = candidateId;
+        AssignCandidateName = candidateName;
+        SelectedAssignToUserId = "";
+        AssignNotes = "";
+        ShowAssign = true;
+        AssignableUsers = await AuthApi.GetUsersAsync(1, 100, 2);
+        StateHasChanged();
+    }
+
+    private void CloseAssignModal()
+    {
+        ShowAssign = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmAssign()
+    {
+        if (string.IsNullOrEmpty(SelectedAssignToUserId)) return;
+        var assignToId = Guid.Parse(SelectedAssignToUserId);
+        var result = await AuthApi.AssignCandidateAsync(new AssignCandidateDto
+        {
+            UserId = AssignCandidateId,
+            AssignedToUserId = assignToId,
+            Notes = string.IsNullOrWhiteSpace(AssignNotes) ? null : AssignNotes
+        });
+        if (result != null)
+        {
+            ShowAssign = false;
+            await LoadData();
+            await LoadTabCounts();
+        }
+    }
+}

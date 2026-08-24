@@ -1,0 +1,133 @@
+@page "/candidates/assigned"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject LocalStorageService LocalStorage
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.assigned.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.assigned.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.assigned.subtitle")</p>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (AssignedItems.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.assigned.empty")</div>
+    </div>
+}
+else
+{
+    <div class="admin-candidates-table-wrapper">
+        <table class="admin-candidates-table">
+            <thead>
+                <tr>
+                    <th>@Lang.T("admin.assigned.columnCandidate")</th>
+                    <th>@Lang.T("admin.assigned.columnEmail")</th>
+                    <th>@Lang.T("admin.assigned.columnStage")</th>
+                    <th>@Lang.T("admin.assigned.columnAssignedTo")</th>
+                    <th>@Lang.T("admin.assigned.columnInvestigation")</th>
+                    <th>@Lang.T("admin.assigned.columnAssignedDate")</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in AssignedItems)
+                {
+                    <tr>
+                        <td>
+                            <div class="admin-candidate-name">
+                                <div class="admin-result-avatar">@(GetInitials(item.FullName))</div>
+                                <div>
+                                    <div class="admin-candidate-fullname">@item.FullName</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>@item.Email</td>
+                        <td>
+                            <span class="admin-result-badge admin-result-badge--info">@GetStageName(item.CurrentStage)</span>
+                        </td>
+                        <td>@(item.AssignedToName ?? "—")</td>
+                        <td>
+                            <span class="admin-skill-count">@item.InvestigationCompleted / @item.InvestigationTotal</span>
+                        </td>
+                        <td class="col-date">@(item.AssignedAt?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td>
+                            <div class="admin-row-actions">
+                                <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.candidates.viewProfile")" @onclick="() => ViewDetail(item)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+}
+
+@code {
+    private List<RecruitmentPipelineDto> AssignedItems { get; set; } = new();
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        StateHasChanged();
+
+        var userIdStr = await LocalStorage.GetItemAsync("otwadmin-user-id");
+        Guid? userId = Guid.TryParse(userIdStr, out var parsed) ? parsed : null;
+
+        var data = await AuthApi.GetRecruitmentPipelineAsync(1, 200, null, userId, null);
+        AssignedItems = data?.Items
+            .Where(i => i.CurrentStage != 5)
+            .ToList() ?? new();
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private void ViewDetail(RecruitmentPipelineDto item)
+    {
+        Nav.NavigateTo($"/candidates/profile/{item.UserId}");
+    }
+
+    private string GetStageName(int stage) => stage switch
+    {
+        0 => Lang.T("admin.recruitment.stage0"),
+        1 => Lang.T("admin.recruitment.stage1"),
+        2 => Lang.T("admin.recruitment.stage2"),
+        3 => Lang.T("admin.recruitment.stage3"),
+        4 => Lang.T("admin.recruitment.stage4"),
+        5 => Lang.T("admin.recruitment.stage5"),
+        _ => "—"
+    };
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[^1][..1]).ToUpper();
+    }
+}

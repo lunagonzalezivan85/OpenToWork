@@ -147,11 +147,211 @@ public class AdminAuthApiService
         return await response.Content.ReadAsByteArrayAsync();
     }
 
+    public async Task<CandidateConsoleResultDto?> GetCandidatesAsync(
+        int page = 1, int pageSize = 20, string? search = null,
+        bool? wizardCompleted = null, bool? hasLinkedIn = null,
+        bool? hasPortfolio = null, bool? hasCV = null, bool? isActive = null,
+        Guid? skillId = null, string? sortBy = null, bool sortDesc = true,
+        string? recruitmentStatus = null)
+    {
+        await SetAuthHeaderAsync();
+        var query = $"api/admin/candidates?page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrEmpty(search)) query += $"&search={Uri.EscapeDataString(search)}";
+        if (wizardCompleted.HasValue) query += $"&wizardCompleted={wizardCompleted.Value}";
+        if (hasLinkedIn.HasValue) query += $"&hasLinkedIn={hasLinkedIn.Value}";
+        if (hasPortfolio.HasValue) query += $"&hasPortfolio={hasPortfolio.Value}";
+        if (hasCV.HasValue) query += $"&hasCV={hasCV.Value}";
+        if (isActive.HasValue) query += $"&isActive={isActive.Value}";
+        if (skillId.HasValue) query += $"&skillId={skillId.Value}";
+        if (!string.IsNullOrEmpty(sortBy)) query += $"&sortBy={Uri.EscapeDataString(sortBy)}";
+        query += $"&sortDesc={sortDesc.ToString().ToLower()}";
+        if (!string.IsNullOrEmpty(recruitmentStatus)) query += $"&recruitmentStatus={recruitmentStatus}";
+
+        var response = await _httpClient.GetAsync(query);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateConsoleResultDto>();
+    }
+
+    public async Task<bool> BulkActivateCandidatesAsync(List<Guid> ids)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/candidates/bulk-activate", new { Ids = ids });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> BulkDeactivateCandidatesAsync(List<Guid> ids)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/candidates/bulk-deactivate", new { Ids = ids });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<byte[]?> ExportCandidatesCsvAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/candidates/export");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadAsByteArrayAsync();
+    }
+
+    public async Task<RecruitmentPipelineResultDto?> GetRecruitmentPipelineAsync(
+        int page = 1, int pageSize = 20, int? stage = null, Guid? assignedTo = null, string? search = null)
+    {
+        await SetAuthHeaderAsync();
+        var query = $"api/admin/recruitment?page={page}&pageSize={pageSize}";
+        if (stage.HasValue) query += $"&stage={stage.Value}";
+        if (assignedTo.HasValue) query += $"&assignedTo={assignedTo.Value}";
+        if (!string.IsNullOrEmpty(search)) query += $"&search={Uri.EscapeDataString(search)}";
+
+        var response = await _httpClient.GetAsync(query);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<RecruitmentPipelineResultDto>();
+    }
+
+    public async Task<RecruitmentDetailDto?> GetRecruitmentDetailAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/recruitment/{id}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<RecruitmentDetailDto>();
+    }
+
+    public async Task<RecruitmentDetailDto?> GetRecruitmentByUserAsync(Guid userId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/recruitment/by-user/{userId}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<RecruitmentDetailDto>();
+    }
+
+    public async Task<RecruitmentPipelineDto?> AssignCandidateAsync(AssignCandidateDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/recruitment/assign", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<RecruitmentPipelineDto>();
+    }
+
+    public async Task<bool> MoveStageAsync(Guid recruitmentId, int toStage, string? notes = null)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/move-stage", new MoveStageDto { ToStage = toStage, Notes = notes });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ToggleInvestigationStepAsync(Guid recruitmentId, ToggleInvestigationStepDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/investigation", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> StartInvestigationStepAsync(Guid recruitmentId, int step)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsync($"api/admin/recruitment/{recruitmentId}/investigation/{step}/start", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<ReferenceCheckDto?> AddReferenceAsync(Guid checklistId, AddReferenceDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment/investigation/{checklistId}/references", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<ReferenceCheckDto>();
+    }
+
+    public async Task<bool> UpdateReferenceStatusAsync(Guid referenceId, UpdateReferenceStatusDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/references/{referenceId}", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeleteReferenceAsync(Guid referenceId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/recruitment/references/{referenceId}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<InvestigationChecklistDto?> AddCustomValidationAsync(Guid recruitmentId, string label)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment/{recruitmentId}/investigation/custom", new AddCustomValidationDto { Label = label });
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<InvestigationChecklistDto>();
+    }
+
+    public async Task<bool> DeleteCustomValidationAsync(Guid checklistId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/recruitment/investigation/{checklistId}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DismissCandidateAsync(Guid recruitmentId, int reason, string? notes = null)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment/{recruitmentId}/dismiss", new DismissCandidateDto { Reason = reason, Notes = notes });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UnassignCandidateAsync(Guid recruitmentId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsync($"api/admin/recruitment/{recruitmentId}/unassign", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UpdateCandidatePhoneAsync(Guid recruitmentId, string? phone)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/candidate-phone", new UpdateCandidatePhoneDto { Phone = phone });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UpdateChecklistNotesAsync(Guid checklistId, string? notes)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/investigation/{checklistId}/notes", new UpdateChecklistNotesDto { Notes = notes });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<TechnicalEvaluationDto?> AddTechnicalEvaluationAsync(Guid recruitmentId, AddTechnicalEvaluationDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment/{recruitmentId}/evaluations", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<TechnicalEvaluationDto>();
+    }
+
+    public async Task<bool> UpdateTechnicalEvaluationAsync(Guid evaluationId, UpdateTechnicalEvaluationDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/evaluations/{evaluationId}", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeleteTechnicalEvaluationAsync(Guid evaluationId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/recruitment/evaluations/{evaluationId}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<TechnicalEvaluationDto?> GetCulturalInterviewAsync(Guid recruitmentId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/recruitment/{recruitmentId}/cultural-interview");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<TechnicalEvaluationDto>();
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");
-        if (!string.IsNullOrEmpty(token))
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _httpClient.DefaultRequestHeaders.Authorization = string.IsNullOrEmpty(token) ? null : new AuthenticationHeaderValue("Bearer", token);
     }
 
     private async Task PersistAuthAsync(AuthResponseDto auth)

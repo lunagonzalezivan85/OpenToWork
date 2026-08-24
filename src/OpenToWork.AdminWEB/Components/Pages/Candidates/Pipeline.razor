@@ -1,0 +1,181 @@
+@page "/candidates/pipeline"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.recruitment.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.recruitment.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.recruitment.subtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder="@Lang.T("admin.recruitment.searchPlaceholder")" class="admin-pipeline-search" />
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (PipelineData == null || PipelineData.Items.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.recruitment.empty")</div>
+    </div>
+}
+else
+{
+    <div class="admin-pipeline-kanban">
+        @foreach (var stage in Stages)
+        {
+            var stageItems = PipelineData.Items.Where(i => i.CurrentStage == stage.Key).ToList();
+            var stageCount = PipelineData.CountByStage.GetValueOrDefault(stage.Key, 0);
+            <div class="admin-kanban-column">
+                <div class="admin-kanban-column-header">
+                    <span class="admin-kanban-column-title">@stage.Value</span>
+                    <span class="admin-kanban-column-count">@stageCount</span>
+                </div>
+                <div class="admin-kanban-column-body">
+                    @if (stageItems.Count == 0)
+                    {
+                        <div class="admin-kanban-empty">@Lang.T("admin.recruitment.noCandidates")</div>
+                    }
+                    @foreach (var item in stageItems)
+                    {
+                        <div class="admin-kanban-card @(item.Dismissal != null ? "admin-kanban-card--dismissed" : "")" @onclick="() => ViewDetail(item.UserId)">
+                            <div class="admin-kanban-card-header">
+                                <div class="admin-result-avatar">@(GetInitials(item.FullName))</div>
+                                <div class="admin-kanban-card-info">
+                                    <div class="admin-kanban-card-name">@item.FullName</div>
+                                    <div class="admin-kanban-card-email">@item.Email</div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.Title))
+                            {
+                                <div class="admin-kanban-card-title">@item.Title</div>
+                            }
+                            @if (stage.Key == 1 && item.InvestigationTotal > 0)
+                            {
+                                var pct = (int)Math.Round((double)item.InvestigationCompleted / item.InvestigationTotal * 100);
+                                <div class="admin-kanban-progress">
+                                    <div class="admin-kanban-progress-bar">
+                                        <div class="admin-kanban-progress-fill" style="width: @pct%"></div>
+                                    </div>
+                                    <span class="admin-kanban-progress-text">@item.InvestigationCompleted/@item.InvestigationTotal</span>
+                                </div>
+                            }
+                            @if (item.Dismissal != null)
+                            {
+                                <div class="admin-kanban-card-dismissed">
+                                    @Lang.T("admin.recruitment.dismissed"): @GetDismissalReason(item.Dismissal.Reason)
+                                </div>
+                            }
+                            <div class="admin-kanban-card-footer">
+                                @if (item.AssignedToName != null)
+                                {
+                                    <span class="admin-kanban-assigned">@Lang.T("admin.recruitment.assignedTo"): @item.AssignedToName</span>
+                                }
+                                else
+                                {
+                                    <span class="admin-kanban-unassigned">@Lang.T("admin.recruitment.unassigned")</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (PipelineData.TotalPages > 1)
+    {
+        <div class="admin-pagination">
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage <= 1)" @onclick="PrevPage">
+                @Lang.T("admin.candidates.prev")
+            </button>
+            <span>@Lang.T("admin.candidates.page") @CurrentPage @Lang.T("admin.candidates.of") @PipelineData.TotalPages</span>
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage >= PipelineData.TotalPages)" @onclick="NextPage">
+                @Lang.T("admin.candidates.next")
+            </button>
+        </div>
+    }
+}
+
+@code {
+    private RecruitmentPipelineResultDto? PipelineData { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private string SearchTerm { get; set; } = "";
+    private int CurrentPage { get; set; } = 1;
+    private int PageSize { get; set; } = 50;
+
+    private Dictionary<int, string> Stages => new()
+    {
+        { 0, Lang.T("admin.recruitment.stage0") },
+        { 1, Lang.T("admin.recruitment.stage1") },
+        { 2, Lang.T("admin.recruitment.stage2") },
+        { 3, Lang.T("admin.recruitment.stage3") },
+        { 4, Lang.T("admin.recruitment.stage4") },
+        { 5, Lang.T("admin.recruitment.stage5") }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        PipelineData = await AuthApi.GetRecruitmentPipelineAsync(
+            CurrentPage, PageSize, null, null,
+            string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter") return;
+        CurrentPage = 1;
+        await LoadData();
+    }
+
+    private async Task PrevPage()
+    {
+        if (CurrentPage > 1) { CurrentPage--; await LoadData(); }
+    }
+
+    private async Task NextPage()
+    {
+        if (PipelineData != null && CurrentPage < PipelineData.TotalPages) { CurrentPage++; await LoadData(); }
+    }
+
+    private void ViewDetail(Guid id) => Nav.NavigateTo($"/candidates/pipeline/{id}");
+
+    private string GetDismissalReason(int reason) => reason switch
+    {
+        0 => Lang.T("admin.recruitment.reasonTechnical"),
+        1 => Lang.T("admin.recruitment.reasonReferences"),
+        2 => Lang.T("admin.recruitment.reasonSalary"),
+        3 => Lang.T("admin.recruitment.reasonNoShow"),
+        _ => Lang.T("admin.recruitment.reasonOther")
+    };
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[^1][..1]).ToUpper();
+    }
+}

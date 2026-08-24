@@ -1,0 +1,860 @@
+@page "/candidates/profile/{UserId:guid}"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>@(Profile?.CandidateName ?? Lang.T("admin.profile.title"))</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@(Profile?.CandidateName ?? Lang.T("admin.profile.title"))</h1>
+        <p class="admin-page-header-subtitle">@(Profile?.Title ?? "")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.dashboard.backToDashboard")</button>
+    </div>
+</div>
+
+@if (Profile == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else
+{
+    @* === Pipeline stepper === *@
+    <div class="admin-candidate-pipeline-bar">
+        @if (Recruitment == null)
+        {
+            <div class="admin-pipeline-bar-empty">
+                <span>@Lang.T("admin.recruitment.noProcess")</span>
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="StartInvestigation">
+                    @Lang.T("admin.recruitment.investigate")
+                </button>
+            </div>
+        }
+        else if (Recruitment.Dismissal != null)
+        {
+            <div class="admin-pipeline-bar-dismissed">
+                <span class="admin-result-badge admin-result-badge--danger">@Lang.T("admin.recruitment.dismissed")</span>
+            </div>
+        }
+        else
+        {
+            <div class="admin-pipeline-stepper-inline">
+                @for (int i = 0; i <= 4; i++)
+                {
+                    var stageIndex = i;
+                    var stageClass = stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step--done" :
+                        stageIndex == Recruitment.CurrentStage ? "admin-pipeline-step--active" : "";
+                    <div class="admin-pipeline-step @stageClass">
+                        <div class="admin-pipeline-step-circle">
+                            @if (stageIndex < Recruitment.CurrentStage)
+                            {
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
+                            }
+                            else
+                            {
+                                @(stageIndex + 1)
+                            }
+                        </div>
+                        <span class="admin-pipeline-step-label">@GetStageName(stageIndex)</span>
+                        @if (stageIndex < Recruitment.CurrentStage && stageIndex > 0 && HasStageNotes(stageIndex))
+                        {
+                            <div class="admin-pipeline-step-note" @onclick="@(() => OpenStageDetail(stageIndex))">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                            </div>
+                        }
+                    </div>
+                    @if (stageIndex < 4)
+                    {
+                        <div class="admin-pipeline-step-line @(stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step-line--done" : "")"></div>
+                    }
+                }
+            </div>
+            <div class="admin-pipeline-bar-actions">
+                @if (Recruitment.CurrentStage < 4)
+                {
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="MoveToNextStage">
+                        @Lang.T("admin.recruitment.moveToNext") → @GetStageName(Recruitment.CurrentStage + 1)
+                    </button>
+                }
+                <a href="/candidates/pipeline/@UserId" class="ot-btn ot-btn--outline ot-btn--small">
+                    @Lang.T("admin.recruitment.detailTitle")
+                </a>
+            </div>
+        }
+    </div>
+
+    <div class="admin-candidate-profile-split">
+        @* === Left panel 35% — Personal data === *@
+        <div class="admin-candidate-profile-left">
+            <div class="admin-profile-header-card">
+                <div class="admin-profile-avatar">
+                    @if (!string.IsNullOrEmpty(Profile.ProfilePictureUrl))
+                    {
+                        <img src="@Profile.ProfilePictureUrl" alt="avatar" />
+                    }
+                    else
+                    {
+                        <span>@AvatarText</span>
+                    }
+                </div>
+                <div class="admin-profile-header-info">
+                    <h2>@(Profile.CandidateName ?? Profile.Email)</h2>
+                    <p class="admin-profile-header-title">@(Profile.Title ?? "")</p>
+                    <div class="admin-profile-header-badges">
+                        @if (Profile.IsActive)
+                        {
+                            <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.active")</span>
+                        }
+                        else
+                        {
+                            <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.inactive")</span>
+                        }
+                        @if (Profile.WizardCompleted == true)
+                        {
+                            <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.dashboard.evaluated")</span>
+                        }
+                        else
+                        {
+                            <span class="admin-result-badge admin-result-badge--warning">@Lang.T("admin.dashboard.pending")</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-profile-section">
+                <h3 class="admin-profile-section-title">@Lang.T("admin.profile.contactInfo")</h3>
+                <div class="admin-profile-info-list">
+                    <div class="admin-profile-info-row">
+                        <span class="admin-profile-info-label">@Lang.T("admin.profile.email")</span>
+                        <span class="admin-profile-info-value">@Profile.Email</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Profile.Phone))
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.phone")</span>
+                            <span class="admin-profile-info-value">@Profile.Phone</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.Country))
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.location")</span>
+                            <span class="admin-profile-info-value">@(Profile.City), @(Profile.Country)</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.Address))
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.address")</span>
+                            <span class="admin-profile-info-value">@Profile.Address</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.Identification))
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.identification")</span>
+                            <span class="admin-profile-info-value">@Profile.Identification</span>
+                        </div>
+                    }
+                    @if (Profile.BirthDate.HasValue)
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.birthDate")</span>
+                            <span class="admin-profile-info-value">@Profile.BirthDate.Value.ToString("dd MMM yyyy")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="admin-profile-section">
+                <h3 class="admin-profile-section-title">@Lang.T("admin.profile.accountInfo")</h3>
+                <div class="admin-profile-info-list">
+                    <div class="admin-profile-info-row">
+                        <span class="admin-profile-info-label">@Lang.T("admin.profile.createdAt")</span>
+                        <span class="admin-profile-info-value">@Profile.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
+                    </div>
+                    @if (Profile.LastLoginAt.HasValue)
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.lastLogin")</span>
+                            <span class="admin-profile-info-value">@Profile.LastLoginAt.Value.ToLocalTime().ToString("dd MMM yyyy HH:mm")</span>
+                        </div>
+                    }
+                    @if (Profile.CompletedAt.HasValue)
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.completedAt")</span>
+                            <span class="admin-profile-info-value">@Profile.CompletedAt.Value.ToLocalTime().ToString("dd MMM yyyy")</span>
+                        </div>
+                    }
+                    @if (Profile.YearsOfExperience.HasValue)
+                    {
+                        <div class="admin-profile-info-row">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.yearsExperience")</span>
+                            <span class="admin-profile-info-value">@Profile.YearsOfExperience.Value</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (Recruitment != null && Recruitment.Dismissal == null && Recruitment.CurrentStage > 0)
+            {
+                <div class="admin-profile-score-card" @onclick="OpenScoreModal">
+                    <div class="admin-profile-score-circle @(OverallScore >= 70 ? "admin-profile-score-circle--pass" : "admin-profile-score-circle--fail")">
+                        <span class="admin-profile-score-circle-value">@OverallScore.ToString("0.#")</span>
+                        <span class="admin-profile-score-circle-max">/100</span>
+                    </div>
+                    <span class="admin-profile-score-circle-label">@Lang.T("admin.recruitment.overallScore")</span>
+                </div>
+            }
+        </div>
+
+        @* === Right panel 65% — Recruitment data === *@
+        <div class="admin-candidate-profile-right">
+            @if (!string.IsNullOrEmpty(Profile.Summary))
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.summary")</h3>
+                    <p class="admin-profile-summary">@Profile.Summary</p>
+                </div>
+            }
+
+            <div class="admin-profile-section">
+                <h3 class="admin-profile-section-title">@Lang.T("admin.recruitment.recruitmentInfo")</h3>
+                <div class="admin-profile-info-grid">
+                    @if (!string.IsNullOrEmpty(Profile.LinkedInUrl))
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">LinkedIn</span>
+                            <span class="admin-profile-info-value"><a href="@Profile.LinkedInUrl" target="_blank">@Lang.T("admin.recruitment.viewProfile")</a></span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.PortfolioUrl))
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">@Lang.T("admin.profile.portfolio")</span>
+                            <span class="admin-profile-info-value"><a href="@Profile.PortfolioUrl" target="_blank">@Lang.T("admin.recruitment.viewProfile")</a></span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Profile.CvUrl))
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">CV</span>
+                            <span class="admin-profile-info-value"><a href="@Profile.CvUrl" target="_blank">@Lang.T("admin.recruitment.viewCV")</a></span>
+                        </div>
+                    }
+                    @if (Profile.Availability.HasValue)
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.availability")</span>
+                            <span class="admin-profile-info-value">@GetAvailability(Profile.Availability.Value)</span>
+                        </div>
+                    }
+                    @if (Profile.WorkAuthorization.HasValue)
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.workAuthorization")</span>
+                            <span class="admin-profile-info-value">@GetWorkAuthorization(Profile.WorkAuthorization.Value)</span>
+                        </div>
+                    }
+                    @if (Profile.IsProfilePublic.HasValue)
+                    {
+                        <div class="admin-profile-info-item">
+                            <span class="admin-profile-info-label">@Lang.T("admin.recruitment.profileVisibility")</span>
+                            <span class="admin-profile-info-value">@(Profile.IsProfilePublic.Value ? Lang.T("admin.recruitment.public") : Lang.T("admin.recruitment.private"))</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (Profile.Skills.Count > 0)
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.skills") (@Profile.Skills.Count)</h3>
+                    <div class="admin-profile-badges">
+                        @foreach (var skill in Profile.Skills)
+                        {
+                            <span class="admin-result-badge admin-result-badge--info">@skill.Name</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Profile.Experiences.Count > 0)
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.experience") (@Profile.Experiences.Count)</h3>
+                    <div class="admin-profile-timeline">
+                        @foreach (var exp in Profile.Experiences)
+                        {
+                            <div class="admin-profile-timeline-item">
+                                <div class="admin-profile-timeline-dot"></div>
+                                <div class="admin-profile-timeline-content">
+                                    <div class="admin-profile-timeline-title">@exp.JobTitle</div>
+                                    <div class="admin-profile-timeline-subtitle">@exp.CompanyName</div>
+                                    <div class="admin-profile-timeline-date">
+                                        @exp.StartDate.ToString("MMM yyyy") - @(exp.IsCurrentJob ? Lang.T("admin.profile.present") : exp.EndDate?.ToString("MMM yyyy"))
+                                        @if (!string.IsNullOrEmpty(exp.Location))
+                                        {
+                                            <span> · @exp.Location</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(exp.Description))
+                                    {
+                                        <p class="admin-profile-timeline-desc">@exp.Description</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Profile.Educations.Count > 0)
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.education") (@Profile.Educations.Count)</h3>
+                    <div class="admin-profile-timeline">
+                        @foreach (var edu in Profile.Educations)
+                        {
+                            <div class="admin-profile-timeline-item">
+                                <div class="admin-profile-timeline-dot"></div>
+                                <div class="admin-profile-timeline-content">
+                                    <div class="admin-profile-timeline-title">@edu.Degree</div>
+                                    <div class="admin-profile-timeline-subtitle">@edu.Institution</div>
+                                    @if (!string.IsNullOrEmpty(edu.FieldOfStudy))
+                                    {
+                                        <div class="admin-profile-timeline-subtitle">@edu.FieldOfStudy</div>
+                                    }
+                                    <div class="admin-profile-timeline-date">
+                                        @(edu.StartDate?.ToString("MMM yyyy") ?? "-") - @(edu.IsInProgress ? Lang.T("admin.profile.inProgress") : edu.EndDate?.ToString("MMM yyyy") ?? "-")
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Profile.Certifications.Count > 0)
+            {
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.profile.certifications") (@Profile.Certifications.Count)</h3>
+                    <div class="admin-profile-cert-grid">
+                        @foreach (var cert in Profile.Certifications)
+                        {
+                            <div class="admin-profile-cert-card">
+                                <div class="admin-profile-cert-name">@cert.Name</div>
+                                @if (!string.IsNullOrEmpty(cert.Issuer))
+                                {
+                                    <div class="admin-profile-cert-issuer">@cert.Issuer</div>
+                                }
+                                @if (cert.IssueDate.HasValue)
+                                {
+                                    <div class="admin-profile-cert-date">@cert.IssueDate.Value.ToString("MMM yyyy")</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        @* === Investigation checklist (when in Investigation stage) === *@
+        @if (Recruitment != null && Recruitment.Dismissal == null && Recruitment.CurrentStage == 1)
+        {
+            <div class="admin-profile-section admin-investigation-section">
+                <h3 class="admin-profile-section-title">
+                    @Lang.T("admin.recruitment.investigationChecklist")
+                    <span class="admin-skill-count" style="margin-left: 0.5rem;">
+                        @Recruitment.InvestigationChecklist.Count(c => c.IsCompleted) / @Recruitment.InvestigationChecklist.Count
+                    </span>
+                </h3>
+                <div class="admin-investigation-list">
+                    @foreach (var item in Recruitment.InvestigationChecklist.OrderBy(c => c.Step))
+                    {
+                        <div class="admin-investigation-item @(item.IsCompleted ? "admin-investigation-item--done" : "")">
+                            <div class="admin-investigation-check">
+                                <input type="checkbox" checked="@item.IsCompleted" @onchange="() => ToggleStep(item)" />
+                            </div>
+                            <div class="admin-investigation-content">
+                                <div class="admin-investigation-step-name">@(item.Label ?? GetInvestigationStepName(item.Step))</div>
+                                @if (item.IsCustom)
+                                {
+                                    <span class="admin-result-badge admin-result-badge--info" style="margin-left: 0.5rem; font-size: 0.65rem;">Custom</span>
+                                }
+                                @if (item.IsCompleted)
+                                {
+                                    <div class="admin-investigation-meta">
+                                        @Lang.T("admin.recruitment.completedBy") @item.CompletedByName · @item.CompletedAt?.ToString("yyyy-MM-dd HH:mm")
+                                    </div>
+                                }
+                            </div>
+                            @if (item.IsCustom)
+                            {
+                                <button class="admin-row-btn" title="Eliminar" @onclick="() => DeleteCustomValidation(item.Id)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    @* Add custom validation *@
+                    <div class="admin-investigation-add">
+                        <input type="text" @bind="NewValidationLabel" placeholder="@Lang.T("admin.recruitment.addValidationPlaceholder")" class="admin-investigation-add-input" />
+                        <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(NewValidationLabel)" @onclick="AddCustomValidation">
+                            @Lang.T("admin.recruitment.addValidation")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @* === Score summary modal === *@
+    @if (ShowScoreModal && Recruitment != null)
+    {
+        <div class="admin-modal-overlay" @onclick="CloseScoreModal">
+            <div class="admin-modal" @onclick:stopPropagation="true">
+                <h3 class="admin-modal-title">@Lang.T("admin.recruitment.scoreSummary")</h3>
+                <div class="admin-modal-body">
+                    @* Stage 1: Investigation *@
+                    <div class="admin-score-summary-stage">
+                        <div class="admin-score-summary-stage-header">
+                            <span class="admin-score-summary-stage-name">@GetStageName(1)</span>
+                            @{
+                                var invCompleted = Recruitment.InvestigationChecklist.Count(c => c.IsCompleted);
+                                var invTotal = Recruitment.InvestigationChecklist.Count;
+                                var invPct = invTotal > 0 ? (invCompleted * 100 / invTotal) : 0;
+                            }
+                            <span class="admin-score-summary-stage-score">@invPct%</span>
+                        </div>
+                        <div class="admin-score-summary-progress">
+                            <div class="admin-score-summary-progress-bar" style="width: @invPct%"></div>
+                        </div>
+                    </div>
+
+                    @* Stage 2: Technical *@
+                    <div class="admin-score-summary-stage">
+                        <div class="admin-score-summary-stage-header">
+                            <span class="admin-score-summary-stage-name">@GetStageName(2)</span>
+                            @if (Recruitment.TechnicalEvaluations.Count > 0)
+                            {
+                                var techAvg = Math.Round(Recruitment.TechnicalEvaluations.Average(e => e.Score), 1);
+                                <span class="admin-score-summary-stage-score @(techAvg >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">@techAvg.ToString("0.#")/100</span>
+                            }
+                            else
+                            {
+                                <span class="admin-score-summary-stage-score admin-score-summary-stage-score--muted">—</span>
+                            }
+                        </div>
+                        @if (Recruitment.TechnicalEvaluations.Count > 0)
+                        {
+                            <div class="admin-score-summary-badge">
+                                <span class="admin-recommendation-badge @(Recruitment.TechnicalEvaluations.Average(e => e.Score) >= 70 ? "admin-recommendation--1" : "admin-recommendation--2")">
+                                    @(Recruitment.TechnicalEvaluations.Average(e => e.Score) >= 70 ? Lang.T("admin.recruitment.apt") : Lang.T("admin.recruitment.notApt"))
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    @* Stage 3: Cultural *@
+                    <div class="admin-score-summary-stage">
+                        <div class="admin-score-summary-stage-header">
+                            <span class="admin-score-summary-stage-name">@GetStageName(3)</span>
+                            @if (Recruitment.CulturalInterviews.Count > 0)
+                            {
+                                var cultAvg = Math.Round(Recruitment.CulturalInterviews.Average(e => e.Score), 1);
+                                <span class="admin-score-summary-stage-score @(cultAvg >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">@cultAvg.ToString("0.#")/100</span>
+                            }
+                            else
+                            {
+                                <span class="admin-score-summary-stage-score admin-score-summary-stage-score--muted">—</span>
+                            }
+                        </div>
+                        @if (Recruitment.CulturalInterviews.Count > 0)
+                        {
+                            <div class="admin-score-summary-badge">
+                                <span class="admin-recommendation-badge admin-recommendation--@Recruitment.CulturalInterviews.First().Recommendation">
+                                    @GetRecommendationLabel(Recruitment.CulturalInterviews.First().Recommendation)
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    @* Overall *@
+                    <div class="admin-score-summary-overall">
+                        <span class="admin-score-summary-overall-label">@Lang.T("admin.recruitment.overallScore")</span>
+                        <span class="admin-score-summary-overall-value @(OverallScore >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">@OverallScore.ToString("0.#")/100</span>
+                    </div>
+                </div>
+                <div class="admin-modal-actions">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseScoreModal">@Lang.T("admin.common.cancel")</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* === Stage detail modal === *@
+    @if (ShowStageDetail && Recruitment != null)
+    {
+        <div class="admin-modal-overlay" @onclick="CloseStageDetail">
+            <div class="admin-modal" @onclick:stopPropagation="true">
+                <h3 class="admin-modal-title">@GetStageName(StageDetailIndex)</h3>
+                <div class="admin-modal-body">
+                    @if (StageDetailIndex == 1)
+                    {
+                        var completedSteps = Recruitment.InvestigationChecklist.Where(c => c.IsCompleted).Count();
+                        var totalSteps = Recruitment.InvestigationChecklist.Count;
+                        <div class="admin-stage-detail-stat">
+                            <span>@Lang.T("admin.recruitment.checklistProgress")</span>
+                            <strong>@completedSteps/@totalSteps</strong>
+                        </div>
+                        <div class="admin-stage-detail-items">
+                            @foreach (var item in Recruitment.InvestigationChecklist)
+                            {
+                                <div class="admin-stage-detail-item">
+                                    <span class="admin-stage-detail-item-status @(item.IsCompleted ? "admin-stage-detail-item-status--done" : "")">
+                                        @(item.IsCompleted ? "✓" : "○")
+                                    </span>
+                                    <span>@(item.Label ?? GetInvestigationStepName(item.Step))</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(item.Notes))
+                                {
+                                    <div class="admin-stage-detail-item-notes">@item.Notes</div>
+                                }
+                            }
+                        </div>
+                    }
+                    else if (StageDetailIndex == 2)
+                    {
+                        if (Recruitment.TechnicalEvaluations.Count > 0)
+                        {
+                            <div class="admin-stage-detail-stat">
+                                <span>@Lang.T("admin.recruitment.averageScore")</span>
+                                <strong class="@(Recruitment.TechnicalEvaluations.Average(e => e.Score) >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">
+                                    @Math.Round(Recruitment.TechnicalEvaluations.Average(e => e.Score), 1).ToString("0.#")/100
+                                </strong>
+                            </div>
+                            <div class="admin-stage-detail-apt">
+                                <span class="admin-recommendation-badge @(Recruitment.TechnicalEvaluations.Average(e => e.Score) >= 70 ? "admin-recommendation--1" : "admin-recommendation--2")">
+                                    @(Recruitment.TechnicalEvaluations.Average(e => e.Score) >= 70 ? Lang.T("admin.recruitment.apt") : Lang.T("admin.recruitment.notApt"))
+                                </span>
+                            </div>
+                            @foreach (var eval in Recruitment.TechnicalEvaluations)
+                            {
+                                <div class="admin-stage-detail-card">
+                                    <div class="admin-stage-detail-card-header">
+                                        <span>@eval.EvaluationName</span>
+                                        <span class="@(eval.Score >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">@eval.Score.ToString("0.#")/100</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(eval.Description))
+                                    {
+                                        <div class="admin-stage-detail-card-desc">@eval.Description</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(eval.Notes))
+                                    {
+                                        <div class="admin-stage-detail-card-notes">@eval.Notes</div>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="admin-empty-text">@Lang.T("admin.recruitment.noEvaluations")</div>
+                        }
+                    }
+                    else if (StageDetailIndex == 3)
+                    {
+                        if (Recruitment.CulturalInterviews.Count > 0)
+                        {
+                            <div class="admin-stage-detail-stat">
+                                <span>@Lang.T("admin.recruitment.averageScore")</span>
+                                <strong class="@(Recruitment.CulturalInterviews.Average(e => e.Score) >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">
+                                    @Math.Round(Recruitment.CulturalInterviews.Average(e => e.Score), 1).ToString("0.#")/100
+                                </strong>
+                            </div>
+                            <div class="admin-stage-detail-apt">
+                                <span class="admin-recommendation-badge admin-recommendation--@Recruitment.CulturalInterviews.First().Recommendation">
+                                    @GetRecommendationLabel(Recruitment.CulturalInterviews.First().Recommendation)
+                                </span>
+                            </div>
+                            @foreach (var interview in Recruitment.CulturalInterviews)
+                            {
+                                <div class="admin-stage-detail-card">
+                                    <div class="admin-stage-detail-card-header">
+                                        <span>@interview.EvaluationName</span>
+                                        <span class="@(interview.Score >= 70 ? "admin-stage-detail-pass" : "admin-stage-detail-fail")">@interview.Score.ToString("0.#")/100</span>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(interview.Description))
+                                    {
+                                        <div class="admin-stage-detail-card-desc">@interview.Description</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(interview.Notes))
+                                    {
+                                        <div class="admin-stage-detail-card-notes">@interview.Notes</div>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="admin-empty-text">@Lang.T("admin.recruitment.noCulturalInterview")</div>
+                        }
+                    }
+                </div>
+                <div class="admin-modal-actions">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseStageDetail">@Lang.T("admin.common.cancel")</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* === Assign modal === *@
+    @if (ShowAssign)
+    {
+        <div class="admin-modal-overlay" @onclick='() => ShowAssign = false'>
+            <div class="admin-modal" @onclick:stopPropagation="true">
+                <h3 class="admin-modal-title">@Lang.T("admin.recruitment.assignCandidate")</h3>
+                <div class="admin-modal-body">
+                    <label>@Lang.T("admin.recruitment.assignTo")</label>
+                    <select @bind="SelectedAssignToUserId" class="admin-modal-select">
+                        <option value="">@Lang.T("admin.recruitment.selectUser")</option>
+                        @foreach (var u in AssignableUsers)
+                        {
+                            <option value="@u.Id">@u.Email</option>
+                        }
+                    </select>
+                </div>
+                <div class="admin-modal-actions">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => ShowAssign = false'>@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrEmpty(SelectedAssignToUserId)" @onclick="ConfirmAssign">
+                        @Lang.T("admin.recruitment.confirmAssign")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid UserId { get; set; }
+    private AdminUserProfileDto? Profile { get; set; }
+    private RecruitmentDetailDto? Recruitment { get; set; }
+    private List<AdminUserDto> AssignableUsers { get; set; } = new();
+    private bool ShowAssign { get; set; }
+    private string SelectedAssignToUserId { get; set; } = "";
+    private string NewValidationLabel { get; set; } = "";
+    private bool ShowStageDetail { get; set; }
+    private int StageDetailIndex { get; set; }
+    private bool ShowScoreModal { get; set; }
+
+    private decimal OverallScore
+    {
+        get
+        {
+            if (Recruitment == null) return 0;
+
+            var scores = new List<decimal>();
+
+            var invTotal = Recruitment.InvestigationChecklist.Count;
+            var invCompleted = Recruitment.InvestigationChecklist.Count(c => c.IsCompleted);
+            if (invTotal > 0)
+                scores.Add((decimal)invCompleted / invTotal * 100);
+
+            if (Recruitment.TechnicalEvaluations.Count > 0)
+                scores.Add(Recruitment.TechnicalEvaluations.Average(e => e.Score));
+
+            if (Recruitment.CulturalInterviews.Count > 0)
+                scores.Add(Recruitment.CulturalInterviews.Average(e => e.Score));
+
+            return scores.Count > 0 ? Math.Round(scores.Average(), 1) : 0;
+        }
+    }
+
+    private string AvatarText
+    {
+        get
+        {
+            var name = Profile?.CandidateName ?? Profile?.Email ?? "";
+            return name.Length >= 2 ? name.Substring(0, 2).ToUpper() : name.ToUpper();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var token = await LocalStorage.GetItemAsync("otwadmin-token");
+        if (string.IsNullOrEmpty(token))
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
+        Profile = await AuthApi.GetUserProfileAsync(UserId);
+        Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        AssignableUsers = await AuthApi.GetUsersAsync(1, 100, 2);
+    }
+
+    private void GoBack() => Nav.NavigateTo("/candidates");
+
+    private async Task StartInvestigation()
+    {
+        ShowAssign = true;
+    }
+
+    private async Task ConfirmAssign()
+    {
+        if (string.IsNullOrEmpty(SelectedAssignToUserId)) return;
+        var assignToId = Guid.Parse(SelectedAssignToUserId);
+        var result = await AuthApi.AssignCandidateAsync(new AssignCandidateDto
+        {
+            UserId = UserId,
+            AssignedToUserId = assignToId
+        });
+        if (result != null)
+        {
+            ShowAssign = false;
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private async Task MoveToNextStage()
+    {
+        if (Recruitment == null) return;
+        var ok = await AuthApi.MoveStageAsync(Recruitment.Id, Recruitment.CurrentStage + 1);
+        if (ok)
+        {
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private async Task ToggleStep(InvestigationChecklistDto item)
+    {
+        if (Recruitment == null) return;
+        var ok = await AuthApi.ToggleInvestigationStepAsync(Recruitment.Id, new ToggleInvestigationStepDto
+        {
+            Step = item.Step,
+            IsCompleted = !item.IsCompleted
+        });
+        if (ok)
+        {
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private async Task AddCustomValidation()
+    {
+        if (Recruitment == null || string.IsNullOrWhiteSpace(NewValidationLabel)) return;
+        var result = await AuthApi.AddCustomValidationAsync(Recruitment.Id, NewValidationLabel.Trim());
+        if (result != null)
+        {
+            NewValidationLabel = "";
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private async Task DeleteCustomValidation(Guid checklistId)
+    {
+        var ok = await AuthApi.DeleteCustomValidationAsync(checklistId);
+        if (ok)
+        {
+            Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
+        }
+    }
+
+    private string GetInvestigationStepName(int step) => step switch
+    {
+        0 => Lang.T("admin.recruitment.invStep0"),
+        1 => Lang.T("admin.recruitment.invStep1"),
+        2 => Lang.T("admin.recruitment.invStep2"),
+        3 => Lang.T("admin.recruitment.invStep3"),
+        4 => Lang.T("admin.recruitment.invStep4"),
+        _ => ""
+    };
+
+    private string GetStageName(int stage) => stage switch
+    {
+        0 => Lang.T("admin.recruitment.stage0"),
+        1 => Lang.T("admin.recruitment.stage1"),
+        2 => Lang.T("admin.recruitment.stage2"),
+        3 => Lang.T("admin.recruitment.stage3"),
+        4 => Lang.T("admin.recruitment.stage4"),
+        5 => Lang.T("admin.recruitment.stage5"),
+        _ => ""
+    };
+
+    private string GetAvailability(int a) => a switch
+    {
+        0 => Lang.T("admin.recruitment.availImmediate"),
+        1 => Lang.T("admin.recruitment.avail15"),
+        2 => Lang.T("admin.recruitment.avail30"),
+        3 => Lang.T("admin.recruitment.avail60"),
+        _ => "—"
+    };
+
+    private string GetWorkAuthorization(int w) => w switch
+    {
+        0 => Lang.T("admin.recruitment.authCitizen"),
+        1 => Lang.T("admin.recruitment.authResident"),
+        2 => Lang.T("admin.recruitment.authVisa"),
+        3 => Lang.T("admin.recruitment.authNone"),
+        _ => "—"
+    };
+
+    private bool HasStageNotes(int stage)
+    {
+        if (Recruitment == null) return false;
+        return stage switch
+        {
+            1 => Recruitment.InvestigationChecklist.Any(c => c.IsCompleted || !string.IsNullOrEmpty(c.Notes)),
+            2 => Recruitment.TechnicalEvaluations.Count > 0,
+            3 => Recruitment.CulturalInterviews.Count > 0,
+            _ => false
+        };
+    }
+
+    private void OpenStageDetail(int stage)
+    {
+        StageDetailIndex = stage;
+        ShowStageDetail = true;
+    }
+
+    private void CloseStageDetail()
+    {
+        ShowStageDetail = false;
+    }
+
+    private void OpenScoreModal()
+    {
+        ShowScoreModal = true;
+    }
+
+    private void CloseScoreModal()
+    {
+        ShowScoreModal = false;
+    }
+
+    private string GetRecommendationLabel(int rec)
+    {
+        return rec switch
+        {
+            1 => Lang.T("admin.recruitment.recRecommended"),
+            2 => Lang.T("admin.recruitment.recNotRecommended"),
+            3 => Lang.T("admin.recruitment.recUndecided"),
+            _ => Lang.T("admin.recruitment.recPending")
+        };
+    }
+}
