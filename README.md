@@ -16,7 +16,7 @@ El proyecto se compone de **3 portales independientes**:
 | Portal | Descripcion | Estado |
 |--------|-------------|--------|
 | **Portal de Candidatos** | Registro, perfil, wizard, busqueda de vacantes, postulaciones | 80% Completado |
-| **Portal Administrativo** | Verificaciones manuales, moderacion, gestion de usuarios, auditoria | 85% Completado |
+| **Portal Administrativo** | Verificaciones manuales, moderacion, gestion de usuarios, auditoria, pipeline de reclutamiento | 85% Completado + Pipeline de Reclutamiento (21-Ago) |
 | **Portal Corporativo** | Suscripcion mensual, perfiles evaluados, ranking, filtros avanzados | Pendiente |
 
 ### Caracteristicas principales
@@ -293,7 +293,9 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - [x] i18n completo (es + en) con claves nuevas
 - [x] UI/UX: One UI, Bento Grid, Command-Driven, temas (navy/dark/light)
 
-### Fase 3: Motor de Evaluacion y Scoring - Pendiente
+### Fase 3: Motor de Evaluacion y Scoring - Pendiente (checklist original) / En progreso (via Pipeline de Reclutamiento)
+
+**Checklist original (automatizacion via ValidationService/ScoringService) — sigue sin implementarse:**
 
 - [ ] Entidades de scoring (`PTCandidateScore`, `PTVerification`, `PTCandidateReference`)
 - [ ] ValidationService: verificacion automatica (LinkedIn, portafolio, coherencia cronologica)
@@ -304,7 +306,9 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - [ ] Referencias laborales: CRUD en wizard y perfil
 - [ ] Pruebas de habilidades: `PTSkillTest`, `PTCandidateTestResult`
 
-### Fase 4: Portal Administrativo - 85% COMPLETADA (por Dsiezar)
+> **Nota (2026-08-24, Dsiezar):** Iluna construyo un **Pipeline de Reclutamiento** (ver Bitacora, sesion 21-Ago) que cubre gran parte del *objetivo* de negocio de Fase 3 (evaluar y verificar candidatos antes de mostrarlos a la empresa), pero con una **arquitectura distinta a la planeada aqui**: es un flujo de **evaluacion manual/asistida por un reclutador** (checklist de investigacion, evaluacion tecnica, entrevista cultural, score general por etapa) en vez de un motor 100% automatico (`ValidationService`/`ScoringService`/`CompatibilityService`). Entidades nuevas: `PTCandidateRecruitment`, `PTInvestigationChecklist`, `PTReferenceCheck`, `PTTechnicalEvaluation`, `PTRecruitmentStageLog`, `PTRecruitmentDismissal` — no `PTCandidateScore`/`PTVerification` como decia el checklist original. Se deja el checklist original sin marcar porque tecnicamente no es lo que se construyo, pero el objetivo de negocio (candidatos evaluados antes de llegar a la empresa) ya tiene una primera version funcionando. Alinea bien con la definicion estrategica consolidada de la sesion 2026-08-15 ("TD revisa candidatos" antes del shortlist).
+
+### Fase 4: Portal Administrativo - 85% COMPLETADA (por Dsiezar) + Pipeline de Reclutamiento (por Iluna)
 
 - [x] AdminAPI con JWT independiente (puerto 5001)
 - [x] AdminWEB con login y layout (puerto 5101)
@@ -316,8 +320,12 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - [x] Exportacion de datos (CSV)
 - [x] i18n admin (es/en)
 - [x] QA+SEC: 6 bugs corregidos (enumeracion de cuentas, paginacion negativa, CSV injection, estado vacantes temporales, auto-bloqueo admin, clave i18n)
-- [ ] Verificaciones manuales (aprobar/rechazar `PTVerification`) — **bloqueado por Fase 3**
-- [ ] Revision de validaciones automaticas — **bloqueado por Fase 3**
+- [x] Consola de candidatos con 4 tabs, filtros, stats, export CSV, acciones masivas (Iluna, 21-Ago)
+- [x] Pipeline de reclutamiento: kanban por etapas, asignacion de reclutador, historial, descarte (Iluna, 21-Ago)
+- [x] Checklist de investigacion + verificacion de referencias laborales (auto-generadas desde experiencia) (Iluna, 21-Ago)
+- [x] Evaluaciones tecnicas y entrevistas culturales con puntuacion, score general por etapa (Iluna, 21-Ago)
+- [ ] Verificaciones manuales (aprobar/rechazar `PTVerification`) — **bloqueado por Fase 3** (checklist original; el Pipeline de Reclutamiento ya cubre una version distinta de esto, ver nota arriba)
+- [ ] Revision de validaciones automaticas — **bloqueado por Fase 3** (checklist original)
 - [ ] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar)
 
 **Deuda tecnica documentada (4 items):**
@@ -493,8 +501,8 @@ Antes de marcar cualquier fase como completada, se debe validar:
 
 - **Fase 1 (Fundacion):** COMPLETADA
 - **Fase 2 (Portal de Candidatos):** 80% completada (Iluna) — funcional pero pendiente de pulido UI/UX y validacion de pantallas
-- **Fase 3 (Motor de Evaluacion y Scoring):** Pendiente — **PRIORIDAD MAXIMA**, es el corazon de la propuesta de negocio
-- **Fase 4 (Portal Administrativo):** 85% completada (Dsiezar) — faltan verificaciones manuales (bloqueadas por Fase 3), gestion de roles y 4 items de deuda tecnica
+- **Fase 3 (Motor de Evaluacion y Scoring):** el checklist original (ValidationService/ScoringService automaticos) sigue pendiente, pero Iluna ya construyo un **Pipeline de Reclutamiento manual** (21-Ago) que cubre el objetivo de negocio con otra arquitectura — ver nota en la seccion "Fases del Proyecto"
+- **Fase 4 (Portal Administrativo):** 85% completada (Dsiezar) + Pipeline de Reclutamiento completo (Iluna, 21-Ago: consola de candidatos, kanban, checklist de investigacion, evaluaciones tecnicas, entrevistas culturales, score general) — faltan gestion de roles y 4 items de deuda tecnica de Dsiezar
 - **Fase 5 (Portal Corporativo):** Pendiente — la estructura base puede iniciar en paralelo con Fase 3
 - **Fases 6-8:** Pendientes
 
@@ -537,6 +545,9 @@ Antes de marcar cualquier fase como completada, se debe validar:
 | 2026-08-14 | Iluna | Fase 4 | AdminWEB: pendiente - mejorar tablas con filtros, pulir diseno inspirado en Cazvid (pipeline visual, cards de aplicantes) |
 | 2026-08-14 | Iluna | Fase 4 | Seed data: 3 empresas, 10 vacantes permanentes, 3 vacantes temporales, 20 skills, 3 postulantes, 5 aplicaciones |
 | 2026-08-14 | Iluna | Docs | seed-data.sql: script de datos de prueba con credenciales para todos los roles |
+| 2026-08-15 | Dsiezar | Docs | Respuesta a las 17 preguntas de RH + definicion estrategica consolidada (dos scores separados, verificacion como estado progresivo, retencion basada en estado) |
+| 2026-08-21 | Iluna | Fase 4 | Pipeline de Reclutamiento completo: consola de candidatos, kanban, checklist de investigacion, referencias automaticas, evaluaciones tecnicas, entrevistas culturales, score general (6 migraciones nuevas) |
+| 2026-08-24 | Dsiezar | Docs | Migraciones del Pipeline de Reclutamiento aplicadas localmente; README sincronizado con el estado real de Fase 3/4 (estaba desactualizado, faltaba registrar 60+ commits) |
 
 ---
 
@@ -1105,6 +1116,50 @@ Pruebas totales: 44
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-08-21 — Pipeline de Reclutamiento completo (Iluna)
+
+> **Nota de Dsiezar (2026-08-24):** Esta entrada documenta 60+ commits que ya estaban en `main` pero no tenían registro en la Bitácora — se agrega ahora al leer el README y sincronizar migraciones. El detalle línea por línea está en el historial de git; aquí el resumen funcional.
+
+#### Consola de candidatos (`Candidates/Index.razor` — nuevo)
+- 4 tabs: Sin iniciar, En proceso, Finalizado, Descartados (filtro `recruitmentStatus` en la API)
+- Estadísticas, búsqueda por nombre/email/título, acciones masivas (activar/desactivar seleccionados), exportación CSV
+- Botón "Asignar candidato" — modal con selección de usuario admin, redirige al pipeline
+
+#### Pipeline de reclutamiento (`Candidates/Pipeline.razor`, `PipelineDetail.razor` — nuevo)
+- Vista kanban por etapas + stepper en el perfil del candidato
+- Historial de etapas (`PTRecruitmentStageLog`), descarte con motivo (`PTRecruitmentDismissal`)
+- Página `Assigned.razor`: candidatos asignados al reclutador actual, con etapa e info de investigación
+
+#### Checklist de investigación y referencias (`PTInvestigationChecklist`, `PTReferenceCheck`)
+- 5 pasos por defecto + validaciones personalizadas, tracking de duración (`StartedAt`/`CompletedAt`)
+- Sub-panel de referencias con empresa/contacto/estado — **se auto-generan desde las experiencias laborales** del candidato
+- Captura/edición del teléfono del candidato desde el checklist si falta
+
+#### Evaluaciones técnicas y entrevistas culturales (`PTTechnicalEvaluation`)
+- Evaluaciones técnicas: CRUD completo en modal, puntuación, promedio por etapa
+- Entrevistas culturales: notas, puntuación, recomendación, listadas como cards con promedio (sin endpoint separado)
+
+#### Score general del candidato
+- Círculo de puntaje en el perfil (incluye porcentaje de investigación completada, no solo evaluaciones)
+- Modal con resumen de puntuaciones por etapa, notas clickeables en el stepper con detalle apto/no apto
+
+#### Backend — nuevas entidades y servicios
+- Entidades: `PTCandidateRecruitment`, `PTInvestigationChecklist`, `PTReferenceCheck`, `PTTechnicalEvaluation`, `PTRecruitmentStageLog`, `PTRecruitmentDismissal`
+- `RecruitmentController.cs`, `RecruitmentService.cs` / `IRecruitmentService.cs`
+- `AdminCandidateService.cs` / `IAdminCandidateService.cs` — endpoint dedicado de consola con filtros/estadísticas
+- `RecruitmentDtos.cs`, `RecruitmentEnums.cs`
+- 6 migraciones EF Core: `RecruitmentPipeline`, `UpdateInvestigationChecklist`, `InvestigationTrackingAndReferences`, `AutoReferencesFromExperiences`, `TechnicalEvaluations`, `CulturalInterviewFields`
+- Fix: query de candidatos dividida (subquery `TopSkills` no traducía a SQL en MySQL/Pomelo vía `OUTER APPLY`)
+- Fix: `GetCulturalInterview` retorna `NotFound` en vez de `Ok(null)` (causaba error de parseo JSON en el cliente)
+
+#### Navegación
+- Sidebar de `AdminWEB` simplificado: Panel + grupo "Reclutamiento" (Candidatos, Asignados, Pipeline)
+
+#### Relación con Fase 3 y la definición estratégica
+Este pipeline es una implementación **manual/asistida por reclutador** del objetivo de Fase 3 (evaluar y verificar candidatos antes de exponerlos a la empresa) — no el motor 100% automático (`ValidationService`/`ScoringService`) que describía el checklist original. Encaja con el paso "TD revisa candidatos" de la definición estratégica consolidada (sesión 2026-08-15): confirma que Trato Directo cura candidatos activamente, no solo da acceso a una base. Ver detalle en la sección "Fase 3" más arriba.
+
+---
 
 ### Sesión 2026-08-15 — Respuesta de Darwin a RH + definición estratégica consolidada
 
