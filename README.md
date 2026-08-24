@@ -1106,6 +1106,59 @@ Pruebas totales: 44
 
 ## Bitácora de Cambios
 
+### Sesión 2026-08-15 — Respuesta de Darwin a RH + definición estratégica consolidada
+
+#### ✅ Darwin respondió las 17 preguntas de RH
+
+Respuesta completa en `docs/dsiezar/respuesta-rh.md`. Además, se recibió y validó un segundo análisis (consolidación de dos planteamientos de negocio) que **refina la dirección sin contradecir lo ya construido** (Fase 1, Fase 2 y el Portal Admin de Fase 4 quedan intactos). Los cambios de rumbo afectan únicamente al diseño de **Fase 3 (Motor de Evaluación)**, que todavía no se ha empezado a construir — llega en el momento correcto.
+
+#### Decisión estratégica central: Trato Directo es Tech-Enabled Recruitment, no un ATS self-service
+
+> Trato Directo **selecciona y cura** candidatos para la empresa (no solo le da acceso a una base para que ella haga todo el trabajo). El diferenciador es: **candidato evaluado → candidato verificado → matching con la vacante → shortlist de calidad.**
+
+Flujo completo que debe soportar el sistema (MVP = que este ciclo funcione de punta a punta, aunque sea con un solo candidato y una sola empresa — **el MVP valida la transacción, no el volumen**):
+
+```
+Candidato se registra → Completa perfil → TD evalúa → TD verifica →
+Sistema calcula Candidate Score → Candidato entra a base elegible →
+Empresa registra vacante → Sistema calcula Job Match → TD revisa candidatos →
+Se genera shortlist → Empresa revisa shortlist → Entrevista → Contratación/descarte
+→ Todo evento relevante queda auditado
+```
+
+#### Cambio de diseño técnico: dos scores separados, no uno
+
+- **Candidate Score** — intrínseco del candidato (experiencia, formación, competencias, estabilidad, referencias, verificación). La empresa **no puede modificarlo**.
+- **Job Match Score** — específico por candidato-vacante (compatibilidad). La empresa **sí puede ajustar los pesos** por vacante (scorecard configurable).
+
+Implica **dos entidades separadas** en el modelo de datos de Fase 3 (`PTCandidateScore` y algo tipo `PTJobMatchScore` calculado por par candidato-vacante), no una sola tabla de "scoring" mezclada.
+
+#### "Verificado Trato Directo" es un estado, no un booleano
+
+Estado progresivo: `Perfil registrado → Perfil completo → Evaluado → Verificación en proceso → Verificado TD`, con dimensiones internas propias (identidad, experiencia, formación, referencias, documentación, evaluación realizada, fecha de última verificación). El distintivo ★ solo aparece cuando se cumplen los criterios mínimos — es un activo de confianza, no solo un ícono.
+
+#### Corrección sobre retención (reemplaza la regla de "12 meses" de `respuesta-rh.md`)
+
+En vez de una expiración automática por tiempo fijo, el candidato **permanece en la plataforma indefinidamente con un estado que identifica que ya fue validado**. La visibilidad para empresas se gobierna por ese estado, no por un temporizador — evita fijar en código una regla comercial que todavía no está cerrada. (Retención/soft delete siguen siendo obligatorios desde el diseño, solo se parametriza el criterio de expiración en vez de hardcodearlo).
+
+#### Apelación de score: se deja abierta, no cerrada
+
+`respuesta-rh.md` decía "no hay apelación". Se corrige a: **no se cierra la decisión todavía** — el modelo de evaluación debe poder re-evaluarse/versionarse (ya era necesario por el recálculo periódico de la pregunta 11), sin comprometerse aún a un flujo formal de disputa.
+
+#### Nueva feature de Admin identificada (no estaba en el diseño original de Fase 4)
+
+Pantalla de **revisión de matches / cola de shortlist** — antes de que un match candidato-vacante llegue a la empresa, alguien de Trato Directo lo revisa y aprueba. Se agrega al alcance de cuando se conecte Fase 3 con el Portal Admin.
+
+#### Fuera del MVP (confirmado, sin cambios respecto a `respuesta-rh.md`)
+
+Integración HRIS, API empresarial, ML avanzado, multiidioma más allá de ES/EN, automatizaciones Enterprise, reporting sofisticado, personalizaciones extensas por cliente.
+
+#### 7 decisiones que se dejan abiertas a propósito (no cerrar todavía)
+
+Metodología exacta de "Verificado TD" · pesos del Candidate Score · variables configurables del Job Match Score · modelo de ingresos inicial · nivel de intervención humana de TD por plan · valor concreto gratuito para el candidato · política de revisión/actualización de evaluaciones.
+
+---
+
 ### Sesión 2026-08-15 — Dashboard clickeable, vista de resultados, perfil de usuario y análisis RH
 
 #### ⚠️ Ojo Darwin — Necesito que respondas las preguntas del experto en RH
