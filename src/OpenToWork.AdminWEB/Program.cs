@@ -1,5 +1,6 @@
 using OpenToWork.AdminWEB.Components;
 using OpenToWork.AdminWEB.Services;
+using OpenToWork.SharedUI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,10 @@ builder.Services.AddAuthentication();
 builder.Services.AddScoped<LocalStorageService>();
 builder.Services.AddScoped<AdminAuthApiService>();
 builder.Services.AddScoped<AdminAuthStateProvider>();
-builder.Services.AddScoped<LanguageService>();
+builder.Services.AddScoped(sp => new LanguageService(
+    sp.GetRequiredService<Microsoft.JSInterop.IJSRuntime>(),
+    sp.GetRequiredService<IWebHostEnvironment>(),
+    new[] { "admin" }));
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(sp => sp.GetRequiredService<AdminAuthStateProvider>());
 
 builder.Services.AddHttpClient<AdminAuthApiService>(client =>

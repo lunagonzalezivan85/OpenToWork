@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.SharedUI.Services;
 
 namespace OpenToWork.WEB.Services;
 

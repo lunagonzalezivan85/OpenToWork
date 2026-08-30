@@ -1,21 +1,30 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.JSInterop;
 
-namespace OpenToWork.WEB.Services;
+namespace OpenToWork.SharedUI.Services;
 
+/// <summary>
+/// Loads flat-file JSON translations for a Blazor Server app. Each entry in <paramref name="sections"/>
+/// (passed at registration time) is both the JSON filename (wwwroot/config/language/{lang}/{section}.json)
+/// and the flatten prefix for its keys (e.g. "common.save"). AdminWEB registers a single "admin" section;
+/// WEB registers its full set of portal sections - this preserves both apps' existing behavior exactly.
+/// </summary>
 public class LanguageService
 {
     private readonly IJSRuntime _jsRuntime;
     private readonly IWebHostEnvironment _env;
+    private readonly string[] _sections;
     private string _currentLanguage = "es";
     public Dictionary<string, string> _translations = new();
 
     public event Action? OnLanguageChanged;
 
-    public LanguageService(IJSRuntime jsRuntime, IWebHostEnvironment env)
+    public LanguageService(IJSRuntime jsRuntime, IWebHostEnvironment env, string[] sections)
     {
         _jsRuntime = jsRuntime;
         _env = env;
+        _sections = sections;
     }
 
     public string CurrentLanguage => _currentLanguage;
@@ -48,10 +57,9 @@ public class LanguageService
 
     public async Task LoadTranslationsAsync(string lang)
     {
-        var sections = new[] { "common", "auth", "wizard", "dashboard", "vacancies", "profile", "validation", "errors", "applications" };
         _translations.Clear();
         var basePath = Path.Combine(_env.WebRootPath, "config", "language", lang);
-        foreach (var section in sections)
+        foreach (var section in _sections)
         {
             try
             {

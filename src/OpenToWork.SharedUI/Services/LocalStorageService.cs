@@ -1,6 +1,6 @@
 using Microsoft.JSInterop;
 
-namespace OpenToWork.WEB.Services;
+namespace OpenToWork.SharedUI.Services;
 
 public class LocalStorageService
 {
