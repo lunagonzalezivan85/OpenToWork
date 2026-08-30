@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        <EditForm Model="RegisterModel" OnValidSubmit="HandleRegister">
+        <EditForm Model="RegisterModel" OnValidSubmit="HandleRegister" FormName="register" Enhance="false">
             <div class="ot-input-group mb-md">
                 <label class="ot-input-label">@Lang.T("common.labels.email")</label>
                 <InputText class="ot-input-field" @bind-Value="RegisterModel.Email" placeholder="@Lang.T("auth.login.emailPlaceholder")" />
