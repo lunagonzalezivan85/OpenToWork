@@ -696,13 +696,6 @@ else
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
 
-        var token = await LocalStorage.GetItemAsync("otwadmin-token");
-        if (string.IsNullOrEmpty(token))
-        {
-            Nav.NavigateTo("/login", forceLoad: true);
-            return;
-        }
-
         Profile = await AuthApi.GetUserProfileAsync(UserId);
         Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
         AssignableUsers = await AuthApi.GetUsersAsync(1, 100, 2);

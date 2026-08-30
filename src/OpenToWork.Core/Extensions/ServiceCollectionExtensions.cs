@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddCoreServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<ITokenCryptoService, TokenCryptoService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICandidateService, CandidateService>();
         services.AddScoped<IVacancyService, VacancyService>();
@@ -24,6 +25,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddAdminCoreServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<ITokenCryptoService, TokenCryptoService>();
         services.AddScoped<IAdminAuthService, AdminAuthService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IAdminUserService, AdminUserService>();

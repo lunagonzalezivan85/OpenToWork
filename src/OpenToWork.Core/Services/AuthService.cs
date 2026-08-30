@@ -5,7 +5,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
 using OpenToWork.Models.Entities;
@@ -17,11 +16,13 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
+    private readonly ITokenCryptoService _tokenCrypto;
 
-    public AuthService(AppDbContext context, IConfiguration config)
+    public AuthService(AppDbContext context, IConfiguration config, ITokenCryptoService tokenCrypto)
     {
         _context = context;
         _config = config;
+        _tokenCrypto = tokenCrypto;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, string? createdBy = null)
@@ -89,7 +90,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenDto dto)
     {
-        var tokenHash = HashToken(dto.RefreshToken);
+        var tokenHash = _tokenCrypto.HashToken(dto.RefreshToken);
         var token = await _context.SC_RefreshTokens
             .Include(t => t.User).ThenInclude(u => u.UserRoles)
             .Include(t => t.User).ThenInclude(u => u.UserPreference)
@@ -106,7 +107,7 @@ public class AuthService : IAuthService
 
     public async Task<bool> RevokeTokenAsync(string refreshToken)
     {
-        var tokenHash = HashToken(refreshToken);
+        var tokenHash = _tokenCrypto.HashToken(refreshToken);
         var token = await _context.SC_RefreshTokens
             .FirstOrDefaultAsync(t => t.TokenHash == tokenHash && !t.IsRevoked && !t.IsDeleted);
 
@@ -152,8 +153,8 @@ public class AuthService : IAuthService
     private async Task<AuthResponseDto> GenerateAuthResponseAsync(SCUser user, bool rememberMe = false)
     {
         var token = GenerateJwtToken(user, rememberMe);
-        var refreshToken = GenerateRefreshToken();
-        var refreshTokenHash = HashToken(refreshToken);
+        var refreshToken = _tokenCrypto.GenerateRefreshToken();
+        var refreshTokenHash = _tokenCrypto.HashToken(refreshToken);
 
         var expireDays = _config.GetValue<int>("Jwt:RefreshTokenExpireDays", 7);
 
@@ -196,9 +197,6 @@ public class AuthService : IAuthService
 
     private string GenerateJwtToken(SCUser user, bool rememberMe)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
         var expireMinutes = rememberMe
             ? _config.GetValue<int>("Jwt:ExpireMinutesRememberMe", 43200)
             : _config.GetValue<int>("Jwt:ExpireMinutes", 60);
@@ -216,29 +214,7 @@ public class AuthService : IAuthService
             claims.Add(new Claim(ClaimTypes.Role, ((OpenToWork.Shared.Enums.UserRole)role.Role).ToString()));
         }
 
-        var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(expireMinutes),
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    private static string GenerateRefreshToken()
-    {
-        var randomBytes = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomBytes);
-        return Convert.ToBase64String(randomBytes);
-    }
-
-    private static string HashToken(string token)
-    {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
-        return Convert.ToHexString(bytes);
+        return _tokenCrypto.CreateJwtToken(claims, _config["Jwt:Key"]!, _config["Jwt:Issuer"]!, _config["Jwt:Audience"]!, expireMinutes);
     }
 
     public async Task<bool> RequestPasswordResetAsync(string email)
@@ -249,7 +225,7 @@ public class AuthService : IAuthService
         if (user == null) return false;
 
         var resetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-        user.PasswordResetToken = HashToken(resetToken);
+        user.PasswordResetToken = _tokenCrypto.HashToken(resetToken);
         user.PasswordResetExpiresAt = DateTime.UtcNow.AddHours(1);
         user.UpdatedAt = DateTime.UtcNow;
 
@@ -262,7 +238,7 @@ public class AuthService : IAuthService
 
     public async Task<bool> ResetPasswordAsync(string token, string newPassword)
     {
-        var tokenHash = HashToken(token);
+        var tokenHash = _tokenCrypto.HashToken(token);
         var user = await _context.SC_Users
             .FirstOrDefaultAsync(u => u.PasswordResetToken == tokenHash && !u.IsDeleted && u.IsActive);
 

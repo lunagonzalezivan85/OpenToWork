@@ -16,7 +16,7 @@ El proyecto se compone de **3 portales independientes**:
 | Portal | Descripcion | Estado |
 |--------|-------------|--------|
 | **Portal de Candidatos** | Registro, perfil, wizard, busqueda de vacantes, postulaciones | 80% Completado |
-| **Portal Administrativo** | Verificaciones manuales, moderacion, gestion de usuarios, auditoria, pipeline de reclutamiento | 85% Completado + Pipeline de Reclutamiento (21-Ago) |
+| **Portal Administrativo** | Verificaciones manuales, moderacion, gestion de usuarios, auditoria, pipeline de reclutamiento | 90% Completado + Pipeline de Reclutamiento (21-Ago) — solo quedan bloqueados 2 items de Fase 3 |
 | **Portal Corporativo** | Suscripcion mensual, perfiles evaluados, ranking, filtros avanzados | Pendiente |
 
 ### Caracteristicas principales
@@ -308,7 +308,7 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 
 > **Nota (2026-08-24, Dsiezar):** Iluna construyo un **Pipeline de Reclutamiento** (ver Bitacora, sesion 21-Ago) que cubre gran parte del *objetivo* de negocio de Fase 3 (evaluar y verificar candidatos antes de mostrarlos a la empresa), pero con una **arquitectura distinta a la planeada aqui**: es un flujo de **evaluacion manual/asistida por un reclutador** (checklist de investigacion, evaluacion tecnica, entrevista cultural, score general por etapa) en vez de un motor 100% automatico (`ValidationService`/`ScoringService`/`CompatibilityService`). Entidades nuevas: `PTCandidateRecruitment`, `PTInvestigationChecklist`, `PTReferenceCheck`, `PTTechnicalEvaluation`, `PTRecruitmentStageLog`, `PTRecruitmentDismissal` — no `PTCandidateScore`/`PTVerification` como decia el checklist original. Se deja el checklist original sin marcar porque tecnicamente no es lo que se construyo, pero el objetivo de negocio (candidatos evaluados antes de llegar a la empresa) ya tiene una primera version funcionando. Alinea bien con la definicion estrategica consolidada de la sesion 2026-08-15 ("TD revisa candidatos" antes del shortlist).
 
-### Fase 4: Portal Administrativo - 85% COMPLETADA (por Dsiezar) + Pipeline de Reclutamiento (por Iluna)
+### Fase 4: Portal Administrativo - 90% COMPLETADA (por Dsiezar) + Pipeline de Reclutamiento (por Iluna)
 
 - [x] AdminAPI con JWT independiente (puerto 5001)
 - [x] AdminWEB con login y layout (puerto 5101)
@@ -326,13 +326,15 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - [x] Evaluaciones tecnicas y entrevistas culturales con puntuacion, score general por etapa (Iluna, 21-Ago)
 - [ ] Verificaciones manuales (aprobar/rechazar `PTVerification`) — **bloqueado por Fase 3** (checklist original; el Pipeline de Reclutamiento ya cubre una version distinta de esto, ver nota arriba)
 - [ ] Revision de validaciones automaticas — **bloqueado por Fase 3** (checklist original)
-- [ ] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar)
+- [x] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar) (Dsiezar, 29-Ago)
 
-**Deuda tecnica documentada (4 items):**
-- [ ] Unificar `AdminAuthService` con `AuthService` (logica duplicada)
-- [ ] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar)
-- [ ] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI
-- [ ] Centralizar guard de autenticacion en `AdminLayout` (copiado en 5 paginas)
+**Deuda tecnica documentada (4 items) — resueltos 29-Ago (Dsiezar):**
+- [x] Unificar `AdminAuthService` con `AuthService` (logica duplicada) — extraida a `ITokenCryptoService` compartido en Core
+- [x] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar) — ahora traduce a `UNION ALL` con `Skip/Take` del lado del servidor
+- [x] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI
+- [x] Centralizar guard de autenticacion en `AdminLayout` (copiado en 9 paginas; ademas protegia por primera vez las 4 paginas del Pipeline de Reclutamiento, que no tenian guard)
+
+Solo quedan bloqueados los 2 items que dependen de entidades de Fase 3 (`PTVerification`/`ValidationService`, aun no existen).
 
 ### Fase 5: Portal Corporativo - Pendiente
 
@@ -443,17 +445,16 @@ Fase 3 (Motor de Scoring) ──────────────────
    - **Validacion: ejecutar API + WEB, verificar pantallas funcionen correctamente antes de avanzar**
    - **Validacion: comprobar patron de diseno One UI (squircles, pill buttons, Bento Grid, temas)**
 
-2. **Fase 4 - Portal Administrativo (completar 15% faltante):**
-   - Verificaciones manuales (aprobar/rechazar `PTVerification`) — requiere Fase 3
-   - Revision de validaciones automaticas — requiere Fase 3
-   - Gestion de roles de usuario (cambiar rol, no solo activar/desactivar)
-   - Resolver 4 items de deuda tecnica:
+2. **Fase 4 - Portal Administrativo (completado 29-Ago salvo lo bloqueado por Fase 3):**
+   - Verificaciones manuales (aprobar/rechazar `PTVerification`) — requiere Fase 3, sigue pendiente
+   - Revision de validaciones automaticas — requiere Fase 3, sigue pendiente
+   - [x] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar) (Dsiezar, 29-Ago)
+   - [x] Resueltos los 4 items de deuda tecnica (Dsiezar, 29-Ago):
      - Unificar `AdminAuthService` con `AuthService`
      - Optimizar `AdminVacancyService` (paginacion en BD, no en memoria)
      - Mover `LocalStorageService`/`LanguageService` a SharedUI
      - Centralizar guard de autenticacion en `AdminLayout`
-   - **Validacion: ejecutar AdminAPI + AdminWEB, verificar pantallas funcionen correctamente**
-   - **Validacion: comprobar patron de diseno One UI consistente con portal principal**
+   - **Validacion: ejecutado AdminAPI + AdminWEB contra MySQL real, pantallas verificadas en navegador**
 
 3. **Fase 5 - Portal Corporativo (puede iniciar estructura base en paralelo con Fase 3):**
    - Crear `OpenToWork.CorporateAPI` (puerto 5002, JWT independiente)
@@ -1092,7 +1093,7 @@ Pruebas totales: 44
 
 ## Tareas Pendientes — Portal Administrativo
 
-> **Contexto:** El portal administrativo está al 85%. Lo que falta está bloqueado por la Fase 3 (Motor de Evaluación) o requiere desarrollo independiente.
+> **Contexto:** El portal administrativo está al 90%. Lo que falta está bloqueado por la Fase 3 (Motor de Evaluación); todo lo que no dependía de Fase 3 se completó el 29-Ago (Dsiezar).
 
 ### Pendientes bloqueados por Fase 3 (Motor de Scoring)
 
@@ -1100,22 +1101,36 @@ Pruebas totales: 44
 - [ ] **Revisión de validaciones automáticas** — Ver el resultado de validaciones automáticas (LinkedIn, portafolio, coherencia cronológica) desde el admin. Requiere `ValidationService` (Fase 3).
 - [ ] **Gestión de scores de candidatos** — Ver y gestionar los índices de Estabilidad, Confiabilidad y Evidencia de cada candidato desde el admin.
 
-### Pendientes independientes (se pueden hacer ahora)
+### Completados 29-Ago (Dsiezar)
 
-- [ ] **Gestión de roles de usuario** — Actualmente el admin solo puede activar/desactivar usuarios. Falta poder cambiar el `PrimaryRole` (Candidato → Empresa → Admin) desde el panel.
-- [ ] **Pruebas unitarias para AdminAPI** — Crear `OpenToWork.AdminTests` con pruebas de integración contra `localhost:5001` (login admin, dashboard metrics, users CRUD, vacancies moderation, skills CRUD, audit log, export CSV).
-- [ ] **Pruebas de seguridad admin** — Verificar que un candidato no puede acceder a endpoints admin, que el auto-bloqueo funciona, que la paginación no acepta valores negativos.
+- [x] **Gestión de roles de usuario** — El admin ahora puede cambiar el `PrimaryRole` (Candidato/Empresa/Admin) de cualquier usuario desde `/users`, con guardia de auto-bloqueo y validación de valor de rol. Verificado end-to-end contra MySQL real.
+- [ ] **Pruebas unitarias para AdminAPI** — Crear `OpenToWork.AdminTests` con pruebas de integración contra `localhost:5001` (login admin, dashboard metrics, users CRUD, vacancies moderation, skills CRUD, audit log, export CSV). *(sigue pendiente, no formaba parte de la deuda técnica original)*
+- [ ] **Pruebas de seguridad admin** — Verificar que un candidato no puede acceder a endpoints admin, que el auto-bloqueo funciona, que la paginación no acepta valores negativos. *(sigue pendiente)*
 
-### Deuda técnica documentada (4 items)
+### Deuda técnica documentada (4 items) — resueltos 29-Ago (Dsiezar)
 
-- [ ] Unificar `AdminAuthService` con `AuthService` (lógica duplicada)
-- [ ] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar)
-- [ ] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI
-- [ ] Centralizar guard de autenticación en `AdminLayout` (copiado en 5 páginas)
+- [x] Unificar `AdminAuthService` con `AuthService` (lógica duplicada) — crypto de tokens extraída a `ITokenCryptoService` en Core
+- [x] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar) — ahora usa `Concat` a nivel de `IQueryable` para traducir a `UNION ALL` con paginación en el servidor
+- [x] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI — `LanguageService` unificado recibiendo el arreglo de secciones por constructor
+- [x] Centralizar guard de autenticación en `AdminLayout` (antes copiado en 9 páginas) — como efecto colateral, protege por primera vez las 4 páginas del Pipeline de Reclutamiento que no tenían guard
 
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-08-29 — Cierre de Fase 4: gestión de roles + 4 items de deuda técnica (Dsiezar)
+
+Se completó todo lo pendiente de Fase 4 que no dependía de Fase 3. Detalle completo en [`docs/dsiezar/fase-4.md`](docs/dsiezar/fase-4.md).
+
+- **Gestión de roles de usuario:** nuevo endpoint `PUT /api/admin/users/{id}/role` (`AdminUserService.ChangeRoleAsync`) con guardia de auto-bloqueo y validación de rol; selector de rol por tarjeta en `/users` con confirmación antes de aplicar el cambio.
+- **Unificación `AdminAuthService`/`AuthService`:** la lógica de criptografía de tokens (firma JWT, refresh token, hashing) que estaba duplicada se extrajo a `ITokenCryptoService` en `OpenToWork.Core`. Cada servicio conserva su propia lógica de claims y su propia configuración `Jwt:*`.
+- **Paginación de `AdminVacancyService`:** `GetVacanciesAsync` ya no carga `PT_Vacancies`/`PT_TempVacancies` completas en memoria — ambas se proyectan a `IQueryable<AdminVacancyDto>` con el mismo conjunto de propiedades y se unen con `.Concat()`, que EF Core/Pomelo traduce a un `UNION ALL` con `ORDER BY`/`LIMIT`/`OFFSET` del lado del servidor.
+- **`LocalStorageService`/`LanguageService` movidos a `SharedUI`:** `LanguageService` se unificó recibiendo el arreglo de secciones de traducción por constructor (preserva el comportamiento de ambos portales sin cambios).
+- **Guard de autenticación centralizado en `AdminLayout`:** eliminado de las 9 páginas que lo duplicaban. Efecto colateral: las 4 páginas del Pipeline de Reclutamiento (Iluna) que nunca tuvieron este guard quedan protegidas automáticamente.
+
+Todo verificado end-to-end contra MySQL real (no solo compilado): cambio de rol con reversión, guardias de auto-bloqueo (409) y rol inválido (400), login/refresh-token en ambos portales tras la unificación de crypto, paginación y filtro por status de vacantes tras la reescritura con `Concat`, traducciones ES/EN tras la migración a `SharedUI`, y redirección a `/login` sin sesión en páginas antes desprotegidas.
+
+Quedan bloqueados por Fase 3 (sin cambios): verificaciones manuales (`PTVerification`) y revisión de validaciones automáticas.
 
 ### Sesión 2026-08-21 — Pipeline de Reclutamiento completo (Iluna)
 

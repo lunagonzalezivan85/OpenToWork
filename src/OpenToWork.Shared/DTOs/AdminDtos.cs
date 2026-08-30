@@ -38,6 +38,11 @@ public class ModerateVacancyDto
     public int Status { get; set; }
 }
 
+public class ChangeRoleDto
+{
+    public int Role { get; set; }
+}
+
 public class AdminSkillDto
 {
     public Guid Id { get; set; }

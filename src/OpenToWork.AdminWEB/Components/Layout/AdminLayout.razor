@@ -3,6 +3,7 @@
 @inject LanguageService Lang
 @inject AdminAuthApiService AuthApi
 @inject AdminAuthStateProvider AuthProvider
+@inject LocalStorageService LocalStorage
 @inject Microsoft.JSInterop.IJSRuntime JS
 @inject NavigationManager Nav
 
@@ -109,6 +110,16 @@
 @code {
     protected override async Task OnInitializedAsync()
     {
+        // Centralized auth guard: every page rendered through AdminLayout requires a session
+        // token. This replaces the per-page "otwadmin-token" checks that used to be duplicated
+        // across pages (and were missing entirely from the Recruitment Pipeline pages).
+        var token = await LocalStorage.GetItemAsync("otwadmin-token");
+        if (string.IsNullOrEmpty(token))
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
     }

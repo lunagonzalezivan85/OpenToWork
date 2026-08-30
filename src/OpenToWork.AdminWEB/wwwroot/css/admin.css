@@ -1433,7 +1433,19 @@
 
 .admin-user-card-actions {
     display: flex;
+    align-items: center;
     gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.admin-role-select {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.78rem;
+}
+
+.admin-role-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 @media (max-width: 640px) {
