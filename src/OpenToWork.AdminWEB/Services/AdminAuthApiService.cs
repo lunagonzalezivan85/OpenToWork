@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.SharedUI.Services;
 
 namespace OpenToWork.AdminWEB.Services;
 
@@ -70,6 +71,13 @@ public class AdminAuthApiService
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.DeleteAsync($"api/admin/users/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ChangeUserRoleAsync(Guid id, int role)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/users/{id}/role", new ChangeRoleDto { Role = role });
         return response.IsSuccessStatusCode;
     }
 

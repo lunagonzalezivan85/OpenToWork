@@ -3,6 +3,7 @@ using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
 using OpenToWork.Models.Entities;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.Core.Services;
 
@@ -205,6 +206,39 @@ public class AdminUserService : IAdminUserService
         await _context.SaveChangesAsync();
 
         await _auditLog.LogAsync(adminId, "DeleteUser", "SC_Users", id, null, ipAddress);
+        return true;
+    }
+
+    public async Task<bool> ChangeRoleAsync(Guid id, int newRole, Guid adminId, string? ipAddress)
+    {
+        if (!Enum.IsDefined(typeof(UserRole), newRole)) return false;
+
+        var user = await _context.SC_Users
+            .Include(u => u.UserRoles)
+            .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
+        if (user == null) return false;
+
+        var previousRole = user.PrimaryRole;
+        if (previousRole == newRole) return true;
+
+        user.PrimaryRole = newRole;
+        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedBy = adminId;
+
+        var existingRole = user.UserRoles.FirstOrDefault(r => r.Role == newRole && !r.IsDeleted);
+        if (existingRole == null)
+        {
+            _context.SC_UserRoles.Add(new SCUserRole
+            {
+                SCUserId = user.Id,
+                Role = newRole,
+                CreatedBy = adminId
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(adminId, "ChangeUserRole", "SC_Users", id, $"{{\"from\":{previousRole},\"to\":{newRole}}}", ipAddress);
         return true;
     }
 
