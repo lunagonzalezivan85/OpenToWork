@@ -1006,6 +1006,11 @@
     color: var(--text-muted);
 }
 
+.admin-result-badge--danger {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
 @media (max-width: 640px) {
     .admin-results-grid {
         grid-template-columns: 1fr;

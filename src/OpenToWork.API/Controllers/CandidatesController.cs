@@ -65,6 +65,20 @@ public class CandidatesController : ControllerBase
     /// disparar sus propias verificaciones - evita que cualquier usuario autenticado gatille
     /// verificaciones (y las peticiones HTTP salientes que implican) contra otro candidato.
     /// </summary>
+    /// <summary>Lectura pura, no dispara HTTP (agregado en 3.8 para la seccion Verificaciones del dashboard).</summary>
+    [HttpGet("{id}/verifications")]
+    public async Task<IActionResult> GetVerifications(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
+        if (myCandidate == null || myCandidate.Id != id) return Forbid();
+
+        var results = await _validationService.GetVerificationsAsync(id);
+        return Ok(results);
+    }
+
     [HttpPost("{id}/verifications/run")]
     public async Task<IActionResult> RunVerifications(Guid id)
     {
@@ -76,6 +90,20 @@ public class CandidatesController : ControllerBase
 
         var results = await _validationService.RunAllVerificationsAsync(id);
         return Ok(results);
+    }
+
+    /// <summary>Lectura pura, no recalcula (agregado en 3.8 para el dashboard). Mismo guard de ownership.</summary>
+    [HttpGet("{id}/score")]
+    public async Task<IActionResult> GetScore(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
+        if (myCandidate == null || myCandidate.Id != id) return Forbid();
+
+        var result = await _scoringService.GetScoreAsync(id);
+        return Ok(result);
     }
 
     /// <summary>

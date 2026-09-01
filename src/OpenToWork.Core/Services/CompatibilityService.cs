@@ -60,11 +60,12 @@ public class CompatibilityService : ICompatibilityService
         var match = await _context.PT_JobMatchScores
             .FirstOrDefaultAsync(m => m.PT_CandidateId == candidateId && m.PT_VacancyId == vacancyId && !m.IsDeleted);
 
-        // PTVacancy no tiene un campo propio de pesos configurables (no esta en el esquema de
-        // 3.1) - si esta fila ya tenia un WeightsConfig custom (seteado a mano o por una futura
-        // feature de admin), se respeta en cada recalculo; si no, se usan los defaults y se
-        // registran aca como "los pesos usados en este calculo" (fase-3-sub4.md pregunta 1).
-        var weights = ParseWeights(match?.WeightsConfig);
+        // Orden de prioridad para los pesos (fase-3-sub4.md pregunta 1, corregido en 3.8 al
+        // construir el scorecard de empresa): 1) PTVacancy.WeightsConfig - lo que la empresa
+        // configuro para esta vacante puntual (agregado en 3.8, no existia en el esquema de
+        // 3.1/3.4); 2) el WeightsConfig ya guardado en un match previo de este mismo par
+        // candidato-vacante (compatibilidad con calculos anteriores a 3.8); 3) los defaults.
+        var weights = ParseWeights(vacancy.WeightsConfig ?? match?.WeightsConfig);
         var percentage = (skillsMatch * weights.skills) + (experienceMatch * weights.experience) + (locationMatch * weights.location);
 
         if (match == null)
@@ -80,7 +81,7 @@ public class CompatibilityService : ICompatibilityService
         match.MatchPercentage = Math.Clamp((int)Math.Round(percentage), 0, 100);
         match.CalculatedAt = DateTime.UtcNow;
         match.UpdatedAt = DateTime.UtcNow;
-        match.WeightsConfig ??= SerializeWeights(weights);
+        match.WeightsConfig = SerializeWeights(weights);
 
         await _context.SaveChangesAsync();
 

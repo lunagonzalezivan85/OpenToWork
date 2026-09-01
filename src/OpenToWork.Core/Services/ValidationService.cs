@@ -202,6 +202,25 @@ public class ValidationService : IValidationService
         return results;
     }
 
+    public async Task<List<VerificationResultDto>> GetVerificationsAsync(Guid candidateId)
+    {
+        // Incluye Type=Reference (lo escribe ReferenceService, no este servicio) para que la
+        // lista sea completa - ver fase-3-sub8.md.
+        var verifications = await _context.PT_Verifications
+            .Where(v => v.PT_CandidateId == candidateId && !v.IsDeleted)
+            .OrderBy(v => v.Type)
+            .ToListAsync();
+
+        return verifications.Select(v => new VerificationResultDto
+        {
+            Type = v.Type,
+            Status = v.Status,
+            Score = v.Score,
+            Result = v.Result,
+            VerifiedAt = v.VerifiedAt
+        }).ToList();
+    }
+
     private async Task<bool> IsReachableAsync(string url, HttpMethod method, bool requireExact200)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || (uri.Scheme != "http" && uri.Scheme != "https"))
@@ -219,6 +238,17 @@ public class ValidationService : IValidationService
             // Timeout, DNS, TLS, lo que sea - nunca debe tumbar el flujo del candidato.
             return false;
         }
+    }
+
+    public async Task<VerificationResultDto> SetVerificationStatusAsync(Guid candidateId, int type, int status, Guid adminId)
+    {
+        var checkStatus = (VerificationCheckStatus)status;
+        if (checkStatus != VerificationCheckStatus.Verified && checkStatus != VerificationCheckStatus.Failed)
+            throw new InvalidOperationException("Status must be Verified or Failed for a manual override");
+
+        var score = checkStatus == VerificationCheckStatus.Verified ? 100 : 0;
+        var result = JsonSerializer.Serialize(new { manualOverride = true, adminId, at = DateTime.UtcNow });
+        return await SaveVerificationAsync(candidateId, (VerificationType)type, checkStatus, score, result);
     }
 
     private async Task<VerificationResultDto> SaveVerificationAsync(Guid candidateId, VerificationType type, VerificationCheckStatus status, int score, string resultJson)

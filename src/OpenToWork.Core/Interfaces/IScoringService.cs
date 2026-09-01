@@ -22,4 +22,7 @@ public interface IScoringService
     int CalculateOverallScore(int stability, int reliability, int evidence, int compatibility);
     Task<CandidateScoreDto> RecalculateAsync(Guid candidateId);
     Task RecalculateAllAsync();
+
+    /// <summary>Lectura pura del ultimo score persistido - devuelve todo en 0 (Version=0) si nunca se calculo, sin crear una fila (agregado en sub-fase 3.8 para no recalcular en cada carga del dashboard).</summary>
+    Task<CandidateScoreDto> GetScoreAsync(Guid candidateId);
 }
