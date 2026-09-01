@@ -24,6 +24,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IValidationService, ValidationService>();
         services.AddHttpClient<IValidationService, ValidationService>();
         services.AddScoped<IScoringService, ScoringService>();
+        services.AddScoped<ICompatibilityService, CompatibilityService>();
 
         return services;
     }
@@ -41,6 +42,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminApplicationService, AdminApplicationService>();
         services.AddScoped<IAdminCandidateService, AdminCandidateService>();
         services.AddScoped<IRecruitmentService, RecruitmentService>();
+        services.AddScoped<ICompatibilityService, CompatibilityService>();
 
         return services;
     }

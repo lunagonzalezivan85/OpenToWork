@@ -28,7 +28,15 @@ public class PTJobMatchScore : BaseEntity
 
     public int ExperienceMatch { get; set; } = 0;
 
+    /// <summary>
+    /// Reservado, siempre 0 por ahora: PTVacancy.Requirements es texto libre, sin un campo
+    /// estructurado de titulo/carrera requerida para comparar contra PTCandidateEducation
+    /// (fase-3-sub4.md pregunta 5).
+    /// </summary>
     public int EducationMatch { get; set; } = 0;
+
+    /// <summary>Agregado en sub-fase 3.4 (fase-3-sub4.md pregunta 4).</summary>
+    public int LocationMatch { get; set; } = 0;
 
     public DateTime CalculatedAt { get; set; } = DateTime.UtcNow;
 
