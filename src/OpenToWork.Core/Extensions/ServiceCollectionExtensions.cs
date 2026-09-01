@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<IValidationService, ValidationService>();
         services.AddScoped<IScoringService, ScoringService>();
         services.AddScoped<ICompatibilityService, CompatibilityService>();
+        services.AddScoped<IReferenceService, ReferenceService>();
 
         return services;
     }
