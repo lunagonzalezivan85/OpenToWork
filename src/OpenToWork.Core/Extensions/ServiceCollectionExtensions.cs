@@ -21,6 +21,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAlertService, AlertService>();
         services.AddScoped<ICvParserService, CvParserService>();
         services.AddHttpClient<ICvParserService, CvParserService>();
+        services.AddScoped<IValidationService, ValidationService>();
+        services.AddHttpClient<IValidationService, ValidationService>();
 
         return services;
     }
