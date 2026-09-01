@@ -11,10 +11,12 @@ namespace OpenToWork.API.Controllers;
 public class CandidatesController : ControllerBase
 {
     private readonly ICandidateService _candidateService;
+    private readonly IValidationService _validationService;
 
-    public CandidatesController(ICandidateService candidateService)
+    public CandidatesController(ICandidateService candidateService, IValidationService validationService)
     {
         _candidateService = candidateService;
+        _validationService = validationService;
     }
 
     [HttpGet("me")]
@@ -50,6 +52,24 @@ public class CandidatesController : ControllerBase
 
         var result = await _candidateService.UpdateWizardStepAsync(userId.Value, dto);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// {id} es el Id de PTCandidate (no el SCUserId). Solo el dueno del perfil puede
+    /// disparar sus propias verificaciones - evita que cualquier usuario autenticado gatille
+    /// verificaciones (y las peticiones HTTP salientes que implican) contra otro candidato.
+    /// </summary>
+    [HttpPost("{id}/verifications/run")]
+    public async Task<IActionResult> RunVerifications(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
+        if (myCandidate == null || myCandidate.Id != id) return Forbid();
+
+        var results = await _validationService.RunAllVerificationsAsync(id);
+        return Ok(results);
     }
 
     private Guid? GetUserId()
