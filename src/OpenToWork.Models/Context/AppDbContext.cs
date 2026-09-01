@@ -34,6 +34,12 @@ public class AppDbContext : DbContext
     public DbSet<PTCandidateRecruitmentPreferences> PT_CandidateRecruitmentPreferences => Set<PTCandidateRecruitmentPreferences>();
     public DbSet<SYDocumentType> SY_DocumentTypes => Set<SYDocumentType>();
     public DbSet<PTRecruitmentDocument> PT_RecruitmentDocuments => Set<PTRecruitmentDocument>();
+    public DbSet<PTCandidateScore> PT_CandidateScores => Set<PTCandidateScore>();
+    public DbSet<PTJobMatchScore> PT_JobMatchScores => Set<PTJobMatchScore>();
+    public DbSet<PTVerification> PT_Verifications => Set<PTVerification>();
+    public DbSet<PTCandidateReference> PT_CandidateReferences => Set<PTCandidateReference>();
+    public DbSet<PTSkillTest> PT_SkillTests => Set<PTSkillTest>();
+    public DbSet<PTCandidateTestResult> PT_CandidateTestResults => Set<PTCandidateTestResult>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -282,6 +288,46 @@ public class AppDbContext : DbContext
         });
 
         SeedDocumentTypes(modelBuilder);
+
+        modelBuilder.Entity<PTCandidateScore>(e =>
+        {
+            e.ToTable("PT_CandidateScores");
+            e.HasIndex(s => new { s.PT_CandidateId, s.IsDeleted }).IsUnique();
+        });
+
+        modelBuilder.Entity<PTJobMatchScore>(e =>
+        {
+            e.ToTable("PT_JobMatchScores");
+            e.HasIndex(m => new { m.PT_CandidateId, m.PT_VacancyId, m.IsDeleted }).IsUnique();
+            e.HasIndex(m => new { m.PT_VacancyId, m.MatchPercentage, m.IsDeleted });
+        });
+
+        modelBuilder.Entity<PTVerification>(e =>
+        {
+            e.ToTable("PT_Verifications");
+            e.HasIndex(v => new { v.PT_CandidateId, v.Type, v.IsDeleted }).IsUnique();
+            e.HasIndex(v => new { v.Status, v.IsDeleted });
+        });
+
+        modelBuilder.Entity<PTCandidateReference>(e =>
+        {
+            e.ToTable("PT_CandidateReferences");
+            e.HasIndex(r => new { r.PT_CandidateId, r.IsDeleted });
+        });
+
+        modelBuilder.Entity<PTSkillTest>(e =>
+        {
+            e.ToTable("PT_SkillTests");
+            e.HasIndex(t => new { t.Category, t.IsActive, t.IsDeleted });
+        });
+
+        modelBuilder.Entity<PTCandidateTestResult>(e =>
+        {
+            e.ToTable("PT_CandidateTestResults");
+            e.HasIndex(r => new { r.PT_CandidateId, r.IsDeleted });
+            e.HasIndex(r => new { r.PT_SkillTestId, r.IsDeleted });
+        });
+
         SeedWizardSteps(modelBuilder);
     }
 
