@@ -293,7 +293,9 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - [x] i18n completo (es + en) con claves nuevas
 - [x] UI/UX: One UI, Bento Grid, Command-Driven, temas (navy/dark/light)
 
-### Fase 3: Motor de Evaluacion y Scoring Automatico - Pendiente
+### Fase 3: Motor de Evaluacion y Scoring Automatico - COMPLETADA (Dsiezar, 01-Sep-2026)
+
+> **Actualizacion (01-Sep-2026, Dsiezar):** Las 8 sub-fases de este plan se completaron en orden estricto (3.1 → 3.8), cada una con sus preguntas respondidas y documentadas en `docs/dsiezar/fase-3-sub1.md` a `fase-3-sub8.md` **antes** de escribir codigo, tal como exige la instruccion obligatoria de abajo. Rama `dsiezar-fase-3` (8 commits, `e746f21`..`85bf4ea`), pusheada a origin, pendiente de PR/revision de Iluna. El plan detallado de cada sub-fase se deja intacto abajo como documentacion de los requisitos originales - ver la Bitacora de Cambios para el resumen de que se construyo en cada una.
 
 > **⚠️ INSTRUCCION OBLIGATORIA PARA DARWIN (Dsiezar / IA):**
 >
@@ -577,20 +579,22 @@ Perfil registrado → Perfil completo → Evaluado → Verificacion en proceso �
 
 > **Resumen de sub-fases:** 8 sub-fases, cada una con preguntas que deben responderse antes de codificar. Las respuestas definen los algoritmos. El orden es secuencial: 3.1 → 3.2 → 3.3 → 3.4 → 3.5 → 3.6 → 3.7 → 3.8.
 >
-> **Checklist original (automatizacion via ValidationService/ScoringService) — sigue sin implementarse:**
+> **Checklist original (automatizacion via ValidationService/ScoringService) — implementado (Dsiezar, 01-Sep-2026):**
 
-- [ ] Entidades de scoring (`PTCandidateScore`, `PTVerification`, `PTCandidateReference`)
-- [ ] ValidationService: verificacion automatica (LinkedIn, portafolio, coherencia cronologica)
-- [ ] ScoringService: indices de Estabilidad, Confiabilidad, Evidencia
-- [ ] CompatibilityService: match candidato-vacante
-- [ ] API endpoints: `/api/candidates/{id}/score`, `/api/candidates/{id}/verifications`
-- [ ] Dashboard candidato: mostrar scores y verificaciones en el perfil
-- [ ] Referencias laborales: CRUD en wizard y perfil
-- [ ] Pruebas de habilidades: `PTSkillTest`, `PTCandidateTestResult`
+- [x] Entidades de scoring (`PTCandidateScore`, `PTVerification`, `PTCandidateReference`, `PTJobMatchScore`, `PTSkillTest`, `PTCandidateTestResult` — sub-fase 3.1)
+- [x] ValidationService: verificacion automatica (LinkedIn, portafolio, coherencia cronologica, identidad como stub documentado — sub-fase 3.2)
+- [x] ScoringService: indices de Estabilidad, Confiabilidad, Evidencia y Compatibilidad — sub-fase 3.3
+- [x] CompatibilityService: match candidato-vacante (Job Match Score) — sub-fase 3.4
+- [x] API endpoints: `GET/POST api/candidates/{id}/score[/recalculate]`, `GET/POST api/candidates/{id}/verifications[/run]` — sub-fases 3.2/3.3/3.8
+- [x] Dashboard candidato: scores, verificaciones y badge "Verificado TD" en el perfil — sub-fase 3.8
+- [x] Referencias laborales: CRUD + flujo de solicitud/feedback publico en `/references` — sub-fase 3.5
+- [x] Pruebas de habilidades: `PTSkillTest`/`PTCandidateTestResult` + UI de reto con timer en `/skill-tests` — sub-fase 3.6
 
-> **Nota (2026-08-24, Dsiezar):** Iluna construyo un **Pipeline de Reclutamiento** (ver Bitacora, sesion 21-Ago) que cubre gran parte del *objetivo* de negocio de Fase 3 (evaluar y verificar candidatos antes de mostrarlos a la empresa), pero con una **arquitectura distinta a la planeada aqui**: es un flujo de **evaluacion manual/asistida por un reclutador** (checklist de investigacion, evaluacion tecnica, entrevista cultural, score general por etapa) en vez de un motor 100% automatico (`ValidationService`/`ScoringService`/`CompatibilityService`). Entidades nuevas: `PTCandidateRecruitment`, `PTInvestigationChecklist`, `PTReferenceCheck`, `PTTechnicalEvaluation`, `PTRecruitmentStageLog`, `PTRecruitmentDismissal` — no `PTCandidateScore`/`PTVerification` como decia el checklist original. Se deja el checklist original sin marcar porque tecnicamente no es lo que se construyo, pero el objetivo de negocio (candidatos evaluados antes de llegar a la empresa) ya tiene una primera version funcionando. Alinea bien con la definicion estrategica consolidada de la sesion 2026-08-15 ("TD revisa candidatos" antes del shortlist).
+> **Nota (2026-08-24, Dsiezar):** Iluna construyo un **Pipeline de Reclutamiento** (ver Bitacora, sesion 21-Ago) que cubre gran parte del *objetivo* de negocio de Fase 3 (evaluar y verificar candidatos antes de mostrarlos a la empresa), pero con una **arquitectura distinta a la planeada aqui**: es un flujo de **evaluacion manual/asistida por un reclutador** (checklist de investigacion, evaluacion tecnica, entrevista cultural, score general por etapa) en vez de un motor 100% automatico. Entidades nuevas: `PTCandidateRecruitment`, `PTInvestigationChecklist`, `PTReferenceCheck`, `PTTechnicalEvaluation`, `PTRecruitmentStageLog`, `PTRecruitmentDismissal`. Ambos flujos coexisten: el Pipeline de Iluna sigue siendo la evaluacion manual/asistida por reclutador durante el proceso de investigacion; el Motor de Scoring de esta sub-fase es el calculo 100% automatico (`PTCandidateScore`/`PTVerification`) que corre en paralelo y alimenta el dashboard del candidato y el shortlist de la empresa.
+>
+> **Actualizacion (01-Sep-2026, Dsiezar):** el checklist original de arriba ya esta implementado de punta a punta - ver el detalle completo en `docs/dsiezar/fase-3-sub1.md` a `fase-3-sub8.md` y en la Bitacora de Cambios.
 
-### Fase 4: Portal Administrativo - 90% COMPLETADA (por Dsiezar) + Pipeline de Reclutamiento (por Iluna)
+### Fase 4: Portal Administrativo - 100% COMPLETADA (por Dsiezar) + Pipeline de Reclutamiento (por Iluna)
 
 - [x] AdminAPI con JWT independiente (puerto 5001)
 - [x] AdminWEB con login y layout (puerto 5101)
@@ -606,8 +610,8 @@ Perfil registrado → Perfil completo → Evaluado → Verificacion en proceso �
 - [x] Pipeline de reclutamiento: kanban por etapas, asignacion de reclutador, historial, descarte (Iluna, 21-Ago)
 - [x] Checklist de investigacion + verificacion de referencias laborales (auto-generadas desde experiencia) (Iluna, 21-Ago)
 - [x] Evaluaciones tecnicas y entrevistas culturales con puntuacion, score general por etapa (Iluna, 21-Ago)
-- [ ] Verificaciones manuales (aprobar/rechazar `PTVerification`) — **bloqueado por Fase 3** (checklist original; el Pipeline de Reclutamiento ya cubre una version distinta de esto, ver nota arriba)
-- [ ] Revision de validaciones automaticas — **bloqueado por Fase 3** (checklist original)
+- [x] Verificaciones manuales (aprobar/rechazar `PTVerification`) — resuelto en sub-fase 3.8: `CandidateProfile.razor` (admin) tiene botones Aprobar/Rechazar por verificacion, via `ValidationService.SetVerificationStatusAsync`
+- [x] Revision de validaciones automaticas — resuelto en sub-fase 3.8: score e indices visibles con boton Recalcular en el mismo perfil
 - [x] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar) (Dsiezar, 29-Ago)
 
 **Deuda tecnica documentada (4 items) — resueltos 29-Ago (Dsiezar):**
@@ -616,7 +620,7 @@ Perfil registrado → Perfil completo → Evaluado → Verificacion en proceso �
 - [x] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI
 - [x] Centralizar guard de autenticacion en `AdminLayout` (copiado en 9 paginas; ademas protegia por primera vez las 4 paginas del Pipeline de Reclutamiento, que no tenian guard)
 
-Solo quedan bloqueados los 2 items que dependen de entidades de Fase 3 (`PTVerification`/`ValidationService`, aun no existen).
+Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-fase 3.8). Fase 4 no tiene items pendientes.
 
 ### Fase 5: Portal Corporativo - Parcialmente COMPLETADO (estructura base en OpenToWork.WEB)
 
@@ -633,16 +637,18 @@ Solo quedan bloqueados los 2 items que dependen de entidades de Fase 3 (`PTVerif
 - [x] Mensajeria (`Messages.razor`)
 - [x] Navegacion adaptada para rol empresa (`MainLayout.razor`)
 
-**Pendiente (depende de Fase 3 — Motor de Scoring):**
+**Desbloqueado por Fase 3 (Dsiezar, 01-Sep-2026):**
+- [x] Ranking automatico de candidatos por compatibilidad — `CompatibilityService.GenerateShortlist`, sub-fase 3.4
+- [x] Shortlist con Job Match Score — visible en `VacancyManage.razor` ("Ranking por Compatibilidad"), sub-fase 3.8
+- [x] Scorecard configurable por vacante — `PTVacancy.WeightsConfig`, formulario en `VacancyManage.razor`, sub-fase 3.8
+
+**Pendiente:**
 - [ ] Sistema de suscripciones (planes: Basic, Pro, Enterprise) — requiere definir modelo de ingresos
 - [ ] Entidad `COSubscription` — CompanyId, Plan, Status, StartDate, EndDate, MonthlyFee
 - [ ] Entidad `COSearchHistory` — CompanyId, Filters, ResultCount, SearchedAt
 - [ ] Entidad `COCandidateView` — CompanyId, CandidateId, ScoreSnapshot, ViewedAt
-- [ ] Busqueda avanzada con filtros por score, confiabilidad, estabilidad — requiere `PTCandidateScore` (Fase 3)
-- [ ] Vista de perfiles evaluados con checkmarks de verificacion — requiere `PTVerification` (Fase 3)
-- [ ] Ranking automatico de candidatos por compatibilidad — requiere `PTJobMatchScore` (Fase 3)
-- [ ] Shortlist con Job Match Score — requiere `CompatibilityService` (Fase 3)
-- [ ] Scorecard configurable por vacante — requiere `PTJobMatchScore.WeightsConfig` (Fase 3)
+- [ ] Busqueda avanzada con filtros por score, confiabilidad, estabilidad (`PTCandidateScore` ya existe desde Fase 3, falta la UI de busqueda)
+- [ ] Vista de perfiles evaluados con checkmarks de verificacion (`PTVerification` ya existe desde Fase 3, falta el checkmark en `VerifiedApplicants.razor`)
 - [ ] Reportes avanzados
 - [ ] Migracion EF Core para entidades corporativas restantes
 
@@ -671,13 +677,13 @@ Solo quedan bloqueados los 2 items que dependen de entidades de Fase 3 (`PTVerif
 
 ## Tareas Pendientes Resumidas
 
-> **Total: ~45 tareas pendientes** | Prioridad: **Fase 3** (desbloquea verificaciones del portal admin)
+> **Actualizado 01-Sep-2026 (Dsiezar):** Fase 3 completa desbloqueo a Fase 4 (100%) y 3 de 11 tareas de Fase 5. **Total: ~26 tareas pendientes** | Prioridad: **Fase 5** (suscripciones y busqueda por score) o **Fase 8** (testing/despliegue, sigue sin cobertura automatizada)
 
 | Fase | Tareas pendientes | Bloquea a |
 |------|-------------------|-----------|
-| **Fase 3** | 15 tareas (entidades, servicios, API, UI) | Fase 4 (verificaciones), Fase 5 (perfiles evaluados) |
-| **Fase 4** | 3 tareas + 4 deuda tecnica | — |
-| **Fase 5** | 11 tareas (suscripciones, entidades CO, busqueda por score, shortlist) — estructura base ya existe en OpenToWork.WEB | Fase 6 |
+| **Fase 3** | 0 tareas — COMPLETADA (Dsiezar, 01-Sep) | — |
+| **Fase 4** | 0 tareas — COMPLETADA | — |
+| **Fase 5** | 8 tareas (suscripciones, entidades CO, busqueda por score, checkmarks, reportes) — estructura base + shortlist/scorecard ya existen | Fase 6 |
 | **Fase 6** | 4 tareas (servicios premium) | — |
 | **Fase 7** | 4 tareas (integraciones externas) | — |
 | **Fase 8** | 4 tareas (pruebas, despliegue) | — |
@@ -725,23 +731,11 @@ Fase 3 (Motor de Scoring) ──────────────────
 
 ### Plan de ejecucion detallado
 
-1. **Fase 3 - Motor de Evaluacion y Scoring (PRIORIDAD MAXIMA):**
-   - Crear entidades: `PTCandidateScore`, `PTVerification`, `PTCandidateReference`, `PTSkillTest`, `PTCandidateTestResult`
-   - Migracion EF Core
-   - Implementar `ValidationService` (verificacion automatica: LinkedIn, portafolio, coherencia cronologica)
-   - Implementar `ScoringService` (indices: Estabilidad, Confiabilidad, Evidencia)
-   - Implementar `CompatibilityService` (match candidato-vacante)
-   - API endpoints: `/api/candidates/{id}/score`, `/api/candidates/{id}/verifications`
-   - UI: scores y verificaciones en el perfil del candidato (bento cards con los 4 indices)
-   - Referencias laborales: CRUD en wizard (nuevo paso) y perfil
-   - Pruebas de habilidades: UI basica
-   - i18n keys para scores, verificaciones, referencias (es/en)
-   - **Validacion: ejecutar API + WEB, verificar pantallas funcionen correctamente antes de avanzar**
-   - **Validacion: comprobar patron de diseno One UI (squircles, pill buttons, Bento Grid, temas)**
+1. ~~**Fase 3 - Motor de Evaluacion y Scoring**~~ — **COMPLETADA (Dsiezar, 01-Sep-2026)**, ver detalle en la seccion "Fases del Proyecto" y en `docs/dsiezar/fase-3-sub1.md` a `fase-3-sub8.md`.
 
-2. **Fase 4 - Portal Administrativo (completado 29-Ago salvo lo bloqueado por Fase 3):**
-   - Verificaciones manuales (aprobar/rechazar `PTVerification`) — requiere Fase 3, sigue pendiente
-   - Revision de validaciones automaticas — requiere Fase 3, sigue pendiente
+2. **Fase 4 - Portal Administrativo (COMPLETADA):**
+   - [x] Verificaciones manuales (aprobar/rechazar `PTVerification`) — resuelto en sub-fase 3.8 (Dsiezar, 01-Sep)
+   - [x] Revision de validaciones automaticas — resuelto en sub-fase 3.8 (Dsiezar, 01-Sep)
    - [x] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar) (Dsiezar, 29-Ago)
    - [x] Resueltos los 4 items de deuda tecnica (Dsiezar, 29-Ago):
      - Unificar `AdminAuthService` con `AuthService`
@@ -750,16 +744,16 @@ Fase 3 (Motor de Scoring) ──────────────────
      - Centralizar guard de autenticacion en `AdminLayout`
    - **Validacion: ejecutado AdminAPI + AdminWEB contra MySQL real, pantallas verificadas en navegador**
 
-3. **Fase 5 - Portal Corporativo (puede iniciar estructura base en paralelo con Fase 3):**
-   - Crear `OpenToWork.CorporateAPI` (puerto 5002, JWT independiente)
-   - Crear `OpenToWork.CorporateWEB` (puerto 5102)
-   - Entidades: `COCompany`, `COSubscription`, `COSearchHistory`, `COCandidateView`
-   - Registro de empresas + wizard de empresa
-   - Sistema de suscripciones (planes: Basic, Pro, Enterprise)
-   - Busqueda avanzada con filtros por score (requiere Fase 3 terminada)
-   - Vista de perfiles evaluados con checkmarks
-   - Ranking automatico de candidatos por compatibilidad
-   - Reportes avanzados
+3. **Fase 5 - Portal Corporativo** (nota 31-Ago de Iluna: no hacen falta proyectos `CorporateAPI`/`CorporateWEB` separados, el portal ya vive en `OpenToWork.WEB` - items de infraestructura de abajo obsoletos):
+   - ~~Crear `OpenToWork.CorporateAPI` (puerto 5002, JWT independiente)~~ — obsoleto, ver nota
+   - ~~Crear `OpenToWork.CorporateWEB` (puerto 5102)~~ — obsoleto, ver nota
+   - Entidad `COCompany` — ya cubierta por `PTCompany` (Registro/Login/Dashboard de empresa funcionando)
+   - Entidades `COSubscription`/`COSearchHistory`/`COCandidateView` — pendientes
+   - Sistema de suscripciones (planes: Basic, Pro, Enterprise) — pendiente
+   - Busqueda avanzada con filtros por score — pendiente (`PTCandidateScore` ya existe desde Fase 3)
+   - Vista de perfiles evaluados con checkmarks — pendiente
+   - [x] Ranking automatico de candidatos por compatibilidad — `CompatibilityService`, sub-fase 3.4/3.8 (Dsiezar, 01-Sep)
+   - Reportes avanzados — pendiente
    - **Validacion: ejecutar CorporateAPI + CorporateWEB, verificar pantallas funcionen**
    - **Validacion: comprobar patron de diseno One UI consistente**
 
@@ -795,15 +789,15 @@ Antes de marcar cualquier fase como completada, se debe validar:
 ### Estado actual del proyecto
 
 - **Fase 1 (Fundacion):** COMPLETADA
-- **Fase 2 (Portal de Candidatos):** 80% completada (Iluna) — funcional pero pendiente de pulido UI/UX y validacion de pantallas
-- **Fase 3 (Motor de Evaluacion y Scoring):** el checklist original (ValidationService/ScoringService automaticos) sigue pendiente, pero Iluna ya construyo un **Pipeline de Reclutamiento manual** (21-Ago) que cubre el objetivo de negocio con otra arquitectura — ver nota en la seccion "Fases del Proyecto"
-- **Fase 4 (Portal Administrativo):** 85% completada (Dsiezar) + Pipeline de Reclutamiento completo (Iluna, 21-Ago: consola de candidatos, kanban, checklist de investigacion, evaluaciones tecnicas, entrevistas culturales, score general) — faltan gestion de roles y 4 items de deuda tecnica de Dsiezar
-- **Fase 5 (Portal Corporativo):** Pendiente — la estructura base puede iniciar en paralelo con Fase 3
+- **Fase 2 (Portal de Candidatos):** COMPLETADA
+- **Fase 3 (Motor de Evaluacion y Scoring):** COMPLETADA (Dsiezar, 01-Sep-2026) — las 8 sub-fases del plan obligatorio de Iluna, en la rama `dsiezar-fase-3` (pusheada, pendiente de PR/revision). El **Pipeline de Reclutamiento manual** de Iluna (21-Ago) sigue activo en paralelo, ver nota en la seccion "Fases del Proyecto"
+- **Fase 4 (Portal Administrativo):** COMPLETADA — Dsiezar (roles + deuda tecnica, 29-Ago; verificaciones manuales, 01-Sep) + Pipeline de Reclutamiento completo (Iluna, 21-Ago: consola de candidatos, kanban, checklist de investigacion, evaluaciones tecnicas, entrevistas culturales, score general)
+- **Fase 5 (Portal Corporativo):** Parcial — estructura base + shortlist/scorecard (Fase 3) ya funcionan; falta suscripciones y busqueda avanzada por score
 - **Fases 6-8:** Pendientes
 
 ### Indicaciones para continuar
 
-1. **Culminar las fases pendientes en orden de prioridad.** Fase 3 primero, despues completar Fase 4, luego Fase 5.
+1. **Culminar las fases pendientes en orden de prioridad.** Fase 5 (suscripciones, busqueda por score), despues Fase 6/7, luego Fase 8 (testing/despliegue).
 2. **No avanzar a la siguiente fase hasta validar que las pantallas funcionen correctamente.** Ejecutar API + WEB y verificar en navegador con datos reales.
 3. **Validar que se cumpla el patron de diseno solicitado** (Samsung One UI: squircles, pill buttons, Bento Grid, temas consistentes, espaciado uniforme).
 4. **Mejorar todo lo que sea posible para verse mas profesional.** Cada fase debe entregar una UI pulida, no solo funcional.
@@ -1411,6 +1405,21 @@ Pruebas totales: 44
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-01 — Fase 3 completa: Motor de Evaluación y Scoring Automático, 8 sub-fases (Dsiezar)
+
+Se completó Fase 3 de punta a punta siguiendo el plan obligatorio de Iluna (`a340397`), sub-fase por sub-fase en orden estricto, con las preguntas de cada una respondidas y documentadas **antes** de escribir código. Detalle completo por sub-fase en [`docs/dsiezar/fase-3-sub1.md`](docs/dsiezar/fase-3-sub1.md) a [`fase-3-sub8.md`](docs/dsiezar/fase-3-sub8.md). Rama `dsiezar-fase-3` (8 commits, `e746f21`..`85bf4ea`), pusheada a origin, pendiente de PR/revisión de Iluna.
+
+- **3.1 — Entidades + migración:** `PTCandidateScore`, `PTJobMatchScore`, `PTVerification`, `PTCandidateReference`, `PTSkillTest`, `PTCandidateTestResult`, todas con FK a `PT_CandidateId` (no `SCUserId`).
+- **3.2 — `ValidationService`:** verificación automática de LinkedIn/portafolio (formato + alcanzabilidad HTTP) y coherencia cronológica del CV (gaps, saltos laborales, solapamientos); identidad queda como stub documentado (`PTCandidate` no tiene campo de documento todavía).
+- **3.3 — `ScoringService`:** los 4 índices del Candidate Score (Estabilidad/Confiabilidad/Evidencia/Compatibilidad) + `OverallScore` ponderado, recalculado automáticamente en cada edición de perfil/experiencia/educación/CV.
+- **3.4 — `CompatibilityService`:** Job Match Score por par candidato-vacante (skills/experiencia/ubicación — educación e idioma quedan fuera por falta de campos estructurados), shortlist rankeado, admin-driven (no automático).
+- **3.5 — Referencias laborales:** alta desde el perfil, link público con token (sin SMTP, mismo patrón que el reset de contraseña), feedback y verificación automática al responder.
+- **3.6 — Retos técnicos:** banco de preguntas multiple-choice, intento con timer server-side, anti-cheat básico, CRUD admin.
+- **3.7 — Estado "Verificado TD":** calculado en vivo (nunca persistido) a partir de score + verificaciones + referencias, sin necesitar tabla ni job nuevo.
+- **3.8 — UI en los 3 portales:** dashboard del candidato (4 índices + badge), gestión de scores y verificaciones manuales en el admin, banco de retos admin con preview, cola de shortlist, y shortlist + scorecard configurable en el portal de empresa. De paso se agregó `PTVacancy.WeightsConfig` (no existía un lugar propio para que la empresa configure pesos) y se corrigió un bug real de redirección durante el prerender estático de Blazor Server.
+
+Todo verificado end-to-end contra MySQL real (no solo compilado) en cada sub-fase — la 3.8 además en navegador real contra los 3 portales corriendo en simultáneo. Con esto, Fase 4 queda 100% completa (los 2 items que esperaban a Fase 3 ya están resueltos) y Fase 5 desbloquea shortlist/scorecard/ranking por compatibilidad.
 
 ### Sesión 2026-08-29 — Cierre de Fase 4: gestión de roles + 4 items de deuda técnica (Dsiezar)
 
