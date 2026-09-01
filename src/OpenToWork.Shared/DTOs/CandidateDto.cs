@@ -17,8 +17,12 @@ public class CandidateDto
     public string? Country { get; set; }
     public string? City { get; set; }
     public string? Address { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public int? YearsOfExperience { get; set; }
     public bool WizardCompleted { get; set; }
     public int WizardStep { get; set; }
+    public List<CandidateExperienceDto> Experiences { get; set; } = new();
+    public List<CandidateEducationDto> Educations { get; set; } = new();
 }
 
 public class UpdateCandidateWizardDto

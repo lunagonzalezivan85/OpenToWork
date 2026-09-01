@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Components.Forms;
 using OpenToWork.Shared.DTOs;
 using OpenToWork.SharedUI.Services;
 
@@ -309,6 +310,31 @@ public class ApiAuthService
         await SetAuthHeaderAsync();
         var response = await _httpClient.DeleteAsync($"api/profile/certification/{id}");
         return response.IsSuccessStatusCode;
+    }
+
+    public async Task<UploadCvResponseDto?> UploadCvAsync(IBrowserFile file)
+    {
+        await SetAuthHeaderAsync();
+
+        using var content = new MultipartFormDataContent();
+        using var fileStream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+        var fileContent = new StreamContent(fileStream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+        content.Add(fileContent, "file", file.Name);
+
+        var response = await _httpClient.PostAsync("api/profile/upload-cv", content);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<UploadCvResponseDto>();
+    }
+
+    public async Task<CandidateProfileDto?> ApplyCvAsync(string cvUrl, CvParseResultDto parsedData)
+    {
+        await SetAuthHeaderAsync();
+
+        var request = new ApplyCvRequestDto { CvUrl = cvUrl, ParsedData = parsedData };
+        var response = await _httpClient.PostAsJsonAsync("api/profile/apply-cv", request);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateProfileDto>();
     }
 
     public async Task<List<AlertDto>> GetAlertsAsync()

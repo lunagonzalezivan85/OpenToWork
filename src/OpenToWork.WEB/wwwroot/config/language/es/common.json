@@ -161,6 +161,7 @@
         "goTo": "Ir a configurar"
     },
     "wizard": {
+        "step0": "CV",
         "step1": "Búsqueda",
         "step2": "Experiencia",
         "step3": "Habilidades",
@@ -168,6 +169,8 @@
         "step5": "Educación",
         "step6": "Resumen",
         "step7": "Perfil",
+        "step0Title": "Sube tu CV",
+        "step0Desc": "Sube tu currículum en PDF y extraeremos automáticamente tus datos para ahorrarte tiempo",
         "step1Title": "Cuéntanos qué estás buscando",
         "step1Desc": "Define los puestos que quieres y tu modalidad de trabajo preferida",
         "step2Title": "Experiencia Laboral",

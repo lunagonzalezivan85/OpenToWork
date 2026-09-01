@@ -221,7 +221,7 @@
     private static int CalculateProfileCompletion(CandidateDto c)
     {
         int filled = 0;
-        int total = 10;
+        int total = 15;
         if (!string.IsNullOrEmpty(c.FirstName)) filled++;
         if (!string.IsNullOrEmpty(c.LastName)) filled++;
         if (!string.IsNullOrEmpty(c.Identification)) filled++;
@@ -231,8 +231,13 @@
         if (!string.IsNullOrEmpty(c.Summary)) filled++;
         if (!string.IsNullOrEmpty(c.Country)) filled++;
         if (!string.IsNullOrEmpty(c.City)) filled++;
+        if (!string.IsNullOrEmpty(c.CvUrl)) filled++;
+        if (!string.IsNullOrEmpty(c.LinkedInUrl)) filled++;
+        if (c.YearsOfExperience.HasValue) filled++;
+        if (c.Experiences != null && c.Experiences.Count > 0) filled++;
+        if (c.Educations != null && c.Educations.Count > 0) filled++;
         if (c.WizardCompleted) filled++;
-        return (int)((double)filled / total * 100);
+        return (int)Math.Round((double)filled / total * 100);
     }
 
     private void GoToWizard() => Nav.NavigateTo("/profile");

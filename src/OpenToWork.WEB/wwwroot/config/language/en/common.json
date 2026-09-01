@@ -161,6 +161,7 @@
         "goTo": "Go to settings"
     },
     "wizard": {
+        "step0": "CV",
         "step1": "Search",
         "step2": "Experience",
         "step3": "Skills",
@@ -168,6 +169,8 @@
         "step5": "Education",
         "step6": "Summary",
         "step7": "Profile",
+        "step0Title": "Upload your CV",
+        "step0Desc": "Upload your resume in PDF and we'll automatically extract your data to save you time",
         "step1Title": "Tell us what you're looking for",
         "step1Desc": "Define the positions you want and your preferred work mode",
         "step2Title": "Work Experience",

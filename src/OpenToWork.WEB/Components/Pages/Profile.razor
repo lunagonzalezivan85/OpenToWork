@@ -1,6 +1,7 @@
 @page "/profile"
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
+@using Microsoft.AspNetCore.Components.Forms
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
 @inject LocalStorageService LocalStorage
@@ -47,6 +48,51 @@
                 <!-- Step Content -->
                 <div class="wizard-content">
                     @if (CurrentStep == 0)
+                    {
+                        <h2 class="wizard-step-title">@Lang.T("common.wizard.step0Title")</h2>
+                        <p class="wizard-step-desc">@Lang.T("common.wizard.step0Desc")</p>
+
+                        <div class="wizard-cv-upload-zone">
+                            <div class="wizard-cv-upload">
+                                <InputFile OnChange="OnCvFileSelected" accept="application/pdf" class="wizard-cv-input" />
+                                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="UploadCv" disabled="@(!IsCvSelected || IsUploadingCv)">
+                                    @if (IsUploadingCv)
+                                    {
+                                        <span>@Lang.T("profile.cv.uploading")</span>
+                                    }
+                                    else
+                                    {
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="17 8 12 3 7 8" />
+                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        </svg>
+                                        @Lang.T("profile.cv.upload")
+                                    }
+                                </button>
+                            </div>
+                            @if (!string.IsNullOrEmpty(ProfileData.CvUrl))
+                            {
+                                <a href="@ProfileData.CvUrl" target="_blank" class="wizard-cv-link">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <path d="M14 2v6h6" />
+                                    </svg>
+                                    @Lang.T("profile.cv.viewCurrent")
+                                </a>
+                            }
+                            @if (CvUploadError != null)
+                            {
+                                <span class="wizard-cv-error">@CvUploadError</span>
+                            }
+                            @if (CvUploadSuccess)
+                            {
+                                <span class="wizard-cv-success">@Lang.T("profile.cv.success")</span>
+                            }
+                        </div>
+                    }
+
+                    @if (CurrentStep == 1)
                     {
                         <h2 class="wizard-step-title">@Lang.T("common.wizard.step1Title")</h2>
                         <p class="wizard-step-desc">@Lang.T("common.wizard.step1Desc")</p>
@@ -152,7 +198,7 @@
                         </div>
                     }
 
-                    @if (CurrentStep == 1)
+                    @if (CurrentStep == 2)
                     {
                         <h2 class="wizard-step-title">@Lang.T("common.wizard.step2Title")</h2>
                         <p class="wizard-step-desc">@Lang.T("common.wizard.step2Desc")</p>
@@ -229,7 +275,7 @@
                         }
                     }
 
-                    @if (CurrentStep == 2)
+                    @if (CurrentStep == 3)
                     {
                         <h2 class="wizard-step-title">@Lang.T("common.wizard.step3Title")</h2>
                         <p class="wizard-step-desc">@Lang.T("common.wizard.step3Desc")</p>
@@ -266,7 +312,7 @@
                         </div>
                     }
 
-                    @if (CurrentStep == 3)
+                    @if (CurrentStep == 4)
                     {
                         <h2 class="wizard-step-title">@Lang.T("common.wizard.step4Title")</h2>
                         <p class="wizard-step-desc">@Lang.T("common.wizard.step4Desc")</p>
@@ -321,7 +367,7 @@
                         }
                     }
 
-                    @if (CurrentStep == 4)
+                    @if (CurrentStep == 5)
                     {
                         <h2 class="wizard-step-title">@Lang.T("common.wizard.step5Title")</h2>
                         <p class="wizard-step-desc">@Lang.T("common.wizard.step5Desc")</p>
@@ -390,7 +436,7 @@
                         }
                     }
 
-                    @if (CurrentStep == 5)
+                    @if (CurrentStep == 6)
                     {
                         <h2 class="wizard-step-title">@Lang.T("common.wizard.step6Title")</h2>
                         <p class="wizard-step-desc">@Lang.T("common.wizard.step6Desc")</p>
@@ -409,7 +455,7 @@
                         </div>
                     }
 
-                    @if (CurrentStep == 6)
+                    @if (CurrentStep == 7)
                     {
                         <h2 class="wizard-step-title">@Lang.T("common.wizard.step7Title")</h2>
                         <p class="wizard-step-desc">@Lang.T("common.wizard.step7Desc")</p>
@@ -450,9 +496,22 @@
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                         <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
                                     </svg>
-                                    CV (URL)
+                                    CV
                                 </label>
-                                <input class="wizard-input" @bind="ProfileData.CvUrl" placeholder="https://...cv.pdf" />
+                                @if (!string.IsNullOrEmpty(ProfileData.CvUrl))
+                                {
+                                    <a href="@ProfileData.CvUrl" target="_blank" class="wizard-cv-link">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <path d="M14 2v6h6" />
+                                        </svg>
+                                        @Lang.T("profile.cv.viewCurrent")
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="wizard-cv-notset">@Lang.T("profile.cv.notUploaded")</span>
+                                }
                             </div>
                         </div>
 
@@ -463,9 +522,38 @@
 
                         <div class="wizard-form-grid wizard-form-grid--2">
                             <div class="wizard-form-field">
+                                <label class="wizard-field-label">@Lang.T("profile.fields.phone")</label>
+                                <input class="wizard-input" @bind="ProfileData.Phone" placeholder="Ej: +503 7777-7777" />
+                            </div>
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">@Lang.T("profile.fields.identification")</label>
+                                <input class="wizard-input" @bind="ProfileData.Identification" placeholder="Ej: 12345678-9" />
+                            </div>
+                        </div>
+
+                        <div class="wizard-form-grid wizard-form-grid--2">
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">@Lang.T("profile.fields.birthDate")</label>
+                                <input class="wizard-input" type="date" @bind="ProfileData.BirthDate" />
+                            </div>
+                            <div class="wizard-form-field">
                                 <label class="wizard-field-label">@Lang.T("profile.fields.yearsExperience")</label>
                                 <input class="wizard-input" type="number" @bind="ProfileData.YearsOfExperience" />
                             </div>
+                        </div>
+
+                        <div class="wizard-form-grid wizard-form-grid--2">
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">@Lang.T("profile.fields.country")</label>
+                                <input class="wizard-input" @bind="ProfileData.Country" placeholder="Ej: El Salvador" />
+                            </div>
+                            <div class="wizard-form-field">
+                                <label class="wizard-field-label">@Lang.T("profile.fields.city")</label>
+                                <input class="wizard-input" @bind="ProfileData.City" placeholder="Ej: San Salvador" />
+                            </div>
+                        </div>
+
+                        <div class="wizard-form-grid wizard-form-grid--2">
                             <div class="wizard-form-field">
                                 <label class="wizard-field-label">@Lang.T("profile.fields.availability")</label>
                                 <select class="wizard-input" @bind="ProfileData.Availability">
@@ -654,6 +742,211 @@
     }
 </div>
 
+<!-- CV Modal -->
+@if (ShowCvModal)
+{
+    <div class="cv-modal-overlay">
+        <div class="cv-modal">
+            @if (CvModalState == "uploading")
+            {
+                <div class="cv-modal-loading">
+                    <div class="cv-modal-spinner"></div>
+                    <h3 class="cv-modal-title">@Lang.T("profile.cv.uploading")</h3>
+                </div>
+            }
+            else if (CvModalState == "analyzing")
+            {
+                <div class="cv-modal-loading">
+                    <div class="cv-modal-spinner"></div>
+                    <h3 class="cv-modal-title">@Lang.T("profile.cv.analyzing")</h3>
+                    <p class="cv-modal-desc">@Lang.T("profile.cv.analyzingDesc")</p>
+                </div>
+            }
+            else if (CvModalState == "results" && CvParseResult != null)
+            {
+                <div class="cv-modal-header">
+                    <h3 class="cv-modal-title">@Lang.T("profile.cv.resultsTitle")</h3>
+                    <button class="cv-modal-close" @onclick="CancelCvApply">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="cv-modal-body">
+                    @if (CvParseResult.Experiences.Count == 0 && CvParseResult.Educations.Count == 0
+                         && CvParseResult.Certifications.Count == 0 && string.IsNullOrEmpty(CvParseResult.Title)
+                         && string.IsNullOrEmpty(CvParseResult.Summary))
+                    {
+                        <p class="cv-modal-empty">@Lang.T("profile.cv.noData")</p>
+                    }
+                    else
+                    {
+                        @if (!string.IsNullOrEmpty(CvParseResult.Title) || !string.IsNullOrEmpty(CvParseResult.Summary))
+                        {
+                            <div class="cv-result-section">
+                                <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionProfile")</h4>
+                                @if (!string.IsNullOrEmpty(CvParseResult.Title))
+                                {
+                                    <p class="cv-result-item"><strong>@Lang.T("profile.fields.title"):</strong> @CvParseResult.Title</p>
+                                }
+                                @if (!string.IsNullOrEmpty(CvParseResult.Summary))
+                                {
+                                    <p class="cv-result-item cv-result-summary">@CvParseResult.Summary</p>
+                                }
+                                @if (CvParseResult.YearsOfExperience.HasValue)
+                                {
+                                    <p class="cv-result-item"><strong>@Lang.T("profile.fields.yearsExperience"):</strong> @CvParseResult.YearsOfExperience</p>
+                                }
+                                @if (!string.IsNullOrEmpty(CvParseResult.City) || !string.IsNullOrEmpty(CvParseResult.Country))
+                                {
+                                    <p class="cv-result-item"><strong>@Lang.T("profile.cv.location"):</strong> @(CvParseResult.City)@(string.IsNullOrEmpty(CvParseResult.Country) ? "" : $", {CvParseResult.Country}")</p>
+                                }
+                                @if (!string.IsNullOrEmpty(CvParseResult.LinkedInUrl))
+                                {
+                                    <p class="cv-result-item"><strong>LinkedIn:</strong> @CvParseResult.LinkedInUrl</p>
+                                }
+                            </div>
+                        }
+
+                        @if (CvParseResult.Skills.Count > 0)
+                        {
+                            <div class="cv-result-section">
+                                <h4 class="cv-result-section-title">@Lang.T("common.wizard.skills")</h4>
+                                <div class="cv-result-tags">
+                                    @foreach (var skill in CvParseResult.Skills)
+                                    {
+                                        <span class="cv-result-tag">@skill</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (CvParseResult.Experiences.Count > 0)
+                        {
+                            <div class="cv-result-section">
+                                <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionExperience") (@CvParseResult.Experiences.Count)</h4>
+                                @foreach (var exp in CvParseResult.Experiences)
+                                {
+                                    <div class="cv-result-card">
+                                        <p class="cv-result-card-title">@exp.JobTitle</p>
+                                        <p class="cv-result-card-subtitle">@exp.CompanyName</p>
+                                        @if (!string.IsNullOrEmpty(exp.StartDate) || !string.IsNullOrEmpty(exp.EndDate))
+                                        {
+                                            <p class="cv-result-card-meta">@(exp.StartDate) - @(exp.IsCurrentJob ? Lang.T("profile.experience.present") : exp.EndDate)</p>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (CvParseResult.Educations.Count > 0)
+                        {
+                            <div class="cv-result-section">
+                                <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionEducation") (@CvParseResult.Educations.Count)</h4>
+                                @foreach (var edu in CvParseResult.Educations)
+                                {
+                                    <div class="cv-result-card">
+                                        <p class="cv-result-card-title">@edu.Degree</p>
+                                        <p class="cv-result-card-subtitle">@edu.Institution</p>
+                                        @if (!string.IsNullOrEmpty(edu.FieldOfStudy))
+                                        {
+                                            <p class="cv-result-card-meta">@edu.FieldOfStudy</p>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (CvParseResult.Certifications.Count > 0)
+                        {
+                            <div class="cv-result-section">
+                                <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionCertifications") (@CvParseResult.Certifications.Count)</h4>
+                                @foreach (var cert in CvParseResult.Certifications)
+                                {
+                                    <div class="cv-result-card">
+                                        <p class="cv-result-card-title">@cert.Name</p>
+                                        @if (!string.IsNullOrEmpty(cert.Issuer))
+                                        {
+                                            <p class="cv-result-card-subtitle">@cert.Issuer</p>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (CvParseResult.Languages.Count > 0)
+                        {
+                            <div class="cv-result-section">
+                                <h4 class="cv-result-section-title">@Lang.T("common.wizard.step4") (@CvParseResult.Languages.Count)</h4>
+                                <div class="cv-result-tags">
+                                    @foreach (var lang in CvParseResult.Languages)
+                                    {
+                                        <span class="cv-result-tag">@(lang.Name)@(string.IsNullOrEmpty(lang.Level) ? "" : $" ({lang.Level})")</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div class="cv-modal-footer">
+                    <p class="cv-modal-confirm-text">@Lang.T("profile.cv.confirmReplace")</p>
+                    <div class="cv-modal-footer-buttons">
+                        <button class="ot-btn ot-btn--secondary" @onclick="CancelCvApply">
+                            @Lang.T("profile.cv.keepExisting")
+                        </button>
+                        <button class="ot-btn ot-btn--primary" @onclick="ConfirmCvApply">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                            @Lang.T("profile.cv.replaceData")
+                        </button>
+                    </div>
+                </div>
+            }
+            else if (CvModalState == "applying")
+            {
+                <div class="cv-modal-loading">
+                    <div class="cv-modal-spinner"></div>
+                    <h3 class="cv-modal-title">@Lang.T("profile.cv.applyingData")</h3>
+                </div>
+            }
+            else if (CvModalState == "done")
+            {
+                <div class="cv-modal-loading">
+                    <div class="cv-modal-success-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="40" height="40">
+                            <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                    </div>
+                    <h3 class="cv-modal-title">@Lang.T("profile.cv.appliedTitle")</h3>
+                    <p class="cv-modal-desc">@Lang.T("profile.cv.appliedDesc")</p>
+                    <button class="ot-btn ot-btn--primary" @onclick="CloseCvModal" style="margin-top: 0.5rem;">
+                        @Lang.T("common.buttons.ok")
+                    </button>
+                </div>
+            }
+            else if (CvModalState == "error")
+            {
+                <div class="cv-modal-loading">
+                    <div class="cv-modal-error-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="40" height="40">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M15 9l-6 6M9 9l6 6" />
+                        </svg>
+                    </div>
+                    <h3 class="cv-modal-title">@Lang.T("profile.cv.errorTitle")</h3>
+                    <p class="cv-modal-desc">@CvUploadError</p>
+                    <button class="ot-btn ot-btn--primary" @onclick="CloseCvModal" style="margin-top: 0.5rem;">
+                        @Lang.T("common.buttons.ok")
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
 @code {
     private CandidateProfileDto? ProfileData { get; set; }
     private int CurrentStep { get; set; } = 0;
@@ -676,8 +969,20 @@
     private CreateExperienceDto NewExp { get; set; } = new();
     private CreateEducationDto NewEdu { get; set; } = new();
 
+    // CV Upload
+    private IBrowserFile? SelectedCvFile { get; set; }
+    private bool IsCvSelected { get; set; }
+    private bool IsUploadingCv { get; set; }
+    private string? CvUploadError { get; set; }
+    private bool CvUploadSuccess { get; set; }
+    private bool ShowCvModal { get; set; }
+    private string CvModalState { get; set; } = "";
+    private CvParseResultDto? CvParseResult { get; set; }
+    private string? PendingCvUrl { get; set; }
+
     private List<string> WizardSteps => new()
     {
+        Lang.T("common.wizard.step0"),
         Lang.T("common.wizard.step1"),
         Lang.T("common.wizard.step2"),
         Lang.T("common.wizard.step3"),
@@ -841,7 +1146,12 @@
             Availability = ProfileData.Availability,
             WorkAuthorization = ProfileData.WorkAuthorization,
             IsProfilePublic = ProfileData.IsProfilePublic,
-            CvUrl = ProfileData.CvUrl
+            CvUrl = ProfileData.CvUrl,
+            Phone = ProfileData.Phone,
+            Identification = ProfileData.Identification,
+            BirthDate = ProfileData.BirthDate,
+            Country = ProfileData.Country,
+            City = ProfileData.City
         };
         ProfileData = await AuthApi.UpdateProfileAsync(dto);
     }
@@ -849,6 +1159,142 @@
     private async Task FinishWizard()
     {
         await SaveProfileData();
+    }
+
+    private void OnCvFileSelected(InputFileChangeEventArgs e)
+    {
+        CvUploadError = null;
+        CvUploadSuccess = false;
+
+        if (e.File == null) return;
+
+        if (e.File.ContentType != "application/pdf")
+        {
+            CvUploadError = Lang.T("profile.cv.onlyPdf");
+            IsCvSelected = false;
+            return;
+        }
+
+        if (e.File.Size > 10 * 1024 * 1024)
+        {
+            CvUploadError = Lang.T("profile.cv.tooLarge");
+            IsCvSelected = false;
+            return;
+        }
+
+        SelectedCvFile = e.File;
+        IsCvSelected = true;
+    }
+
+    private async Task UploadCv()
+    {
+        if (SelectedCvFile == null || ProfileData == null) return;
+
+        IsUploadingCv = true;
+        CvUploadError = null;
+        CvUploadSuccess = false;
+        ShowCvModal = true;
+        CvModalState = "uploading";
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(600);
+            CvModalState = "analyzing";
+            StateHasChanged();
+
+            var result = await AuthApi.UploadCvAsync(SelectedCvFile);
+            if (result != null)
+            {
+                CvParseResult = result.ParsedData;
+                PendingCvUrl = result.CvUrl;
+                ProfileData.CvUrl = result.CvUrl;
+                IsCvSelected = false;
+                SelectedCvFile = null;
+                IsUploadingCv = false;
+                CvModalState = "results";
+            }
+            else
+            {
+                CvUploadError = Lang.T("profile.cv.error");
+                IsUploadingCv = false;
+                CvModalState = "error";
+            }
+        }
+        catch (Exception)
+        {
+            CvUploadError = Lang.T("profile.cv.error");
+            IsUploadingCv = false;
+            CvModalState = "error";
+        }
+    }
+
+    private async Task ConfirmCvApply()
+    {
+        if (CvParseResult == null || string.IsNullOrEmpty(PendingCvUrl)) return;
+
+        CvModalState = "applying";
+        StateHasChanged();
+
+        try
+        {
+            var updated = await AuthApi.ApplyCvAsync(PendingCvUrl, CvParseResult);
+            if (updated != null)
+            {
+                ProfileData = updated;
+
+                if (CvParseResult.Skills.Count > 0)
+                {
+                    Skills = CvParseResult.Skills.Take(10).ToList();
+                }
+
+                if (CvParseResult.Languages.Count > 0)
+                {
+                    Languages = CvParseResult.Languages.Select(l => new LanguageItem
+                    {
+                        Name = l.Name,
+                        Level = MapLanguageLevel(l.Level)
+                    }).ToList();
+                }
+
+                CvUploadSuccess = true;
+                CvModalState = "done";
+            }
+            else
+            {
+                CvUploadError = Lang.T("profile.cv.error");
+                CvModalState = "error";
+            }
+        }
+        catch (Exception)
+        {
+            CvUploadError = Lang.T("profile.cv.error");
+            CvModalState = "error";
+        }
+    }
+
+    private static int MapLanguageLevel(string? level)
+    {
+        if (string.IsNullOrEmpty(level)) return 1;
+        var l = level.ToLowerInvariant();
+        if (l.Contains("native") || l.Contains("nativo")) return 4;
+        if (l.Contains("advanced") || l.Contains("avanzado")) return 3;
+        if (l.Contains("intermediate") || l.Contains("intermedio")) return 2;
+        return 1;
+    }
+
+    private void CancelCvApply()
+    {
+        ShowCvModal = false;
+        CvModalState = "";
+        CvParseResult = null;
+        PendingCvUrl = null;
+    }
+
+    private void CloseCvModal()
+    {
+        ShowCvModal = false;
+        CvModalState = "";
     }
 
     private static string GetInitials(string name)

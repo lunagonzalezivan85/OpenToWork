@@ -15,4 +15,5 @@ public interface IProfileService
     Task<CandidateCertificationDto> AddCertificationAsync(Guid userId, CreateCertificationDto dto);
     Task<CandidateCertificationDto?> UpdateCertificationAsync(Guid certificationId, UpdateCertificationDto dto, Guid userId);
     Task<bool> DeleteCertificationAsync(Guid certificationId, Guid userId);
+    Task<CandidateProfileDto?> ApplyCvDataAsync(Guid userId, CvParseResultDto parsedData, string cvUrl);
 }

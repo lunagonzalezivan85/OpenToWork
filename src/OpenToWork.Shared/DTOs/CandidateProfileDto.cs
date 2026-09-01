@@ -12,6 +12,11 @@ public class UpdateCandidateProfileDto
     public bool? IsProfilePublic { get; set; }
     public string? CvUrl { get; set; }
     public string? ProfilePictureUrl { get; set; }
+    public string? Phone { get; set; }
+    public string? Identification { get; set; }
+    public DateTime? BirthDate { get; set; }
+    public string? Country { get; set; }
+    public string? City { get; set; }
 }
 
 public class CandidateProfileDto

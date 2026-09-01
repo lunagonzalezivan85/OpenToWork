@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenToWork.Core.Interfaces;
+using OpenToWork.Core.Services;
 using OpenToWork.Shared.DTOs;
 
 namespace OpenToWork.API.Controllers;
@@ -11,10 +12,14 @@ namespace OpenToWork.API.Controllers;
 public class ProfileController : ControllerBase
 {
     private readonly IProfileService _profileService;
+    private readonly ICvParserService _cvParserService;
+    private readonly IWebHostEnvironment _env;
 
-    public ProfileController(IProfileService profileService)
+    public ProfileController(IProfileService profileService, ICvParserService cvParserService, IWebHostEnvironment env)
     {
         _profileService = profileService;
+        _cvParserService = cvParserService;
+        _env = env;
     }
 
     [HttpGet]
@@ -125,6 +130,69 @@ public class ProfileController : ControllerBase
 
         var deleted = await _profileService.DeleteCertificationAsync(id, userId.Value);
         return deleted ? NoContent() : NotFound();
+    }
+
+    [HttpPost("upload-cv")]
+    [RequestSizeLimit(10_000_000)]
+    public async Task<IActionResult> UploadCv(IFormFile file)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded");
+
+        var allowedTypes = new[] { "application/pdf" };
+        if (!allowedTypes.Contains(file.ContentType))
+            return BadRequest("Only PDF files are allowed");
+
+        if (file.Length > 10_000_000)
+            return BadRequest("File size must be less than 10MB");
+
+        var uploadsDir = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads", "cv");
+        Directory.CreateDirectory(uploadsDir);
+
+        var fileName = $"cv_{userId.Value}_{DateTime.UtcNow:yyyyMMddHHmmss}.pdf";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var cvUrl = $"/uploads/cv/{fileName}";
+
+        byte[] fileBytes;
+        using (var ms = new MemoryStream())
+        {
+            await file.CopyToAsync(ms);
+            fileBytes = ms.ToArray();
+        }
+
+        CvParseResultDto? parsedData = null;
+        try
+        {
+            parsedData = await _cvParserService.ParseCvAsync(fileBytes, file.FileName, file.ContentType);
+        }
+        catch (Exception ex)
+        {
+            return Ok(new UploadCvResponseDto { CvUrl = cvUrl, ParsedData = new CvParseResultDto() });
+        }
+
+        return Ok(new UploadCvResponseDto { CvUrl = cvUrl, ParsedData = parsedData });
+    }
+
+    [HttpPost("apply-cv")]
+    public async Task<IActionResult> ApplyCv([FromBody] ApplyCvRequestDto request)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (string.IsNullOrEmpty(request.CvUrl) || request.ParsedData == null)
+            return BadRequest("Invalid CV data");
+
+        var updatedProfile = await _profileService.ApplyCvDataAsync(userId.Value, request.ParsedData, request.CvUrl);
+        return Ok(updatedProfile);
     }
 
     private Guid? GetUserId()

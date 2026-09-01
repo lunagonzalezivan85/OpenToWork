@@ -45,6 +45,11 @@ public class ProfileService : IProfileService
         if (dto.IsProfilePublic.HasValue) candidate.IsProfilePublic = dto.IsProfilePublic.Value;
         if (dto.CvUrl != null) candidate.CvUrl = dto.CvUrl;
         if (dto.ProfilePictureUrl != null) candidate.ProfilePictureUrl = dto.ProfilePictureUrl;
+        if (dto.Phone != null) candidate.Phone = dto.Phone;
+        if (dto.Identification != null) candidate.Identification = dto.Identification;
+        if (dto.BirthDate.HasValue) candidate.BirthDate = dto.BirthDate;
+        if (dto.Country != null) candidate.Country = dto.Country;
+        if (dto.City != null) candidate.City = dto.City;
         candidate.UpdatedAt = DateTime.UtcNow;
         candidate.UpdatedBy = userId;
 
@@ -233,6 +238,190 @@ public class ProfileService : IProfileService
         certification.DeletedBy = userId;
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<CandidateProfileDto?> ApplyCvDataAsync(Guid userId, CvParseResultDto parsed, string cvUrl)
+    {
+        var candidate = await _context.PT_Candidates
+            .Include(c => c.Experiences)
+            .Include(c => c.Educations)
+            .Include(c => c.Certifications)
+            .Include(c => c.CandidateSkills)
+            .FirstOrDefaultAsync(c => c.SCUserId == userId && !c.IsDeleted);
+
+        if (candidate == null) return null;
+
+        candidate.CvUrl = cvUrl;
+        if (!string.IsNullOrEmpty(parsed.Title)) candidate.Title = parsed.Title;
+        if (!string.IsNullOrEmpty(parsed.Summary)) candidate.Summary = parsed.Summary;
+        if (!string.IsNullOrEmpty(parsed.City)) candidate.City = parsed.City;
+        if (!string.IsNullOrEmpty(parsed.Country)) candidate.Country = parsed.Country;
+        if (!string.IsNullOrEmpty(parsed.LinkedInUrl)) candidate.LinkedInUrl = parsed.LinkedInUrl;
+        if (!string.IsNullOrEmpty(parsed.PortfolioUrl)) candidate.PortfolioUrl = parsed.PortfolioUrl;
+        if (parsed.YearsOfExperience.HasValue) candidate.YearsOfExperience = parsed.YearsOfExperience;
+
+        if (parsed.Availability != null)
+        {
+            var availLower = parsed.Availability.ToLowerInvariant();
+            if (availLower.Contains("inmediata") || availLower.Contains("immediate"))
+                candidate.Availability = 0;
+            else if (availLower.Contains("dos semanas") || availLower.Contains("two weeks"))
+                candidate.Availability = 1;
+            else if (availLower.Contains("un mes") || availLower.Contains("one month"))
+                candidate.Availability = 2;
+            else if (availLower.Contains("no disponible") || availLower.Contains("not available"))
+                candidate.Availability = 3;
+        }
+
+        candidate.UpdatedAt = DateTime.UtcNow;
+        candidate.UpdatedBy = userId;
+
+        foreach (var exp in candidate.Experiences.Where(e => !e.IsDeleted))
+        {
+            exp.IsDeleted = true;
+            exp.DeletedAt = DateTime.UtcNow;
+            exp.DeletedBy = userId;
+        }
+
+        foreach (var edu in candidate.Educations.Where(e => !e.IsDeleted))
+        {
+            edu.IsDeleted = true;
+            edu.DeletedAt = DateTime.UtcNow;
+            edu.DeletedBy = userId;
+        }
+
+        foreach (var cert in candidate.Certifications.Where(c => !c.IsDeleted))
+        {
+            cert.IsDeleted = true;
+            cert.DeletedAt = DateTime.UtcNow;
+            cert.DeletedBy = userId;
+        }
+
+        foreach (var cs in candidate.CandidateSkills.Where(s => !s.IsDeleted))
+        {
+            cs.IsDeleted = true;
+            cs.DeletedAt = DateTime.UtcNow;
+            cs.DeletedBy = userId;
+        }
+
+        foreach (var exp in parsed.Experiences)
+        {
+            if (string.IsNullOrEmpty(exp.JobTitle) || string.IsNullOrEmpty(exp.CompanyName)) continue;
+
+            var startDate = TryParseDate(exp.StartDate) ?? DateTime.UtcNow;
+            var endDate = TryParseDate(exp.EndDate);
+
+            _context.PT_CandidateExperiences.Add(new PTCandidateExperience
+            {
+                PT_CandidateId = candidate.Id,
+                JobTitle = exp.JobTitle,
+                CompanyName = exp.CompanyName,
+                Description = exp.Description,
+                Location = exp.Location,
+                StartDate = startDate,
+                EndDate = exp.IsCurrentJob ? null : endDate,
+                IsCurrentJob = exp.IsCurrentJob,
+                CreatedBy = userId
+            });
+        }
+
+        foreach (var edu in parsed.Educations)
+        {
+            if (string.IsNullOrEmpty(edu.Institution) || string.IsNullOrEmpty(edu.Degree)) continue;
+
+            _context.PT_CandidateEducations.Add(new PTCandidateEducation
+            {
+                PT_CandidateId = candidate.Id,
+                Institution = edu.Institution,
+                Degree = edu.Degree,
+                FieldOfStudy = edu.FieldOfStudy,
+                StartDate = TryParseDate(edu.StartDate),
+                EndDate = edu.IsInProgress ? null : TryParseDate(edu.EndDate),
+                IsInProgress = edu.IsInProgress,
+                CreatedBy = userId
+            });
+        }
+
+        foreach (var cert in parsed.Certifications)
+        {
+            if (string.IsNullOrEmpty(cert.Name)) continue;
+
+            _context.PT_CandidateCertifications.Add(new PTCandidateCertification
+            {
+                PT_CandidateId = candidate.Id,
+                Name = cert.Name,
+                Issuer = cert.Issuer,
+                IssueDate = TryParseDate(cert.IssueDate),
+                ExpiryDate = TryParseDate(cert.ExpiryDate),
+                CreatedBy = userId
+            });
+        }
+
+        var newSkills = new List<PTSkill>();
+        foreach (var skillName in parsed.Skills)
+        {
+            if (string.IsNullOrWhiteSpace(skillName)) continue;
+
+            var existingSkill = await _context.PT_Skills.FirstOrDefaultAsync(s => s.Name.ToLower() == skillName.ToLower());
+            var skillId = existingSkill?.Id ?? Guid.Empty;
+
+            if (existingSkill == null)
+            {
+                var newSkill = new PTSkill { Name = skillName.Trim(), CreatedBy = userId };
+                _context.PT_Skills.Add(newSkill);
+                newSkills.Add(newSkill);
+            }
+            else
+            {
+                _context.PT_CandidateSkills.Add(new PTCandidateSkill
+                {
+                    PT_CandidateId = candidate.Id,
+                    PT_SkillId = skillId,
+                    CreatedBy = userId
+                });
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+        foreach (var newSkill in newSkills)
+        {
+            _context.PT_CandidateSkills.Add(new PTCandidateSkill
+            {
+                PT_CandidateId = candidate.Id,
+                PT_SkillId = newSkill.Id,
+                CreatedBy = userId
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        var updated = await _context.PT_Candidates
+            .Include(c => c.Experiences)
+            .Include(c => c.Educations)
+            .Include(c => c.Certifications)
+            .FirstOrDefaultAsync(c => c.Id == candidate.Id);
+
+        return updated != null ? MapToProfileDto(updated) : null;
+    }
+
+    private static DateTime? TryParseDate(string? dateStr)
+    {
+        if (string.IsNullOrEmpty(dateStr)) return null;
+
+        if (DateTime.TryParseExact(dateStr, "yyyy-MM", null, System.Globalization.DateTimeStyles.None, out var date))
+            return date;
+
+        if (DateTime.TryParseExact(dateStr, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var dateFull))
+            return dateFull;
+
+        if (DateTime.TryParse(dateStr, out var generalDate))
+            return generalDate;
+
+        if (int.TryParse(dateStr, out var year) && year > 1900 && year < 2100)
+            return new DateTime(year, 1, 1);
+
+        return null;
     }
 
     private static CandidateProfileDto MapToProfileDto(PTCandidate c) => new()
