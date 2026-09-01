@@ -293,9 +293,291 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - [x] i18n completo (es + en) con claves nuevas
 - [x] UI/UX: One UI, Bento Grid, Command-Driven, temas (navy/dark/light)
 
-### Fase 3: Motor de Evaluacion y Scoring - Pendiente (checklist original) / En progreso (via Pipeline de Reclutamiento)
+### Fase 3: Motor de Evaluacion y Scoring Automatico - Pendiente
 
-**Checklist original (automatizacion via ValidationService/ScoringService) — sigue sin implementarse:**
+> **⚠️ INSTRUCCION OBLIGATORIA PARA DARWIN (Dsiezar / IA):**
+>
+> Este es el plan oficial y obligatorio para construir el Motor de Scoring Automatico. **Darwin debe seguir este plan paso a paso, en el orden indicado.** Cada sub-fase genera preguntas que deben responderse ANTES de escribir codigo — las respuestas definen los algoritmos de calculo automatico.
+>
+> **Regla:** No se puede saltar sub-fases. Cada sub-fase debe estar 100% completada (entidades + servicio + endpoint + UI basica) antes de pasar a la siguiente. Al final de cada sub-fase, documentar en `docs/dsiezar/fase-3-subN.md` las decisiones tomadas.
+>
+> **Rama obligatoria:** `dsiezar-fase-3`
+
+#### Sub-fase 3.1: Entidades de Scoring + Migracion
+
+**Objetivo:** Crear el modelo de datos que soporta todos los calculos automaticos.
+
+**Entidades a crear:**
+
+- `PTCandidateScore` — score intrinseco del candidato
+  - `Id`, `PT_CandidateId` (FK), `StabilityIndex` (0-100), `ReliabilityIndex` (0-100), `EvidenceIndex` (0-100), `CompatibilityIndex` (0-100), `OverallScore` (0-100), `CalculatedAt` (DateTime), `Version` (int)
+- `PTJobMatchScore` — score por par candidato-vacante
+  - `Id`, `PT_CandidateId` (FK), `PT_VacancyId` (FK), `MatchPercentage` (0-100), `SkillsMatch` (int), `ExperienceMatch` (int), `EducationMatch` (int), `CalculatedAt`, `WeightsConfig` (JSON)
+- `PTVerification` — verificaciones automaticas
+  - `Id`, `PT_CandidateId` (FK), `Type` (enum: Identity=0, LinkedIn=1, Portfolio=2, CvCoherence=3, Education=4, Reference=5), `Status` (enum: Pending=0, InProgress=1, Verified=2, Failed=3), `VerifiedAt`, `Result` (JSON), `Score` (0-100)
+- `PTCandidateReference` — referencias laborales del candidato
+  - `Id`, `PT_CandidateId` (FK), `ContactName`, `CompanyName`, `Phone`, `Email`, `Relationship` (enum: Manager=0, Peer=1, Subordinate=2), `Status` (enum: Pending=0, Sent=1, Responded=2, Verified=3, Failed=4), `Rating` (1-5), `Feedback`
+- `PTSkillTest` — banco de retos tecnicos
+  - `Id`, `Category`, `Difficulty` (enum: Easy=0, Medium=1, Hard=2), `Title`, `Description`, `TimeLimit` (int minutos), `Questions` (JSON), `IsActive`
+- `PTCandidateTestResult` — resultados de retos
+  - `Id`, `PT_CandidateId` (FK), `PT_SkillTestId` (FK), `Score` (0-100), `TimeTaken` (int segundos), `CompletedAt`, `AntiCheatFlags` (int)
+
+**Migracion:** `ScoringEngine` — crea las 6 tablas con indices en `PT_CandidateId` y `PT_VacancyId`.
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub1.md`):**
+
+1. ¿El `OverallScore` se almacena como un campo calculado en la tabla, o se calcula on-the-fly cada vez que se consulta? ¿Por que?
+2. ¿Que estrategia se usa para el versionado (`Version`)? ¿Incremental por recalculo, o timestamp?
+3. ¿`PTJobMatchScore.WeightsConfig` que formato JSON debe tener? Definir el schema exacto.
+4. ¿Las verificaciones (`PTVerification`) se insertan automaticamente al crear un candidato, o se disparan bajo demanda?
+5. ¿`PTCandidateReference` tiene soft delete o se elimina fisicamente?
+6. ¿`PTSkillTest.Questions` que estructura JSON debe tener? ¿Multiple choice, codigo, o ambos?
+7. ¿Se necesita una entidad `PTScoreWeight` configurable por el admin, o los pesos van hardcodeados en el ScoringService?
+
+---
+
+#### Sub-fase 3.2: ValidationService — Verificaciones Automaticas
+
+**Objetivo:** Sistema que verifica datos del candidato sin intervencion humana.
+
+**Metodos a implementar:**
+
+- `VerifyLinkedInAsync(candidateId)` — valida que la URL de LinkedIn existe y tiene el formato correcto del candidato
+- `VerifyPortfolioAsync(candidateId)` — hace HTTP GET a la URL del portfolio y verifica que responde 200
+- `VerifyCvCoherenceAsync(candidateId)` — analiza coherencia cronologica entre experiencias (gaps > 6 meses, superposiciones, fechas imposibles)
+- `VerifyIdentityAsync(candidateId)` — validacion de documento subido (formato, legibilidad)
+- `DetectRedFlagsAsync(candidateId)` — saltos laborales < 3 meses, cambios de sector frecuentes, gaps inexplicables
+- `RunAllVerificationsAsync(candidateId)` — ejecuta todas las verificaciones y guarda resultados en `PTVerification`
+
+**Endpoint:** `POST api/candidates/{id}/verifications/run` — dispara todas las verificaciones
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub2.md`):**
+
+1. ¿La verificacion de LinkedIn hace un scraping real de la pagina, o solo valida que la URL responde y tiene el formato `linkedin.com/in/{slug}`?
+2. ¿La verificacion de portfolio tiene timeout? ¿Cuanto? ¿Que pasa si responde 403 o 401?
+3. ¿Como se define un "gap inexplicable"? ¿Cuantos meses sin empleo se consideran un gap? ¿Se penaliza mas si es reciente o antiguo?
+4. ¿Que se considera "superposicion sospechosa"? ¿Dos empleos simultaneos por mas de X meses?
+5. ¿La verificacion de identidad que valida exactamente? ¿Formato de documento, OCR, o solo presencia del archivo?
+6. ¿Cada cuanto se re-ejecutan las verificaciones automaticamente? ¿On-demand, diario, semanal?
+7. ¿Si una verificacion falla, se reintenta automaticamente? ¿Cuantos reintentos, con que intervalo?
+8. ¿El `Score` de cada verificacion (0-100) como se calcula? ¿Es binario (100 si pasa, 0 si falla) o hay matices?
+9. ¿Que red flags se detectan exactamente? Definir la lista completa de reglas.
+10. ¿Las red flags afectan el `ReliabilityIndex` o tienen un campo separado en `PTCandidateScore`?
+
+---
+
+#### Sub-fase 3.3: ScoringService — Indices Automaticos
+
+**Objetivo:** Algoritmos que calculan los 4 indices del Candidate Score automaticamente.
+
+**Metodos a implementar:**
+
+- `CalculateStabilityIndex(candidate)` — analiza `PTCandidateExperience`:
+  - Duracion promedio en empleos (mas duracion = mas estable)
+  - Frecuencia de cambios (menos cambios = mas estable)
+  - Penalizacion por empleos < 3 meses
+  - Bonus por empleo actual > 12 meses
+- `CalculateReliabilityIndex(candidate)` — analiza coherencia:
+  - Coherencia cronologica entre experiencias (sin gaps ni superposiciones = 100)
+  - Penalizacion por gaps > 6 meses sin explicacion
+  - Penalizacion por superposiciones imposibles
+  - Bonus por progresion logica (ascensos, misma industria)
+- `CalculateEvidenceIndex(candidate)` — suma de verificaciones:
+  - LinkedIn verificado = +25
+  - Portfolio verificado = +25
+  - CV subido y coherente = +25
+  - Identidad verificada = +25
+  - Si no tiene alguna verificacion, el indice es proporcional
+- `CalculateCompatibilityIndex(candidate)` — matching de skills:
+  - Compara skills del candidato vs. skills demandadas en vacantes activas
+  - Mientras mas skills demandadas tenga el candidato, mayor el indice
+  - Penalizacion si tiene skills que nadie demanda
+- `CalculateOverallScore(candidate)` — promedio ponderado de los 4 indices
+- `RecalculateAsync(candidateId)` — recalcula todos los indices y guarda en `PTCandidateScore`
+- `RecalculateAllAsync()` — recalculo en lote para todos los candidatos
+
+**Endpoint:** `POST api/candidates/{id}/score/recalculate` — recalcula score de un candidato
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub3.md`):**
+
+1. ¿Que pesos tiene cada indice en el `OverallScore`? Definir los 4 pesos exactos (ej: Estabilidad 30%, Confiabilidad 25%, Evidencia 25%, Compatibilidad 20%).
+2. ¿La duracion promedio en empleos como se pondera? ¿Es lineal o hay un techo (ej: 5+ anos = 100)?
+3. ¿Cuantos cambios de empleo por ano se consideran "frecuentes"? ¿Como escala la penalizacion?
+4. ¿Un gap de 6 meses se penaliza igual que uno de 2 anos? ¿O es proporcional?
+5. ¿La "progresion logica" como se detecta automaticamente? ¿Que criterios objetivos usa el algoritmo?
+6. ¿El `CompatibilityIndex` se calcula contra todas las vacantes activas, o solo las de la industria del candidato?
+7. ¿Si no hay vacantes activas en el sistema, el `CompatibilityIndex` es 0, 50 (neutral), o se omite del calculo?
+8. ¿El recalculo en lote (`RecalculateAllAsync`) se ejecuta via un job programado (Hangfire/Quartz) o manualmente desde el admin?
+9. ¿Cada cuanto se debe recalcular el score automaticamente? ¿Diario, semanal, mensual?
+10. ¿El score anterior se guarda para comparar (historico de scores) o se sobrescribe?
+11. ¿El candidato puede ver el desglose de cada indice, o solo el `OverallScore`?
+12. ¿Que pasa si un candidato no tiene experiencias cargadas? ¿StabilityIndex = 0, 50 (neutral), o N/A?
+
+---
+
+#### Sub-fase 3.4: CompatibilityService — Job Match Score
+
+**Objetivo:** Algoritmo que calcula que tan compatible es un candidato con una vacante especifica.
+
+**Metodos a implementar:**
+
+- `CalculateJobMatch(candidateId, vacancyId)` — compara:
+  - Skills requeridas vs. skills del candidato (peso configurable)
+  - Experiencia requerida vs. anos de experiencia del candidato
+  - Educacion requerida vs. educacion del candidato
+  - Ubicacion / modalidad (remoto, hibrido, presencial)
+  - Nivel de ingles u otros idiomas
+- `GenerateShortlist(vacancyId)` — ranking automatico de candidatos por match score
+- `GenerateShortlist(vacancyId, limit)` — top N candidatos para una vacante
+
+**Endpoints:**
+- `POST api/vacancies/{id}/matches/calculate` — calcula matches para una vacante
+- `GET api/vacancies/{id}/matches` — lista de candidatos rankeados
+- `GET api/vacancies/{id}/matches?limit=10` — top 10 candidatos
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub4.md`):**
+
+1. ¿Los pesos del Job Match Score son fijos o configurables por la empresa? Si son configurables, ¿que valores puede ajustar?
+2. ¿El matching de skills es binario (tiene/no tiene) o ponderado por `ProficiencyLevel`?
+3. ¿Si una vacante requiere 5 anos de experiencia y el candidato tiene 3, el `ExperienceMatch` es 60% (3/5), 0%, o hay una curva?
+4. ¿La ubicacion geografica como se compara? ¿Exacta, por pais, por region?
+5. ¿El nivel de ingles se valida contra un campo del candidato o se infiere de las experiencias?
+6. ¿El shortlist se genera automaticamente al crear una vacante, o lo dispara el admin/TD?
+7. ¿Cuantos candidatos aparecen en el shortlist por defecto? ¿Es configurable?
+8. ¿El `MatchPercentage` se recalcula si el candidato actualiza su perfil despues de que se genero el match?
+9. ¿Se necesita un endpoint para que TD apruebe/rechaze matches antes de que lleguen a la empresa? (ver "Nueva feature de Admin" en la definicion estrategica)
+10. ¿La empresa puede ver el desglose del match (skills, experiencia, educacion) o solo el porcentaje total?
+
+---
+
+#### Sub-fase 3.5: Referencias Laborales Automaticas
+
+**Objetivo:** Sistema de referencias donde el candidato agrega contactos y el sistema los verifica.
+
+**Metodos a implementar:**
+
+- `AddReferenceAsync(candidateId, dto)` — candidato agrega 2-3 referencias
+- `SendReferenceRequestAsync(referenceId)` — sistema envia email/solicitud al contacto
+- `SubmitReferenceFeedbackAsync(referenceId, rating, feedback)` — el contacto responde
+- `VerifyReferenceAsync(referenceId)` — sistema valida la respuesta y la marca como verificada
+- `GetReferencesAsync(candidateId)` — lista de referencias con estado
+
+**Endpoints:**
+- `GET/POST api/candidates/{id}/references`
+- `POST api/references/{id}/send` — envia solicitud
+- `POST api/references/{id}/feedback` — el contacto responde (endpoint publico o con token)
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub5.md`):**
+
+1. ¿Cuantas referencias minimas se exigen? ¿2 o 3?
+2. ¿El email de solicitud de referencia se envia via SMTP, o se genera un link que el candidato comparte?
+3. ¿El contacto de referencia necesita crear una cuenta en OpenToWork, o responde via un link publico con token?
+4. ¿Que informacion se le pide al contacto? ¿Solo rating + feedback, o tambien confirmar datos del candidato?
+5. ¿Las referencias verificadas suman al `EvidenceIndex`? ¿Cuanto?
+6. ¿Si una referencia no responde en X dias, se marca como fallida? ¿Cuanto es X?
+7. ¿El candidato puede ver el feedback que dio la referencia, o es privado para TD?
+8. ¿Se validan que las referencias no sean del mismo empresa donde trabajo (para evitar sesgo)?
+
+---
+
+#### Sub-fase 3.6: Pruebas de Habilidades (Retos Tecnicos)
+
+**Objetivo:** Banco de retos tecnicos con puntaje automatico.
+
+**Metodos a implementar:**
+
+- `CreateSkillTestAsync(dto)` — admin crea un reto (CRUD completo)
+- `GetAvailableTestsAsync(category)` — lista de retos disponibles por categoria
+- `StartTestAsync(candidateId, testId)` — candidato inicia un reto (registra intento + timer)
+- `SubmitTestAsync(resultId, answers)` — candidato envia respuestas, sistema calcula puntaje automatico
+- `GetTestResultsAsync(candidateId)` — historial de resultados del candidato
+
+**Endpoints:**
+- `GET/POST/PUT/DELETE api/skill-tests` — CRUD admin
+- `GET api/skill-tests/available` — lista para candidatos
+- `POST api/skill-tests/{id}/start` — inicia intento
+- `POST api/skill-tests/results/{id}/submit` — envia respuestas
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub6.md`):**
+
+1. ¿Los retos son multiple choice, codigo ejecutable, o ambos?
+2. ¿El puntaje es automatico (sistema corrige) o requiere revision manual de TD?
+3. ¿Si es codigo ejecutable, se usa un juez online (ej: Judge0, Piston) o se evalua con tests unitarios propios?
+4. ¿El anti-copia que medidas tiene? ¿Tab switching, copiar/pegar, tiempo limite?
+5. ¿Cuantos intentos tiene el candidato por reto? ¿1, 3, ilimitados?
+6. ¿Los resultados de retos suman al `CandidateScore`? ¿A que indice?
+7. ¿El candidato puede ver los retos disponibles antes de completar su perfil, o requiere perfil completo?
+8. ¿Se puede retomar un reto despues de cerrar el navegador, o se anula el intento?
+
+---
+
+#### Sub-fase 3.7: Estado "Verificado TD" Automatico
+
+**Objetivo:** Sistema que asigna automaticamente el estado de verificacion progresivo.
+
+**Estados progresivos:**
+```
+Perfil registrado → Perfil completo → Evaluado → Verificacion en proceso → Verificado TD
+```
+
+**Metodos a implementar:**
+
+- `GetVerificationStatusAsync(candidateId)` — retorna el estado actual
+- `EvaluateVerificationStatusAsync(candidateId)` — evalua criterios y asigna estado:
+  - **Perfil registrado:** candidato existe en el sistema
+  - **Perfil completo:** `ProfileCompletionPercentage >= 80`
+  - **Evaluado:** tiene `PTCandidateScore` con `OverallScore > 0` y al menos 3 verificaciones completadas
+  - **Verificacion en proceso:** tiene verificaciones pendientes o en progreso
+  - **Verificado TD:** todas las verificaciones pasaron, `OverallScore >= umbral`, referencias verificadas
+
+**Endpoint:** `GET api/candidates/{id}/verification-status`
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub7.md`):**
+
+1. ¿Cual es el `OverallScore` minimo para alcanzar "Verificado TD"? ¿60, 70, 80?
+2. ¿Cuantas verificaciones deben pasar como minimo? ¿Todas o un subconjunto?
+3. ¿Las referencias verificadas son obligatorias para "Verificado TD", o solo recomendadas?
+4. ¿El estado se recalcula automaticamente cada vez que se completa una verificacion, o hay un job periodico?
+5. ¿Si un candidato era "Verificado TD" y despues falla una verificacion (ej: portfolio cae), pierde el estado automaticamente?
+6. ¿El distintivo ★ aparece en el perfil publico del candidato para las empresas? ¿Como se muestra?
+7. ¿El candidato recibe notificacion cuando alcanza "Verificado TD"?
+8. ¿Se puede revocar manualmente el estado desde el admin? ¿Quien tiene ese poder?
+
+---
+
+#### Sub-fase 3.8: UI — Integracion en los 3 portales
+
+**Portal del Candidato:**
+- Dashboard: 4 graficos circulares (Estabilidad, Confiabilidad, Evidencia, Compatibilidad) + OverallScore
+- Seccion "Verificaciones": lista con estado (pendiente, verificada, fallida) + boton "Ejecutar verificaciones"
+- Seccion "Referencias": CRUD para agregar contactos, ver estado de solicitudes
+- Seccion "Retos tecnicos": lista de retos disponibles por categoria, tomar reto con timer
+- Badge "Verificado TD" en el perfil cuando se cumpla
+
+**Portal Admin:**
+- Gestion de scores: ver indices de cada candidato, boton "Recalcular"
+- Verificaciones manuales: aprobar/rechazar verificaciones
+- Cola de shortlist: TD revisa matches antes de enviar a la empresa
+- Banco de retos: CRUD de `PTSkillTest`
+
+**Portal de Empresa:**
+- Shortlist: ver candidatos rankeados por Job Match Score para cada vacante
+- Scorecard configurable: ajustar pesos del Job Match Score por vacante
+- Ver desglose del match (skills, experiencia, educacion)
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub8.md`):**
+
+1. ¿Los graficos de indices en el dashboard del candidato son SVG circulares (como el donut existente) o barras horizontales?
+2. ¿El candidato puede ver el desglose de que penalizo su `StabilityIndex` (ej: "Gap de 8 meses en 2023")?
+3. ¿La cola de shortlist del admin tiene un workflow de aprobacion (pendiente → aprobado → enviado a empresa)?
+4. ¿El scorecard configurable de la empresa es un formulario con sliders, o inputs numericos?
+5. ¿El banco de retos del admin tiene preview del reto antes de publicarlo?
+
+---
+
+> **Resumen de sub-fases:** 8 sub-fases, cada una con preguntas que deben responderse antes de codificar. Las respuestas definen los algoritmos. El orden es secuencial: 3.1 → 3.2 → 3.3 → 3.4 → 3.5 → 3.6 → 3.7 → 3.8.
+>
+> **Checklist original (automatizacion via ValidationService/ScoringService) — sigue sin implementarse:**
 
 - [ ] Entidades de scoring (`PTCandidateScore`, `PTVerification`, `PTCandidateReference`)
 - [ ] ValidationService: verificacion automatica (LinkedIn, portafolio, coherencia cronologica)
