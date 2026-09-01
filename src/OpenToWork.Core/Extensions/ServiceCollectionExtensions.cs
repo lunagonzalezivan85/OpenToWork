@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICompatibilityService, CompatibilityService>();
         services.AddScoped<IReferenceService, ReferenceService>();
         services.AddScoped<ISkillTestService, SkillTestService>();
+        services.AddScoped<IVerificationStatusService, VerificationStatusService>();
 
         return services;
     }
@@ -47,6 +48,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICompatibilityService, CompatibilityService>();
         services.AddScoped<ISkillTestService, SkillTestService>();
         services.AddScoped<IScoringService, ScoringService>();
+        services.AddScoped<IVerificationStatusService, VerificationStatusService>();
 
         return services;
     }
