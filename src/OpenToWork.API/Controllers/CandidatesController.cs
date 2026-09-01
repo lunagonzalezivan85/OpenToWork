@@ -14,13 +14,15 @@ public class CandidatesController : ControllerBase
     private readonly IValidationService _validationService;
     private readonly IScoringService _scoringService;
     private readonly IReferenceService _referenceService;
+    private readonly IVerificationStatusService _verificationStatusService;
 
-    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService)
+    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService)
     {
         _candidateService = candidateService;
         _validationService = validationService;
         _scoringService = scoringService;
         _referenceService = referenceService;
+        _verificationStatusService = verificationStatusService;
     }
 
     [HttpGet("me")]
@@ -118,6 +120,24 @@ public class CandidatesController : ControllerBase
         if (myCandidate == null || myCandidate.Id != id) return Forbid();
 
         var result = await _referenceService.AddReferenceAsync(id, dto);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// {id} es el Id de PTCandidate. Solo el dueno del perfil por ahora - la exposicion
+    /// publica/para empresas del distintivo Verificado TD se resuelve en la sub-fase 3.8, junto
+    /// con el modelo de autenticacion de empresa (fase-3-sub7.md pregunta 6).
+    /// </summary>
+    [HttpGet("{id}/verification-status")]
+    public async Task<IActionResult> GetVerificationStatus(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
+        if (myCandidate == null || myCandidate.Id != id) return Forbid();
+
+        var result = await _verificationStatusService.GetVerificationStatusAsync(id);
         return Ok(result);
     }
 
