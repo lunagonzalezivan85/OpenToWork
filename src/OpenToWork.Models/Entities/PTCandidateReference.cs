@@ -38,4 +38,18 @@ public class PTCandidateReference : BaseEntity
     public int? Rating { get; set; }
 
     public string? Feedback { get; set; }
+
+    /// <summary>
+    /// Hash del token del link publico que el candidato comparte con el contacto (mismo patron
+    /// que SCUser.PasswordResetToken - nunca se guarda el token en claro). Agregado en
+    /// sub-fase 3.5, no estaba en el esquema original de 3.1.
+    /// </summary>
+    [MaxLength(200)]
+    public string? TokenHash { get; set; }
+
+    /// <summary>Vencimiento del link Y umbral de "no respondio a tiempo" (fase-3-sub5.md pregunta 6).</summary>
+    public DateTime? TokenExpiresAt { get; set; }
+
+    /// <summary>Cuando se disparo SendReferenceRequestAsync.</summary>
+    public DateTime? SentAt { get; set; }
 }

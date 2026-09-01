@@ -13,12 +13,14 @@ public class CandidatesController : ControllerBase
     private readonly ICandidateService _candidateService;
     private readonly IValidationService _validationService;
     private readonly IScoringService _scoringService;
+    private readonly IReferenceService _referenceService;
 
-    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService)
+    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService)
     {
         _candidateService = candidateService;
         _validationService = validationService;
         _scoringService = scoringService;
+        _referenceService = referenceService;
     }
 
     [HttpGet("me")]
@@ -88,6 +90,34 @@ public class CandidatesController : ControllerBase
         if (myCandidate == null || myCandidate.Id != id) return Forbid();
 
         var result = await _scoringService.RecalculateAsync(id);
+        return Ok(result);
+    }
+
+    /// <summary>{id} es el Id de PTCandidate. Solo el dueno del perfil ve sus propias referencias.</summary>
+    [HttpGet("{id}/references")]
+    public async Task<IActionResult> GetReferences(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
+        if (myCandidate == null || myCandidate.Id != id) return Forbid();
+
+        var result = await _referenceService.GetReferencesAsync(id);
+        return Ok(result);
+    }
+
+    /// <summary>{id} es el Id de PTCandidate. Solo el dueno del perfil agrega sus propias referencias.</summary>
+    [HttpPost("{id}/references")]
+    public async Task<IActionResult> AddReference(Guid id, [FromBody] CreateReferenceDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
+        if (myCandidate == null || myCandidate.Id != id) return Forbid();
+
+        var result = await _referenceService.AddReferenceAsync(id, dto);
         return Ok(result);
     }
 

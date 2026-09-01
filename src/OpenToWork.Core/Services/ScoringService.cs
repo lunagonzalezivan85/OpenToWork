@@ -132,12 +132,14 @@ public class ScoringService : IScoringService
             .Where(v => v.PT_CandidateId == candidateId && !v.IsDeleted)
             .ToListAsync();
 
+        // Reescalado de 4 componentes de 25 a 5 de 20 al sumar Reference en la sub-fase 3.5
+        // (fase-3-sub5.md pregunta 5) - mismo maximo de 100, un componente mas.
         var score = 0;
-        foreach (var type in new[] { VerificationType.LinkedIn, VerificationType.Portfolio, VerificationType.CvCoherence, VerificationType.Identity })
+        foreach (var type in new[] { VerificationType.LinkedIn, VerificationType.Portfolio, VerificationType.CvCoherence, VerificationType.Identity, VerificationType.Reference })
         {
             var v = verifications.FirstOrDefault(x => x.Type == (int)type);
             if (v != null && v.Status == (int)VerificationCheckStatus.Verified)
-                score += 25;
+                score += 20;
         }
 
         return score;

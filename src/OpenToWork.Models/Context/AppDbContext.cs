@@ -313,6 +313,7 @@ public class AppDbContext : DbContext
         {
             e.ToTable("PT_CandidateReferences");
             e.HasIndex(r => new { r.PT_CandidateId, r.IsDeleted });
+            e.HasIndex(r => r.TokenHash); // lookup del endpoint publico de feedback (3.5).
         });
 
         modelBuilder.Entity<PTSkillTest>(e =>
