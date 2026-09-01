@@ -29,4 +29,14 @@ public class PTCandidateTestResult : BaseEntity
 
     /// <summary>Contador de banderas anti-copia detectadas (cambio de pestana, etc).</summary>
     public int AntiCheatFlags { get; set; } = 0;
+
+    /// <summary>
+    /// Cuando arranco el intento - agregado en sub-fase 3.6 (no estaba en el esquema de 3.1),
+    /// permite enforcar TimeLimit del lado del servidor y resumir intentos (fase-3-sub6.md
+    /// preguntas 5/8).
+    /// </summary>
+    public DateTime StartedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>JSON con los indices de respuesta enviados, mismo orden que PTSkillTest.Questions.</summary>
+    public string? Answers { get; set; }
 }

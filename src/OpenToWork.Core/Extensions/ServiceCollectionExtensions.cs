@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IScoringService, ScoringService>();
         services.AddScoped<ICompatibilityService, CompatibilityService>();
         services.AddScoped<IReferenceService, ReferenceService>();
+        services.AddScoped<ISkillTestService, SkillTestService>();
 
         return services;
     }
@@ -49,6 +50,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminCandidateRegistrationService, AdminCandidateRegistrationService>();
         services.AddHttpClient<ILinkedinSearchService, LinkedinSearchService>();
         services.AddScoped<ICompatibilityService, CompatibilityService>();
+        services.AddScoped<ISkillTestService, SkillTestService>();
+        services.AddScoped<IScoringService, ScoringService>();
 
         return services;
     }

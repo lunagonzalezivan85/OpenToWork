@@ -38,6 +38,18 @@ public class ScoringService : IScoringService
     // Penalizacion maxima por skills del candidato que ninguna vacante activa demanda (pregunta 1 de 3.4 no aplica aca; ver sub3 pregunta sobre compatibilidad).
     private const int UnusedSkillsMaxPenalty = 20;
 
+    // EvidenceIndex: pesos por componente, re-pesados en la sub-fase 3.6 al sumar SkillTest
+    // (fase-3-sub6.md pregunta 6) - suman 100 entre los 5 de PT_Verifications + SkillTest.
+    private static readonly (VerificationType type, int weight)[] EvidenceVerificationWeights =
+    {
+        (VerificationType.LinkedIn, 15),
+        (VerificationType.Portfolio, 15),
+        (VerificationType.CvCoherence, 20),
+        (VerificationType.Identity, 15),
+        (VerificationType.Reference, 15)
+    };
+    private const int EvidenceSkillTestWeight = 20;
+
     public ScoringService(AppDbContext context)
     {
         _context = context;
@@ -132,15 +144,19 @@ public class ScoringService : IScoringService
             .Where(v => v.PT_CandidateId == candidateId && !v.IsDeleted)
             .ToListAsync();
 
-        // Reescalado de 4 componentes de 25 a 5 de 20 al sumar Reference en la sub-fase 3.5
-        // (fase-3-sub5.md pregunta 5) - mismo maximo de 100, un componente mas.
+        // Re-pesado a 6 componentes en la sub-fase 3.6 (fase-3-sub6.md pregunta 6): los checks
+        // mas sustantivos (coherencia de todo el CV, reto de habilidades aprobado) pesan mas
+        // que los binarios simples (URL, referencia unica, stub de identidad). Suma 100.
         var score = 0;
-        foreach (var type in new[] { VerificationType.LinkedIn, VerificationType.Portfolio, VerificationType.CvCoherence, VerificationType.Identity, VerificationType.Reference })
+        foreach (var (type, weight) in EvidenceVerificationWeights)
         {
             var v = verifications.FirstOrDefault(x => x.Type == (int)type);
             if (v != null && v.Status == (int)VerificationCheckStatus.Verified)
-                score += 20;
+                score += weight;
         }
+
+        if (await SkillTestService.HasPassingResultAsync(_context, candidateId))
+            score += EvidenceSkillTestWeight;
 
         return score;
     }
