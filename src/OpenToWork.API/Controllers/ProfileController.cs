@@ -32,6 +32,13 @@ public class ProfileController : ControllerBase
         return result != null ? Ok(result) : NotFound();
     }
 
+    [HttpGet("candidate/{candidateId}")]
+    public async Task<IActionResult> GetCandidateProfile(Guid candidateId)
+    {
+        var result = await _profileService.GetCandidateByIdAsync(candidateId);
+        return result != null ? Ok(result) : NotFound();
+    }
+
     [HttpPut]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateCandidateProfileDto dto)
     {

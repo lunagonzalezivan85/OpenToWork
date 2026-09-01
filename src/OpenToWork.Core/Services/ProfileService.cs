@@ -28,6 +28,20 @@ public class ProfileService : IProfileService
         return MapToProfileDto(candidate);
     }
 
+    public async Task<CandidateProfileDto?> GetCandidateByIdAsync(Guid candidateId)
+    {
+        var candidate = await _context.PT_Candidates
+            .Include(c => c.Experiences)
+            .Include(c => c.Educations)
+            .Include(c => c.Certifications)
+            .Include(c => c.CandidateSkills).ThenInclude(cs => cs.Skill)
+            .FirstOrDefaultAsync(c => c.Id == candidateId && !c.IsDeleted);
+
+        if (candidate == null) return null;
+
+        return MapToProfileDto(candidate);
+    }
+
     public async Task<CandidateProfileDto?> UpdateProfileAsync(Guid userId, UpdateCandidateProfileDto dto)
     {
         var candidate = await _context.PT_Candidates
@@ -449,7 +463,14 @@ public class ProfileService : IProfileService
         IsProfilePublic = c.IsProfilePublic,
         Experiences = c.Experiences.Where(e => !e.IsDeleted).Select(MapToExperienceDto).ToList(),
         Educations = c.Educations.Where(e => !e.IsDeleted).Select(MapToEducationDto).ToList(),
-        Certifications = c.Certifications.Where(c => !c.IsDeleted).Select(MapToCertificationDto).ToList()
+        Certifications = c.Certifications.Where(c => !c.IsDeleted).Select(MapToCertificationDto).ToList(),
+        Skills = c.CandidateSkills.Where(cs => !cs.IsDeleted && !cs.Skill.IsDeleted).Select(cs => new CandidateSkillDto
+        {
+            Id = cs.Id,
+            Name = cs.Skill.Name,
+            Category = cs.Skill.Category,
+            ProficiencyLevel = cs.ProficiencyLevel
+        }).ToList()
     };
 
     private static CandidateExperienceDto MapToExperienceDto(PTCandidateExperience e) => new()

@@ -179,6 +179,14 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<List<VacancyDto>>() ?? new();
     }
 
+    public async Task<List<ApplicationDto>> GetVacancyApplicationsAsync(Guid vacancyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/applications/vacancy/{vacancyId}");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<ApplicationDto>>() ?? new();
+    }
+
     public async Task<VacancyDto?> CreateVacancyAsync(CreateVacancyDto dto)
     {
         await SetAuthHeaderAsync();
@@ -239,6 +247,14 @@ public class ApiAuthService
         var response = await _httpClient.GetAsync($"api/applications/vacancy/{vacancyId}");
         if (!response.IsSuccessStatusCode) return new();
         return await response.Content.ReadFromJsonAsync<List<ApplicationDto>>() ?? new();
+    }
+
+    public async Task<CandidateProfileDto?> GetCandidateProfileByIdAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/profile/candidate/{candidateId}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateProfileDto>();
     }
 
     public async Task<ApplicationDto?> UpdateApplicationStatusAsync(Guid id, int status)
@@ -387,6 +403,7 @@ public class ApiAuthService
         await _localStorage.SetItemAsync("opentowork-token", auth.Token);
         await _localStorage.SetItemAsync("opentowork-refresh-token", auth.RefreshToken);
         await _localStorage.SetItemAsync("opentowork-user-id", auth.User.Id.ToString());
+        await _localStorage.SetItemAsync("opentowork-role", auth.User.PrimaryRole.ToString());
         await _localStorage.SetItemAsync("opentowork-theme", auth.User.Theme ?? "navy");
         await _localStorage.SetItemAsync("opentowork-lang", auth.User.Language ?? "es");
     }
@@ -396,12 +413,14 @@ public class ApiAuthService
         await _localStorage.RemoveItemAsync("opentowork-token");
         await _localStorage.RemoveItemAsync("opentowork-refresh-token");
         await _localStorage.RemoveItemAsync("opentowork-user-id");
+        await _localStorage.RemoveItemAsync("opentowork-role");
         _httpClient.DefaultRequestHeaders.Authorization = null;
     }
 
     public async Task<string?> GetTokenAsync() => await _localStorage.GetItemAsync("opentowork-token");
     public async Task<string?> GetRefreshTokenAsync() => await _localStorage.GetItemAsync("opentowork-refresh-token");
     public async Task<string?> GetUserIdAsync() => await _localStorage.GetItemAsync("opentowork-user-id");
+    public async Task<string?> GetUserRoleAsync() => await _localStorage.GetItemAsync("opentowork-role");
 
     private class SearchResult
     {

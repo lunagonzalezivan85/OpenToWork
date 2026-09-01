@@ -1,0 +1,237 @@
+@page "/verified-applicants"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>Postulantes verificados</PageTitle>
+
+<div class="page-container">
+    <h1 class="dash-title">Postulantes verificados</h1>
+    <p class="dash-subtitle">Candidatos que se han postulado a tus vacantes</p>
+
+    @if (Loading)
+    {
+        <div class="dash-empty-state">
+            <p>Cargando...</p>
+        </div>
+    }
+    else if (SelectedVacancyId.HasValue && Applicants.Any())
+    {
+        <div class="va-back-bar">
+            <button class="ot-btn ot-btn--ghost ot-btn--small" @onclick="BackToVacancies">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Volver
+            </button>
+            <span class="va-vacancy-title">@SelectedVacancyTitle</span>
+            <span class="va-applicant-count">@Applicants.Count postulantes</span>
+        </div>
+
+        <div class="va-applicant-list">
+            @foreach (var app in Applicants)
+            {
+                <div class="va-applicant-card" style="cursor: pointer;" @onclick="() => GoToApplicantProfile(app.CandidateId)">
+                    <div class="va-applicant-avatar">@(GetInitials(app.CandidateName))</div>
+                    <div class="va-applicant-body">
+                        <div class="va-applicant-primary">
+                            <span class="va-applicant-name">@app.CandidateName</span>
+                            <span class="va-applicant-title">@(app.CandidateTitle ?? "Sin titulo")</span>
+                        </div>
+                        <div class="va-applicant-secondary">
+                            <span class="va-applicant-status va-applicant-status--@GetStatusClass(app.Status)">
+                                @GetStatusLabel(app.Status)
+                            </span>
+                            <span class="va-applicant-date">@app.CreatedAt.ToString("dd/MM/yyyy")</span>
+                        </div>
+                    </div>
+                    <div class="va-applicant-progress">
+                        <div class="va-progress-ring" style="--pct: @app.ProfileCompletionPercentage">
+                            <span>@app.ProfileCompletionPercentage%</span>
+                        </div>
+                    </div>
+                    <div class="va-applicant-arrow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (SelectedVacancyId.HasValue && !Applicants.Any())
+    {
+        <div class="va-back-bar">
+            <button class="ot-btn ot-btn--ghost ot-btn--small" @onclick="BackToVacancies">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Volver
+            </button>
+            <span class="va-vacancy-title">@SelectedVacancyTitle</span>
+        </div>
+        <div class="bento-card dash-empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+            </svg>
+            <h3>Sin postulantes para esta vacante</h3>
+            <p>Aun no hay candidatos que se hayan postulado</p>
+        </div>
+    }
+    else if (Vacancies.Any())
+    {
+        <h2 class="dash-section-title">Selecciona una vacante</h2>
+        <div class="va-vacancy-list">
+            @foreach (var v in Vacancies)
+            {
+                <div class="va-vacancy-card" style="cursor: pointer;" @onclick="() => SelectVacancy(v)">
+                    <div class="va-vacancy-info">
+                        <span class="va-vacancy-name">@v.Title</span>
+                        <div class="va-vacancy-meta">
+                            <span class="va-vacancy-status va-vacancy-status--@GetVacancyStatusClass(v.Status)">
+                                @GetVacancyStatusLabel(v.Status)
+                            </span>
+                            <span class="va-vacancy-views">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                                @v.ViewsCount vistas
+                            </span>
+                        </div>
+                    </div>
+                    <div class="va-vacancy-applicants">
+                        <span class="va-vacancy-count">@(VacancyApplicantCounts.GetValueOrDefault(v.Id, 0))</span>
+                        <span class="va-vacancy-count-label">postulantes</span>
+                    </div>
+                    <div class="va-applicant-arrow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="bento-card dash-empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <h3>No tienes vacantes publicadas</h3>
+            <p>Publica una vacante para recibir postulantes</p>
+            <button class="ot-btn ot-btn--primary" @onclick="GoToCreateVacancy">Publicar vacante</button>
+        </div>
+    }
+</div>
+
+@code {
+    private bool Loading { get; set; } = true;
+    private List<VacancyDto> Vacancies { get; set; } = new();
+    private List<ApplicationDto> Applicants { get; set; } = new();
+    private Dictionary<Guid, int> VacancyApplicantCounts { get; set; } = new();
+    private Guid? SelectedVacancyId { get; set; }
+    private string SelectedVacancyTitle { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        try
+        {
+            Vacancies = await AuthApi.GetMyCompanyVacanciesAsync();
+
+            foreach (var v in Vacancies)
+            {
+                try
+                {
+                    var apps = await AuthApi.GetVacancyApplicationsAsync(v.Id);
+                    VacancyApplicantCounts[v.Id] = apps.Count;
+                }
+                catch
+                {
+                    VacancyApplicantCounts[v.Id] = 0;
+                }
+            }
+        }
+        catch
+        {
+            Vacancies = new();
+        }
+
+        Loading = false;
+    }
+
+    private async Task SelectVacancy(VacancyDto vacancy)
+    {
+        SelectedVacancyId = vacancy.Id;
+        SelectedVacancyTitle = vacancy.Title;
+
+        try
+        {
+            Applicants = await AuthApi.GetVacancyApplicationsAsync(vacancy.Id);
+        }
+        catch
+        {
+            Applicants = new();
+        }
+    }
+
+    private void BackToVacancies()
+    {
+        SelectedVacancyId = null;
+        Applicants = new();
+        SelectedVacancyTitle = "";
+    }
+
+    private void GoToCreateVacancy() => Nav.NavigateTo("/vacancies/create");
+    private void GoToApplicantProfile(Guid candidateId) => Nav.NavigateTo($"/applicant-profile/{candidateId}");
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
+
+    private static string GetStatusClass(int status) => status switch
+    {
+        0 => "draft",
+        1 => "active",
+        2 => "closed",
+        3 => "active",
+        _ => "draft"
+    };
+
+    private static string GetStatusLabel(int status) => status switch
+    {
+        0 => "Pendiente",
+        1 => "En revision",
+        2 => "Rechazado",
+        3 => "Aceptado",
+        _ => "Pendiente"
+    };
+
+    private static string GetVacancyStatusClass(int status) => status switch
+    {
+        0 => "draft",
+        1 => "active",
+        2 => "closed",
+        _ => "draft"
+    };
+
+    private static string GetVacancyStatusLabel(int status) => status switch
+    {
+        0 => "Borrador",
+        1 => "Activa",
+        2 => "Cerrada",
+        _ => "Borrador"
+    };
+}

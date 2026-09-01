@@ -117,7 +117,31 @@ public class ApplicationService : IApplicationService
             ExpectedSalary = a.ExpectedSalary,
             AvailableFromDate = a.AvailableFromDate,
             ApplicationSource = a.ApplicationSource,
-            CreatedAt = a.CreatedAt
+            CreatedAt = a.CreatedAt,
+            ProfileCompletionPercentage = CalculateProfileCompletion(candidate)
         };
+    }
+
+    private static int CalculateProfileCompletion(PTCandidate? c)
+    {
+        if (c == null) return 0;
+        int filled = 0;
+        int total = 15;
+        if (!string.IsNullOrEmpty(c.FirstName)) filled++;
+        if (!string.IsNullOrEmpty(c.LastName)) filled++;
+        if (!string.IsNullOrEmpty(c.Phone)) filled++;
+        if (!string.IsNullOrEmpty(c.Identification)) filled++;
+        if (c.BirthDate.HasValue) filled++;
+        if (!string.IsNullOrEmpty(c.Country)) filled++;
+        if (!string.IsNullOrEmpty(c.City)) filled++;
+        if (!string.IsNullOrEmpty(c.Title)) filled++;
+        if (!string.IsNullOrEmpty(c.Summary)) filled++;
+        if (c.YearsOfExperience.HasValue) filled++;
+        if (!string.IsNullOrEmpty(c.LinkedInUrl)) filled++;
+        if (!string.IsNullOrEmpty(c.PortfolioUrl)) filled++;
+        if (c.Availability.HasValue) filled++;
+        if (c.WorkAuthorization.HasValue) filled++;
+        if (!string.IsNullOrEmpty(c.CvUrl)) filled++;
+        return (int)Math.Round((double)filled / total * 100);
     }
 }

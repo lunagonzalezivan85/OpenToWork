@@ -15,6 +15,7 @@ public class ApplicationDto
     public DateTime? AvailableFromDate { get; set; }
     public int ApplicationSource { get; set; }
     public DateTime CreatedAt { get; set; }
+    public int ProfileCompletionPercentage { get; set; }
 }
 
 public class CreateApplicationDto

@@ -5,6 +5,7 @@ namespace OpenToWork.Core.Interfaces;
 public interface IProfileService
 {
     Task<CandidateProfileDto?> GetProfileAsync(Guid userId);
+    Task<CandidateProfileDto?> GetCandidateByIdAsync(Guid candidateId);
     Task<CandidateProfileDto?> UpdateProfileAsync(Guid userId, UpdateCandidateProfileDto dto);
     Task<CandidateExperienceDto> AddExperienceAsync(Guid userId, CreateExperienceDto dto);
     Task<CandidateExperienceDto?> UpdateExperienceAsync(Guid experienceId, UpdateExperienceDto dto, Guid userId);

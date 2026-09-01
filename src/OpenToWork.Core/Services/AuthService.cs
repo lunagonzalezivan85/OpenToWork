@@ -69,6 +69,7 @@ public class AuthService : IAuthService
             .Include(u => u.UserRoles)
             .Include(u => u.UserPreference)
             .Include(u => u.Candidate)
+            .Include(u => u.Company)
             .FirstOrDefaultAsync(u => u.Email == dto.Email && !u.IsDeleted);
 
         if (user == null || !user.IsActive)
@@ -95,6 +96,7 @@ public class AuthService : IAuthService
             .Include(t => t.User).ThenInclude(u => u.UserRoles)
             .Include(t => t.User).ThenInclude(u => u.UserPreference)
             .Include(t => t.User).ThenInclude(u => u.Candidate)
+            .Include(t => t.User).ThenInclude(u => u.Company)
             .FirstOrDefaultAsync(t => t.TokenHash == tokenHash && !t.IsRevoked && !t.IsDeleted);
 
         if (token == null || token.ExpiresAt < DateTime.UtcNow)
@@ -206,6 +208,7 @@ public class AuthService : IAuthService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new("primaryRole", user.PrimaryRole.ToString()),
+            new(JwtRegisteredClaimNames.GivenName, user.Company?.Name ?? user.Candidate?.FirstName ?? user.Email.Split('@')[0]),
             new(ClaimTypes.NameIdentifier, user.Id.ToString())
         };
 

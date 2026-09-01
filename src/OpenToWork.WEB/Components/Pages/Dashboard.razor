@@ -198,19 +198,35 @@
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
 
+        string? jwtName = null;
+        var token = await AuthApi.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+        {
+            try
+            {
+                var payload = token.Split('.')[1];
+                var jsonBytes = Convert.FromBase64String(payload + (payload.Length % 4 == 2 ? "==" : payload.Length % 4 == 3 ? "=" : ""));
+                var claims = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+                jwtName = claims?.TryGetValue("given_name", out var gn) == true ? gn.ToString() : null;
+            }
+            catch { }
+        }
+
         CandidateProfile = await AuthApi.GetCandidateProfileAsync();
 
         if (CandidateProfile != null)
         {
             ShowWizardPrompt = !CandidateProfile.WizardCompleted;
             ProfileCompletion = CalculateProfileCompletion(CandidateProfile);
-            UserName = CandidateProfile.FirstName;
+            UserName = !string.IsNullOrEmpty(CandidateProfile.FirstName) ? CandidateProfile.FirstName : (jwtName ?? "Usuario");
             UserInitials = GetInitials($"{CandidateProfile.FirstName} {CandidateProfile.LastName}".Trim());
         }
         else
         {
             ShowWizardPrompt = true;
             ProfileCompletion = 0;
+            UserName = jwtName ?? "Usuario";
+            UserInitials = GetInitials(UserName);
         }
 
         var (vacancies, total) = await AuthApi.SearchVacanciesAsync(new SearchVacancyDto { Page = 1, PageSize = 4 });

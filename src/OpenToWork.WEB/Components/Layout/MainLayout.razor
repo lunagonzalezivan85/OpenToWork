@@ -26,26 +26,39 @@
 
             <!-- Center: App navigation tabs (desktop only) -->
             <div class="nav-links">
-                <a href="/dashboard" class="nav-link @(CurrentPage == "dashboard" ? "active" : "")">
+                <a href="@DashboardUrl" class="nav-link @(CurrentPage == "dashboard" || CurrentPage == "company-dashboard" ? "active" : "")">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                         <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
                         <rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
                     </svg>
                     @Lang.T("common.nav.panel")
                 </a>
-                <a href="/my-applications" class="nav-link @(CurrentPage == "my-applications" ? "active" : "")">
+                <a href="@MyApplicationsUrl" class="nav-link @(CurrentPage == "my-applications" || CurrentPage == "my-vacancies" ? "active" : "")">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                         <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
                     </svg>
-                    @Lang.T("common.nav.myApplications")
+                    @MyApplicationsLabel
                 </a>
-                <a href="/vacancies" class="nav-link @(CurrentPage == "vacancies" ? "active" : "")">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-                    </svg>
-                    @Lang.T("common.nav.searchJobs")
-                </a>
+                @if (IsCompany)
+                {
+                    <a href="/verified-applicants" class="nav-link @(CurrentPage == "verified-applicants" ? "active" : "")">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <path d="M22 4L12 14.01l-3-3" />
+                        </svg>
+                        Postulantes verificados
+                    </a>
+                }
+                else
+                {
+                    <a href="/vacancies" class="nav-link @(CurrentPage == "vacancies" ? "active" : "")">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                        </svg>
+                        @Lang.T("common.nav.searchJobs")
+                    </a>
+                }
                 <a href="/messages" class="nav-link @(CurrentPage == "messages" ? "active" : "")">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -101,14 +114,21 @@
                             }
                         </button>
                         <div class="nav-user-profile">
-                            <a href="/dashboard" class="nav-user-avatar">
+                            <a href="@DashboardUrl" class="nav-user-avatar">
                                 @(UserInitials)
                             </a>
                             <div class="nav-user-dropdown">
-                                <a href="/dashboard" class="nav-user-dropdown-item">@Lang.T("common.nav.dashboard")</a>
-                                <a href="/my-vacancies" class="nav-user-dropdown-item">@Lang.T("common.nav.myVacancies")</a>
+                                <a href="@DashboardUrl" class="nav-user-dropdown-item">@Lang.T("common.nav.dashboard")</a>
+                                @if (IsCompany)
+                                {
+                                    <a href="/my-vacancies" class="nav-user-dropdown-item">Mis solicitudes</a>
+                                    <a href="/verified-applicants" class="nav-user-dropdown-item">Postulantes verificados</a>
+                                }
+                                else
+                                {
+                                    <a href="/my-applications" class="nav-user-dropdown-item">@Lang.T("common.nav.myApplications")</a>
+                                }
                                 <a href="/profile" class="nav-user-dropdown-item">@Lang.T("common.nav.profile")</a>
-                                <a href="/my-applications" class="nav-user-dropdown-item">@Lang.T("common.nav.myApplications")</a>
                                 <!-- Settings inside dropdown (mobile) -->
                                 <div class="nav-user-dropdown-settings">
                                     <select @onchange="OnThemeChanged" class="nav-select">
@@ -185,26 +205,52 @@
 
     <!-- Mobile Bottom Navigation Bar -->
     <nav class="bottom-nav">
-        <a href="/dashboard" class="bottom-nav-item @(CurrentPage == "dashboard" ? "active" : "")">
+        <a href="@DashboardUrl" class="bottom-nav-item @(CurrentPage == "dashboard" || CurrentPage == "company-dashboard" ? "active" : "")">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
                 <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
                 <rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
             </svg>
             <span>@Lang.T("common.nav.panel")</span>
         </a>
-        <a href="/vacancies" class="bottom-nav-item @(CurrentPage == "vacancies" ? "active" : "")">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-            </svg>
-            <span>@Lang.T("common.nav.vacancies")</span>
-        </a>
-        <a href="/my-applications" class="bottom-nav-item @(CurrentPage == "my-applications" ? "active" : "")">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-            </svg>
-            <span>@Lang.T("common.nav.myApplications")</span>
-        </a>
+        @if (IsCompany)
+        {
+            <a href="/my-vacancies" class="bottom-nav-item @(CurrentPage == "my-vacancies" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                </svg>
+                <span>Solicitudes</span>
+            </a>
+        }
+        else
+        {
+            <a href="/vacancies" class="bottom-nav-item @(CurrentPage == "vacancies" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <span>@Lang.T("common.nav.vacancies")</span>
+            </a>
+        }
+        @if (IsCompany)
+        {
+            <a href="/verified-applicants" class="bottom-nav-item @(CurrentPage == "verified-applicants" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <path d="M22 4L12 14.01l-3-3" />
+                </svg>
+                <span>Postulantes</span>
+            </a>
+        }
+        else
+        {
+            <a href="/my-applications" class="bottom-nav-item @(CurrentPage == "my-applications" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                </svg>
+                <span>@Lang.T("common.nav.myApplications")</span>
+            </a>
+        }
         <a href="/messages" class="bottom-nav-item @(CurrentPage == "messages" ? "active" : "")">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -305,6 +351,7 @@
 
 @code {
     private bool IsLoggedIn { get; set; }
+    private bool IsCompany { get; set; }
     private string UserName { get; set; } = "";
     private string UserEmail { get; set; } = "";
     private string UserInitials { get; set; } = "U";
@@ -312,6 +359,9 @@
     private bool ShowSettingsMenu { get; set; }
     private string CurrentLang { get; set; } = "es";
     private string CurrentPage { get; set; } = "";
+    private string DashboardUrl => IsCompany ? "/company-dashboard" : "/dashboard";
+    private string MyApplicationsUrl => IsCompany ? "/my-vacancies" : "/my-applications";
+    private string MyApplicationsLabel => IsCompany ? Lang.T("common.nav.myVacancies") : Lang.T("common.nav.myApplications");
 
     protected override async Task OnInitializedAsync()
     {
@@ -320,6 +370,9 @@
 
         var token = await LocalStorage.GetItemAsync("opentowork-token");
         IsLoggedIn = !string.IsNullOrEmpty(token);
+
+        var roleStr = await LocalStorage.GetItemAsync("opentowork-role");
+        IsCompany = roleStr == "1";
 
         CurrentLang = await LocalStorage.GetItemAsync("opentowork-lang") ?? "es";
 
@@ -429,9 +482,11 @@
         {
             "" => Lang.T("common.nav.home"),
             "dashboard" => Lang.T("common.nav.panel"),
+            "company-dashboard" => Lang.T("common.nav.panel"),
             "vacancies" => Lang.T("common.nav.vacancies"),
             "my-vacancies" => Lang.T("common.nav.myVacancies"),
             "my-applications" => Lang.T("common.nav.myApplications"),
+            "verified-applicants" => "Postulantes verificados",
             "profile" => Lang.T("common.nav.profile"),
             "messages" => Lang.T("common.nav.messages"),
             _ => Lang.T("common.nav.home")

@@ -45,4 +45,13 @@ public class CandidateProfileDto
     public List<CandidateExperienceDto> Experiences { get; set; } = new();
     public List<CandidateEducationDto> Educations { get; set; } = new();
     public List<CandidateCertificationDto> Certifications { get; set; } = new();
+    public List<CandidateSkillDto> Skills { get; set; } = new();
+}
+
+public class CandidateSkillDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Category { get; set; }
+    public int? ProficiencyLevel { get; set; }
 }

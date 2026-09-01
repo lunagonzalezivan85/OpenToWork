@@ -89,7 +89,8 @@
             if (result != null)
             {
                 AuthProvider.NotifyAuthenticationStateChanged();
-                Nav.NavigateTo("/dashboard");
+                var redirectTo = result.User.PrimaryRole == 1 ? "/company-dashboard" : "/dashboard";
+                Nav.NavigateTo(redirectTo);
             }
             else
             {
