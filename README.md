@@ -1370,3 +1370,66 @@ Metodología exacta de "Verificado TD" · pesos del Candidate Score · variables
 #### Archivos modificados/creados
 - **Modificados**: `MainLayout.razor`, `App.razor`, `Program.cs`, `ApiAuthService.cs`, `Messages.razor`, `VacancyDetail.razor`, `Profile.razor`, `Dashboard.razor`, `Home.razor`, `MyApplications.razor`, `MyVacancies.razor`, `Vacancies.razor`, `_Imports.razor`, `components.css`, `portal-nav.css`, `wizard-profile.css`, traducciones ES/EN
 - **Creados**: `DESIGN-SYSTEM.md`, `VacancyManage.razor`, `VacancyCard.razor`, `icon.svg`, `manifest.json`, `sw.js`
+
+---
+
+### Sesión 31-Ago-2026 — Portal de Empresa, Análisis de CV con IA y Evaluación de Perfil IA
+
+#### Portal de Empresa — Dashboard corporativo (`CompanyDashboard.razor` — nuevo)
+- Página `/company-dashboard` con panel de comando estilo IA: input con placeholder "Preguntale a la IA o escribe un comando..." y sugerencias clickeables (Crear vacante, Ver vacantes, Postulantes, Mensajes).
+- Badges de estadísticas: Vacantes (azul), Postulantes (verde), Borradores (ámbar) — clickeables, navegan a las páginas correspondientes.
+- Hero slider de publicidad (70%) + lista de postulantes recientes (30%) en grid responsive.
+- Slider con slides de ejemplo: navegación con flechas prev/next, dots indicadores, auto-rotación.
+- Lista "Postulantes recientes": avatar con iniciales, nombre, vacante, anillo circular de % perfil completado. Click navega al perfil completo del candidato.
+- Eliminada la sección "Mis solicitudes recientes" del dashboard.
+- Iniciales y nombre del usuario extraídos del JWT (`given_name`).
+
+#### Análisis de CV con IA — Evaluación de perfil
+- `ApplicationDto` extendido con `ProfileCompletionPercentage`.
+- `ApplicationService.CalculateProfileCompletion`: calcula el porcentaje de completitud del perfil del candidato basado en 15 campos (nombre, apellido, teléfono, identificación, fecha nacimiento, país, ciudad, título, resumen, años de experiencia, LinkedIn, portfolio, disponibilidad, autorización de trabajo, CV).
+- `MapToDtoAsync` actualizado para incluir el porcentaje en cada aplicación mapeada.
+
+#### Evaluación de Perfil IA — Página de perfil completo del candidato (`ApplicantProfile.razor` — nuevo)
+- Página `/applicant-profile/{CandidateId}` con diseño estilo CV en modo lectura.
+- **Card header 100%**: avatar con iniciales, nombre completo, título profesional, ubicación, años de experiencia, botón "Ver CV", resumen profesional, enlaces de contacto (teléfono, LinkedIn, portfolio).
+- **Sección 70/30**:
+  - **Columna 70%**: Experiencia laboral (timeline con dots azules), Educación (timeline con dots verdes), Certificaciones (cards con nombre, emisor, fecha).
+  - **Columna 30%**: Habilidades con barra de progreso (`ProficiencyLevel`), Información personal (identificación, nacimiento, país, ciudad, disponibilidad, autorización), Nivel por categoría (skills agrupados por categoría en pills azules).
+- Responsive: columnas se apilan en móvil.
+
+#### Backend — API de perfil de candidato por ID
+- `IProfileService.GetCandidateByIdAsync(Guid candidateId)` — nuevo método en la interfaz.
+- `ProfileService.GetCandidateByIdAsync` — busca por `Id` del candidato con includes de experiences, educations, certifications y candidateSkills.
+- `ProfileController` — nuevo endpoint `GET api/profile/candidate/{candidateId}` devuelve el perfil completo del candidato.
+- `CandidateProfileDto` extendido con `List<CandidateSkillDto> Skills` (Name, Category, ProficiencyLevel).
+- `MapToProfileDto` actualizado para mapear skills desde `CandidateSkills` con include de `Skill`.
+- `ApiAuthService.GetCandidateProfileByIdAsync(Guid candidateId)` — método cliente en WEB que llama al endpoint.
+
+#### Postulantes verificados — Rediseño con lista y % de perfil (`VerifiedApplicants.razor` — rediseñado)
+- Página `/verified-applicants` rediseñada con formato de lista de cards.
+- **Lista de vacantes**: cards con título, badge de estado (pill), icono de vistas, número grande de postulantes + label. Click navega a los postulantes de esa vacante.
+- **Lista de postulantes**: cards con avatar (iniciales), nombre, título profesional, badge de estado (Pendiente/En revisión/Rechazado/Aceptado), fecha de postulación, anillo circular de % perfil completado (conic-gradient verde), flecha chevron animada al hover. Click navega al perfil completo del candidato.
+- Estado vacío cuando una vacante no tiene postulantes.
+- Hover: borde azul + shadow suave + flecha animada.
+
+#### CSS (`components.css`)
+- Estilos para hero slider, 70/30 grid, applicant list con progress ring.
+- Estilos para modal (eliminado posteriormente al migrar a página completa).
+- Estilos CV: `.cv-card`, `.cv-header-card`, `.cv-avatar`, `.cv-name`, `.cv-title`, `.cv-header-meta`, `.cv-header-summary`, `.cv-header-contact`, `.cv-content-grid` (70/30), `.cv-section-title`, `.cv-timeline-*`, `.cv-cert-*`, `.cv-skills-list`, `.cv-skill-bar`, `.cv-skill-fill`, `.cv-info-list`, `.cv-category-*`, `.cv-skill-pill`.
+- Estilos Verified Applicants: `.va-back-bar`, `.va-applicant-list`, `.va-applicant-card`, `.va-applicant-avatar`, `.va-applicant-body`, `.va-applicant-status--*`, `.va-progress-ring` (conic-gradient), `.va-applicant-arrow`, `.va-vacancy-list`, `.va-vacancy-card`, `.va-vacancy-status--*`, `.va-vacancy-views`, `.va-vacancy-applicants`, `.va-vacancy-count`.
+- Media queries responsive para todas las nuevas secciones.
+
+#### Archivos nuevos
+- `src/OpenToWork.WEB/Components/Pages/ApplicantProfile.razor`
+- `src/OpenToWork.WEB/Components/Pages/CompanyDashboard.razor`
+- `src/OpenToWork.WEB/Components/Pages/VerifiedApplicants.razor`
+
+#### Archivos modificados
+- `src/OpenToWork.API/Controllers/ProfileController.cs` — endpoint `GET candidate/{candidateId}`
+- `src/OpenToWork.Core/Interfaces/IProfileService.cs` — `GetCandidateByIdAsync`
+- `src/OpenToWork.Core/Services/ProfileService.cs` — implementación + mapping de skills
+- `src/OpenToWork.Core/Services/ApplicationService.cs` — `CalculateProfileCompletion`
+- `src/OpenToWork.Shared/DTOs/ApplicationDto.cs` — `ProfileCompletionPercentage`
+- `src/OpenToWork.Shared/DTOs/CandidateProfileDto.cs` — `Skills` + `CandidateSkillDto`
+- `src/OpenToWork.WEB/Services/ApiAuthService.cs` — `GetCandidateProfileByIdAsync`
+- `src/OpenToWork.WEB/wwwroot/css/components.css` — todos los estilos nuevos
