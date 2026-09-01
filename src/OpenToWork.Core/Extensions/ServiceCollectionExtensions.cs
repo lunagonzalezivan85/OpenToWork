@@ -49,6 +49,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISkillTestService, SkillTestService>();
         services.AddScoped<IScoringService, ScoringService>();
         services.AddScoped<IVerificationStatusService, VerificationStatusService>();
+        services.AddScoped<IValidationService, ValidationService>();
+        services.AddHttpClient<IValidationService, ValidationService>();
 
         return services;
     }

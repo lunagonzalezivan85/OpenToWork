@@ -1,5 +1,18 @@
 namespace OpenToWork.Shared.DTOs;
 
+/// <summary>Scorecard configurable de la empresa (fase-3-sub8.md pregunta 4) - los 3 valores deben venir juntos, o ninguno (null limpia la config custom).</summary>
+public class UpdateScorecardDto
+{
+    public double? Skills { get; set; }
+    public double? Experience { get; set; }
+    public double? Location { get; set; }
+}
+
+public class ScorecardDto
+{
+    public string? WeightsConfig { get; set; }
+}
+
 public class JobMatchDto
 {
     public Guid CandidateId { get; set; }

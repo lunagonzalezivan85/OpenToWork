@@ -14,11 +14,13 @@ namespace OpenToWork.API.Controllers;
 public class PermanentVacanciesController : ControllerBase
 {
     private readonly IPermanentVacancyService _vacancyService;
+    private readonly ICompatibilityService _compatibilityService;
     private readonly AppDbContext _context;
 
-    public PermanentVacanciesController(IPermanentVacancyService vacancyService, AppDbContext context)
+    public PermanentVacanciesController(IPermanentVacancyService vacancyService, ICompatibilityService compatibilityService, AppDbContext context)
     {
         _vacancyService = vacancyService;
+        _compatibilityService = compatibilityService;
         _context = context;
     }
 
@@ -125,6 +127,61 @@ public class PermanentVacanciesController : ControllerBase
 
         var converted = await _vacancyService.ConvertTempVacancyAsync(tempVacancyId, userId.Value);
         return converted ? Ok() : NotFound();
+    }
+
+    // --- Fase 3, sub-fase 3.8: Portal de Empresa - Shortlist + Scorecard configurable ---
+    // Solo lectura del shortlist (la empresa NO dispara el calculo - eso es admin/TD, ver
+    // fase-3-sub4.md pregunta 6); el scorecard si es de la empresa (pregunta 4 de 3.8).
+
+    [HttpGet("{id}/matches")]
+    public async Task<IActionResult> GetMatches(Guid id, [FromQuery] int? limit = null)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        if (!await OwnsVacancyAsync(id, userId.Value)) return Forbid();
+
+        var shortlist = await _compatibilityService.GenerateShortlist(id, limit);
+        return Ok(shortlist);
+    }
+
+    [HttpGet("{id}/scorecard")]
+    public async Task<IActionResult> GetScorecard(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        if (!await OwnsVacancyAsync(id, userId.Value)) return Forbid();
+
+        var vacancy = await _context.PT_Vacancies.FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+        if (vacancy == null) return NotFound();
+        return Ok(new ScorecardDto { WeightsConfig = vacancy.WeightsConfig });
+    }
+
+    [HttpPut("{id}/scorecard")]
+    public async Task<IActionResult> UpdateScorecard(Guid id, [FromBody] UpdateScorecardDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        if (!await OwnsVacancyAsync(id, userId.Value)) return Forbid();
+
+        var vacancy = await _context.PT_Vacancies.FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
+        if (vacancy == null) return NotFound();
+
+        // null limpia la config custom y vuelve a los defaults de CompatibilityService.
+        vacancy.WeightsConfig = dto.Skills.HasValue && dto.Experience.HasValue && dto.Location.HasValue
+            ? System.Text.Json.JsonSerializer.Serialize(new { skills = dto.Skills, experience = dto.Experience, location = dto.Location })
+            : null;
+        vacancy.UpdatedAt = DateTime.UtcNow;
+        vacancy.UpdatedBy = userId.Value;
+        await _context.SaveChangesAsync();
+
+        return Ok(new ScorecardDto { WeightsConfig = vacancy.WeightsConfig });
+    }
+
+    private async Task<bool> OwnsVacancyAsync(Guid vacancyId, Guid userId)
+    {
+        var companyId = await GetCompanyIdAsync(userId);
+        if (companyId == null) return false;
+        return await _context.PT_Vacancies.AnyAsync(v => v.Id == vacancyId && v.PT_CompanyId == companyId && !v.IsDeleted);
     }
 
     private Guid? GetUserId()

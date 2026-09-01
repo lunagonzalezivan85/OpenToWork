@@ -89,6 +89,7 @@ public class AdminUserService : IAdminUserService
         if (user.Candidate != null)
         {
             var c = user.Candidate;
+            dto.CandidateId = c.Id;
             dto.CandidateName = $"{c.FirstName} {c.LastName}";
             dto.Title = c.Title;
             dto.Summary = c.Summary;

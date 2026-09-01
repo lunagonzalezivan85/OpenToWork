@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using OpenToWork.Shared.DTOs;
 using OpenToWork.SharedUI.Services;
 
@@ -367,6 +368,88 @@ public class AdminAuthApiService
         await _localStorage.SetItemAsync("otwadmin-token", auth.Token);
         await _localStorage.SetItemAsync("otwadmin-refresh-token", auth.RefreshToken);
         await _localStorage.SetItemAsync("otwadmin-user-id", auth.User.Id.ToString());
+    }
+
+    // --- Fase 3, sub-fase 3.8: Gestion de scores + Verificaciones manuales ---
+
+    public async Task<CandidateScoreDto?> GetCandidateScoreAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/candidates/{candidateId}/score");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateScoreDto>();
+    }
+
+    public async Task<CandidateScoreDto?> RecalculateCandidateScoreAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/admin/candidates/{candidateId}/score/recalculate", null);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateScoreDto>();
+    }
+
+    public async Task<List<VerificationResultDto>> GetCandidateVerificationsAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/candidates/{candidateId}/verifications");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<VerificationResultDto>>() ?? new();
+    }
+
+    public async Task<bool> SetVerificationStatusAsync(Guid candidateId, int type, int status)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/candidates/{candidateId}/verifications/{type}", new { Status = status });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<SkillTestAdminDto>> GetSkillTestsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/skill-tests");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<SkillTestAdminDto>>() ?? new();
+    }
+
+    public async Task<SkillTestAdminDto?> CreateSkillTestAsync(CreateSkillTestDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/skill-tests", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<SkillTestAdminDto>();
+    }
+
+    public async Task<SkillTestAdminDto?> UpdateSkillTestAsync(Guid id, UpdateSkillTestDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/skill-tests/{id}", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<SkillTestAdminDto>();
+    }
+
+    public async Task<bool> DeleteSkillTestAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/skill-tests/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<int> CalculateVacancyMatchesAsync(Guid vacancyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/admin/vacancies/{vacancyId}/matches/calculate", null);
+        if (!response.IsSuccessStatusCode) return 0;
+        var doc = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return doc.TryGetProperty("candidatesEvaluated", out var v) ? v.GetInt32() : 0;
+    }
+
+    public async Task<List<JobMatchDto>> GetVacancyShortlistAsync(Guid vacancyId, int? limit = null)
+    {
+        await SetAuthHeaderAsync();
+        var url = $"api/admin/vacancies/{vacancyId}/matches" + (limit.HasValue ? $"?limit={limit}" : "");
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<JobMatchDto>>() ?? new();
     }
 
     public async Task LogoutAsync()

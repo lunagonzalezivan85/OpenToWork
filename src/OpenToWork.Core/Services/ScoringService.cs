@@ -245,6 +245,29 @@ public class ScoringService : IScoringService
         };
     }
 
+    public async Task<CandidateScoreDto> GetScoreAsync(Guid candidateId)
+    {
+        var score = await _context.PT_CandidateScores
+            .FirstOrDefaultAsync(s => s.PT_CandidateId == candidateId && !s.IsDeleted);
+
+        if (score == null)
+        {
+            return new CandidateScoreDto { CandidateId = candidateId, CalculatedAt = DateTime.UtcNow, Version = 0 };
+        }
+
+        return new CandidateScoreDto
+        {
+            CandidateId = candidateId,
+            StabilityIndex = score.StabilityIndex,
+            ReliabilityIndex = score.ReliabilityIndex,
+            EvidenceIndex = score.EvidenceIndex,
+            CompatibilityIndex = score.CompatibilityIndex,
+            OverallScore = score.OverallScore,
+            CalculatedAt = score.CalculatedAt,
+            Version = score.Version
+        };
+    }
+
     public async Task RecalculateAllAsync()
     {
         // Bajo demanda unicamente - no hay Hangfire/Quartz instalado (fase-3-sub3.md

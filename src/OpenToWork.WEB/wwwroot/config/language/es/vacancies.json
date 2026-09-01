@@ -85,5 +85,15 @@
         "location": "Ubicación",
         "category": "Categoría"
     },
-    "notFound": "No se pudo cargar la vacante. Es posible que no exista o haya sido eliminada."
+    "notFound": "No se pudo cargar la vacante. Es posible que no exista o haya sido eliminada.",
+    "matchScore": {
+        "title": "Ranking por Compatibilidad (Match Score)",
+        "scorecard": "Configurar Scorecard",
+        "scorecardHint": "Ajustá cómo se pondera cada dimensión del Match Score para esta vacante (los 3 valores en % deben sumar 100).",
+        "weightSkills": "Skills",
+        "weightExperience": "Experiencia",
+        "weightLocation": "Ubicación",
+        "saveScorecard": "Guardar Scorecard",
+        "empty": "Todavía no hay candidatos rankeados para esta vacante. El equipo de OpenToWork calcula este ranking periódicamente."
+    }
 }
