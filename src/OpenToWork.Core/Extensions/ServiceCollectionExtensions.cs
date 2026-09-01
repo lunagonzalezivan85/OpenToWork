@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<ICvParserService, CvParserService>();
         services.AddScoped<IValidationService, ValidationService>();
         services.AddHttpClient<IValidationService, ValidationService>();
+        services.AddScoped<IScoringService, ScoringService>();
 
         return services;
     }

@@ -12,11 +12,13 @@ public class CandidatesController : ControllerBase
 {
     private readonly ICandidateService _candidateService;
     private readonly IValidationService _validationService;
+    private readonly IScoringService _scoringService;
 
-    public CandidatesController(ICandidateService candidateService, IValidationService validationService)
+    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService)
     {
         _candidateService = candidateService;
         _validationService = validationService;
+        _scoringService = scoringService;
     }
 
     [HttpGet("me")]
@@ -70,6 +72,23 @@ public class CandidatesController : ControllerBase
 
         var results = await _validationService.RunAllVerificationsAsync(id);
         return Ok(results);
+    }
+
+    /// <summary>
+    /// {id} es el Id de PTCandidate (no el SCUserId). Solo el dueno del perfil puede recalcular
+    /// su propio score (mismo guard de ownership que /verifications/run).
+    /// </summary>
+    [HttpPost("{id}/score/recalculate")]
+    public async Task<IActionResult> RecalculateScore(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
+        if (myCandidate == null || myCandidate.Id != id) return Forbid();
+
+        var result = await _scoringService.RecalculateAsync(id);
+        return Ok(result);
     }
 
     private Guid? GetUserId()

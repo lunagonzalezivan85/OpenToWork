@@ -9,10 +9,12 @@ namespace OpenToWork.Core.Services;
 public class ProfileService : IProfileService
 {
     private readonly AppDbContext _context;
+    private readonly IScoringService _scoringService;
 
-    public ProfileService(AppDbContext context)
+    public ProfileService(AppDbContext context, IScoringService scoringService)
     {
         _context = context;
+        _scoringService = scoringService;
     }
 
     public async Task<CandidateProfileDto?> GetProfileAsync(Guid userId)
@@ -68,6 +70,9 @@ public class ProfileService : IProfileService
         candidate.UpdatedBy = userId;
 
         await _context.SaveChangesAsync();
+        // Recalculo automatico al editar el perfil (fase-3-sub3.md pregunta 9). Solo lecturas
+        // de BD, sin HTTP, seguro de disparar en cada guardado.
+        await _scoringService.RecalculateAsync(candidate.Id);
 
         var updated = await _context.PT_Candidates
             .Include(c => c.Experiences)
@@ -100,6 +105,7 @@ public class ProfileService : IProfileService
 
         _context.PT_CandidateExperiences.Add(experience);
         await _context.SaveChangesAsync();
+        await _scoringService.RecalculateAsync(candidate.Id);
         return MapToExperienceDto(experience);
     }
 
@@ -121,6 +127,7 @@ public class ProfileService : IProfileService
         experience.UpdatedBy = userId;
 
         await _context.SaveChangesAsync();
+        await _scoringService.RecalculateAsync(experience.PT_CandidateId);
         return MapToExperienceDto(experience);
     }
 
@@ -135,6 +142,7 @@ public class ProfileService : IProfileService
         experience.DeletedAt = DateTime.UtcNow;
         experience.DeletedBy = userId;
         await _context.SaveChangesAsync();
+        await _scoringService.RecalculateAsync(experience.PT_CandidateId);
         return true;
     }
 
@@ -159,6 +167,7 @@ public class ProfileService : IProfileService
 
         _context.PT_CandidateEducations.Add(education);
         await _context.SaveChangesAsync();
+        await _scoringService.RecalculateAsync(candidate.Id);
         return MapToEducationDto(education);
     }
 
@@ -179,6 +188,7 @@ public class ProfileService : IProfileService
         education.UpdatedBy = userId;
 
         await _context.SaveChangesAsync();
+        await _scoringService.RecalculateAsync(education.PT_CandidateId);
         return MapToEducationDto(education);
     }
 
@@ -193,6 +203,7 @@ public class ProfileService : IProfileService
         education.DeletedAt = DateTime.UtcNow;
         education.DeletedBy = userId;
         await _context.SaveChangesAsync();
+        await _scoringService.RecalculateAsync(education.PT_CandidateId);
         return true;
     }
 
@@ -409,6 +420,7 @@ public class ProfileService : IProfileService
         }
 
         await _context.SaveChangesAsync();
+        await _scoringService.RecalculateAsync(candidate.Id);
 
         var updated = await _context.PT_Candidates
             .Include(c => c.Experiences)
