@@ -17,7 +17,7 @@ El proyecto se compone de **3 portales independientes**:
 |--------|-------------|--------|
 | **Portal de Candidatos** | Registro, perfil, wizard, busqueda de vacantes, postulaciones | 80% Completado |
 | **Portal Administrativo** | Verificaciones manuales, moderacion, gestion de usuarios, auditoria, pipeline de reclutamiento | 90% Completado + Pipeline de Reclutamiento (21-Ago) — solo quedan bloqueados 2 items de Fase 3 |
-| **Portal Corporativo** | Suscripcion mensual, perfiles evaluados, ranking, filtros avanzados | Pendiente |
+| **Portal Corporativo** | Dashboard, vacantes, postulantes, perfil de candidato, mensajeria | 70% Completado (estructura base en OpenToWork.WEB) — pendiente scoring/suscripciones (Fase 3) |
 
 ### Caracteristicas principales
 
@@ -618,21 +618,33 @@ Perfil registrado → Perfil completo → Evaluado → Verificacion en proceso �
 
 Solo quedan bloqueados los 2 items que dependen de entidades de Fase 3 (`PTVerification`/`ValidationService`, aun no existen).
 
-### Fase 5: Portal Corporativo - Pendiente
+### Fase 5: Portal Corporativo - Parcialmente COMPLETADO (estructura base en OpenToWork.WEB)
 
-- [ ] Crear proyecto `OpenToWork.CorporateAPI` (puerto 5002, JWT independiente)
-- [ ] Crear proyecto `OpenToWork.CorporateWEB` (puerto 5102)
-- [ ] Entidad `COCompany` — Name, Industry, Size, Website, LogoUrl
-- [ ] Entidad `COSubscription` — CompanyId, Plan (Basic/Pro/Enterprise), Status, StartDate, EndDate, MonthlyFee
+> **Nota (31-Ago-2026, Iluna):** El portal corporativo YA EXISTE en `OpenToWork.WEB` (puerto 5147). No se necesitan los proyectos separados `OpenToWork.CorporateAPI`/`OpenToWork.CorporateWEB`. El portal de empresa funciona dentro del mismo proyecto que el portal de candidatos, con autenticacion JWT compartida y rutas diferenciadas (`/company-dashboard`, `/verified-applicants`, `/applicant-profile/{id}`, etc.).
+
+**Completado:**
+- [x] Registro de empresas (rol 1 en `Register.razor`, mismo flujo que candidatos)
+- [x] Login de empresas (mismo `Login.razor`, JWT con rol diferenciado)
+- [x] Dashboard corporativo (`CompanyDashboard.razor`) — command bar IA, badges de estadisticas, hero slider, postulantes recientes
+- [x] Gestion de vacantes (`Vacancies.razor`, `VacancyManage.razor`, `MyVacancies.razor`)
+- [x] Lista de postulantes verificados (`VerifiedApplicants.razor`) — cards con % perfil completado
+- [x] Perfil completo del candidato en modo lectura (`ApplicantProfile.razor`) — estilo CV con layout 70/30
+- [x] Entidad `PTCompany` — Name, Industry, Size, Website, Description, LogoUrl (ya existe en el modelo)
+- [x] Mensajeria (`Messages.razor`)
+- [x] Navegacion adaptada para rol empresa (`MainLayout.razor`)
+
+**Pendiente (depende de Fase 3 — Motor de Scoring):**
+- [ ] Sistema de suscripciones (planes: Basic, Pro, Enterprise) — requiere definir modelo de ingresos
+- [ ] Entidad `COSubscription` — CompanyId, Plan, Status, StartDate, EndDate, MonthlyFee
 - [ ] Entidad `COSearchHistory` — CompanyId, Filters, ResultCount, SearchedAt
 - [ ] Entidad `COCandidateView` — CompanyId, CandidateId, ScoreSnapshot, ViewedAt
-- [ ] Registro de empresas + wizard de empresa
-- [ ] Sistema de suscripciones (planes: Basic, Pro, Enterprise)
-- [ ] Busqueda avanzada con filtros por score, confiabilidad, estabilidad
-- [ ] Vista de perfiles evaluados con checkmarks de verificacion
-- [ ] Ranking automatico de candidatos por compatibilidad
+- [ ] Busqueda avanzada con filtros por score, confiabilidad, estabilidad — requiere `PTCandidateScore` (Fase 3)
+- [ ] Vista de perfiles evaluados con checkmarks de verificacion — requiere `PTVerification` (Fase 3)
+- [ ] Ranking automatico de candidatos por compatibilidad — requiere `PTJobMatchScore` (Fase 3)
+- [ ] Shortlist con Job Match Score — requiere `CompatibilityService` (Fase 3)
+- [ ] Scorecard configurable por vacante — requiere `PTJobMatchScore.WeightsConfig` (Fase 3)
 - [ ] Reportes avanzados
-- [ ] Migracion EF Core para entidades corporativas
+- [ ] Migracion EF Core para entidades corporativas restantes
 
 ### Fase 6: Servicios Premium - Pendiente
 
@@ -665,7 +677,7 @@ Solo quedan bloqueados los 2 items que dependen de entidades de Fase 3 (`PTVerif
 |------|-------------------|-----------|
 | **Fase 3** | 15 tareas (entidades, servicios, API, UI) | Fase 4 (verificaciones), Fase 5 (perfiles evaluados) |
 | **Fase 4** | 3 tareas + 4 deuda tecnica | — |
-| **Fase 5** | 13 tareas (proyecto nuevo, entidades, suscripciones, busqueda) | Fase 6 |
+| **Fase 5** | 11 tareas (suscripciones, entidades CO, busqueda por score, shortlist) — estructura base ya existe en OpenToWork.WEB | Fase 6 |
 | **Fase 6** | 4 tareas (servicios premium) | — |
 | **Fase 7** | 4 tareas (integraciones externas) | — |
 | **Fase 8** | 4 tareas (pruebas, despliegue) | — |
