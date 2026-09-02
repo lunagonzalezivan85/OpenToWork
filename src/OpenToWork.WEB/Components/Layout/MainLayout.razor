@@ -58,6 +58,12 @@
                         </svg>
                         @Lang.T("common.nav.messages")
                     </a>
+                    <a href="/candidate-search" class="nav-link @(CurrentPage == "candidate-search" ? "active" : "")">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                        </svg>
+                        Búsqueda avanzada
+                    </a>
                 }
                 else
                 {
@@ -495,6 +501,7 @@
             "my-vacancies" => Lang.T("common.nav.myVacancies"),
             "my-applications" => Lang.T("common.nav.myApplications"),
             "verified-applicants" => "Postulantes verificados",
+            "candidate-search" => "Búsqueda avanzada",
             "profile" => Lang.T("common.nav.profile"),
             "messages" => Lang.T("common.nav.messages"),
             _ => Lang.T("common.nav.home")

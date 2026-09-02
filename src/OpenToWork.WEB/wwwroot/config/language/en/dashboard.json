@@ -110,5 +110,18 @@
         "backToList": "Back to list",
         "minutes": "min",
         "wizardRequired": "You need to complete your profile (wizard) to take tests."
+    },
+    "candidateSearch": {
+        "title": "Advanced Search",
+        "subtitle": "Find candidates by score, verification status and skills",
+        "filtersTitle": "Filters",
+        "minScore": "Minimum score",
+        "minStatus": "Minimum status",
+        "anyStatus": "Any status",
+        "skill": "Skill",
+        "anySkill": "Any skill",
+        "search": "Search",
+        "empty": "No candidates found with those filters.",
+        "resultsCount": "candidates found"
     }
 }

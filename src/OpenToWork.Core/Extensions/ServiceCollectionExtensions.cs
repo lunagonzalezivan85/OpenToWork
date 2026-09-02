@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReferenceService, ReferenceService>();
         services.AddScoped<ISkillTestService, SkillTestService>();
         services.AddScoped<IVerificationStatusService, VerificationStatusService>();
+        services.AddScoped<ICandidateSearchService, CandidateSearchService>();
 
         return services;
     }

@@ -15,14 +15,32 @@ public class CandidatesController : ControllerBase
     private readonly IScoringService _scoringService;
     private readonly IReferenceService _referenceService;
     private readonly IVerificationStatusService _verificationStatusService;
+    private readonly ICandidateSearchService _candidateSearchService;
 
-    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService)
+    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService, ICandidateSearchService candidateSearchService)
     {
         _candidateService = candidateService;
         _validationService = validationService;
         _scoringService = scoringService;
         _referenceService = referenceService;
         _verificationStatusService = verificationStatusService;
+        _candidateSearchService = candidateSearchService;
+    }
+
+    /// <summary>Busqueda avanzada de la empresa por score/verificacion/skill (Fase 5). Solo candidatos con perfil publico.</summary>
+    [HttpGet("search")]
+    public async Task<IActionResult> Search([FromQuery] CandidateSearchFilterDto filter)
+    {
+        var result = await _candidateSearchService.SearchAsync(filter);
+        return Ok(result);
+    }
+
+    /// <summary>Skills que aparecen en candidatos con perfil publico - para el filtro de busqueda.</summary>
+    [HttpGet("search/skills")]
+    public async Task<IActionResult> GetSearchableSkills()
+    {
+        var result = await _candidateSearchService.GetSearchableSkillsAsync();
+        return Ok(result);
     }
 
     [HttpGet("me")]
@@ -92,15 +110,16 @@ public class CandidatesController : ControllerBase
         return Ok(results);
     }
 
-    /// <summary>Lectura pura, no recalcula (agregado en 3.8 para el dashboard). Mismo guard de ownership.</summary>
+    /// <summary>
+    /// Lectura pura, no recalcula. Visible para cualquier usuario autenticado (no solo el
+    /// dueno) - mismo criterio ya usado por ProfileController.GetCandidateProfile para el
+    /// perfil publico; la empresa lo necesita para busqueda avanzada y postulantes (Fase 5).
+    /// </summary>
     [HttpGet("{id}/score")]
     public async Task<IActionResult> GetScore(Guid id)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-
-        var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
-        if (myCandidate == null || myCandidate.Id != id) return Forbid();
 
         var result = await _scoringService.GetScoreAsync(id);
         return Ok(result);
@@ -152,18 +171,16 @@ public class CandidatesController : ControllerBase
     }
 
     /// <summary>
-    /// {id} es el Id de PTCandidate. Solo el dueno del perfil por ahora - la exposicion
-    /// publica/para empresas del distintivo Verificado TD se resuelve en la sub-fase 3.8, junto
-    /// con el modelo de autenticacion de empresa (fase-3-sub7.md pregunta 6).
+    /// {id} es el Id de PTCandidate. Visible para cualquier usuario autenticado (no solo el
+    /// dueno) desde Fase 5 - resuelve el gap de acceso dejado abierto en fase-3-sub7.md
+    /// pregunta 6, mismo criterio que GetScore de arriba: la empresa necesita ver el badge
+    /// "Verificado TD" de otros candidatos en postulantes y busqueda avanzada.
     /// </summary>
     [HttpGet("{id}/verification-status")]
     public async Task<IActionResult> GetVerificationStatus(Guid id)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
-
-        var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
-        if (myCandidate == null || myCandidate.Id != id) return Forbid();
 
         var result = await _verificationStatusService.GetVerificationStatusAsync(id);
         return Ok(result);

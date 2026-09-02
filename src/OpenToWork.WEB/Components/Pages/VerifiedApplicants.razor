@@ -38,6 +38,17 @@
                     <div class="va-applicant-body">
                         <div class="va-applicant-primary">
                             <span class="va-applicant-name">@app.CandidateName</span>
+                            @if (VerificationBadges.TryGetValue(app.CandidateId, out var vStatus))
+                            {
+                                @if (vStatus.IsVerifiedTD)
+                                {
+                                    <span class="dash-score-badge" title="Verificado TD">★ Verificado TD</span>
+                                }
+                                else
+                                {
+                                    <span class="dash-score-status">@VerificationStatusLabel(vStatus.Status)</span>
+                                }
+                            }
                             <span class="va-applicant-title">@(app.CandidateTitle ?? "Sin titulo")</span>
                         </div>
                         <div class="va-applicant-secondary">
@@ -136,6 +147,7 @@
     private Dictionary<Guid, int> VacancyApplicantCounts { get; set; } = new();
     private Guid? SelectedVacancyId { get; set; }
     private string SelectedVacancyTitle { get; set; } = "";
+    private Dictionary<Guid, VerificationStatusDto> VerificationBadges { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -180,7 +192,24 @@
         {
             Applicants = new();
         }
+
+        VerificationBadges = new();
+        foreach (var app in Applicants)
+        {
+            var status = await AuthApi.GetVerificationStatusAsync(app.CandidateId);
+            if (status != null) VerificationBadges[app.CandidateId] = status;
+        }
     }
+
+    private static string VerificationStatusLabel(int status) => status switch
+    {
+        0 => "Perfil registrado",
+        1 => "Perfil completo",
+        2 => "Evaluado",
+        3 => "Verificacion en proceso",
+        4 => "Verificado TD",
+        _ => "-"
+    };
 
     private void BackToVacancies()
     {

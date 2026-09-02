@@ -1,0 +1,166 @@
+@page "/candidate-search"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("dashboard.candidateSearch.title")</PageTitle>
+
+<div class="page-container">
+    <div class="dash-banner-card">
+        <div class="dash-banner-info">
+            <h1 class="dash-banner-title">@Lang.T("dashboard.candidateSearch.title")</h1>
+            <p class="dash-banner-role">@Lang.T("dashboard.candidateSearch.subtitle")</p>
+        </div>
+    </div>
+
+    <div class="bento-grid">
+        <div class="bento-card bento-card--full">
+            <span class="bento-card-title">@Lang.T("dashboard.candidateSearch.filtersTitle")</span>
+            <div class="wizard-form-grid" style="margin-top: var(--space-md);">
+                <div class="wizard-form-field">
+                    <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minScore")</label>
+                    <input type="number" min="0" max="100" class="wizard-input" @bind="MinScore" placeholder="0-100" />
+                </div>
+                <div class="wizard-form-field">
+                    <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minStatus")</label>
+                    <select class="wizard-input" @bind="MinStatus">
+                        <option value="">@Lang.T("dashboard.candidateSearch.anyStatus")</option>
+                        <option value="2">@Lang.T("dashboard.score.statusEvaluated")</option>
+                        <option value="3">@Lang.T("dashboard.score.statusInProgress")</option>
+                        <option value="4">@Lang.T("dashboard.score.statusVerifiedTD")</option>
+                    </select>
+                </div>
+                <div class="wizard-form-field">
+                    <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.skill")</label>
+                    <select class="wizard-input" @bind="SkillId">
+                        <option value="">@Lang.T("dashboard.candidateSearch.anySkill")</option>
+                        @foreach (var s in Skills)
+                        {
+                            <option value="@s.Id">@s.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <button class="ot-btn ot-btn--primary" style="margin-top: var(--space-md);" @onclick="SearchAsync" disabled="@IsLoading">
+                @Lang.T("dashboard.candidateSearch.search")
+            </button>
+        </div>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="wizard-loading"><div class="wizard-skeleton-main"></div></div>
+    }
+    else if (HasSearched && Results.Count == 0)
+    {
+        <div class="bento-card bento-card--full dash-empty">
+            <p>@Lang.T("dashboard.candidateSearch.empty")</p>
+        </div>
+    }
+    else if (Results.Count > 0)
+    {
+        <p class="dash-chart-info-text">@Total @Lang.T("dashboard.candidateSearch.resultsCount")</p>
+        <div class="bento-grid">
+            @foreach (var r in Results)
+            {
+                <div class="bento-card bento-card--medium" style="cursor:pointer;" @onclick="() => GoToProfile(r.CandidateId)">
+                    <div class="dash-score-header">
+                        <div>
+                            <span class="bento-card-title">@r.Name</span>
+                            <p class="dash-chart-info-text" style="margin:2px 0 0;">@(r.Title ?? "-") @(string.IsNullOrEmpty(r.City) ? "" : $"· {r.City}, {r.Country}")</p>
+                        </div>
+                        @if (r.IsVerifiedTD)
+                        {
+                            <span class="dash-score-badge">★ TD</span>
+                        }
+                    </div>
+                    <div class="dash-score-rings" style="margin-top: var(--space-md);">
+                        <div class="dash-score-mini-ring" style="--mini-color: #3b82f6; --deg: @(r.OverallScore * 3.6)deg; width:56px; height:56px;">
+                            <div class="dash-score-mini-ring-inner" style="width:42px; height:42px;">@r.OverallScore</div>
+                        </div>
+                        <span class="dash-score-status">@VerificationStatusLabel(r.VerificationStatus)</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Total > PageSize)
+        {
+            <div style="display:flex; gap:8px; justify-content:center; margin-top: var(--space-lg);">
+                <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(Page <= 1)" @onclick="() => ChangePage(Page - 1)">←</button>
+                <span class="dash-chart-info-text" style="align-self:center;">@Page / @TotalPages</span>
+                <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(Page >= TotalPages)" @onclick="() => ChangePage(Page + 1)">→</button>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private int? MinScore { get; set; }
+    private string MinStatus { get; set; } = "";
+    private string SkillId { get; set; } = "";
+    private List<SkillOptionDto> Skills { get; set; } = new();
+    private List<CandidateSearchResultDto> Results { get; set; } = new();
+    private int Total { get; set; }
+    private int Page { get; set; } = 1;
+    private const int PageSize = 20;
+    private bool IsLoading { get; set; }
+    private bool HasSearched { get; set; }
+
+    private int TotalPages => (int)Math.Ceiling(Total / (double)PageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        Skills = await AuthApi.GetSearchableSkillsAsync();
+        await SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        Page = 1;
+        await RunSearchAsync();
+    }
+
+    private async Task ChangePage(int page)
+    {
+        Page = page;
+        await RunSearchAsync();
+    }
+
+    private async Task RunSearchAsync()
+    {
+        IsLoading = true;
+        HasSearched = true;
+
+        var filter = new CandidateSearchFilterDto
+        {
+            MinOverallScore = MinScore,
+            MinVerificationStatus = string.IsNullOrEmpty(MinStatus) ? null : int.Parse(MinStatus),
+            SkillId = string.IsNullOrEmpty(SkillId) ? null : Guid.Parse(SkillId),
+            Page = Page,
+            PageSize = PageSize
+        };
+
+        var result = await AuthApi.SearchCandidatesAsync(filter);
+        Results = result?.Items ?? new();
+        Total = result?.Total ?? 0;
+        IsLoading = false;
+    }
+
+    private void GoToProfile(Guid candidateId) => Nav.NavigateTo($"/applicant-profile/{candidateId}");
+
+    private string VerificationStatusLabel(int status) => status switch
+    {
+        0 => Lang.T("dashboard.score.statusProfileRegistered"),
+        1 => Lang.T("dashboard.score.statusProfileComplete"),
+        2 => Lang.T("dashboard.score.statusEvaluated"),
+        3 => Lang.T("dashboard.score.statusInProgress"),
+        4 => Lang.T("dashboard.score.statusVerifiedTD"),
+        _ => "-"
+    };
+}

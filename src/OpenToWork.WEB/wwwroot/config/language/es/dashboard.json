@@ -110,5 +110,18 @@
         "backToList": "Volver a la lista",
         "minutes": "min",
         "wizardRequired": "Necesitás completar tu perfil (wizard) para poder tomar retos."
+    },
+    "candidateSearch": {
+        "title": "Búsqueda Avanzada",
+        "subtitle": "Encontrá candidatos por score, estado de verificación y skills",
+        "filtersTitle": "Filtros",
+        "minScore": "Score mínimo",
+        "minStatus": "Estado mínimo",
+        "anyStatus": "Cualquier estado",
+        "skill": "Skill",
+        "anySkill": "Cualquier skill",
+        "search": "Buscar",
+        "empty": "No se encontraron candidatos con esos filtros.",
+        "resultsCount": "candidatos encontrados"
     }
 }

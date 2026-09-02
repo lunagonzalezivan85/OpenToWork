@@ -543,6 +543,26 @@ public class ApiAuthService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<CandidateSearchResultPageDto?> SearchCandidatesAsync(CandidateSearchFilterDto filter)
+    {
+        await SetAuthHeaderAsync();
+        var query = $"api/candidates/search?page={filter.Page}&pageSize={filter.PageSize}";
+        if (filter.MinOverallScore.HasValue) query += $"&minOverallScore={filter.MinOverallScore}";
+        if (filter.MinVerificationStatus.HasValue) query += $"&minVerificationStatus={filter.MinVerificationStatus}";
+        if (filter.SkillId.HasValue) query += $"&skillId={filter.SkillId}";
+        var response = await _httpClient.GetAsync(query);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateSearchResultPageDto>();
+    }
+
+    public async Task<List<SkillOptionDto>> GetSearchableSkillsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/candidates/search/skills");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<SkillOptionDto>>() ?? new();
+    }
+
     public async Task<string?> GetTokenAsync() => await _localStorage.GetItemAsync("opentowork-token");
     public async Task<string?> GetRefreshTokenAsync() => await _localStorage.GetItemAsync("opentowork-refresh-token");
     public async Task<string?> GetUserIdAsync() => await _localStorage.GetItemAsync("opentowork-user-id");
