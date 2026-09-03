@@ -57,6 +57,15 @@
         padding: var(--space-lg);
     }
 
+    .auth-split-brand {
+        display: none;
+    }
+
+    .auth-split-form {
+        flex: 1;
+        max-width: 100%;
+    }
+
     .nav-bar {
         padding: 0 var(--space-md);
     }
@@ -71,6 +80,10 @@
 
     .auth-top-bar {
         padding: 0 var(--space-md);
+    }
+
+    .auth-split-form {
+        padding: var(--space-md);
     }
 
     h1 { font-size: 1.5rem; }
@@ -179,6 +192,14 @@
     .auth-card {
         padding: var(--space-md);
         border-radius: var(--radius-lg);
+    }
+
+    .auth-brand-title {
+        font-size: 2rem;
+    }
+
+    .auth-brand-tagline {
+        font-size: 1.1rem;
     }
 
     .role-card {

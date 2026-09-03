@@ -1,12 +1,12 @@
 {
-  "name": "OpenToWork",
-  "short_name": "OTW",
-  "description": "Plataforma de empleo y gestión de vacantes",
+  "name": "CONEX",
+  "short_name": "CONEX",
+  "description": "Plataforma de evaluacion, validacion y scoring de talento",
   "id": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",
-  "theme_color": "#0066FF",
+  "theme_color": "#0B4F8A",
   "orientation": "portrait",
   "icons": [
     {

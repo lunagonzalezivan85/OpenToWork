@@ -1,4 +1,4 @@
-# OpenToWork
+# CONEX
 
 Plataforma de **evaluacion, validacion y scoring de talento** que funciona como la capa de confianza para decisiones de contratacion. Construida con **.NET 10, Blazor y MySQL**.
 

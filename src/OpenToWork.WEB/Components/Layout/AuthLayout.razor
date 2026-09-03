@@ -3,28 +3,36 @@
 @inject LanguageService Lang
 @inject Microsoft.JSInterop.IJSRuntime JS
 
-<div class="auth-layout">
-    <div class="auth-top-bar">
-        <div class="nav-brand">
-            <a href="/">
-                <span class="nav-brand-logo">OTW</span>
-                <span class="nav-brand-text">OpenToWork</span>
-            </a>
+<div class="auth-split">
+    <div class="auth-split-brand">
+        <div class="auth-brand-top">
+            <div class="nav-brand">
+                <a href="/">
+                    <span class="nav-brand-logo">CONEX</span>
+                    <span class="nav-brand-text">CONEX</span>
+                </a>
+            </div>
         </div>
-        <div class="nav-actions">
-            <select @onchange="OnThemeChanged" class="nav-select">
+        <div class="auth-brand-content">
+            <h1 class="auth-brand-title">CONEX</h1>
+            <p class="auth-brand-tagline">@Lang.T("auth.brand.tagline")</p>
+            <p class="auth-brand-description">@Lang.T("auth.brand.description")</p>
+        </div>
+        <div class="auth-brand-footer">
+            <select @onchange="OnThemeChanged" class="nav-select nav-select--light">
                 <option value="navy">Navy</option>
                 <option value="dark">Dark</option>
                 <option value="light">Light</option>
             </select>
-            <select @onchange="OnLanguageChanged" class="nav-select">
+            <select @onchange="OnLanguageChanged" class="nav-select nav-select--light">
                 <option value="es">ES</option>
                 <option value="en">EN</option>
             </select>
         </div>
     </div>
-
-    @Body
+    <div class="auth-split-form">
+        @Body
+    </div>
 </div>
 
 @code {

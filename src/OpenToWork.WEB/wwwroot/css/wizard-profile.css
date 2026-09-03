@@ -1025,15 +1025,15 @@
 .wizard-summary-header-banner {
     height: 60px;
     width: 100%;
-    background: #F0F7FF;
-    border-bottom: 3px solid #E8F1FF;
+    background: #E8F0F7;
+    border-bottom: 3px solid #E8F0F7;
 }
 
 .wizard-summary-avatar {
     width: 72px;
     height: 72px;
     border-radius: 20px;
-    background: #0066FF;
+    background: #0B4F8A;
     color: #FFFFFF;
     font-size: 1.6rem;
     font-weight: 800;
@@ -1161,8 +1161,8 @@
     align-items: center;
     padding: 0.3rem 0.8rem;
     border-radius: 999px;
-    background: #E8F1FF;
-    color: #0066FF;
+    background: #E8F0F7;
+    color: #0B4F8A;
     font-size: 0.8rem;
     font-weight: 600;
 }

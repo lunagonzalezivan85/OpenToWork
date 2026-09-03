@@ -1,11 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#0066FF"/>
-  <!-- Briefcase handle -->
-  <rect x="196" y="120" width="120" height="36" rx="18" fill="none" stroke="#FFFFFF" stroke-width="20"/>
-  <!-- Briefcase body -->
-  <rect x="96" y="168" width="320" height="240" rx="32" fill="#FFFFFF"/>
-  <!-- Briefcase lid line -->
-  <rect x="96" y="232" width="320" height="8" fill="#0066FF" opacity="0.15"/>
-  <!-- OTW text -->
-  <text x="256" y="340" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="96" font-weight="800" fill="#0066FF" text-anchor="middle" letter-spacing="-4">OTW</text>
+  <rect width="512" height="512" rx="112" fill="#0B4F8A"/>
+  <!-- Synergy icon: connected nodes forming a network -->
+  <!-- Center node -->
+  <circle cx="256" cy="256" r="48" fill="#FFFFFF"/>
+  <!-- Top-left node -->
+  <circle cx="140" cy="140" r="36" fill="#FFFFFF" opacity="0.9"/>
+  <!-- Top-right node -->
+  <circle cx="372" cy="140" r="36" fill="#FFFFFF" opacity="0.9"/>
+  <!-- Bottom-left node -->
+  <circle cx="140" cy="372" r="36" fill="#FFFFFF" opacity="0.9"/>
+  <!-- Bottom-right node -->
+  <circle cx="372" cy="372" r="36" fill="#FFFFFF" opacity="0.9"/>
+  <!-- Connection lines from center -->
+  <line x1="140" y1="140" x2="256" y2="256" stroke="#FFFFFF" stroke-width="8" opacity="0.6"/>
+  <line x1="372" y1="140" x2="256" y2="256" stroke="#FFFFFF" stroke-width="8" opacity="0.6"/>
+  <line x1="140" y1="372" x2="256" y2="256" stroke="#FFFFFF" stroke-width="8" opacity="0.6"/>
+  <line x1="372" y1="372" x2="256" y2="256" stroke="#FFFFFF" stroke-width="8" opacity="0.6"/>
+  <!-- Outer connections (synergy ring) -->
+  <line x1="140" y1="140" x2="372" y2="140" stroke="#FFFFFF" stroke-width="6" opacity="0.3"/>
+  <line x1="140" y1="372" x2="372" y2="372" stroke="#FFFFFF" stroke-width="6" opacity="0.3"/>
+  <line x1="140" y1="140" x2="140" y2="372" stroke="#FFFFFF" stroke-width="6" opacity="0.3"/>
+  <line x1="372" y1="140" x2="372" y2="372" stroke="#FFFFFF" stroke-width="6" opacity="0.3"/>
+  <!-- CONEX text -->
+  <text x="256" y="470" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="52" font-weight="800" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">CONEX</text>
 </svg>
