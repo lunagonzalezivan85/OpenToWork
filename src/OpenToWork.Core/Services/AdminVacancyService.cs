@@ -23,12 +23,7 @@ public class AdminVacancyService : IAdminVacancyService
         pageSize = Math.Clamp(pageSize, 1, 1_000_000);
 
         var permanentQuery = _context.PT_Vacancies
-            .Include(v => v.Company)
-            .Where(v => !v.IsDeleted);
-
-        if (status.HasValue) permanentQuery = permanentQuery.Where(v => v.Status == status.Value);
-
-        var permanent = await permanentQuery
+            .Where(v => !v.IsDeleted)
             .Select(v => new AdminVacancyDto
             {
                 Id = v.Id,
@@ -41,13 +36,12 @@ public class AdminVacancyService : IAdminVacancyService
                 IsTemporary = false,
                 PublishedAt = v.PublishedAt,
                 ClosedAt = v.ClosedAt,
+                ExpiresAt = null,
                 ViewsCount = v.ViewsCount
-            })
-            .ToListAsync();
+            });
 
-        var tempQuery = _context.PT_TempVacancies.Where(v => !v.IsDeleted);
-
-        var temp = await tempQuery
+        var tempQuery = _context.PT_TempVacancies
+            .Where(v => !v.IsDeleted)
             .Select(v => new AdminVacancyDto
             {
                 Id = v.Id,
@@ -58,19 +52,25 @@ public class AdminVacancyService : IAdminVacancyService
                 WorkMode = v.WorkMode,
                 Status = v.IsPublished ? (int)VacancyStatus.Active : (int)VacancyStatus.Draft,
                 IsTemporary = true,
+                PublishedAt = null,
+                ClosedAt = null,
                 ExpiresAt = v.ExpiresAt,
                 ViewsCount = 0
-            })
-            .ToListAsync();
+            });
 
-        var combined = permanent.Concat(temp);
+        // Both sides assign the exact same set of AdminVacancyDto properties (with explicit
+        // nulls for the ones that don't apply) so EF/Pomelo can translate this Concat into a
+        // single UNION ALL query with server-side ORDER BY/LIMIT/OFFSET instead of loading
+        // both tables into memory.
+        var combined = permanentQuery.Concat(tempQuery);
+
         if (status.HasValue) combined = combined.Where(v => v.Status == status.Value);
 
-        return combined
+        return await combined
             .OrderByDescending(v => v.PublishedAt ?? v.ExpiresAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToList();
+            .ToListAsync();
     }
 
     public async Task<bool> ModerateAsync(Guid id, int status, Guid adminId, string? ipAddress)

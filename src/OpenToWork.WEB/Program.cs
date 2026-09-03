@@ -1,5 +1,6 @@
 using OpenToWork.WEB.Components;
 using OpenToWork.WEB.Services;
+using OpenToWork.SharedUI.Services;
 using Microsoft.AspNetCore.StaticFiles;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,7 +15,10 @@ builder.Services.AddAuthentication();
 builder.Services.AddScoped<LocalStorageService>();
 builder.Services.AddScoped<ApiAuthService>();
 builder.Services.AddScoped<AppAuthStateProvider>();
-builder.Services.AddScoped<LanguageService>();
+builder.Services.AddScoped(sp => new LanguageService(
+    sp.GetRequiredService<Microsoft.JSInterop.IJSRuntime>(),
+    sp.GetRequiredService<IWebHostEnvironment>(),
+    new[] { "common", "auth", "wizard", "dashboard", "vacancies", "profile", "validation", "errors", "applications" }));
 builder.Services.AddSingleton<AesEncryptionService>(sp => new AesEncryptionService(builder.Configuration["Security:AesKey"] ?? "OpenToWork-Default-Key-2024"));
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(sp => sp.GetRequiredService<AppAuthStateProvider>());
 

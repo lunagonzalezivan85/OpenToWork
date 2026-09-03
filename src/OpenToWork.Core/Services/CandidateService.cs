@@ -18,6 +18,8 @@ public class CandidateService : ICandidateService
     public async Task<CandidateDto?> GetCandidateByUserIdAsync(Guid userId)
     {
         var candidate = await _context.PT_Candidates
+            .Include(c => c.Experiences)
+            .Include(c => c.Educations)
             .FirstOrDefaultAsync(c => c.SCUserId == userId && !c.IsDeleted);
 
         return candidate == null ? null : MapToDto(candidate);
@@ -26,6 +28,8 @@ public class CandidateService : ICandidateService
     public async Task<CandidateDto?> GetCandidateByIdAsync(Guid id)
     {
         var candidate = await _context.PT_Candidates
+            .Include(c => c.Experiences)
+            .Include(c => c.Educations)
             .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
 
         return candidate == null ? null : MapToDto(candidate);
@@ -105,7 +109,32 @@ public class CandidateService : ICandidateService
         Country = c.Country,
         City = c.City,
         Address = c.Address,
+        LinkedInUrl = c.LinkedInUrl,
+        YearsOfExperience = c.YearsOfExperience,
         WizardCompleted = c.WizardCompleted,
-        WizardStep = c.WizardStep
+        WizardStep = c.WizardStep,
+        Experiences = c.Experiences.Where(e => !e.IsDeleted).Select(e => new CandidateExperienceDto
+        {
+            Id = e.Id,
+            CandidateId = e.PT_CandidateId,
+            JobTitle = e.JobTitle,
+            CompanyName = e.CompanyName,
+            Description = e.Description,
+            StartDate = e.StartDate,
+            EndDate = e.EndDate,
+            IsCurrentJob = e.IsCurrentJob,
+            Location = e.Location
+        }).ToList(),
+        Educations = c.Educations.Where(e => !e.IsDeleted).Select(e => new CandidateEducationDto
+        {
+            Id = e.Id,
+            CandidateId = e.PT_CandidateId,
+            Institution = e.Institution,
+            Degree = e.Degree,
+            FieldOfStudy = e.FieldOfStudy,
+            StartDate = e.StartDate,
+            EndDate = e.EndDate,
+            IsInProgress = e.IsInProgress
+        }).ToList()
     };
 }

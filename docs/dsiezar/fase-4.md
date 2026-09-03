@@ -4,7 +4,7 @@
 **Rol:** PM (Project Manager)
 **Fecha inicio:** 2026-08-12
 **Fecha fin:** Pendiente
-**Estado:** En Etapa 3 (Implementacion) - AdminAPI y AdminWEB funcionales de punta a punta
+**Estado:** Etapa 3 cerrada salvo lo bloqueado por Fase 3 - gestion de roles y los 4 items de deuda tecnica completados el 2026-08-29. Solo quedan pendientes verificaciones manuales y revision de validaciones automaticas, bloqueadas por `PTVerification`/`ValidationService` (Fase 3, no iniciada).
 
 ---
 
@@ -332,6 +332,8 @@ Los 6 fixes se verificaron corriendo contra el `AdminAPI` real (no solo lectura 
 | 9 | `AdminWEB/Services/LocalStorageService.cs`, `LanguageService.cs` | Copias casi identicas de los servicios homonimos de `OpenToWork.WEB`, sin un proyecto compartido (tipo `SharedUI`) que las contenga una sola vez |
 | 10 | `AdminWEB/Components/Pages/*.razor` | El guard "leer token de localStorage, redirigir a /login si falta" esta copiado y pegado en las 5 paginas en vez de vivir una sola vez en `AdminLayout` - fragil si se agrega una pagina nueva y se olvida el guard |
 
+> **Resueltos los 4 (2026-08-29, Dsiezar):** ver seccion "Etapa 3 (cierre): Gestion de roles + resolucion de deuda tecnica" mas abajo para el detalle de cada fix y su verificacion.
+
 ---
 
 ## Resumen de Cambios
@@ -362,3 +364,68 @@ Feature disenada en Etapa 2 (`docs/dsiezar/fase-3.md` seccion de endpoints) pero
 **Build:** `dotnet build OpenToWork.slnx` -> 0 errores.
 
 Con esto, `AdminAPI` queda con **8 controllers** (Auth, Users, Vacancies, Applications, Skills, Dashboard, AuditLog, Export) y `AdminWEB` con **7 paginas**.
+
+---
+
+## Etapa 3 (cierre): Gestion de roles + resolucion de deuda tecnica (2026-08-29)
+
+**Contexto:** a peticion del usuario ("terminemos lo que falta de la fase 4"), se retoma el checklist pendiente de la Etapa 1. De los 3 items no marcados, 2 siguen bloqueados por Fase 3 (`PTVerification`/`ValidationService` no existen todavia); se implementa el tercero (gestion de roles) y se resuelven los 4 items de deuda tecnica de la revision QA+SEC (items 7-10 de la tabla de arriba).
+
+### Gestion de roles de usuario
+
+**Archivos creados/modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| `Shared/DTOs/AdminDtos.cs` | Nuevo `ChangeRoleDto { int Role }` |
+| `Core/Interfaces/IAdminUserService.cs` | Nuevo `Task<bool> ChangeRoleAsync(Guid id, int newRole, Guid adminId, string? ipAddress)` |
+| `Core/Services/AdminUserService.cs` | Implementacion: valida el rol con `Enum.IsDefined`, actualiza `SCUser.PrimaryRole`, agrega una fila a `SC_UserRoles` si el rol nuevo no esta en el historial (nunca borra roles previos), registra auditoria `ChangeUserRole` con `{"from":X,"to":Y}` |
+| `AdminAPI/Controllers/UsersController.cs` | `PUT /api/admin/users/{id}/role`, con el mismo patron de auto-bloqueo que `/deactivate` y `DELETE` (`if (id == AdminId) return Conflict(...)`) mas `BadRequest` si el rol no es valido |
+| `AdminWEB/Services/AdminAuthApiService.cs` | `ChangeUserRoleAsync(Guid id, int role)` |
+| `AdminWEB/Components/Pages/Users.razor` | Selector `<select>` de rol por tarjeta (deshabilitado para la propia cuenta del admin, usando el `otwadmin-user-id` ya guardado en `localStorage`), con `confirm()` antes de aplicar el cambio y recarga de la lista despues |
+| `wwwroot/config/language/{es,en}/admin.json` | Claves nuevas: `changeRole`, `confirmRoleChange`, `roleCandidate`, `roleCompany`, `roleAdmin` |
+| `wwwroot/css/admin.css` | Estilos `.admin-role-select` (tamano, estado disabled) |
+
+**Verificacion end-to-end contra MySQL real (no mocks):**
+- Navegador: login admin, `/users` muestra el selector de rol en cada tarjeta con el rol actual preseleccionado; la propia cuenta del admin aparece con el selector deshabilitado (confirmado via `getComputedStyle`/`disabled` en consola).
+- `curl` directo contra `AdminAPI`: cambio de rol de un usuario de prueba (Company -> Candidate) devuelve `204`, `GET /users/{id}` confirma el cambio; revertido a `Company` con el mismo patron; intento de cambiar el rol propio del admin -> `409 "You cannot change your own role."`; rol invalido (`99`) -> `400 "Invalid role."`.
+
+### Deuda tecnica #7: Unificar `AdminAuthService` con `AuthService`
+
+**Archivos creados:** `Core/Interfaces/ITokenCryptoService.cs`, `Core/Services/TokenCryptoService.cs` — extraen `CreateJwtToken(claims, key, issuer, audience, expireMinutes)`, `GenerateRefreshToken()` y `HashToken(token)`, que antes eran metodos privados identicos en ambos servicios.
+
+**Archivos modificados:** `AuthService.cs` y `AdminAuthService.cs` ahora reciben `ITokenCryptoService` por constructor y delegan la parte criptografica; cada uno conserva su propia logica de claims (`AuthService` agrega un claim `Role` por cada `UserRole` del usuario; `AdminAuthService` agrega un unico claim `Role=Admin`) y su propia configuracion `Jwt:Key/Issuer/Audience`. Registrado en `AddCoreServices` y `AddAdminCoreServices` (nunca se usan en el mismo host, sin doble registro).
+
+**Verificacion:** login en `AdminAPI` (issuer `OpenToWork.Admin`) y registro+login+refresh-token en `OpenToWork.API` (issuer `OpenToWork.Portal`) contra MySQL real, confirmando que los JWT y refresh tokens se siguen generando y validando correctamente en ambos portales tras la unificacion.
+
+### Deuda tecnica #8: Optimizar `AdminVacancyService`
+
+`GetVacanciesAsync` cargaba `PT_Vacancies` y `PT_TempVacancies` completas en memoria (dos `ToListAsync()`) antes de combinar y paginar con LINQ-to-Objects. Se reescribe proyectando ambas tablas a `IQueryable<AdminVacancyDto>` con **exactamente el mismo conjunto de propiedades asignadas en ambos lados** (incluyendo `null` explicito en las que no aplican a cada tabla, ej. `ExpiresAt = null` en el lado de vacantes permanentes) y uniendolas con `.Concat()` antes del filtro de status, el `OrderByDescending` y el `Skip/Take`.
+
+**Nota tecnica:** la primera version (sin igualar las propiedades asignadas en ambos lados) fallo en tiempo de ejecucion con `InvalidOperationException: Unable to translate set operations when both sides don't assign values to the same properties in the nominal type` — Pomelo/EF Core exige que ambos lados de un `Concat`/`Union` asignen el mismo conjunto de propiedades del tipo destino para poder traducirlo a `UNION ALL`.
+
+**Verificacion:** `curl` contra `AdminAPI` real (MySQL) confirmo `200` con datos correctos en `GET /api/admin/vacancies` (paginado y filtrado por `status`), sin la excepcion de traduccion.
+
+### Deuda tecnica #9: Mover `LocalStorageService`/`LanguageService` a `SharedUI`
+
+`LocalStorageService` era identico byte a byte entre `AdminWEB` y `WEB` - se movio sin cambios a `OpenToWork.SharedUI.Services`.
+
+`LanguageService` tenia la misma logica pero cargaba las traducciones de forma distinta (WEB itera un arreglo fijo de 9 secciones; AdminWEB carga un unico `admin.json`). Se unifico en una sola clase que recibe el arreglo de secciones por constructor - el nombre de cada seccion es tanto el nombre del archivo `.json` como el prefijo de flatten de sus claves, preservando el comportamiento exacto de ambos proyectos. Cada `Program.cs` registra su propia instancia via una lambda de fabrica con su arreglo de secciones.
+
+Requirio agregar `<FrameworkReference Include="Microsoft.AspNetCore.App" />` a `OpenToWork.SharedUI.csproj` para acceder a `IWebHostEnvironment` (no disponible via el paquete `Components.Web` que ya referenciaba).
+
+**Verificacion:** ambos portales muestran las traducciones ES/EN correctas tras la migracion (incluyendo las claves nuevas de gestion de roles); el portal principal (`/`) renderiza con sus 9 secciones sin cambios.
+
+### Deuda tecnica #10: Centralizar el guard de autenticacion en `AdminLayout`
+
+El chequeo `otwadmin-token` -> redirigir a `/login` estaba duplicado en 9 paginas (`CandidateProfile`, `Vacancies`, `Users`, `UserProfile`, `Skills`, `DashboardResults`, `Dashboard`, `AuditLog`, `Applications`). Se centraliza en `AdminLayout.OnInitializedAsync` y se elimina de esas 9 paginas.
+
+**Hallazgo durante la implementacion:** las 4 paginas del Pipeline de Reclutamiento de Iluna (`Candidates/Index`, `Assigned`, `Pipeline`, `PipelineDetail`) **nunca tuvieron este guard** - eran accesibles sin sesion. Al vivir dentro del mismo `AdminLayout`, quedan protegidas automaticamente sin necesidad de tocarlas.
+
+**Verificacion en navegador:** con `localStorage` limpio, `GET /candidates/pipeline` y `GET /users` redirigen a `/login` (antes, `/candidates/pipeline` renderizaba sin sesion). Con sesion iniciada, ambas paginas cargan con su logica intacta.
+
+### Build y estado final
+
+`dotnet build` sin errores en los 4 proyectos host (`API`, `AdminAPI`, `WEB`, `AdminWEB`) tras cada etapa. Todo verificado contra MySQL real en navegador y/o `curl`, no solo compilado.
+
+**Pendiente (bloqueado por Fase 3, sin cambios):** verificaciones manuales (`PTVerification`) y revision de validaciones automaticas (`ValidationService`) - ninguna de las dos entidades existe todavia en el modelo de datos.

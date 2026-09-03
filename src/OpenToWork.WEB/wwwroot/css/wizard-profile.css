@@ -652,6 +652,320 @@
     border-top: 1px solid var(--border-color);
 }
 
+/* ===== CV Upload ===== */
+.wizard-cv-upload-zone {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 14px;
+    background: var(--bg-secondary);
+}
+
+.wizard-cv-upload {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.wizard-cv-input {
+    font-size: 0.85rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.wizard-cv-input::file-selector-button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    margin-right: 0.6rem;
+    font-size: 0.82rem;
+    transition: background 0.15s;
+}
+
+.wizard-cv-input::file-selector-button:hover {
+    background: var(--bg-tertiary);
+}
+
+.wizard-cv-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+    color: var(--accent-primary);
+    text-decoration: none;
+    margin-top: 0.4rem;
+}
+
+.wizard-cv-link:hover {
+    text-decoration: underline;
+}
+
+.wizard-cv-error {
+    display: block;
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 0.4rem;
+}
+
+.wizard-cv-success {
+    display: block;
+    color: var(--success);
+    font-size: 0.8rem;
+    margin-top: 0.4rem;
+}
+
+.wizard-cv-notset {
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* ===== CV Modals ===== */
+.cv-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 19, 43, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+    animation: cvFadeIn 0.2s ease;
+}
+
+@keyframes cvFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.cv-modal {
+    background: var(--card-bg, #FFFFFF);
+    border-radius: 18px;
+    max-width: 540px;
+    width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    animation: cvSlideUp 0.25s ease;
+}
+
+@keyframes cvSlideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.cv-modal--loading {
+    padding: 2.5rem 2rem;
+    text-align: center;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cv-modal-loading {
+    padding: 2.5rem 2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cv-modal-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--bg-secondary, #E8F1FF);
+    border-top-color: var(--accent-primary, #0066FF);
+    border-radius: 50%;
+    animation: cvSpin 0.8s linear infinite;
+}
+
+@keyframes cvSpin {
+    to { transform: rotate(360deg); }
+}
+
+.cv-modal--results {
+    overflow: hidden;
+}
+
+.cv-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color, #E8F1FF);
+}
+
+.cv-modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary, #778DA9);
+    padding: 0.25rem;
+    border-radius: 8px;
+    display: flex;
+    transition: background 0.15s;
+}
+
+.cv-modal-close:hover {
+    background: var(--bg-secondary, #F1F5F9);
+}
+
+.cv-modal-body {
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.cv-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color, #E8F1FF);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.cv-modal-confirm-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary, #0B132B);
+    margin: 0;
+    text-align: center;
+}
+
+.cv-modal-footer-buttons {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.cv-modal-footer-buttons .ot-btn {
+    flex: 1;
+    justify-content: center;
+}
+
+.cv-modal-success-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #22c55e;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cv-modal-error-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cv-modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary, #0B132B);
+    margin: 0;
+}
+
+.cv-modal-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary, #3A506B);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.cv-modal-empty {
+    text-align: center;
+    color: var(--text-secondary, #778DA9);
+    font-size: 0.9rem;
+    padding: 2rem 1rem;
+}
+
+.cv-result-section {
+    margin-bottom: 1.25rem;
+}
+
+.cv-result-section-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--accent-primary, #0066FF);
+    margin: 0 0 0.6rem 0;
+}
+
+.cv-result-item {
+    font-size: 0.88rem;
+    color: var(--text-primary, #0B132B);
+    margin: 0.25rem 0;
+    line-height: 1.5;
+}
+
+.cv-result-item strong {
+    color: var(--text-secondary, #3A506B);
+    font-weight: 600;
+}
+
+.cv-result-summary {
+    color: var(--text-secondary, #3A506B);
+    line-height: 1.6;
+    margin-top: 0.5rem;
+}
+
+.cv-result-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.cv-result-tag {
+    font-size: 0.78rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 8px;
+    background: var(--bg-accent-soft, #E8F1FF);
+    color: var(--accent-primary, #0066FF);
+    font-weight: 500;
+}
+
+.cv-result-card {
+    padding: 0.75rem;
+    border-radius: 12px;
+    background: var(--bg-secondary, #F1F5F9);
+    margin-bottom: 0.5rem;
+}
+
+.cv-result-card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary, #0B132B);
+    margin: 0;
+}
+
+.cv-result-card-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-secondary, #3A506B);
+    margin: 0.15rem 0 0 0;
+}
+
+.cv-result-card-meta {
+    font-size: 0.78rem;
+    color: var(--text-tertiary, #778DA9);
+    margin: 0.15rem 0 0 0;
+}
+
 .wizard-checkbox {
     display: flex;
     align-items: center;

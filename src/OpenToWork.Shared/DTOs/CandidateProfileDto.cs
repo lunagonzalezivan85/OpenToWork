@@ -12,6 +12,11 @@ public class UpdateCandidateProfileDto
     public bool? IsProfilePublic { get; set; }
     public string? CvUrl { get; set; }
     public string? ProfilePictureUrl { get; set; }
+    public string? Phone { get; set; }
+    public string? Identification { get; set; }
+    public DateTime? BirthDate { get; set; }
+    public string? Country { get; set; }
+    public string? City { get; set; }
 }
 
 public class CandidateProfileDto
@@ -40,4 +45,13 @@ public class CandidateProfileDto
     public List<CandidateExperienceDto> Experiences { get; set; } = new();
     public List<CandidateEducationDto> Educations { get; set; } = new();
     public List<CandidateCertificationDto> Certifications { get; set; } = new();
+    public List<CandidateSkillDto> Skills { get; set; } = new();
+}
+
+public class CandidateSkillDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Category { get; set; }
+    public int? ProficiencyLevel { get; set; }
 }

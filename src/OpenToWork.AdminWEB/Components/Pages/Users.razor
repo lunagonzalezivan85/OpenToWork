@@ -1,4 +1,5 @@
 @page "/users"
+@using Microsoft.AspNetCore.Components
 @using OpenToWork.AdminWEB.Services
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.Shared.Enums
@@ -91,6 +92,13 @@ else
                 <div class="admin-user-card-footer">
                     <span class="admin-user-card-date">@user.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
                     <div class="admin-user-card-actions">
+                        <select class="admin-select admin-role-select" @onclick:stopPropagation="true"
+                                value="@user.PrimaryRole" @onchange="(e) => ChangeRole(user.Id, e)"
+                                disabled="@(user.Id == CurrentAdminId)" title="@Lang.T("admin.users.changeRole")">
+                            <option value="0">@Lang.T("admin.users.roleCandidate")</option>
+                            <option value="1">@Lang.T("admin.users.roleCompany")</option>
+                            <option value="2">@Lang.T("admin.users.roleAdmin")</option>
+                        </select>
                         @if (user.IsActive)
                         {
                             <button class="ot-btn ot-btn--outline ot-btn--small" @onclick:stopPropagation="true" @onclick="() => Deactivate(user.Id)">@Lang.T("admin.users.deactivate")</button>
@@ -112,6 +120,7 @@ else
     private List<AdminUserDto>? UsersList;
     private string? SelectedRole { get; set; }
     private string SearchTerm { get; set; } = "";
+    private Guid? CurrentAdminId;
 
     private List<AdminUserDto> FilteredUsers
     {
@@ -151,12 +160,9 @@ else
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
 
-        var token = await LocalStorage.GetItemAsync("otwadmin-token");
-        if (string.IsNullOrEmpty(token))
-        {
-            Nav.NavigateTo("/login", forceLoad: true);
-            return;
-        }
+        var userIdRaw = await LocalStorage.GetItemAsync("otwadmin-user-id");
+        if (Guid.TryParse(userIdRaw, out var parsedId))
+            CurrentAdminId = parsedId;
 
         await LoadUsers();
     }
@@ -203,6 +209,21 @@ else
         if (!confirmed) return;
 
         await AuthApi.DeleteUserAsync(id);
+        await LoadUsers();
+    }
+
+    private async Task ChangeRole(Guid id, ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var newRole)) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", Lang.T("admin.users.confirmRoleChange"));
+        if (!confirmed)
+        {
+            await LoadUsers();
+            return;
+        }
+
+        await AuthApi.ChangeUserRoleAsync(id, newRole);
         await LoadUsers();
     }
 

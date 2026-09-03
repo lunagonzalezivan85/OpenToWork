@@ -10,4 +10,5 @@ public interface IAdminUserService
     Task<bool> ActivateAsync(Guid id, Guid adminId, string? ipAddress);
     Task<bool> DeactivateAsync(Guid id, Guid adminId, string? ipAddress);
     Task<bool> DeleteAsync(Guid id, Guid adminId, string? ipAddress);
+    Task<bool> ChangeRoleAsync(Guid id, int newRole, Guid adminId, string? ipAddress);
 }

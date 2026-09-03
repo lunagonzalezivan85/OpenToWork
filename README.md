@@ -16,8 +16,8 @@ El proyecto se compone de **3 portales independientes**:
 | Portal | Descripcion | Estado |
 |--------|-------------|--------|
 | **Portal de Candidatos** | Registro, perfil, wizard, busqueda de vacantes, postulaciones | 80% Completado |
-| **Portal Administrativo** | Verificaciones manuales, moderacion, gestion de usuarios, auditoria | 85% Completado |
-| **Portal Corporativo** | Suscripcion mensual, perfiles evaluados, ranking, filtros avanzados | Pendiente |
+| **Portal Administrativo** | Verificaciones manuales, moderacion, gestion de usuarios, auditoria, pipeline de reclutamiento | 90% Completado + Pipeline de Reclutamiento (21-Ago) — solo quedan bloqueados 2 items de Fase 3 |
+| **Portal Corporativo** | Dashboard, vacantes, postulantes, perfil de candidato, mensajeria | 70% Completado (estructura base en OpenToWork.WEB) — pendiente scoring/suscripciones (Fase 3) |
 
 ### Caracteristicas principales
 
@@ -293,7 +293,291 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - [x] i18n completo (es + en) con claves nuevas
 - [x] UI/UX: One UI, Bento Grid, Command-Driven, temas (navy/dark/light)
 
-### Fase 3: Motor de Evaluacion y Scoring - Pendiente
+### Fase 3: Motor de Evaluacion y Scoring Automatico - Pendiente
+
+> **⚠️ INSTRUCCION OBLIGATORIA PARA DARWIN (Dsiezar / IA):**
+>
+> Este es el plan oficial y obligatorio para construir el Motor de Scoring Automatico. **Darwin debe seguir este plan paso a paso, en el orden indicado.** Cada sub-fase genera preguntas que deben responderse ANTES de escribir codigo — las respuestas definen los algoritmos de calculo automatico.
+>
+> **Regla:** No se puede saltar sub-fases. Cada sub-fase debe estar 100% completada (entidades + servicio + endpoint + UI basica) antes de pasar a la siguiente. Al final de cada sub-fase, documentar en `docs/dsiezar/fase-3-subN.md` las decisiones tomadas.
+>
+> **Rama obligatoria:** `dsiezar-fase-3`
+
+#### Sub-fase 3.1: Entidades de Scoring + Migracion
+
+**Objetivo:** Crear el modelo de datos que soporta todos los calculos automaticos.
+
+**Entidades a crear:**
+
+- `PTCandidateScore` — score intrinseco del candidato
+  - `Id`, `PT_CandidateId` (FK), `StabilityIndex` (0-100), `ReliabilityIndex` (0-100), `EvidenceIndex` (0-100), `CompatibilityIndex` (0-100), `OverallScore` (0-100), `CalculatedAt` (DateTime), `Version` (int)
+- `PTJobMatchScore` — score por par candidato-vacante
+  - `Id`, `PT_CandidateId` (FK), `PT_VacancyId` (FK), `MatchPercentage` (0-100), `SkillsMatch` (int), `ExperienceMatch` (int), `EducationMatch` (int), `CalculatedAt`, `WeightsConfig` (JSON)
+- `PTVerification` — verificaciones automaticas
+  - `Id`, `PT_CandidateId` (FK), `Type` (enum: Identity=0, LinkedIn=1, Portfolio=2, CvCoherence=3, Education=4, Reference=5), `Status` (enum: Pending=0, InProgress=1, Verified=2, Failed=3), `VerifiedAt`, `Result` (JSON), `Score` (0-100)
+- `PTCandidateReference` — referencias laborales del candidato
+  - `Id`, `PT_CandidateId` (FK), `ContactName`, `CompanyName`, `Phone`, `Email`, `Relationship` (enum: Manager=0, Peer=1, Subordinate=2), `Status` (enum: Pending=0, Sent=1, Responded=2, Verified=3, Failed=4), `Rating` (1-5), `Feedback`
+- `PTSkillTest` — banco de retos tecnicos
+  - `Id`, `Category`, `Difficulty` (enum: Easy=0, Medium=1, Hard=2), `Title`, `Description`, `TimeLimit` (int minutos), `Questions` (JSON), `IsActive`
+- `PTCandidateTestResult` — resultados de retos
+  - `Id`, `PT_CandidateId` (FK), `PT_SkillTestId` (FK), `Score` (0-100), `TimeTaken` (int segundos), `CompletedAt`, `AntiCheatFlags` (int)
+
+**Migracion:** `ScoringEngine` — crea las 6 tablas con indices en `PT_CandidateId` y `PT_VacancyId`.
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub1.md`):**
+
+1. ¿El `OverallScore` se almacena como un campo calculado en la tabla, o se calcula on-the-fly cada vez que se consulta? ¿Por que?
+2. ¿Que estrategia se usa para el versionado (`Version`)? ¿Incremental por recalculo, o timestamp?
+3. ¿`PTJobMatchScore.WeightsConfig` que formato JSON debe tener? Definir el schema exacto.
+4. ¿Las verificaciones (`PTVerification`) se insertan automaticamente al crear un candidato, o se disparan bajo demanda?
+5. ¿`PTCandidateReference` tiene soft delete o se elimina fisicamente?
+6. ¿`PTSkillTest.Questions` que estructura JSON debe tener? ¿Multiple choice, codigo, o ambos?
+7. ¿Se necesita una entidad `PTScoreWeight` configurable por el admin, o los pesos van hardcodeados en el ScoringService?
+
+---
+
+#### Sub-fase 3.2: ValidationService — Verificaciones Automaticas
+
+**Objetivo:** Sistema que verifica datos del candidato sin intervencion humana.
+
+**Metodos a implementar:**
+
+- `VerifyLinkedInAsync(candidateId)` — valida que la URL de LinkedIn existe y tiene el formato correcto del candidato
+- `VerifyPortfolioAsync(candidateId)` — hace HTTP GET a la URL del portfolio y verifica que responde 200
+- `VerifyCvCoherenceAsync(candidateId)` — analiza coherencia cronologica entre experiencias (gaps > 6 meses, superposiciones, fechas imposibles)
+- `VerifyIdentityAsync(candidateId)` — validacion de documento subido (formato, legibilidad)
+- `DetectRedFlagsAsync(candidateId)` — saltos laborales < 3 meses, cambios de sector frecuentes, gaps inexplicables
+- `RunAllVerificationsAsync(candidateId)` — ejecuta todas las verificaciones y guarda resultados en `PTVerification`
+
+**Endpoint:** `POST api/candidates/{id}/verifications/run` — dispara todas las verificaciones
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub2.md`):**
+
+1. ¿La verificacion de LinkedIn hace un scraping real de la pagina, o solo valida que la URL responde y tiene el formato `linkedin.com/in/{slug}`?
+2. ¿La verificacion de portfolio tiene timeout? ¿Cuanto? ¿Que pasa si responde 403 o 401?
+3. ¿Como se define un "gap inexplicable"? ¿Cuantos meses sin empleo se consideran un gap? ¿Se penaliza mas si es reciente o antiguo?
+4. ¿Que se considera "superposicion sospechosa"? ¿Dos empleos simultaneos por mas de X meses?
+5. ¿La verificacion de identidad que valida exactamente? ¿Formato de documento, OCR, o solo presencia del archivo?
+6. ¿Cada cuanto se re-ejecutan las verificaciones automaticamente? ¿On-demand, diario, semanal?
+7. ¿Si una verificacion falla, se reintenta automaticamente? ¿Cuantos reintentos, con que intervalo?
+8. ¿El `Score` de cada verificacion (0-100) como se calcula? ¿Es binario (100 si pasa, 0 si falla) o hay matices?
+9. ¿Que red flags se detectan exactamente? Definir la lista completa de reglas.
+10. ¿Las red flags afectan el `ReliabilityIndex` o tienen un campo separado en `PTCandidateScore`?
+
+---
+
+#### Sub-fase 3.3: ScoringService — Indices Automaticos
+
+**Objetivo:** Algoritmos que calculan los 4 indices del Candidate Score automaticamente.
+
+**Metodos a implementar:**
+
+- `CalculateStabilityIndex(candidate)` — analiza `PTCandidateExperience`:
+  - Duracion promedio en empleos (mas duracion = mas estable)
+  - Frecuencia de cambios (menos cambios = mas estable)
+  - Penalizacion por empleos < 3 meses
+  - Bonus por empleo actual > 12 meses
+- `CalculateReliabilityIndex(candidate)` — analiza coherencia:
+  - Coherencia cronologica entre experiencias (sin gaps ni superposiciones = 100)
+  - Penalizacion por gaps > 6 meses sin explicacion
+  - Penalizacion por superposiciones imposibles
+  - Bonus por progresion logica (ascensos, misma industria)
+- `CalculateEvidenceIndex(candidate)` — suma de verificaciones:
+  - LinkedIn verificado = +25
+  - Portfolio verificado = +25
+  - CV subido y coherente = +25
+  - Identidad verificada = +25
+  - Si no tiene alguna verificacion, el indice es proporcional
+- `CalculateCompatibilityIndex(candidate)` — matching de skills:
+  - Compara skills del candidato vs. skills demandadas en vacantes activas
+  - Mientras mas skills demandadas tenga el candidato, mayor el indice
+  - Penalizacion si tiene skills que nadie demanda
+- `CalculateOverallScore(candidate)` — promedio ponderado de los 4 indices
+- `RecalculateAsync(candidateId)` — recalcula todos los indices y guarda en `PTCandidateScore`
+- `RecalculateAllAsync()` — recalculo en lote para todos los candidatos
+
+**Endpoint:** `POST api/candidates/{id}/score/recalculate` — recalcula score de un candidato
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub3.md`):**
+
+1. ¿Que pesos tiene cada indice en el `OverallScore`? Definir los 4 pesos exactos (ej: Estabilidad 30%, Confiabilidad 25%, Evidencia 25%, Compatibilidad 20%).
+2. ¿La duracion promedio en empleos como se pondera? ¿Es lineal o hay un techo (ej: 5+ anos = 100)?
+3. ¿Cuantos cambios de empleo por ano se consideran "frecuentes"? ¿Como escala la penalizacion?
+4. ¿Un gap de 6 meses se penaliza igual que uno de 2 anos? ¿O es proporcional?
+5. ¿La "progresion logica" como se detecta automaticamente? ¿Que criterios objetivos usa el algoritmo?
+6. ¿El `CompatibilityIndex` se calcula contra todas las vacantes activas, o solo las de la industria del candidato?
+7. ¿Si no hay vacantes activas en el sistema, el `CompatibilityIndex` es 0, 50 (neutral), o se omite del calculo?
+8. ¿El recalculo en lote (`RecalculateAllAsync`) se ejecuta via un job programado (Hangfire/Quartz) o manualmente desde el admin?
+9. ¿Cada cuanto se debe recalcular el score automaticamente? ¿Diario, semanal, mensual?
+10. ¿El score anterior se guarda para comparar (historico de scores) o se sobrescribe?
+11. ¿El candidato puede ver el desglose de cada indice, o solo el `OverallScore`?
+12. ¿Que pasa si un candidato no tiene experiencias cargadas? ¿StabilityIndex = 0, 50 (neutral), o N/A?
+
+---
+
+#### Sub-fase 3.4: CompatibilityService — Job Match Score
+
+**Objetivo:** Algoritmo que calcula que tan compatible es un candidato con una vacante especifica.
+
+**Metodos a implementar:**
+
+- `CalculateJobMatch(candidateId, vacancyId)` — compara:
+  - Skills requeridas vs. skills del candidato (peso configurable)
+  - Experiencia requerida vs. anos de experiencia del candidato
+  - Educacion requerida vs. educacion del candidato
+  - Ubicacion / modalidad (remoto, hibrido, presencial)
+  - Nivel de ingles u otros idiomas
+- `GenerateShortlist(vacancyId)` — ranking automatico de candidatos por match score
+- `GenerateShortlist(vacancyId, limit)` — top N candidatos para una vacante
+
+**Endpoints:**
+- `POST api/vacancies/{id}/matches/calculate` — calcula matches para una vacante
+- `GET api/vacancies/{id}/matches` — lista de candidatos rankeados
+- `GET api/vacancies/{id}/matches?limit=10` — top 10 candidatos
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub4.md`):**
+
+1. ¿Los pesos del Job Match Score son fijos o configurables por la empresa? Si son configurables, ¿que valores puede ajustar?
+2. ¿El matching de skills es binario (tiene/no tiene) o ponderado por `ProficiencyLevel`?
+3. ¿Si una vacante requiere 5 anos de experiencia y el candidato tiene 3, el `ExperienceMatch` es 60% (3/5), 0%, o hay una curva?
+4. ¿La ubicacion geografica como se compara? ¿Exacta, por pais, por region?
+5. ¿El nivel de ingles se valida contra un campo del candidato o se infiere de las experiencias?
+6. ¿El shortlist se genera automaticamente al crear una vacante, o lo dispara el admin/TD?
+7. ¿Cuantos candidatos aparecen en el shortlist por defecto? ¿Es configurable?
+8. ¿El `MatchPercentage` se recalcula si el candidato actualiza su perfil despues de que se genero el match?
+9. ¿Se necesita un endpoint para que TD apruebe/rechaze matches antes de que lleguen a la empresa? (ver "Nueva feature de Admin" en la definicion estrategica)
+10. ¿La empresa puede ver el desglose del match (skills, experiencia, educacion) o solo el porcentaje total?
+
+---
+
+#### Sub-fase 3.5: Referencias Laborales Automaticas
+
+**Objetivo:** Sistema de referencias donde el candidato agrega contactos y el sistema los verifica.
+
+**Metodos a implementar:**
+
+- `AddReferenceAsync(candidateId, dto)` — candidato agrega 2-3 referencias
+- `SendReferenceRequestAsync(referenceId)` — sistema envia email/solicitud al contacto
+- `SubmitReferenceFeedbackAsync(referenceId, rating, feedback)` — el contacto responde
+- `VerifyReferenceAsync(referenceId)` — sistema valida la respuesta y la marca como verificada
+- `GetReferencesAsync(candidateId)` — lista de referencias con estado
+
+**Endpoints:**
+- `GET/POST api/candidates/{id}/references`
+- `POST api/references/{id}/send` — envia solicitud
+- `POST api/references/{id}/feedback` — el contacto responde (endpoint publico o con token)
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub5.md`):**
+
+1. ¿Cuantas referencias minimas se exigen? ¿2 o 3?
+2. ¿El email de solicitud de referencia se envia via SMTP, o se genera un link que el candidato comparte?
+3. ¿El contacto de referencia necesita crear una cuenta en OpenToWork, o responde via un link publico con token?
+4. ¿Que informacion se le pide al contacto? ¿Solo rating + feedback, o tambien confirmar datos del candidato?
+5. ¿Las referencias verificadas suman al `EvidenceIndex`? ¿Cuanto?
+6. ¿Si una referencia no responde en X dias, se marca como fallida? ¿Cuanto es X?
+7. ¿El candidato puede ver el feedback que dio la referencia, o es privado para TD?
+8. ¿Se validan que las referencias no sean del mismo empresa donde trabajo (para evitar sesgo)?
+
+---
+
+#### Sub-fase 3.6: Pruebas de Habilidades (Retos Tecnicos)
+
+**Objetivo:** Banco de retos tecnicos con puntaje automatico.
+
+**Metodos a implementar:**
+
+- `CreateSkillTestAsync(dto)` — admin crea un reto (CRUD completo)
+- `GetAvailableTestsAsync(category)` — lista de retos disponibles por categoria
+- `StartTestAsync(candidateId, testId)` — candidato inicia un reto (registra intento + timer)
+- `SubmitTestAsync(resultId, answers)` — candidato envia respuestas, sistema calcula puntaje automatico
+- `GetTestResultsAsync(candidateId)` — historial de resultados del candidato
+
+**Endpoints:**
+- `GET/POST/PUT/DELETE api/skill-tests` — CRUD admin
+- `GET api/skill-tests/available` — lista para candidatos
+- `POST api/skill-tests/{id}/start` — inicia intento
+- `POST api/skill-tests/results/{id}/submit` — envia respuestas
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub6.md`):**
+
+1. ¿Los retos son multiple choice, codigo ejecutable, o ambos?
+2. ¿El puntaje es automatico (sistema corrige) o requiere revision manual de TD?
+3. ¿Si es codigo ejecutable, se usa un juez online (ej: Judge0, Piston) o se evalua con tests unitarios propios?
+4. ¿El anti-copia que medidas tiene? ¿Tab switching, copiar/pegar, tiempo limite?
+5. ¿Cuantos intentos tiene el candidato por reto? ¿1, 3, ilimitados?
+6. ¿Los resultados de retos suman al `CandidateScore`? ¿A que indice?
+7. ¿El candidato puede ver los retos disponibles antes de completar su perfil, o requiere perfil completo?
+8. ¿Se puede retomar un reto despues de cerrar el navegador, o se anula el intento?
+
+---
+
+#### Sub-fase 3.7: Estado "Verificado TD" Automatico
+
+**Objetivo:** Sistema que asigna automaticamente el estado de verificacion progresivo.
+
+**Estados progresivos:**
+```
+Perfil registrado → Perfil completo → Evaluado → Verificacion en proceso → Verificado TD
+```
+
+**Metodos a implementar:**
+
+- `GetVerificationStatusAsync(candidateId)` — retorna el estado actual
+- `EvaluateVerificationStatusAsync(candidateId)` — evalua criterios y asigna estado:
+  - **Perfil registrado:** candidato existe en el sistema
+  - **Perfil completo:** `ProfileCompletionPercentage >= 80`
+  - **Evaluado:** tiene `PTCandidateScore` con `OverallScore > 0` y al menos 3 verificaciones completadas
+  - **Verificacion en proceso:** tiene verificaciones pendientes o en progreso
+  - **Verificado TD:** todas las verificaciones pasaron, `OverallScore >= umbral`, referencias verificadas
+
+**Endpoint:** `GET api/candidates/{id}/verification-status`
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub7.md`):**
+
+1. ¿Cual es el `OverallScore` minimo para alcanzar "Verificado TD"? ¿60, 70, 80?
+2. ¿Cuantas verificaciones deben pasar como minimo? ¿Todas o un subconjunto?
+3. ¿Las referencias verificadas son obligatorias para "Verificado TD", o solo recomendadas?
+4. ¿El estado se recalcula automaticamente cada vez que se completa una verificacion, o hay un job periodico?
+5. ¿Si un candidato era "Verificado TD" y despues falla una verificacion (ej: portfolio cae), pierde el estado automaticamente?
+6. ¿El distintivo ★ aparece en el perfil publico del candidato para las empresas? ¿Como se muestra?
+7. ¿El candidato recibe notificacion cuando alcanza "Verificado TD"?
+8. ¿Se puede revocar manualmente el estado desde el admin? ¿Quien tiene ese poder?
+
+---
+
+#### Sub-fase 3.8: UI — Integracion en los 3 portales
+
+**Portal del Candidato:**
+- Dashboard: 4 graficos circulares (Estabilidad, Confiabilidad, Evidencia, Compatibilidad) + OverallScore
+- Seccion "Verificaciones": lista con estado (pendiente, verificada, fallida) + boton "Ejecutar verificaciones"
+- Seccion "Referencias": CRUD para agregar contactos, ver estado de solicitudes
+- Seccion "Retos tecnicos": lista de retos disponibles por categoria, tomar reto con timer
+- Badge "Verificado TD" en el perfil cuando se cumpla
+
+**Portal Admin:**
+- Gestion de scores: ver indices de cada candidato, boton "Recalcular"
+- Verificaciones manuales: aprobar/rechazar verificaciones
+- Cola de shortlist: TD revisa matches antes de enviar a la empresa
+- Banco de retos: CRUD de `PTSkillTest`
+
+**Portal de Empresa:**
+- Shortlist: ver candidatos rankeados por Job Match Score para cada vacante
+- Scorecard configurable: ajustar pesos del Job Match Score por vacante
+- Ver desglose del match (skills, experiencia, educacion)
+
+**Preguntas que Darwin debe responder antes de codificar (respuestas en `docs/dsiezar/fase-3-sub8.md`):**
+
+1. ¿Los graficos de indices en el dashboard del candidato son SVG circulares (como el donut existente) o barras horizontales?
+2. ¿El candidato puede ver el desglose de que penalizo su `StabilityIndex` (ej: "Gap de 8 meses en 2023")?
+3. ¿La cola de shortlist del admin tiene un workflow de aprobacion (pendiente → aprobado → enviado a empresa)?
+4. ¿El scorecard configurable de la empresa es un formulario con sliders, o inputs numericos?
+5. ¿El banco de retos del admin tiene preview del reto antes de publicarlo?
+
+---
+
+> **Resumen de sub-fases:** 8 sub-fases, cada una con preguntas que deben responderse antes de codificar. Las respuestas definen los algoritmos. El orden es secuencial: 3.1 → 3.2 → 3.3 → 3.4 → 3.5 → 3.6 → 3.7 → 3.8.
+>
+> **Checklist original (automatizacion via ValidationService/ScoringService) — sigue sin implementarse:**
 
 - [ ] Entidades de scoring (`PTCandidateScore`, `PTVerification`, `PTCandidateReference`)
 - [ ] ValidationService: verificacion automatica (LinkedIn, portafolio, coherencia cronologica)
@@ -304,7 +588,9 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - [ ] Referencias laborales: CRUD en wizard y perfil
 - [ ] Pruebas de habilidades: `PTSkillTest`, `PTCandidateTestResult`
 
-### Fase 4: Portal Administrativo - 85% COMPLETADA (por Dsiezar)
+> **Nota (2026-08-24, Dsiezar):** Iluna construyo un **Pipeline de Reclutamiento** (ver Bitacora, sesion 21-Ago) que cubre gran parte del *objetivo* de negocio de Fase 3 (evaluar y verificar candidatos antes de mostrarlos a la empresa), pero con una **arquitectura distinta a la planeada aqui**: es un flujo de **evaluacion manual/asistida por un reclutador** (checklist de investigacion, evaluacion tecnica, entrevista cultural, score general por etapa) en vez de un motor 100% automatico (`ValidationService`/`ScoringService`/`CompatibilityService`). Entidades nuevas: `PTCandidateRecruitment`, `PTInvestigationChecklist`, `PTReferenceCheck`, `PTTechnicalEvaluation`, `PTRecruitmentStageLog`, `PTRecruitmentDismissal` — no `PTCandidateScore`/`PTVerification` como decia el checklist original. Se deja el checklist original sin marcar porque tecnicamente no es lo que se construyo, pero el objetivo de negocio (candidatos evaluados antes de llegar a la empresa) ya tiene una primera version funcionando. Alinea bien con la definicion estrategica consolidada de la sesion 2026-08-15 ("TD revisa candidatos" antes del shortlist).
+
+### Fase 4: Portal Administrativo - 90% COMPLETADA (por Dsiezar) + Pipeline de Reclutamiento (por Iluna)
 
 - [x] AdminAPI con JWT independiente (puerto 5001)
 - [x] AdminWEB con login y layout (puerto 5101)
@@ -316,31 +602,49 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - [x] Exportacion de datos (CSV)
 - [x] i18n admin (es/en)
 - [x] QA+SEC: 6 bugs corregidos (enumeracion de cuentas, paginacion negativa, CSV injection, estado vacantes temporales, auto-bloqueo admin, clave i18n)
-- [ ] Verificaciones manuales (aprobar/rechazar `PTVerification`) — **bloqueado por Fase 3**
-- [ ] Revision de validaciones automaticas — **bloqueado por Fase 3**
-- [ ] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar)
+- [x] Consola de candidatos con 4 tabs, filtros, stats, export CSV, acciones masivas (Iluna, 21-Ago)
+- [x] Pipeline de reclutamiento: kanban por etapas, asignacion de reclutador, historial, descarte (Iluna, 21-Ago)
+- [x] Checklist de investigacion + verificacion de referencias laborales (auto-generadas desde experiencia) (Iluna, 21-Ago)
+- [x] Evaluaciones tecnicas y entrevistas culturales con puntuacion, score general por etapa (Iluna, 21-Ago)
+- [ ] Verificaciones manuales (aprobar/rechazar `PTVerification`) — **bloqueado por Fase 3** (checklist original; el Pipeline de Reclutamiento ya cubre una version distinta de esto, ver nota arriba)
+- [ ] Revision de validaciones automaticas — **bloqueado por Fase 3** (checklist original)
+- [x] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar) (Dsiezar, 29-Ago)
 
-**Deuda tecnica documentada (4 items):**
-- [ ] Unificar `AdminAuthService` con `AuthService` (logica duplicada)
-- [ ] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar)
-- [ ] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI
-- [ ] Centralizar guard de autenticacion en `AdminLayout` (copiado en 5 paginas)
+**Deuda tecnica documentada (4 items) — resueltos 29-Ago (Dsiezar):**
+- [x] Unificar `AdminAuthService` con `AuthService` (logica duplicada) — extraida a `ITokenCryptoService` compartido en Core
+- [x] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar) — ahora traduce a `UNION ALL` con `Skip/Take` del lado del servidor
+- [x] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI
+- [x] Centralizar guard de autenticacion en `AdminLayout` (copiado en 9 paginas; ademas protegia por primera vez las 4 paginas del Pipeline de Reclutamiento, que no tenian guard)
 
-### Fase 5: Portal Corporativo - Pendiente
+Solo quedan bloqueados los 2 items que dependen de entidades de Fase 3 (`PTVerification`/`ValidationService`, aun no existen).
 
-- [ ] Crear proyecto `OpenToWork.CorporateAPI` (puerto 5002, JWT independiente)
-- [ ] Crear proyecto `OpenToWork.CorporateWEB` (puerto 5102)
-- [ ] Entidad `COCompany` — Name, Industry, Size, Website, LogoUrl
-- [ ] Entidad `COSubscription` — CompanyId, Plan (Basic/Pro/Enterprise), Status, StartDate, EndDate, MonthlyFee
+### Fase 5: Portal Corporativo - Parcialmente COMPLETADO (estructura base en OpenToWork.WEB)
+
+> **Nota (31-Ago-2026, Iluna):** El portal corporativo YA EXISTE en `OpenToWork.WEB` (puerto 5147). No se necesitan los proyectos separados `OpenToWork.CorporateAPI`/`OpenToWork.CorporateWEB`. El portal de empresa funciona dentro del mismo proyecto que el portal de candidatos, con autenticacion JWT compartida y rutas diferenciadas (`/company-dashboard`, `/verified-applicants`, `/applicant-profile/{id}`, etc.).
+
+**Completado:**
+- [x] Registro de empresas (rol 1 en `Register.razor`, mismo flujo que candidatos)
+- [x] Login de empresas (mismo `Login.razor`, JWT con rol diferenciado)
+- [x] Dashboard corporativo (`CompanyDashboard.razor`) — command bar IA, badges de estadisticas, hero slider, postulantes recientes
+- [x] Gestion de vacantes (`Vacancies.razor`, `VacancyManage.razor`, `MyVacancies.razor`)
+- [x] Lista de postulantes verificados (`VerifiedApplicants.razor`) — cards con % perfil completado
+- [x] Perfil completo del candidato en modo lectura (`ApplicantProfile.razor`) — estilo CV con layout 70/30
+- [x] Entidad `PTCompany` — Name, Industry, Size, Website, Description, LogoUrl (ya existe en el modelo)
+- [x] Mensajeria (`Messages.razor`)
+- [x] Navegacion adaptada para rol empresa (`MainLayout.razor`)
+
+**Pendiente (depende de Fase 3 — Motor de Scoring):**
+- [ ] Sistema de suscripciones (planes: Basic, Pro, Enterprise) — requiere definir modelo de ingresos
+- [ ] Entidad `COSubscription` — CompanyId, Plan, Status, StartDate, EndDate, MonthlyFee
 - [ ] Entidad `COSearchHistory` — CompanyId, Filters, ResultCount, SearchedAt
 - [ ] Entidad `COCandidateView` — CompanyId, CandidateId, ScoreSnapshot, ViewedAt
-- [ ] Registro de empresas + wizard de empresa
-- [ ] Sistema de suscripciones (planes: Basic, Pro, Enterprise)
-- [ ] Busqueda avanzada con filtros por score, confiabilidad, estabilidad
-- [ ] Vista de perfiles evaluados con checkmarks de verificacion
-- [ ] Ranking automatico de candidatos por compatibilidad
+- [ ] Busqueda avanzada con filtros por score, confiabilidad, estabilidad — requiere `PTCandidateScore` (Fase 3)
+- [ ] Vista de perfiles evaluados con checkmarks de verificacion — requiere `PTVerification` (Fase 3)
+- [ ] Ranking automatico de candidatos por compatibilidad — requiere `PTJobMatchScore` (Fase 3)
+- [ ] Shortlist con Job Match Score — requiere `CompatibilityService` (Fase 3)
+- [ ] Scorecard configurable por vacante — requiere `PTJobMatchScore.WeightsConfig` (Fase 3)
 - [ ] Reportes avanzados
-- [ ] Migracion EF Core para entidades corporativas
+- [ ] Migracion EF Core para entidades corporativas restantes
 
 ### Fase 6: Servicios Premium - Pendiente
 
@@ -373,7 +677,7 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 |------|-------------------|-----------|
 | **Fase 3** | 15 tareas (entidades, servicios, API, UI) | Fase 4 (verificaciones), Fase 5 (perfiles evaluados) |
 | **Fase 4** | 3 tareas + 4 deuda tecnica | — |
-| **Fase 5** | 13 tareas (proyecto nuevo, entidades, suscripciones, busqueda) | Fase 6 |
+| **Fase 5** | 11 tareas (suscripciones, entidades CO, busqueda por score, shortlist) — estructura base ya existe en OpenToWork.WEB | Fase 6 |
 | **Fase 6** | 4 tareas (servicios premium) | — |
 | **Fase 7** | 4 tareas (integraciones externas) | — |
 | **Fase 8** | 4 tareas (pruebas, despliegue) | — |
@@ -435,17 +739,16 @@ Fase 3 (Motor de Scoring) ──────────────────
    - **Validacion: ejecutar API + WEB, verificar pantallas funcionen correctamente antes de avanzar**
    - **Validacion: comprobar patron de diseno One UI (squircles, pill buttons, Bento Grid, temas)**
 
-2. **Fase 4 - Portal Administrativo (completar 15% faltante):**
-   - Verificaciones manuales (aprobar/rechazar `PTVerification`) — requiere Fase 3
-   - Revision de validaciones automaticas — requiere Fase 3
-   - Gestion de roles de usuario (cambiar rol, no solo activar/desactivar)
-   - Resolver 4 items de deuda tecnica:
+2. **Fase 4 - Portal Administrativo (completado 29-Ago salvo lo bloqueado por Fase 3):**
+   - Verificaciones manuales (aprobar/rechazar `PTVerification`) — requiere Fase 3, sigue pendiente
+   - Revision de validaciones automaticas — requiere Fase 3, sigue pendiente
+   - [x] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar) (Dsiezar, 29-Ago)
+   - [x] Resueltos los 4 items de deuda tecnica (Dsiezar, 29-Ago):
      - Unificar `AdminAuthService` con `AuthService`
      - Optimizar `AdminVacancyService` (paginacion en BD, no en memoria)
      - Mover `LocalStorageService`/`LanguageService` a SharedUI
      - Centralizar guard de autenticacion en `AdminLayout`
-   - **Validacion: ejecutar AdminAPI + AdminWEB, verificar pantallas funcionen correctamente**
-   - **Validacion: comprobar patron de diseno One UI consistente con portal principal**
+   - **Validacion: ejecutado AdminAPI + AdminWEB contra MySQL real, pantallas verificadas en navegador**
 
 3. **Fase 5 - Portal Corporativo (puede iniciar estructura base en paralelo con Fase 3):**
    - Crear `OpenToWork.CorporateAPI` (puerto 5002, JWT independiente)
@@ -493,8 +796,8 @@ Antes de marcar cualquier fase como completada, se debe validar:
 
 - **Fase 1 (Fundacion):** COMPLETADA
 - **Fase 2 (Portal de Candidatos):** 80% completada (Iluna) — funcional pero pendiente de pulido UI/UX y validacion de pantallas
-- **Fase 3 (Motor de Evaluacion y Scoring):** Pendiente — **PRIORIDAD MAXIMA**, es el corazon de la propuesta de negocio
-- **Fase 4 (Portal Administrativo):** 85% completada (Dsiezar) — faltan verificaciones manuales (bloqueadas por Fase 3), gestion de roles y 4 items de deuda tecnica
+- **Fase 3 (Motor de Evaluacion y Scoring):** el checklist original (ValidationService/ScoringService automaticos) sigue pendiente, pero Iluna ya construyo un **Pipeline de Reclutamiento manual** (21-Ago) que cubre el objetivo de negocio con otra arquitectura — ver nota en la seccion "Fases del Proyecto"
+- **Fase 4 (Portal Administrativo):** 85% completada (Dsiezar) + Pipeline de Reclutamiento completo (Iluna, 21-Ago: consola de candidatos, kanban, checklist de investigacion, evaluaciones tecnicas, entrevistas culturales, score general) — faltan gestion de roles y 4 items de deuda tecnica de Dsiezar
 - **Fase 5 (Portal Corporativo):** Pendiente — la estructura base puede iniciar en paralelo con Fase 3
 - **Fases 6-8:** Pendientes
 
@@ -537,6 +840,9 @@ Antes de marcar cualquier fase como completada, se debe validar:
 | 2026-08-14 | Iluna | Fase 4 | AdminWEB: pendiente - mejorar tablas con filtros, pulir diseno inspirado en Cazvid (pipeline visual, cards de aplicantes) |
 | 2026-08-14 | Iluna | Fase 4 | Seed data: 3 empresas, 10 vacantes permanentes, 3 vacantes temporales, 20 skills, 3 postulantes, 5 aplicaciones |
 | 2026-08-14 | Iluna | Docs | seed-data.sql: script de datos de prueba con credenciales para todos los roles |
+| 2026-08-15 | Dsiezar | Docs | Respuesta a las 17 preguntas de RH + definicion estrategica consolidada (dos scores separados, verificacion como estado progresivo, retencion basada en estado) |
+| 2026-08-21 | Iluna | Fase 4 | Pipeline de Reclutamiento completo: consola de candidatos, kanban, checklist de investigacion, referencias automaticas, evaluaciones tecnicas, entrevistas culturales, score general (6 migraciones nuevas) |
+| 2026-08-24 | Dsiezar | Docs | Migraciones del Pipeline de Reclutamiento aplicadas localmente; README sincronizado con el estado real de Fase 3/4 (estaba desactualizado, faltaba registrar 60+ commits) |
 
 ---
 
@@ -1081,7 +1387,7 @@ Pruebas totales: 44
 
 ## Tareas Pendientes — Portal Administrativo
 
-> **Contexto:** El portal administrativo está al 85%. Lo que falta está bloqueado por la Fase 3 (Motor de Evaluación) o requiere desarrollo independiente.
+> **Contexto:** El portal administrativo está al 90%. Lo que falta está bloqueado por la Fase 3 (Motor de Evaluación); todo lo que no dependía de Fase 3 se completó el 29-Ago (Dsiezar).
 
 ### Pendientes bloqueados por Fase 3 (Motor de Scoring)
 
@@ -1089,22 +1395,133 @@ Pruebas totales: 44
 - [ ] **Revisión de validaciones automáticas** — Ver el resultado de validaciones automáticas (LinkedIn, portafolio, coherencia cronológica) desde el admin. Requiere `ValidationService` (Fase 3).
 - [ ] **Gestión de scores de candidatos** — Ver y gestionar los índices de Estabilidad, Confiabilidad y Evidencia de cada candidato desde el admin.
 
-### Pendientes independientes (se pueden hacer ahora)
+### Completados 29-Ago (Dsiezar)
 
-- [ ] **Gestión de roles de usuario** — Actualmente el admin solo puede activar/desactivar usuarios. Falta poder cambiar el `PrimaryRole` (Candidato → Empresa → Admin) desde el panel.
-- [ ] **Pruebas unitarias para AdminAPI** — Crear `OpenToWork.AdminTests` con pruebas de integración contra `localhost:5001` (login admin, dashboard metrics, users CRUD, vacancies moderation, skills CRUD, audit log, export CSV).
-- [ ] **Pruebas de seguridad admin** — Verificar que un candidato no puede acceder a endpoints admin, que el auto-bloqueo funciona, que la paginación no acepta valores negativos.
+- [x] **Gestión de roles de usuario** — El admin ahora puede cambiar el `PrimaryRole` (Candidato/Empresa/Admin) de cualquier usuario desde `/users`, con guardia de auto-bloqueo y validación de valor de rol. Verificado end-to-end contra MySQL real.
+- [ ] **Pruebas unitarias para AdminAPI** — Crear `OpenToWork.AdminTests` con pruebas de integración contra `localhost:5001` (login admin, dashboard metrics, users CRUD, vacancies moderation, skills CRUD, audit log, export CSV). *(sigue pendiente, no formaba parte de la deuda técnica original)*
+- [ ] **Pruebas de seguridad admin** — Verificar que un candidato no puede acceder a endpoints admin, que el auto-bloqueo funciona, que la paginación no acepta valores negativos. *(sigue pendiente)*
 
-### Deuda técnica documentada (4 items)
+### Deuda técnica documentada (4 items) — resueltos 29-Ago (Dsiezar)
 
-- [ ] Unificar `AdminAuthService` con `AuthService` (lógica duplicada)
-- [ ] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar)
-- [ ] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI
-- [ ] Centralizar guard de autenticación en `AdminLayout` (copiado en 5 páginas)
+- [x] Unificar `AdminAuthService` con `AuthService` (lógica duplicada) — crypto de tokens extraída a `ITokenCryptoService` en Core
+- [x] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar) — ahora usa `Concat` a nivel de `IQueryable` para traducir a `UNION ALL` con paginación en el servidor
+- [x] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI — `LanguageService` unificado recibiendo el arreglo de secciones por constructor
+- [x] Centralizar guard de autenticación en `AdminLayout` (antes copiado en 9 páginas) — como efecto colateral, protege por primera vez las 4 páginas del Pipeline de Reclutamiento que no tenían guard
 
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-08-29 — Cierre de Fase 4: gestión de roles + 4 items de deuda técnica (Dsiezar)
+
+Se completó todo lo pendiente de Fase 4 que no dependía de Fase 3. Detalle completo en [`docs/dsiezar/fase-4.md`](docs/dsiezar/fase-4.md).
+
+- **Gestión de roles de usuario:** nuevo endpoint `PUT /api/admin/users/{id}/role` (`AdminUserService.ChangeRoleAsync`) con guardia de auto-bloqueo y validación de rol; selector de rol por tarjeta en `/users` con confirmación antes de aplicar el cambio.
+- **Unificación `AdminAuthService`/`AuthService`:** la lógica de criptografía de tokens (firma JWT, refresh token, hashing) que estaba duplicada se extrajo a `ITokenCryptoService` en `OpenToWork.Core`. Cada servicio conserva su propia lógica de claims y su propia configuración `Jwt:*`.
+- **Paginación de `AdminVacancyService`:** `GetVacanciesAsync` ya no carga `PT_Vacancies`/`PT_TempVacancies` completas en memoria — ambas se proyectan a `IQueryable<AdminVacancyDto>` con el mismo conjunto de propiedades y se unen con `.Concat()`, que EF Core/Pomelo traduce a un `UNION ALL` con `ORDER BY`/`LIMIT`/`OFFSET` del lado del servidor.
+- **`LocalStorageService`/`LanguageService` movidos a `SharedUI`:** `LanguageService` se unificó recibiendo el arreglo de secciones de traducción por constructor (preserva el comportamiento de ambos portales sin cambios).
+- **Guard de autenticación centralizado en `AdminLayout`:** eliminado de las 9 páginas que lo duplicaban. Efecto colateral: las 4 páginas del Pipeline de Reclutamiento (Iluna) que nunca tuvieron este guard quedan protegidas automáticamente.
+
+Todo verificado end-to-end contra MySQL real (no solo compilado): cambio de rol con reversión, guardias de auto-bloqueo (409) y rol inválido (400), login/refresh-token en ambos portales tras la unificación de crypto, paginación y filtro por status de vacantes tras la reescritura con `Concat`, traducciones ES/EN tras la migración a `SharedUI`, y redirección a `/login` sin sesión en páginas antes desprotegidas.
+
+Quedan bloqueados por Fase 3 (sin cambios): verificaciones manuales (`PTVerification`) y revisión de validaciones automáticas.
+
+### Sesión 2026-08-21 — Pipeline de Reclutamiento completo (Iluna)
+
+> **Nota de Dsiezar (2026-08-24):** Esta entrada documenta 60+ commits que ya estaban en `main` pero no tenían registro en la Bitácora — se agrega ahora al leer el README y sincronizar migraciones. El detalle línea por línea está en el historial de git; aquí el resumen funcional.
+
+#### Consola de candidatos (`Candidates/Index.razor` — nuevo)
+- 4 tabs: Sin iniciar, En proceso, Finalizado, Descartados (filtro `recruitmentStatus` en la API)
+- Estadísticas, búsqueda por nombre/email/título, acciones masivas (activar/desactivar seleccionados), exportación CSV
+- Botón "Asignar candidato" — modal con selección de usuario admin, redirige al pipeline
+
+#### Pipeline de reclutamiento (`Candidates/Pipeline.razor`, `PipelineDetail.razor` — nuevo)
+- Vista kanban por etapas + stepper en el perfil del candidato
+- Historial de etapas (`PTRecruitmentStageLog`), descarte con motivo (`PTRecruitmentDismissal`)
+- Página `Assigned.razor`: candidatos asignados al reclutador actual, con etapa e info de investigación
+
+#### Checklist de investigación y referencias (`PTInvestigationChecklist`, `PTReferenceCheck`)
+- 5 pasos por defecto + validaciones personalizadas, tracking de duración (`StartedAt`/`CompletedAt`)
+- Sub-panel de referencias con empresa/contacto/estado — **se auto-generan desde las experiencias laborales** del candidato
+- Captura/edición del teléfono del candidato desde el checklist si falta
+
+#### Evaluaciones técnicas y entrevistas culturales (`PTTechnicalEvaluation`)
+- Evaluaciones técnicas: CRUD completo en modal, puntuación, promedio por etapa
+- Entrevistas culturales: notas, puntuación, recomendación, listadas como cards con promedio (sin endpoint separado)
+
+#### Score general del candidato
+- Círculo de puntaje en el perfil (incluye porcentaje de investigación completada, no solo evaluaciones)
+- Modal con resumen de puntuaciones por etapa, notas clickeables en el stepper con detalle apto/no apto
+
+#### Backend — nuevas entidades y servicios
+- Entidades: `PTCandidateRecruitment`, `PTInvestigationChecklist`, `PTReferenceCheck`, `PTTechnicalEvaluation`, `PTRecruitmentStageLog`, `PTRecruitmentDismissal`
+- `RecruitmentController.cs`, `RecruitmentService.cs` / `IRecruitmentService.cs`
+- `AdminCandidateService.cs` / `IAdminCandidateService.cs` — endpoint dedicado de consola con filtros/estadísticas
+- `RecruitmentDtos.cs`, `RecruitmentEnums.cs`
+- 6 migraciones EF Core: `RecruitmentPipeline`, `UpdateInvestigationChecklist`, `InvestigationTrackingAndReferences`, `AutoReferencesFromExperiences`, `TechnicalEvaluations`, `CulturalInterviewFields`
+- Fix: query de candidatos dividida (subquery `TopSkills` no traducía a SQL en MySQL/Pomelo vía `OUTER APPLY`)
+- Fix: `GetCulturalInterview` retorna `NotFound` en vez de `Ok(null)` (causaba error de parseo JSON en el cliente)
+
+#### Navegación
+- Sidebar de `AdminWEB` simplificado: Panel + grupo "Reclutamiento" (Candidatos, Asignados, Pipeline)
+
+#### Relación con Fase 3 y la definición estratégica
+Este pipeline es una implementación **manual/asistida por reclutador** del objetivo de Fase 3 (evaluar y verificar candidatos antes de exponerlos a la empresa) — no el motor 100% automático (`ValidationService`/`ScoringService`) que describía el checklist original. Encaja con el paso "TD revisa candidatos" de la definición estratégica consolidada (sesión 2026-08-15): confirma que Trato Directo cura candidatos activamente, no solo da acceso a una base. Ver detalle en la sección "Fase 3" más arriba.
+
+---
+
+### Sesión 2026-08-15 — Respuesta de Darwin a RH + definición estratégica consolidada
+
+#### ✅ Darwin respondió las 17 preguntas de RH
+
+Respuesta completa en `docs/dsiezar/respuesta-rh.md`. Además, se recibió y validó un segundo análisis (consolidación de dos planteamientos de negocio) que **refina la dirección sin contradecir lo ya construido** (Fase 1, Fase 2 y el Portal Admin de Fase 4 quedan intactos). Los cambios de rumbo afectan únicamente al diseño de **Fase 3 (Motor de Evaluación)**, que todavía no se ha empezado a construir — llega en el momento correcto.
+
+#### Decisión estratégica central: Trato Directo es Tech-Enabled Recruitment, no un ATS self-service
+
+> Trato Directo **selecciona y cura** candidatos para la empresa (no solo le da acceso a una base para que ella haga todo el trabajo). El diferenciador es: **candidato evaluado → candidato verificado → matching con la vacante → shortlist de calidad.**
+
+Flujo completo que debe soportar el sistema (MVP = que este ciclo funcione de punta a punta, aunque sea con un solo candidato y una sola empresa — **el MVP valida la transacción, no el volumen**):
+
+```
+Candidato se registra → Completa perfil → TD evalúa → TD verifica →
+Sistema calcula Candidate Score → Candidato entra a base elegible →
+Empresa registra vacante → Sistema calcula Job Match → TD revisa candidatos →
+Se genera shortlist → Empresa revisa shortlist → Entrevista → Contratación/descarte
+→ Todo evento relevante queda auditado
+```
+
+#### Cambio de diseño técnico: dos scores separados, no uno
+
+- **Candidate Score** — intrínseco del candidato (experiencia, formación, competencias, estabilidad, referencias, verificación). La empresa **no puede modificarlo**.
+- **Job Match Score** — específico por candidato-vacante (compatibilidad). La empresa **sí puede ajustar los pesos** por vacante (scorecard configurable).
+
+Implica **dos entidades separadas** en el modelo de datos de Fase 3 (`PTCandidateScore` y algo tipo `PTJobMatchScore` calculado por par candidato-vacante), no una sola tabla de "scoring" mezclada.
+
+#### "Verificado Trato Directo" es un estado, no un booleano
+
+Estado progresivo: `Perfil registrado → Perfil completo → Evaluado → Verificación en proceso → Verificado TD`, con dimensiones internas propias (identidad, experiencia, formación, referencias, documentación, evaluación realizada, fecha de última verificación). El distintivo ★ solo aparece cuando se cumplen los criterios mínimos — es un activo de confianza, no solo un ícono.
+
+#### Corrección sobre retención (reemplaza la regla de "12 meses" de `respuesta-rh.md`)
+
+En vez de una expiración automática por tiempo fijo, el candidato **permanece en la plataforma indefinidamente con un estado que identifica que ya fue validado**. La visibilidad para empresas se gobierna por ese estado, no por un temporizador — evita fijar en código una regla comercial que todavía no está cerrada. (Retención/soft delete siguen siendo obligatorios desde el diseño, solo se parametriza el criterio de expiración en vez de hardcodearlo).
+
+#### Apelación de score: se deja abierta, no cerrada
+
+`respuesta-rh.md` decía "no hay apelación". Se corrige a: **no se cierra la decisión todavía** — el modelo de evaluación debe poder re-evaluarse/versionarse (ya era necesario por el recálculo periódico de la pregunta 11), sin comprometerse aún a un flujo formal de disputa.
+
+#### Nueva feature de Admin identificada (no estaba en el diseño original de Fase 4)
+
+Pantalla de **revisión de matches / cola de shortlist** — antes de que un match candidato-vacante llegue a la empresa, alguien de Trato Directo lo revisa y aprueba. Se agrega al alcance de cuando se conecte Fase 3 con el Portal Admin.
+
+#### Fuera del MVP (confirmado, sin cambios respecto a `respuesta-rh.md`)
+
+Integración HRIS, API empresarial, ML avanzado, multiidioma más allá de ES/EN, automatizaciones Enterprise, reporting sofisticado, personalizaciones extensas por cliente.
+
+#### 7 decisiones que se dejan abiertas a propósito (no cerrar todavía)
+
+Metodología exacta de "Verificado TD" · pesos del Candidate Score · variables configurables del Job Match Score · modelo de ingresos inicial · nivel de intervención humana de TD por plan · valor concreto gratuito para el candidato · política de revisión/actualización de evaluaciones.
+
+---
 
 ### Sesión 2026-08-15 — Dashboard clickeable, vista de resultados, perfil de usuario y análisis RH
 
@@ -1247,3 +1664,66 @@ Pruebas totales: 44
 #### Archivos modificados/creados
 - **Modificados**: `MainLayout.razor`, `App.razor`, `Program.cs`, `ApiAuthService.cs`, `Messages.razor`, `VacancyDetail.razor`, `Profile.razor`, `Dashboard.razor`, `Home.razor`, `MyApplications.razor`, `MyVacancies.razor`, `Vacancies.razor`, `_Imports.razor`, `components.css`, `portal-nav.css`, `wizard-profile.css`, traducciones ES/EN
 - **Creados**: `DESIGN-SYSTEM.md`, `VacancyManage.razor`, `VacancyCard.razor`, `icon.svg`, `manifest.json`, `sw.js`
+
+---
+
+### Sesión 31-Ago-2026 — Portal de Empresa, Análisis de CV con IA y Evaluación de Perfil IA
+
+#### Portal de Empresa — Dashboard corporativo (`CompanyDashboard.razor` — nuevo)
+- Página `/company-dashboard` con panel de comando estilo IA: input con placeholder "Preguntale a la IA o escribe un comando..." y sugerencias clickeables (Crear vacante, Ver vacantes, Postulantes, Mensajes).
+- Badges de estadísticas: Vacantes (azul), Postulantes (verde), Borradores (ámbar) — clickeables, navegan a las páginas correspondientes.
+- Hero slider de publicidad (70%) + lista de postulantes recientes (30%) en grid responsive.
+- Slider con slides de ejemplo: navegación con flechas prev/next, dots indicadores, auto-rotación.
+- Lista "Postulantes recientes": avatar con iniciales, nombre, vacante, anillo circular de % perfil completado. Click navega al perfil completo del candidato.
+- Eliminada la sección "Mis solicitudes recientes" del dashboard.
+- Iniciales y nombre del usuario extraídos del JWT (`given_name`).
+
+#### Análisis de CV con IA — Evaluación de perfil
+- `ApplicationDto` extendido con `ProfileCompletionPercentage`.
+- `ApplicationService.CalculateProfileCompletion`: calcula el porcentaje de completitud del perfil del candidato basado en 15 campos (nombre, apellido, teléfono, identificación, fecha nacimiento, país, ciudad, título, resumen, años de experiencia, LinkedIn, portfolio, disponibilidad, autorización de trabajo, CV).
+- `MapToDtoAsync` actualizado para incluir el porcentaje en cada aplicación mapeada.
+
+#### Evaluación de Perfil IA — Página de perfil completo del candidato (`ApplicantProfile.razor` — nuevo)
+- Página `/applicant-profile/{CandidateId}` con diseño estilo CV en modo lectura.
+- **Card header 100%**: avatar con iniciales, nombre completo, título profesional, ubicación, años de experiencia, botón "Ver CV", resumen profesional, enlaces de contacto (teléfono, LinkedIn, portfolio).
+- **Sección 70/30**:
+  - **Columna 70%**: Experiencia laboral (timeline con dots azules), Educación (timeline con dots verdes), Certificaciones (cards con nombre, emisor, fecha).
+  - **Columna 30%**: Habilidades con barra de progreso (`ProficiencyLevel`), Información personal (identificación, nacimiento, país, ciudad, disponibilidad, autorización), Nivel por categoría (skills agrupados por categoría en pills azules).
+- Responsive: columnas se apilan en móvil.
+
+#### Backend — API de perfil de candidato por ID
+- `IProfileService.GetCandidateByIdAsync(Guid candidateId)` — nuevo método en la interfaz.
+- `ProfileService.GetCandidateByIdAsync` — busca por `Id` del candidato con includes de experiences, educations, certifications y candidateSkills.
+- `ProfileController` — nuevo endpoint `GET api/profile/candidate/{candidateId}` devuelve el perfil completo del candidato.
+- `CandidateProfileDto` extendido con `List<CandidateSkillDto> Skills` (Name, Category, ProficiencyLevel).
+- `MapToProfileDto` actualizado para mapear skills desde `CandidateSkills` con include de `Skill`.
+- `ApiAuthService.GetCandidateProfileByIdAsync(Guid candidateId)` — método cliente en WEB que llama al endpoint.
+
+#### Postulantes verificados — Rediseño con lista y % de perfil (`VerifiedApplicants.razor` — rediseñado)
+- Página `/verified-applicants` rediseñada con formato de lista de cards.
+- **Lista de vacantes**: cards con título, badge de estado (pill), icono de vistas, número grande de postulantes + label. Click navega a los postulantes de esa vacante.
+- **Lista de postulantes**: cards con avatar (iniciales), nombre, título profesional, badge de estado (Pendiente/En revisión/Rechazado/Aceptado), fecha de postulación, anillo circular de % perfil completado (conic-gradient verde), flecha chevron animada al hover. Click navega al perfil completo del candidato.
+- Estado vacío cuando una vacante no tiene postulantes.
+- Hover: borde azul + shadow suave + flecha animada.
+
+#### CSS (`components.css`)
+- Estilos para hero slider, 70/30 grid, applicant list con progress ring.
+- Estilos para modal (eliminado posteriormente al migrar a página completa).
+- Estilos CV: `.cv-card`, `.cv-header-card`, `.cv-avatar`, `.cv-name`, `.cv-title`, `.cv-header-meta`, `.cv-header-summary`, `.cv-header-contact`, `.cv-content-grid` (70/30), `.cv-section-title`, `.cv-timeline-*`, `.cv-cert-*`, `.cv-skills-list`, `.cv-skill-bar`, `.cv-skill-fill`, `.cv-info-list`, `.cv-category-*`, `.cv-skill-pill`.
+- Estilos Verified Applicants: `.va-back-bar`, `.va-applicant-list`, `.va-applicant-card`, `.va-applicant-avatar`, `.va-applicant-body`, `.va-applicant-status--*`, `.va-progress-ring` (conic-gradient), `.va-applicant-arrow`, `.va-vacancy-list`, `.va-vacancy-card`, `.va-vacancy-status--*`, `.va-vacancy-views`, `.va-vacancy-applicants`, `.va-vacancy-count`.
+- Media queries responsive para todas las nuevas secciones.
+
+#### Archivos nuevos
+- `src/OpenToWork.WEB/Components/Pages/ApplicantProfile.razor`
+- `src/OpenToWork.WEB/Components/Pages/CompanyDashboard.razor`
+- `src/OpenToWork.WEB/Components/Pages/VerifiedApplicants.razor`
+
+#### Archivos modificados
+- `src/OpenToWork.API/Controllers/ProfileController.cs` — endpoint `GET candidate/{candidateId}`
+- `src/OpenToWork.Core/Interfaces/IProfileService.cs` — `GetCandidateByIdAsync`
+- `src/OpenToWork.Core/Services/ProfileService.cs` — implementación + mapping de skills
+- `src/OpenToWork.Core/Services/ApplicationService.cs` — `CalculateProfileCompletion`
+- `src/OpenToWork.Shared/DTOs/ApplicationDto.cs` — `ProfileCompletionPercentage`
+- `src/OpenToWork.Shared/DTOs/CandidateProfileDto.cs` — `Skills` + `CandidateSkillDto`
+- `src/OpenToWork.WEB/Services/ApiAuthService.cs` — `GetCandidateProfileByIdAsync`
+- `src/OpenToWork.WEB/wwwroot/css/components.css` — todos los estilos nuevos

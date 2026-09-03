@@ -1,0 +1,341 @@
+@page "/applicant-profile/{CandidateId}"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>Perfil del Postulante</PageTitle>
+
+<div class="page-container">
+    <button class="ot-btn ot-btn--ghost ot-btn--small" style="margin-bottom: 1rem;" @onclick="GoBack">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        Volver
+    </button>
+
+    @if (Loading)
+    {
+        <div class="cv-card"><p style="text-align: center; padding: 3rem;">Cargando perfil...</p></div>
+    }
+    else if (Profile != null)
+    {
+        <!-- Header Card 100% -->
+        <div class="cv-card cv-header-card">
+            <div class="cv-header-top">
+                <div class="cv-avatar">@(GetInitials($"{Profile.FirstName} {Profile.LastName}"))</div>
+                <div class="cv-header-info">
+                    <h1 class="cv-name">@Profile.FirstName @Profile.LastName</h1>
+                    <p class="cv-title">@(Profile.Title ?? "Sin titulo profesional")</p>
+                    <div class="cv-header-meta">
+                        @if (!string.IsNullOrEmpty(Profile.City) || !string.IsNullOrEmpty(Profile.Country))
+                        {
+                            <span class="cv-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                @(GetLocationText(Profile.City, Profile.Country))
+                            </span>
+                        }
+                        @if (Profile.YearsOfExperience.HasValue)
+                        {
+                            <span class="cv-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                                @Profile.YearsOfExperience.Value anos de experiencia
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="cv-header-actions">
+                    @if (!string.IsNullOrEmpty(Profile.CvUrl))
+                    {
+                        <a href="@Profile.CvUrl" target="_blank" class="ot-btn ot-btn--outline ot-btn--small">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
+                            Ver CV
+                        </a>
+                    }
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Profile.Summary))
+            {
+                <div class="cv-header-summary">
+                    <p>@Profile.Summary</p>
+                </div>
+            }
+            <div class="cv-header-contact">
+                @if (!string.IsNullOrEmpty(Profile.Phone))
+                {
+                    <span class="cv-contact-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                        @Profile.Phone
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(Profile.LinkedInUrl))
+                {
+                    <a href="@Profile.LinkedInUrl" target="_blank" class="cv-contact-item">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                        LinkedIn
+                    </a>
+                }
+                @if (!string.IsNullOrEmpty(Profile.PortfolioUrl))
+                {
+                    <a href="@Profile.PortfolioUrl" target="_blank" class="cv-contact-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+                        Portfolio
+                    </a>
+                }
+            </div>
+        </div>
+
+        <!-- 70/30 Content -->
+        <div class="cv-content-grid">
+            <!-- Left Column 70% -->
+            <div class="cv-main-col">
+                @if (Profile.Experiences.Any())
+                {
+                    <div class="cv-card">
+                        <h2 class="cv-section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 7h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" /></svg>
+                            Experiencia laboral
+                        </h2>
+                        <div class="cv-timeline">
+                            @foreach (var exp in Profile.Experiences)
+                            {
+                                <div class="cv-timeline-item">
+                                    <div class="cv-timeline-dot"></div>
+                                    <div class="cv-timeline-content">
+                                        <div class="cv-timeline-header">
+                                            <span class="cv-timeline-role">@exp.JobTitle</span>
+                                            <span class="cv-timeline-date">
+                                                @exp.StartDate.ToString("MMM yyyy") - @(exp.IsCurrentJob ? "Actual" : exp.EndDate?.ToString("MMM yyyy") ?? "N/A")
+                                            </span>
+                                        </div>
+                                        <span class="cv-timeline-company">@exp.CompanyName</span>
+                                        @if (!string.IsNullOrEmpty(exp.Location))
+                                        {
+                                            <span class="cv-timeline-location">@exp.Location</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(exp.Description))
+                                        {
+                                            <p class="cv-timeline-desc">@exp.Description</p>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (Profile.Educations.Any())
+                {
+                    <div class="cv-card">
+                        <h2 class="cv-section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
+                            Educacion
+                        </h2>
+                        <div class="cv-timeline">
+                            @foreach (var edu in Profile.Educations)
+                            {
+                                <div class="cv-timeline-item">
+                                    <div class="cv-timeline-dot cv-timeline-dot--green"></div>
+                                    <div class="cv-timeline-content">
+                                        <div class="cv-timeline-header">
+                                            <span class="cv-timeline-role">@edu.Degree</span>
+                                            <span class="cv-timeline-date">
+                                                @(edu.StartDate?.ToString("MMM yyyy") ?? "N/A") - @(edu.IsInProgress ? "En curso" : edu.EndDate?.ToString("MMM yyyy") ?? "N/A")
+                                            </span>
+                                        </div>
+                                        <span class="cv-timeline-company">@edu.Institution</span>
+                                        @if (!string.IsNullOrEmpty(edu.FieldOfStudy))
+                                        {
+                                            <span class="cv-timeline-location">@edu.FieldOfStudy</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (Profile.Certifications.Any())
+                {
+                    <div class="cv-card">
+                        <h2 class="cv-section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="8" r="6" /><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" /></svg>
+                            Certificaciones
+                        </h2>
+                        <div class="cv-cert-list">
+                            @foreach (var cert in Profile.Certifications)
+                            {
+                                <div class="cv-cert-item">
+                                    <div class="cv-cert-info">
+                                        <span class="cv-cert-name">@cert.Name</span>
+                                        @if (!string.IsNullOrEmpty(cert.Issuer))
+                                        {
+                                            <span class="cv-cert-issuer">@cert.Issuer</span>
+                                        }
+                                    </div>
+                                    @if (cert.IssueDate.HasValue)
+                                    {
+                                        <span class="cv-cert-date">@cert.IssueDate.Value.ToString("MMM yyyy")</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Right Column 30% -->
+            <div class="cv-side-col">
+                @if (Profile.Skills.Any())
+                {
+                    <div class="cv-card">
+                        <h2 class="cv-section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
+                            Habilidades
+                        </h2>
+                        <div class="cv-skills-list">
+                            @foreach (var skill in Profile.Skills)
+                            {
+                                <div class="cv-skill-item">
+                                    <span class="cv-skill-name">@skill.Name</span>
+                                    @if (skill.ProficiencyLevel.HasValue)
+                                    {
+                                        <div class="cv-skill-bar">
+                                            <div class="cv-skill-fill" style="width: @(skill.ProficiencyLevel.Value * 20)%"></div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="cv-card">
+                    <h2 class="cv-section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+                        Informacion
+                    </h2>
+                    <div class="cv-info-list">
+                        <div class="cv-info-row">
+                            <span class="cv-info-label">Identificacion</span>
+                            <span class="cv-info-value">@(Profile.Identification ?? "-")</span>
+                        </div>
+                        <div class="cv-info-row">
+                            <span class="cv-info-label">Nacimiento</span>
+                            <span class="cv-info-value">@(Profile.BirthDate?.ToString("dd/MM/yyyy") ?? "-")</span>
+                        </div>
+                        <div class="cv-info-row">
+                            <span class="cv-info-label">Pais</span>
+                            <span class="cv-info-value">@(Profile.Country ?? "-")</span>
+                        </div>
+                        <div class="cv-info-row">
+                            <span class="cv-info-label">Ciudad</span>
+                            <span class="cv-info-value">@(Profile.City ?? "-")</span>
+                        </div>
+                        <div class="cv-info-row">
+                            <span class="cv-info-label">Disponibilidad</span>
+                            <span class="cv-info-value">@GetAvailabilityLabel(Profile.Availability)</span>
+                        </div>
+                        <div class="cv-info-row">
+                            <span class="cv-info-label">Autorizacion</span>
+                            <span class="cv-info-value">@GetWorkAuthLabel(Profile.WorkAuthorization)</span>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Profile.Skills.Any())
+                {
+                    <div class="cv-card">
+                        <h2 class="cv-section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 3v18h18" /><path d="M18 17V9M13 17V5M8 17v-3" /></svg>
+                            Nivel por categoria
+                        </h2>
+                        <div class="cv-category-list">
+                            @foreach (var grp in Profile.Skills.Where(s => !string.IsNullOrEmpty(s.Category)).GroupBy(s => s.Category))
+                            {
+                                <div class="cv-category-item">
+                                    <span class="cv-category-name">@grp.Key</span>
+                                    <div class="cv-category-pills">
+                                        @foreach (var s in grp)
+                                        {
+                                            <span class="cv-skill-pill">@s.Name</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="cv-card" style="text-align: center; padding: 3rem;">
+            <p>No se pudo cargar el perfil del postulante.</p>
+            <button class="ot-btn ot-btn--primary" @onclick="GoBack">Volver</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string CandidateId { get; set; } = "";
+    private bool Loading { get; set; } = true;
+    private CandidateProfileDto? Profile { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        if (Guid.TryParse(CandidateId, out var id))
+        {
+            try
+            {
+                Profile = await AuthApi.GetCandidateProfileByIdAsync(id);
+            }
+            catch
+            {
+                Profile = null;
+            }
+        }
+
+        Loading = false;
+    }
+
+    private void GoBack() => Nav.NavigateTo("/company-dashboard");
+
+    private static string GetLocationText(string? city, string? country)
+    {
+        var parts = new[] { city, country }.Where(x => !string.IsNullOrEmpty(x));
+        return string.Join(", ", parts);
+    }
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
+
+    private static string GetAvailabilityLabel(int? availability) => availability switch
+    {
+        0 => "Inmediata",
+        1 => "1 semana",
+        2 => "2 semanas",
+        3 => "1 mes",
+        _ => "No especificado"
+    };
+
+    private static string GetWorkAuthLabel(int? auth) => auth switch
+    {
+        0 => "Ciudadano",
+        1 => "Permiso de trabajo",
+        2 => "Visa de trabajo",
+        3 => "Solicitando visa",
+        _ => "No especificado"
+    };
+}

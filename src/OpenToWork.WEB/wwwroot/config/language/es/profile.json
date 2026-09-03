@@ -20,7 +20,12 @@
         "workAuthorization": "Autorización de trabajo",
         "summary": "Resumen profesional",
         "cvUrl": "URL del CV",
-        "isPublic": "Perfil público"
+        "isPublic": "Perfil público",
+        "phone": "Teléfono",
+        "identification": "Identificación",
+        "birthDate": "Fecha de nacimiento",
+        "country": "País",
+        "city": "Ciudad"
     },
     "availability": {
         "immediate": "Inmediata",
@@ -57,5 +62,31 @@
         "credentialId": "ID de credencial",
         "credentialUrl": "URL de credencial",
         "verify": "Verificar"
+    },
+    "cv": {
+        "upload": "Subir CV",
+        "uploading": "Subiendo...",
+        "analyzing": "Analizando datos...",
+        "analyzingDesc": "Estamos extrayendo tu información del CV con IA",
+        "viewCurrent": "Ver CV actual",
+        "success": "CV subido y datos extraídos correctamente",
+        "error": "Error al subir el CV",
+        "errorTitle": "Error",
+        "onlyPdf": "Solo se permiten archivos PDF",
+        "tooLarge": "El archivo no puede superar 10MB",
+        "notUploaded": "Aún no has subido tu CV",
+        "resultsTitle": "Datos extraídos de tu CV",
+        "noData": "No se pudieron extraer datos del CV. Puedes completar tu perfil manualmente.",
+        "sectionProfile": "Perfil profesional",
+        "sectionExperience": "Experiencia laboral",
+        "sectionEducation": "Educación",
+        "sectionCertifications": "Certificaciones",
+        "location": "Ubicación",
+        "confirmReplace": "¿Deseas sustituir los datos por los del CV?",
+        "keepExisting": "Conservar actuales",
+        "replaceData": "Sí, reemplazar",
+        "applyingData": "Aplicando datos...",
+        "appliedTitle": "¡Datos aplicados!",
+        "appliedDesc": "Tu perfil ha sido actualizado con la información del CV"
     }
 }

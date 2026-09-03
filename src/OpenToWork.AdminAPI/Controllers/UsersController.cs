@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenToWork.Core.Interfaces;
+using OpenToWork.Shared.DTOs;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
@@ -56,6 +57,17 @@ public class UsersController : AdminControllerBase
         if (id == AdminId) return Conflict(new { message = "You cannot delete your own account." });
 
         var result = await _userService.DeleteAsync(id, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
+    [HttpPut("{id}/role")]
+    public async Task<IActionResult> ChangeRole(Guid id, [FromBody] ChangeRoleDto dto)
+    {
+        if (id == AdminId) return Conflict(new { message = "You cannot change your own role." });
+        if (!Enum.IsDefined(typeof(OpenToWork.Shared.Enums.UserRole), dto.Role))
+            return BadRequest(new { message = "Invalid role." });
+
+        var result = await _userService.ChangeRoleAsync(id, dto.Role, AdminId, ClientIp);
         return result ? NoContent() : NotFound();
     }
 }

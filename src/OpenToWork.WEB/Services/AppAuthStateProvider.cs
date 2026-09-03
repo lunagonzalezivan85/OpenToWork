@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.SharedUI.Services;
 
 namespace OpenToWork.WEB.Services;
 

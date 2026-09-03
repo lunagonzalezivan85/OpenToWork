@@ -1,10 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
 using OpenToWork.Models.Entities;
@@ -17,11 +14,13 @@ public class AdminAuthService : IAdminAuthService
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
+    private readonly ITokenCryptoService _tokenCrypto;
 
-    public AdminAuthService(AppDbContext context, IConfiguration config)
+    public AdminAuthService(AppDbContext context, IConfiguration config, ITokenCryptoService tokenCrypto)
     {
         _context = context;
         _config = config;
+        _tokenCrypto = tokenCrypto;
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
@@ -48,14 +47,14 @@ public class AdminAuthService : IAdminAuthService
     private async Task<AuthResponseDto> GenerateAuthResponseAsync(SCUser user)
     {
         var token = GenerateJwtToken(user);
-        var refreshToken = GenerateRefreshToken();
+        var refreshToken = _tokenCrypto.GenerateRefreshToken();
 
         var expireDays = _config.GetValue<int>("Jwt:RefreshTokenExpireDays", 1);
 
         _context.SC_RefreshTokens.Add(new SCRefreshToken
         {
             SCUserId = user.Id,
-            TokenHash = HashToken(refreshToken),
+            TokenHash = _tokenCrypto.HashToken(refreshToken),
             ExpiresAt = DateTime.UtcNow.AddDays(expireDays),
             IsRevoked = false
         });
@@ -82,8 +81,6 @@ public class AdminAuthService : IAdminAuthService
 
     private string GenerateJwtToken(SCUser user)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expireMinutes = _config.GetValue<int>("Jwt:ExpireMinutes", 60);
 
         var claims = new List<Claim>
@@ -95,28 +92,6 @@ public class AdminAuthService : IAdminAuthService
             new(ClaimTypes.Role, UserRole.Admin.ToString())
         };
 
-        var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(expireMinutes),
-            signingCredentials: creds
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    private static string GenerateRefreshToken()
-    {
-        var randomBytes = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomBytes);
-        return Convert.ToBase64String(randomBytes);
-    }
-
-    private static string HashToken(string token)
-    {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
-        return Convert.ToHexString(bytes);
+        return _tokenCrypto.CreateJwtToken(claims, _config["Jwt:Key"]!, _config["Jwt:Issuer"]!, _config["Jwt:Audience"]!, expireMinutes);
     }
 }
