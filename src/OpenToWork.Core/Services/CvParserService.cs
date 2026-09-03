@@ -14,22 +14,24 @@ public interface ICvParserService
 
 public class CvParserService : ICvParserService
 {
+    private readonly string _geminiApiKey;
+    private readonly string _geminiModel;
     private readonly HttpClient _httpClient;
-    private readonly IConfiguration _config;
     private readonly ILogger<CvParserService> _logger;
 
     public CvParserService(HttpClient httpClient, IConfiguration config, ILogger<CvParserService> logger)
     {
         _httpClient = httpClient;
-        _config = config;
         _logger = logger;
+        _geminiApiKey = config["Gemini:ApiKey"] ?? "";
+        _geminiModel = config["Gemini:Model"] ?? "gemini-3.5-flash";
     }
 
     public async Task<CvParseResultDto> ParseCvAsync(byte[] fileBytes, string fileName, string mimeType)
     {
-        var apiKey = _config["Gemini:ApiKey"];
+        var apiKey = _geminiApiKey;
         if (string.IsNullOrEmpty(apiKey))
-            throw new InvalidOperationException("Gemini API key is not configured. Set 'Gemini:ApiKey' in appsettings or environment variable.");
+            throw new InvalidOperationException("Gemini API key is not configured.");
 
         var base64File = Convert.ToBase64String(fileBytes);
 
@@ -125,17 +127,31 @@ Rules:
             }
         };
 
-        var model = _config["Gemini:Model"] ?? "gemini-3.6-flash";
+        var model = _geminiModel;
         var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
 
         var jsonContent = JsonSerializer.Serialize(requestBody);
-        var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync(url, content);
-        var responseText = await response.Content.ReadAsStringAsync();
+        HttpResponseMessage? response = null;
+        string responseText = "";
 
-        if (!response.IsSuccessStatusCode)
+        for (var attempt = 0; attempt < 3; attempt++)
         {
+            var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+            content.Headers.Add("x-goog-api-key", apiKey);
+            response = await _httpClient.PostAsync(url, content);
+            responseText = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+                break;
+
+            if ((int)response.StatusCode is 503 or 500 or 429 && attempt < 2)
+            {
+                _logger.LogWarning("Gemini API retry {Attempt}: {StatusCode}", attempt + 1, response.StatusCode);
+                await Task.Delay(2000 * (attempt + 1));
+                continue;
+            }
+
             _logger.LogError("Gemini API error: {StatusCode} - {Response}", response.StatusCode, responseText);
             throw new InvalidOperationException($"Gemini API returned {response.StatusCode}");
         }

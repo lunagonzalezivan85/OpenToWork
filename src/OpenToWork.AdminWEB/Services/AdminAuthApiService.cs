@@ -356,6 +356,45 @@ public class AdminAuthApiService
         return await response.Content.ReadFromJsonAsync<TechnicalEvaluationDto>();
     }
 
+    public async Task<AdminRegisterCandidateResultDto?> RegisterCandidateFromCvAsync(MultipartFormDataContent content)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync("api/admin/candidates/register-cv", content);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorJson = await response.Content.ReadAsStringAsync();
+            var msg = !string.IsNullOrWhiteSpace(errorJson) ? errorJson : $"Error HTTP {(int)response.StatusCode}";
+            return new AdminRegisterCandidateResultDto { Success = false, Error = msg };
+        }
+        return await response.Content.ReadFromJsonAsync<AdminRegisterCandidateResultDto>();
+    }
+
+    public async Task<AdminRegisterCandidateResultDto?> RegisterCandidateManualAsync(AdminRegisterCandidateManualDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/candidates/register-manual", dto);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorJson = await response.Content.ReadAsStringAsync();
+            var msg = !string.IsNullOrWhiteSpace(errorJson) ? errorJson : $"Error HTTP {(int)response.StatusCode}";
+            return new AdminRegisterCandidateResultDto { Success = false, Error = msg };
+        }
+        return await response.Content.ReadFromJsonAsync<AdminRegisterCandidateResultDto>();
+    }
+
+    public async Task<LinkedinSearchResponseDto?> SearchLinkedinAsync(LinkedinSearchRequestDto request)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/candidates/search-linkedin", request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorJson = await response.Content.ReadAsStringAsync();
+            var msg = !string.IsNullOrWhiteSpace(errorJson) ? errorJson : $"Error HTTP {(int)response.StatusCode}";
+            return new LinkedinSearchResponseDto { Success = false, Error = msg };
+        }
+        return await response.Content.ReadFromJsonAsync<LinkedinSearchResponseDto>();
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");

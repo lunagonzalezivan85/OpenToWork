@@ -15,7 +15,13 @@
         <p class="admin-page-header-subtitle">@Lang.T("admin.candidates.subtitle")</p>
     </div>
     <div class="admin-page-actions">
-        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ExportCsv" disabled="@IsExporting">
+        <button type="button" class="ot-btn ot-btn--primary ot-btn--small" @onclick="GoToRegister">
+            + Registrar Candidato
+        </button>
+        <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoToSearchLinkedin">
+            Buscar LinkedIn
+        </button>
+        <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="ExportCsv" disabled="@IsExporting">
             @Lang.T("admin.candidates.exportCsv")
         </button>
     </div>
@@ -416,6 +422,16 @@ else
     private void ViewPipeline(Guid candidateId)
     {
         Nav.NavigateTo($"/candidates/pipeline/{candidateId}");
+    }
+
+    private void GoToRegister()
+    {
+        Nav.NavigateTo("/candidates/register");
+    }
+
+    private void GoToSearchLinkedin()
+    {
+        Nav.NavigateTo("/candidates/search-linkedin");
     }
 
     private async Task ExportCsv()

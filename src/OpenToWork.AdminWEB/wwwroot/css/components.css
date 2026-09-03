@@ -2,7 +2,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-sm);
+    gap: 8px;
     border: none;
     border-radius: var(--radius-md);
     font-family: var(--font-family);
@@ -11,6 +11,10 @@
     transition: all var(--transition);
     white-space: nowrap;
     letter-spacing: -0.01em;
+    padding: 12px 24px;
+    font-size: 0.9rem;
+    min-height: 44px;
+    line-height: 1;
 }
 
 .ot-btn--primary {
@@ -67,9 +71,9 @@
     color: var(--text-primary);
 }
 
-.ot-btn--small { padding: 0.4rem 0.85rem; font-size: 0.82rem; }
-.ot-btn--medium { padding: 0.6rem 1.25rem; font-size: 0.9rem; }
-.ot-btn--large { padding: 0.8rem 1.75rem; font-size: 1rem; }
+.ot-btn--small { padding: 8px 16px; font-size: 0.82rem; min-height: 36px; }
+.ot-btn--medium { padding: 12px 24px; font-size: 0.9rem; min-height: 44px; }
+.ot-btn--large { padding: 16px 32px; font-size: 1rem; min-height: 52px; }
 
 .ot-btn:disabled {
     opacity: 0.45;
@@ -121,6 +125,54 @@
     opacity: 0.55;
     cursor: not-allowed;
     background-color: var(--bg-tertiary);
+}
+
+.ot-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.ot-form-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary, #3A506B);
+    letter-spacing: -0.01em;
+}
+
+.ot-form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--input-border, #e2e8f0);
+    border-radius: var(--radius-md, 16px);
+    background-color: var(--input-bg, #ffffff);
+    color: var(--text-primary, #0B132B);
+    font-size: 0.9rem;
+    font-family: var(--font-family, 'Segoe UI', sans-serif);
+    transition: all 0.15s ease;
+    outline: none;
+}
+
+.ot-form-input::placeholder {
+    color: var(--text-muted, #778DA9);
+}
+
+.ot-form-input:focus {
+    border-color: var(--accent-primary, #0066FF);
+    box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.12);
+}
+
+.ot-form-input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    background-color: var(--bg-tertiary, #f1f5f9);
+}
+
+textarea.ot-form-input {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
 }
 
 .ot-input-error {
@@ -1219,4 +1271,43 @@
     font-size: 0.82rem;
     color: var(--nav-text);
     opacity: 0.5;
+}
+
+.otw-notify-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    opacity: 0;
+    transform: translateX(120%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: auto;
+    max-width: 380px;
+}
+
+.otw-notify-toast--show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.otw-notify-toast--error {
+    background: #ef4444;
+}
+
+.otw-notify-toast--success {
+    background: #22c55e;
+}
+
+.otw-notify-toast--warning {
+    background: #f59e0b;
+}
+
+.otw-swal-popup {
+    border-radius: 16px !important;
+    font-family: 'Segoe UI', 'Inter', system-ui, sans-serif !important;
 }

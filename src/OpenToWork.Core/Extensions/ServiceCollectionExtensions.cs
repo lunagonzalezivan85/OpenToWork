@@ -38,6 +38,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminApplicationService, AdminApplicationService>();
         services.AddScoped<IAdminCandidateService, AdminCandidateService>();
         services.AddScoped<IRecruitmentService, RecruitmentService>();
+        services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<ICvParserService, CvParserService>();
+        services.AddHttpClient<ICvParserService, CvParserService>();
+        services.AddScoped<IAdminCandidateRegistrationService, AdminCandidateRegistrationService>();
+        services.AddHttpClient<ILinkedinSearchService, LinkedinSearchService>();
 
         return services;
     }

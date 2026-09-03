@@ -1,0 +1,560 @@
+@page "/candidates/register"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using System.Net.Http.Headers
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>Registrar Candidato</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>Registrar Candidato</h1>
+        <p class="admin-page-header-subtitle">Crea un nuevo candidato desde el panel administrativo</p>
+    </div>
+    <div class="admin-page-actions">
+        <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">
+            Volver
+        </button>
+    </div>
+</div>
+
+<div class="admin-tabs" style="margin-bottom: var(--space-lg);">
+    <button class="admin-tab @(Mode == "cv" ? "admin-tab--active" : "")" @onclick='() => SwitchMode("cv")'>
+        Subir CV
+    </button>
+    <button class="admin-tab @(Mode == "manual" ? "admin-tab--active" : "")" @onclick='() => SwitchMode("manual")'>
+        Registro Manual
+    </button>
+</div>
+
+@if (Mode == "cv")
+{
+    @* === Wizard Steps Indicator === *@
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0; max-width: 600px; margin: 0 auto var(--space-xl);">
+        @for (var i = 0; i < 4; i++)
+        {
+            var stepNum = i + 1;
+            var isActive = CvStep == stepNum;
+            var isDone = CvStep > stepNum;
+            <div style="display: flex; align-items: center; @(i < 3 ? "flex: 1;" : "")">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; transition: all 0.2s;
+                        @(isDone ? "background: #22c55e; color: white; border: 2px solid #22c55e;" :
+                          isActive ? "background: #0066FF; color: white; border: 2px solid #0066FF;" :
+                          "background: #f1f5f9; color: #778DA9; border: 2px solid #e2e8f0;")">
+                        @(isDone ? "\u2713" : stepNum.ToString())
+                    </div>
+                    <span style="font-size: 0.72rem; @(isActive ? "color: #0066FF; font-weight: 600;" : "color: #778DA9;")">
+                        @(i == 0 ? "Seleccionar" : i == 1 ? "Analizando" : i == 2 ? "Revision" : "Finalizar")
+                    </span>
+                </div>
+                @if (i < 3)
+                {
+                    <div style="flex: 1; height: 2px; margin: 0 8px; margin-top: -18px; transition: background 0.2s;
+                        @(isDone ? "background: #22c55e;" : "background: #e2e8f0;")"></div>
+                }
+            </div>
+        }
+    </div>
+
+    @* === Step 1: Seleccionar archivo === *@
+    @if (CvStep == 1)
+    {
+        <div class="ot-card" style="max-width: 600px; margin: 0 auto;">
+            <div style="padding: var(--space-xl);">
+                <h3 style="margin-bottom: var(--space-md);">Selecciona el CV</h3>
+                <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: var(--space-lg);">
+                    Sube el curriculum del candidato en formato PDF.
+                </p>
+
+                <div style="border: 2px dashed #e2e8f0; border-radius: 12px; padding: var(--space-xl); text-align: center; transition: border-color 0.2s;">
+                    <InputFile OnChange="OnCvSelected" accept=".pdf,application/pdf" />
+                    <p style="margin-top: var(--space-sm); color: #778DA9; font-size: 0.82rem;">
+                        Solo PDF, maximo 10MB
+                    </p>
+                </div>
+
+                @if (SelectedFileName != null)
+                {
+                    <div style="margin-top: var(--space-md); padding: var(--space-md); background: #f8fafc; border-radius: 10px; display: flex; align-items: center; gap: var(--space-sm);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="color: #0066FF; flex-shrink: 0;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <span style="font-size: 0.88rem; font-weight: 600;">@SelectedFileName</span>
+                    </div>
+                }
+
+                <div style="margin-top: var(--space-lg); display: flex; gap: var(--space-md);">
+                    <button type="button" class="ot-btn ot-btn--primary" @onclick="StartAnalysis" disabled="@(SelectedFile == null)">
+                        Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* === Step 2: Analizando === *@
+    @if (CvStep == 2)
+    {
+        <div class="ot-card" style="max-width: 600px; margin: 0 auto;">
+            <div style="padding: var(--space-xl); text-align: center;">
+                <div style="margin: 0 auto var(--space-lg); width: 64px; height: 64px;">
+                    <svg viewBox="0 0 64 64" style="animation: spin 1.2s linear infinite;">
+                        <circle cx="32" cy="32" r="28" fill="none" stroke="#e2e8f0" stroke-width="4" />
+                        <circle cx="32" cy="32" r="28" fill="none" stroke="#0066FF" stroke-width="4" stroke-dasharray="80 200" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <h3 style="margin-bottom: var(--space-sm);">Analizando CV...</h3>
+                <p style="color: var(--text-secondary); font-size: 0.88rem;">
+                    Extrayendo datos del curriculum del candidato.
+                </p>
+                <div style="margin-top: var(--space-lg); max-width: 300px; margin-left: auto; margin-right: auto;">
+                    <div style="display: flex; flex-direction: column; gap: 8px; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #778DA9;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
+                            Leyendo archivo PDF
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #778DA9;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
+                            Extrayendo informacion personal
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #778DA9;">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: #0066FF; animation: pulse 1s infinite;"></span>
+                            Procesando experiencias y skills...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* === Step 3: Revision === *@
+    @if (CvStep == 3)
+    {
+        <div class="ot-card" style="max-width: 700px; margin: 0 auto;">
+            <div style="padding: var(--space-xl);">
+                <h3 style="margin-bottom: var(--space-sm);">Revision de datos</h3>
+                <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: var(--space-lg);">
+                    Revisa los datos extraidos del CV antes de registrar al candidato.
+                </p>
+
+                @if (ParsedData != null)
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-lg);">
+                        <div>
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Nombre</label>
+                            <p style="font-size: 0.9rem; font-weight: 600; margin-top: 2px;">@(ParsedData.FirstName ?? "-") @(ParsedData.LastName ?? "")</p>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Email</label>
+                            <p style="font-size: 0.9rem; font-weight: 600; margin-top: 2px;">@(ParsedData.Email ?? "-")</p>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Telefono</label>
+                            <p style="font-size: 0.9rem; margin-top: 2px;">@(ParsedData.Phone ?? "-")</p>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Titulo</label>
+                            <p style="font-size: 0.9rem; margin-top: 2px;">@(ParsedData.Title ?? "-")</p>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Ciudad</label>
+                            <p style="font-size: 0.9rem; margin-top: 2px;">@(ParsedData.City ?? "-")</p>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Pais</label>
+                            <p style="font-size: 0.9rem; margin-top: 2px;">@(ParsedData.Country ?? "-")</p>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(ParsedData.Summary))
+                    {
+                        <div style="margin-bottom: var(--space-md);">
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Resumen</label>
+                            <p style="font-size: 0.85rem; margin-top: 4px; color: var(--text-secondary); line-height: 1.5;">@ParsedData.Summary</p>
+                        </div>
+                    }
+
+                    @if (ParsedData.Skills.Count > 0)
+                    {
+                        <div style="margin-bottom: var(--space-md);">
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Skills (@ParsedData.Skills.Count)</label>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+                                @foreach (var skill in ParsedData.Skills)
+                                {
+                                    <span style="padding: 4px 10px; background: #f1f5f9; border-radius: 6px; font-size: 0.78rem; font-weight: 500;">@skill</span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (ParsedData.Experiences.Count > 0)
+                    {
+                        <div style="margin-bottom: var(--space-md);">
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Experiencias (@ParsedData.Experiences.Count)</label>
+                            <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 8px;">
+                                @foreach (var exp in ParsedData.Experiences)
+                                {
+                                    <div style="padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #0066FF;">
+                                        <p style="font-size: 0.85rem; font-weight: 600; margin: 0;">@exp.JobTitle</p>
+                                        <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 2px 0 0 0;">@exp.CompanyName @(exp.IsCurrentJob ? " (Actual)" : "")</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (ParsedData.Educations.Count > 0)
+                    {
+                        <div style="margin-bottom: var(--space-md);">
+                            <label style="font-size: 0.75rem; color: #778DA9; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Educacion (@ParsedData.Educations.Count)</label>
+                            <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 8px;">
+                                @foreach (var edu in ParsedData.Educations)
+                                {
+                                    <div style="padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #22c55e;">
+                                        <p style="font-size: 0.85rem; font-weight: 600; margin: 0;">@edu.Degree</p>
+                                        <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 2px 0 0 0;">@edu.Institution</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+
+                <div style="margin-top: var(--space-lg); display: flex; gap: var(--space-md);">
+                    <button type="button" class="ot-btn ot-btn--outline" @onclick="BackToStep1">
+                        Volver
+                    </button>
+                    <button type="button" class="ot-btn ot-btn--primary" @onclick="ConfirmRegistration" disabled="@IsLoading">
+                        @if (IsLoading)
+                        {
+                            <span>Registrando...</span>
+                        }
+                        else
+                        {
+                            <span>Confirmar y Registrar</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* === Step 4: Finalizar === *@
+    @if (CvStep == 4)
+    {
+        <div class="ot-card" style="max-width: 600px; margin: 0 auto;">
+            <div style="padding: var(--space-xl); text-align: center;">
+                <div style="width: 56px; height: 56px; border-radius: 50%; background: #22c55e; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-md);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" width="28" height="28">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </div>
+                <h3 style="margin-bottom: var(--space-sm);">Candidato registrado</h3>
+                <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: var(--space-sm);">
+                    @(Result?.Email ?? "") @if (!string.IsNullOrEmpty(Result?.FullName))
+                    {
+                        <span>- @Result.FullName</span>
+                    }
+                </p>
+
+                @if (Result?.EmailWasGenerated == true)
+                {
+                    <p style="color: #f59e0b; font-size: 0.78rem; margin-bottom: var(--space-lg); padding: 8px 14px; background: #fef3c7; border-radius: 8px; display: inline-block;">
+                        El email no estaba en el CV. Se genero uno temporal: @Result?.Email
+                    </p>
+                }
+
+                @if (Result?.ParsedData != null)
+                {
+                    <div style="text-align: left; max-width: 400px; margin: 0 auto var(--space-lg);">
+                        @if (Result.ParsedData.Skills.Count > 0)
+                        {
+                            <p style="font-size: 0.82rem; margin-bottom: 4px; color: #778DA9;"><strong>Skills:</strong> @Result.ParsedData.Skills.Count detectadas</p>
+                        }
+                        @if (Result.ParsedData.Experiences.Count > 0)
+                        {
+                            <p style="font-size: 0.82rem; margin-bottom: 4px; color: #778DA9;"><strong>Experiencias:</strong> @Result.ParsedData.Experiences.Count registros</p>
+                        }
+                        @if (Result.ParsedData.Educations.Count > 0)
+                        {
+                            <p style="font-size: 0.82rem; margin-bottom: 4px; color: #778DA9;"><strong>Educacion:</strong> @Result.ParsedData.Educations.Count registros</p>
+                        }
+                    </div>
+                }
+
+                <div style="display: flex; gap: var(--space-sm); justify-content: center;">
+                    <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">
+                        Ir a candidatos
+                    </button>
+                    <button type="button" class="ot-btn ot-btn--primary ot-btn--small" @onclick="ResetCvWizard">
+                        Registrar otro
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="ot-card" style="max-width: 600px;">
+        <div style="padding: var(--space-xl);">
+            <h3 style="margin-bottom: var(--space-md);">Registro Manual</h3>
+            <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: var(--space-lg);">
+                Ingresa los datos basicos del candidato. Podra completar su perfil despues.
+            </p>
+
+            <div class="ot-form-group">
+                <label class="ot-form-label">Email <span style="color: #ef4444;">*</span></label>
+                <input type="email" @bind="ManualEmail" class="ot-form-input" placeholder="candidato@email.com" />
+            </div>
+
+            <div class="ot-form-group">
+                <label class="ot-form-label">Contrasena temporal <span style="color: #ef4444;">*</span></label>
+                <input type="text" @bind="ManualPassword" class="ot-form-input" placeholder="Minimo 6 caracteres" />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                <div class="ot-form-group">
+                    <label class="ot-form-label">Nombre</label>
+                    <input type="text" @bind="ManualFirstName" class="ot-form-input" placeholder="Juan" />
+                </div>
+                <div class="ot-form-group">
+                    <label class="ot-form-label">Apellido</label>
+                    <input type="text" @bind="ManualLastName" class="ot-form-input" placeholder="Perez" />
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                <div class="ot-form-group">
+                    <label class="ot-form-label">Telefono</label>
+                    <input type="text" @bind="ManualPhone" class="ot-form-input" placeholder="+57 300 123 4567" />
+                </div>
+                <div class="ot-form-group">
+                    <label class="ot-form-label">Titulo profesional</label>
+                    <input type="text" @bind="ManualTitle" class="ot-form-input" placeholder="Desarrollador Full Stack" />
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                <div class="ot-form-group">
+                    <label class="ot-form-label">Ciudad</label>
+                    <input type="text" @bind="ManualCity" class="ot-form-input" placeholder="Bogota" />
+                </div>
+                <div class="ot-form-group">
+                    <label class="ot-form-label">Pais</label>
+                    <input type="text" @bind="ManualCountry" class="ot-form-input" placeholder="Colombia" />
+                </div>
+            </div>
+
+            <div class="ot-form-group">
+                <label class="ot-form-label">LinkedIn URL</label>
+                <input type="text" @bind="ManualLinkedIn" class="ot-form-input" placeholder="https://linkedin.com/in/..." />
+            </div>
+
+            <div class="ot-form-group">
+                <label class="ot-form-label">Resumen profesional</label>
+                <textarea @bind="ManualSummary" class="ot-form-input" rows="3" placeholder="Breve resumen del perfil..."></textarea>
+            </div>
+
+            <div style="margin-top: var(--space-lg); display: flex; gap: var(--space-md);">
+                <button type="button" class="ot-btn ot-btn--primary" @onclick="RegisterManual" disabled="@IsLoading">
+                    @if (IsLoading)
+                    {
+                        <span>Registrando...</span>
+                    }
+                    else
+                    {
+                        <span>Registrar Candidato</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    @@keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    @@keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+</style>
+
+@code {
+    private string Mode { get; set; } = "cv";
+    private bool IsLoading { get; set; }
+
+    // CV Wizard
+    private int CvStep { get; set; } = 1;
+    private IBrowserFile? SelectedFile;
+    private string? SelectedFileName;
+    private CvParseResultDto? ParsedData;
+    private AdminRegisterCandidateResultDto? Result;
+
+    // Manual mode
+    private string ManualEmail { get; set; } = "";
+    private string ManualPassword { get; set; } = "";
+    private string? ManualFirstName { get; set; }
+    private string? ManualLastName { get; set; }
+    private string? ManualPhone { get; set; }
+    private string? ManualTitle { get; set; }
+    private string? ManualSummary { get; set; }
+    private string? ManualCity { get; set; }
+    private string? ManualCountry { get; set; }
+    private string? ManualLinkedIn { get; set; }
+
+    private void SwitchMode(string mode)
+    {
+        Mode = mode;
+    }
+
+    private void OnCvSelected(InputFileChangeEventArgs e)
+    {
+        SelectedFile = e.File;
+        SelectedFileName = e.File.Name;
+    }
+
+    private async Task StartAnalysis()
+    {
+        if (SelectedFile == null) return;
+
+        CvStep = 2;
+        StateHasChanged();
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            using var stream = SelectedFile.OpenReadStream(maxAllowedSize: 10_000_000);
+            using var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+            content.Add(fileContent, "file", SelectedFile.Name);
+
+            var result = await AuthApi.RegisterCandidateFromCvAsync(content);
+
+            if (result == null || !result.Success)
+            {
+                CvStep = 1;
+                var error = !string.IsNullOrWhiteSpace(result?.Error) ? result.Error : "Error al analizar el CV";
+                if (error.Contains("401"))
+                    error = "Sesion expirada. Por favor vuelve a iniciar sesion e intenta de nuevo.";
+                await JS.InvokeVoidAsync("notify.error", error);
+            }
+            else
+            {
+                ParsedData = result.ParsedData;
+                Result = result;
+                CvStep = 3;
+            }
+        }
+        catch (Exception ex)
+        {
+            CvStep = 1;
+            await JS.InvokeVoidAsync("notify.error", $"Error: {ex.Message}");
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void BackToStep1()
+    {
+        CvStep = 1;
+    }
+
+    private async Task ConfirmRegistration()
+    {
+        if (Result == null || !Result.Success) return;
+
+        IsLoading = true;
+        StateHasChanged();
+
+        await Task.Delay(500);
+
+        IsLoading = false;
+        CvStep = 4;
+        StateHasChanged();
+
+        var fullName = Result.FullName ?? Result.Email;
+        await JS.InvokeVoidAsync("swalSuccess", "Candidato registrado", fullName, "Ir a candidatos");
+    }
+
+    private void ResetCvWizard()
+    {
+        CvStep = 1;
+        SelectedFile = null;
+        SelectedFileName = null;
+        ParsedData = null;
+        Result = null;
+    }
+
+    private async Task RegisterManual()
+    {
+        if (string.IsNullOrEmpty(ManualEmail) || string.IsNullOrEmpty(ManualPassword))
+        {
+            await JS.InvokeVoidAsync("notify.error", "Email y contrasena son obligatorios");
+            return;
+        }
+
+        if (ManualPassword.Length < 6)
+        {
+            await JS.InvokeVoidAsync("notify.error", "La contrasena debe tener al menos 6 caracteres");
+            return;
+        }
+
+        IsLoading = true;
+
+        try
+        {
+            var dto = new AdminRegisterCandidateManualDto
+            {
+                Email = ManualEmail,
+                Password = ManualPassword,
+                FirstName = ManualFirstName,
+                LastName = ManualLastName,
+                Phone = ManualPhone,
+                Title = ManualTitle,
+                Summary = ManualSummary,
+                City = ManualCity,
+                Country = ManualCountry,
+                LinkedInUrl = ManualLinkedIn
+            };
+
+            var result = await AuthApi.RegisterCandidateManualAsync(dto);
+
+            if (result == null || !result.Success)
+            {
+                await JS.InvokeVoidAsync("notify.error", !string.IsNullOrWhiteSpace(result?.Error) ? result.Error : "Error al registrar candidato");
+            }
+            else
+            {
+                Result = result;
+                CvStep = 4;
+                StateHasChanged();
+                var fullName = result.FullName ?? result.Email;
+                await JS.InvokeVoidAsync("swalSuccess", "Candidato registrado", fullName, "Ir a candidatos");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("notify.error", $"Error: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        Nav.NavigateTo("/candidates");
+    }
+}
