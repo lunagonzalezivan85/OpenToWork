@@ -31,6 +31,8 @@ public interface IRecruitmentService
 
     Task<bool> DismissCandidateAsync(Guid recruitmentId, DismissCandidateDto dto, Guid adminId, string? ipAddress);
 
+    Task<bool> RestoreCandidateAsync(Guid recruitmentId, Guid adminId, string? ipAddress);
+
     Task<bool> UnassignAsync(Guid recruitmentId, Guid adminId, string? ipAddress);
 
     Task<bool> UpdateCandidatePhoneAsync(Guid recruitmentId, string? phone, Guid adminId, string? ipAddress);
@@ -42,4 +44,18 @@ public interface IRecruitmentService
     Task<bool> DeleteTechnicalEvaluationAsync(Guid evaluationId, Guid adminId, string? ipAddress);
 
     Task<TechnicalEvaluationDto?> GetCulturalInterviewAsync(Guid recruitmentId);
+
+    Task<CandidateRecruitmentPreferencesDto?> GetPreferencesAsync(Guid recruitmentId);
+    Task<CandidateRecruitmentPreferencesDto?> SavePreferencesAsync(Guid recruitmentId, UpdateRecruitmentPreferencesDto dto, Guid adminId, string? ipAddress);
+
+    Task<List<DocumentTypeDto>> GetDocumentTypesAsync();
+    Task<List<RecruitmentDocumentDto>> GetDocumentsAsync(Guid recruitmentId);
+    Task<RecruitmentDocumentDto?> RequestDocumentAsync(Guid recruitmentId, RequestDocumentDto dto, Guid adminId, string? ipAddress);
+    Task<bool> UpdateDocumentStatusAsync(Guid documentId, UpdateDocumentStatusDto dto, Guid adminId, string? ipAddress);
+    Task<bool> DeleteDocumentAsync(Guid documentId, Guid adminId, string? ipAddress);
+
+    Task<bool> UpdateMigrationInfoAsync(Guid recruitmentId, UpdateMigrationInfoDto dto, Guid adminId, string? ipAddress);
+
+    Task<List<VacancyOptionDto>> GetVacancyOptionsAsync();
+    Task<bool> LinkVacancyAsync(Guid recruitmentId, LinkVacancyDto dto, Guid adminId, string? ipAddress);
 }

@@ -270,6 +270,7 @@ public class ProfileService : IProfileService
         if (!string.IsNullOrEmpty(parsed.Summary)) candidate.Summary = parsed.Summary;
         if (!string.IsNullOrEmpty(parsed.City)) candidate.City = parsed.City;
         if (!string.IsNullOrEmpty(parsed.Country)) candidate.Country = parsed.Country;
+        if (!string.IsNullOrEmpty(parsed.Nationality)) candidate.Nationality = parsed.Nationality;
         if (!string.IsNullOrEmpty(parsed.LinkedInUrl)) candidate.LinkedInUrl = parsed.LinkedInUrl;
         if (!string.IsNullOrEmpty(parsed.PortfolioUrl)) candidate.PortfolioUrl = parsed.PortfolioUrl;
         if (parsed.YearsOfExperience.HasValue) candidate.YearsOfExperience = parsed.YearsOfExperience;

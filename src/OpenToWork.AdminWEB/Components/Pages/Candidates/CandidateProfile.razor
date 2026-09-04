@@ -727,8 +727,8 @@ else
     private async Task MoveToNextStage()
     {
         if (Recruitment == null) return;
-        var ok = await AuthApi.MoveStageAsync(Recruitment.Id, Recruitment.CurrentStage + 1);
-        if (ok)
+        var result = await AuthApi.MoveStageAsync(Recruitment.Id, Recruitment.CurrentStage + 1);
+        if (result.Success)
         {
             Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
         }

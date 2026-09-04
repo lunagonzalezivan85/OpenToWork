@@ -31,6 +31,9 @@ public class AppDbContext : DbContext
     public DbSet<PTReferenceCheck> PT_ReferenceChecks => Set<PTReferenceCheck>();
     public DbSet<PTTechnicalEvaluation> PT_TechnicalEvaluations => Set<PTTechnicalEvaluation>();
     public DbSet<PTRecruitmentDismissal> PT_RecruitmentDismissals => Set<PTRecruitmentDismissal>();
+    public DbSet<PTCandidateRecruitmentPreferences> PT_CandidateRecruitmentPreferences => Set<PTCandidateRecruitmentPreferences>();
+    public DbSet<SYDocumentType> SY_DocumentTypes => Set<SYDocumentType>();
+    public DbSet<PTRecruitmentDocument> PT_RecruitmentDocuments => Set<PTRecruitmentDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -244,7 +247,61 @@ public class AppDbContext : DbContext
             e.HasIndex(d => new { d.PT_CandidateRecruitmentId, d.IsDeleted });
         });
 
+        modelBuilder.Entity<PTCandidateRecruitmentPreferences>(e =>
+        {
+            e.ToTable("PT_CandidateRecruitmentPreferences");
+            e.HasIndex(p => new { p.PT_CandidateRecruitmentId, p.IsDeleted }).IsUnique();
+            e.HasIndex(p => new { p.IsCompleted, p.IsDeleted });
+            e.Property(p => p.IsCompleted).HasDefaultValue(false);
+            e.HasOne(p => p.Recruitment)
+                .WithOne(r => r.Preferences)
+                .HasForeignKey<PTCandidateRecruitmentPreferences>(p => p.PT_CandidateRecruitmentId);
+        });
+
+        modelBuilder.Entity<SYDocumentType>(e =>
+        {
+            e.ToTable("SY_DocumentTypes");
+            e.HasIndex(d => new { d.Name, d.IsDeleted }).IsUnique();
+            e.HasIndex(d => new { d.Category, d.IsDeleted });
+            e.Property(d => d.IsRequired).HasDefaultValue(false);
+            e.HasMany(d => d.RecruitmentDocuments)
+                .WithOne(r => r.DocumentType)
+                .HasForeignKey(r => r.SY_DocumentTypeId);
+        });
+
+        modelBuilder.Entity<PTRecruitmentDocument>(e =>
+        {
+            e.ToTable("PT_RecruitmentDocuments");
+            e.HasIndex(r => new { r.PT_CandidateRecruitmentId, r.SY_DocumentTypeId, r.IsDeleted }).IsUnique();
+            e.HasIndex(r => new { r.Status, r.IsDeleted });
+            e.HasIndex(r => new { r.PT_CandidateRecruitmentId, r.IsDeleted });
+            e.Property(r => r.Status).HasDefaultValue(0);
+            e.HasOne(r => r.Recruitment)
+                .WithMany(rec => rec.RecruitmentDocuments)
+                .HasForeignKey(r => r.PT_CandidateRecruitmentId);
+        });
+
+        SeedDocumentTypes(modelBuilder);
         SeedWizardSteps(modelBuilder);
+    }
+
+    private static void SeedDocumentTypes(ModelBuilder modelBuilder)
+    {
+        var docs = new[]
+        {
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Pasaporte", Description = "Pasaporte válido y en vigor", Category = "Identidad", IsRequired = false, SortOrder = 1 },
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Documento de identidad", Description = "DNI / NIE / Cédula de identidad", Category = "Identidad", IsRequired = true, SortOrder = 2 },
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Permiso de trabajo", Description = "Autorización de trabajo en el país de destino", Category = "Migratorio", IsRequired = false, SortOrder = 3 },
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Licencia de conducir", Description = "Permiso de conducir válido", Category = "Habilitación", IsRequired = false, SortOrder = 4 },
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Visado de trabajo", Description = "Visado que habilita a trabajar legalmente", Category = "Migratorio", IsRequired = false, SortOrder = 5 },
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Tarjeta sanitaria", Description = "Tarjeta sanitaria europea (TSE) o seguro médico privado", Category = "Salud", IsRequired = false, SortOrder = 6 },
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Certificado de antecedentes penales", Description = "Certificado de antecedentes penales apostillado", Category = "Legal", IsRequired = false, SortOrder = 7 },
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Titulo / Certificación profesional", Description = "Título habilitante o certificación profesional", Category = "Formación", IsRequired = false, SortOrder = 8 },
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Nº Seguridad Social", Description = "Documento con número de afiliación a la seguridad social", Category = "Fiscal", IsRequired = false, SortOrder = 9 },
+            new SYDocumentType { Id = Guid.NewGuid(), Name = "Cuenta bancaria (IBAN)", Description = "Justificante de cuenta bancaria a nombre del candidato", Category = "Fiscal", IsRequired = false, SortOrder = 10 }
+        };
+
+        modelBuilder.Entity<SYDocumentType>().HasData(docs);
     }
 
     private static void SeedWizardSteps(ModelBuilder modelBuilder)

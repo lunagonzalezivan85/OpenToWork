@@ -103,6 +103,7 @@ public class RecruitmentService : IRecruitmentService
             .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Certifications)
             .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Educations)
             .Include(r => r.AssignedToUser)
+            .Include(r => r.Vacancy)
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.ReferenceChecks)
@@ -127,6 +128,14 @@ public class RecruitmentService : IRecruitmentService
             City = candidate?.City,
             LinkedInUrl = candidate?.LinkedInUrl,
             PortfolioUrl = candidate?.PortfolioUrl,
+            Nationality = candidate?.Nationality,
+            HasPassport = candidate?.HasPassport,
+            PassportNumber = candidate?.PassportNumber,
+            WorkAuthorization = candidate?.WorkAuthorization,
+            WorkAuthorizations = candidate?.WorkAuthorizations,
+            HasTransport = candidate?.HasTransport,
+            VacancyId = recruitment.PT_VacancyId,
+            VacancyTitle = recruitment.Vacancy != null ? recruitment.Vacancy.Title : null,
             CurrentStage = recruitment.CurrentStage,
             AssignedToName = recruitment.AssignedToUser?.Email,
             AssignedToUserId = recruitment.AssignedToUserId,
@@ -244,6 +253,7 @@ public class RecruitmentService : IRecruitmentService
             .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Certifications)
             .Include(r => r.User).ThenInclude(u => u!.Candidate!).ThenInclude(c => c.Educations)
             .Include(r => r.AssignedToUser)
+            .Include(r => r.Vacancy)
             .Include(r => r.StageLogs!).ThenInclude(l => l.ChangedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.CompletedByUser)
             .Include(r => r.InvestigationChecklist!).ThenInclude(c => c.ReferenceChecks)
@@ -268,6 +278,14 @@ public class RecruitmentService : IRecruitmentService
             City = candidate?.City,
             LinkedInUrl = candidate?.LinkedInUrl,
             PortfolioUrl = candidate?.PortfolioUrl,
+            Nationality = candidate?.Nationality,
+            HasPassport = candidate?.HasPassport,
+            PassportNumber = candidate?.PassportNumber,
+            WorkAuthorization = candidate?.WorkAuthorization,
+            WorkAuthorizations = candidate?.WorkAuthorizations,
+            HasTransport = candidate?.HasTransport,
+            VacancyId = recruitment.PT_VacancyId,
+            VacancyTitle = recruitment.Vacancy != null ? recruitment.Vacancy.Title : null,
             CurrentStage = recruitment.CurrentStage,
             AssignedToName = recruitment.AssignedToUser?.Email,
             AssignedToUserId = recruitment.AssignedToUserId,
@@ -461,8 +479,13 @@ public class RecruitmentService : IRecruitmentService
 
     public async Task<bool> MoveStageAsync(Guid recruitmentId, int toStage, string? notes, Guid adminId, string? ipAddress)
     {
-        var recruitment = await _context.PT_CandidateRecruitments.FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
+        var recruitment = await _context.PT_CandidateRecruitments
+            .Include(r => r.Preferences)
+            .FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
         if (recruitment == null) return false;
+
+        if (toStage > 0 && (recruitment.Preferences == null || !recruitment.Preferences.IsCompleted))
+            return false;
 
         var fromStage = recruitment.CurrentStage;
 
@@ -773,6 +796,46 @@ public class RecruitmentService : IRecruitmentService
         return true;
     }
 
+    public async Task<bool> RestoreCandidateAsync(Guid recruitmentId, Guid adminId, string? ipAddress)
+    {
+        var recruitment = await _context.PT_CandidateRecruitments
+            .FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
+        if (recruitment == null || recruitment.CurrentStage != 5) return false;
+
+        var lastLog = await _context.PT_RecruitmentStageLogs
+            .Where(l => l.PT_CandidateRecruitmentId == recruitmentId && l.ToStage == 5 && !l.IsDeleted)
+            .OrderByDescending(l => l.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        var restoreStage = lastLog?.FromStage ?? 0;
+        recruitment.CurrentStage = restoreStage;
+        recruitment.UpdatedAt = DateTime.UtcNow;
+        recruitment.UpdatedBy = adminId;
+
+        var dismissal = await _context.PT_RecruitmentDismissals
+            .FirstOrDefaultAsync(d => d.PT_CandidateRecruitmentId == recruitmentId && !d.IsDeleted);
+        if (dismissal != null)
+        {
+            dismissal.IsDeleted = true;
+            dismissal.UpdatedAt = DateTime.UtcNow;
+            dismissal.UpdatedBy = adminId;
+        }
+
+        _context.PT_RecruitmentStageLogs.Add(new PTRecruitmentStageLog
+        {
+            PT_CandidateRecruitmentId = recruitmentId,
+            FromStage = 5,
+            ToStage = restoreStage,
+            ChangedByUserId = adminId,
+            Notes = "Restored from dismissal",
+            CreatedBy = adminId
+        });
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "RestoreCandidate", "PT_CandidateRecruitments", recruitmentId, null, ipAddress);
+        return true;
+    }
+
     public async Task<bool> UnassignAsync(Guid recruitmentId, Guid adminId, string? ipAddress)
     {
         var recruitment = await _context.PT_CandidateRecruitments.FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
@@ -914,5 +977,286 @@ public class RecruitmentService : IRecruitmentService
             Type = evaluation.Type,
             Recommendation = evaluation.Recommendation
         };
+    }
+
+    public async Task<CandidateRecruitmentPreferencesDto?> GetPreferencesAsync(Guid recruitmentId)
+    {
+        var prefs = await _context.PT_CandidateRecruitmentPreferences
+            .FirstOrDefaultAsync(p => p.PT_CandidateRecruitmentId == recruitmentId && !p.IsDeleted);
+
+        if (prefs == null) return null;
+
+        return new CandidateRecruitmentPreferencesDto
+        {
+            Id = prefs.Id,
+            RecruitmentId = prefs.PT_CandidateRecruitmentId,
+            PreferredWorkShift = prefs.PreferredWorkShift,
+            AcceptedContractType = prefs.AcceptedContractType,
+            AvailabilityToJoin = prefs.AvailabilityToJoin,
+            ExpectedSalary = prefs.ExpectedSalary,
+            AvailableDays = prefs.AvailableDays,
+            AvailableWeekends = prefs.AvailableWeekends,
+            AvailableHolidays = prefs.AvailableHolidays,
+            AvailableSchedule = prefs.AvailableSchedule,
+            IsCompleted = prefs.IsCompleted,
+            CompletedAt = prefs.CompletedAt
+        };
+    }
+
+    public async Task<CandidateRecruitmentPreferencesDto?> SavePreferencesAsync(
+        Guid recruitmentId, UpdateRecruitmentPreferencesDto dto, Guid adminId, string? ipAddress)
+    {
+        var recruitment = await _context.PT_CandidateRecruitments
+            .FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
+        if (recruitment == null) return null;
+
+        var prefs = await _context.PT_CandidateRecruitmentPreferences
+            .FirstOrDefaultAsync(p => p.PT_CandidateRecruitmentId == recruitmentId && !p.IsDeleted);
+
+        var isCompleted = dto.PreferredWorkShift.HasValue
+            && dto.AcceptedContractType.HasValue
+            && dto.AvailabilityToJoin.HasValue
+            && dto.ExpectedSalary.HasValue
+            && !string.IsNullOrWhiteSpace(dto.AvailableDays)
+            && dto.AvailableWeekends.HasValue
+            && dto.AvailableHolidays.HasValue
+            && !string.IsNullOrWhiteSpace(dto.AvailableSchedule);
+
+        if (prefs == null)
+        {
+            prefs = new PTCandidateRecruitmentPreferences
+            {
+                PT_CandidateRecruitmentId = recruitmentId,
+                PreferredWorkShift = dto.PreferredWorkShift,
+                AcceptedContractType = dto.AcceptedContractType,
+                AvailabilityToJoin = dto.AvailabilityToJoin,
+                ExpectedSalary = dto.ExpectedSalary,
+                AvailableDays = dto.AvailableDays,
+                AvailableWeekends = dto.AvailableWeekends,
+                AvailableHolidays = dto.AvailableHolidays,
+                AvailableSchedule = dto.AvailableSchedule,
+                IsCompleted = isCompleted,
+                CompletedAt = isCompleted ? DateTime.UtcNow : null,
+                CreatedBy = adminId
+            };
+            _context.PT_CandidateRecruitmentPreferences.Add(prefs);
+        }
+        else
+        {
+            prefs.PreferredWorkShift = dto.PreferredWorkShift;
+            prefs.AcceptedContractType = dto.AcceptedContractType;
+            prefs.AvailabilityToJoin = dto.AvailabilityToJoin;
+            prefs.ExpectedSalary = dto.ExpectedSalary;
+            prefs.AvailableDays = dto.AvailableDays;
+            prefs.AvailableWeekends = dto.AvailableWeekends;
+            prefs.AvailableHolidays = dto.AvailableHolidays;
+            prefs.AvailableSchedule = dto.AvailableSchedule;
+            prefs.IsCompleted = isCompleted;
+            prefs.CompletedAt = isCompleted ? DateTime.UtcNow : prefs.CompletedAt;
+            prefs.UpdatedAt = DateTime.UtcNow;
+            prefs.UpdatedBy = adminId;
+        }
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "SaveRecruitmentPreferences", "PT_CandidateRecruitmentPreferences", prefs.Id, null, ipAddress);
+
+        return new CandidateRecruitmentPreferencesDto
+        {
+            Id = prefs.Id,
+            RecruitmentId = prefs.PT_CandidateRecruitmentId,
+            PreferredWorkShift = prefs.PreferredWorkShift,
+            AcceptedContractType = prefs.AcceptedContractType,
+            AvailabilityToJoin = prefs.AvailabilityToJoin,
+            ExpectedSalary = prefs.ExpectedSalary,
+            AvailableDays = prefs.AvailableDays,
+            AvailableWeekends = prefs.AvailableWeekends,
+            AvailableHolidays = prefs.AvailableHolidays,
+            AvailableSchedule = prefs.AvailableSchedule,
+            IsCompleted = prefs.IsCompleted,
+            CompletedAt = prefs.CompletedAt
+        };
+    }
+
+    public async Task<List<DocumentTypeDto>> GetDocumentTypesAsync()
+    {
+        return await _context.SY_DocumentTypes
+            .Where(d => !d.IsDeleted)
+            .OrderBy(d => d.SortOrder)
+            .Select(d => new DocumentTypeDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Description = d.Description,
+                Category = d.Category,
+                IsRequired = d.IsRequired,
+                SortOrder = d.SortOrder
+            })
+            .ToListAsync();
+    }
+
+    public async Task<List<RecruitmentDocumentDto>> GetDocumentsAsync(Guid recruitmentId)
+    {
+        return await _context.PT_RecruitmentDocuments
+            .Include(r => r.DocumentType)
+            .Include(r => r.VerifiedByUser)
+            .Where(r => r.PT_CandidateRecruitmentId == recruitmentId && !r.IsDeleted)
+            .OrderBy(r => r.DocumentType.SortOrder)
+            .Select(r => new RecruitmentDocumentDto
+            {
+                Id = r.Id,
+                RecruitmentId = r.PT_CandidateRecruitmentId,
+                DocumentTypeId = r.SY_DocumentTypeId,
+                DocumentTypeName = r.DocumentType.Name,
+                DocumentTypeCategory = r.DocumentType.Category,
+                Status = r.Status,
+                FileUrl = r.FileUrl,
+                FileName = r.FileName,
+                SubmittedAt = r.SubmittedAt,
+                VerifiedByName = r.VerifiedByUser != null ? r.VerifiedByUser.Email : null,
+                VerifiedAt = r.VerifiedAt,
+                Notes = r.Notes,
+                ExpiresAt = r.ExpiresAt
+            })
+            .ToListAsync();
+    }
+
+    public async Task<RecruitmentDocumentDto?> RequestDocumentAsync(
+        Guid recruitmentId, RequestDocumentDto dto, Guid adminId, string? ipAddress)
+    {
+        var recruitment = await _context.PT_CandidateRecruitments
+            .FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
+        if (recruitment == null) return null;
+
+        var existing = await _context.PT_RecruitmentDocuments
+            .FirstOrDefaultAsync(r => r.PT_CandidateRecruitmentId == recruitmentId
+                && r.SY_DocumentTypeId == dto.DocumentTypeId && !r.IsDeleted);
+        if (existing != null) return null;
+
+        var doc = new PTRecruitmentDocument
+        {
+            PT_CandidateRecruitmentId = recruitmentId,
+            SY_DocumentTypeId = dto.DocumentTypeId,
+            Status = 0,
+            Notes = dto.Notes,
+            CreatedBy = adminId
+        };
+        _context.PT_RecruitmentDocuments.Add(doc);
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "RequestDocument", "PT_RecruitmentDocuments", doc.Id, null, ipAddress);
+
+        var docType = await _context.SY_DocumentTypes.FirstOrDefaultAsync(d => d.Id == dto.DocumentTypeId);
+        return new RecruitmentDocumentDto
+        {
+            Id = doc.Id,
+            RecruitmentId = recruitmentId,
+            DocumentTypeId = dto.DocumentTypeId,
+            DocumentTypeName = docType?.Name ?? "",
+            DocumentTypeCategory = docType?.Category,
+            Status = 0,
+            Notes = doc.Notes
+        };
+    }
+
+    public async Task<bool> UpdateDocumentStatusAsync(
+        Guid documentId, UpdateDocumentStatusDto dto, Guid adminId, string? ipAddress)
+    {
+        var doc = await _context.PT_RecruitmentDocuments
+            .FirstOrDefaultAsync(r => r.Id == documentId && !r.IsDeleted);
+        if (doc == null) return false;
+
+        doc.Status = dto.Status;
+        if (!string.IsNullOrEmpty(dto.FileUrl))
+        {
+            doc.FileUrl = dto.FileUrl;
+            doc.FileName = dto.FileName;
+            doc.SubmittedAt = DateTime.UtcNow;
+        }
+        if (dto.Status == 2)
+        {
+            doc.VerifiedByUserId = adminId;
+            doc.VerifiedAt = DateTime.UtcNow;
+        }
+        doc.Notes = dto.Notes ?? doc.Notes;
+        doc.ExpiresAt = dto.ExpiresAt ?? doc.ExpiresAt;
+        doc.UpdatedAt = DateTime.UtcNow;
+        doc.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "UpdateDocumentStatus", "PT_RecruitmentDocuments", documentId, null, ipAddress);
+        return true;
+    }
+
+    public async Task<bool> DeleteDocumentAsync(Guid documentId, Guid adminId, string? ipAddress)
+    {
+        var doc = await _context.PT_RecruitmentDocuments
+            .FirstOrDefaultAsync(r => r.Id == documentId && !r.IsDeleted);
+        if (doc == null) return false;
+
+        doc.IsDeleted = true;
+        doc.DeletedAt = DateTime.UtcNow;
+        doc.DeletedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "DeleteDocument", "PT_RecruitmentDocuments", documentId, null, ipAddress);
+        return true;
+    }
+
+    public async Task<bool> UpdateMigrationInfoAsync(Guid recruitmentId, UpdateMigrationInfoDto dto, Guid adminId, string? ipAddress)
+    {
+        var recruitment = await _context.PT_CandidateRecruitments
+            .Include(r => r.User)
+            .ThenInclude(u => u!.Candidate)
+            .FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
+
+        if (recruitment?.User?.Candidate == null) return false;
+
+        var candidate = recruitment.User.Candidate;
+        if (dto.Nationality != null) candidate.Nationality = string.IsNullOrWhiteSpace(dto.Nationality) ? null : dto.Nationality;
+        if (dto.HasPassport.HasValue) candidate.HasPassport = dto.HasPassport;
+        if (dto.PassportNumber != null) candidate.PassportNumber = string.IsNullOrWhiteSpace(dto.PassportNumber) ? null : dto.PassportNumber;
+        if (dto.WorkAuthorization.HasValue) candidate.WorkAuthorization = dto.WorkAuthorization;
+        if (dto.WorkAuthorizations != null) candidate.WorkAuthorizations = string.IsNullOrWhiteSpace(dto.WorkAuthorizations) ? null : dto.WorkAuthorizations;
+        if (dto.HasTransport.HasValue) candidate.HasTransport = dto.HasTransport;
+        candidate.UpdatedAt = DateTime.UtcNow;
+        candidate.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "UpdateMigrationInfo", "PT_Candidates", candidate.Id, null, ipAddress);
+        return true;
+    }
+
+    public async Task<List<VacancyOptionDto>> GetVacancyOptionsAsync()
+    {
+        return await _context.PT_Vacancies
+            .Include(v => v.Company)
+            .Where(v => !v.IsDeleted && v.Status == 0)
+            .OrderByDescending(v => v.CreatedAt)
+            .Select(v => new VacancyOptionDto
+            {
+                Id = v.Id,
+                Title = v.Title,
+                CompanyName = v.Company != null ? v.Company.Name : null,
+                Location = v.Location,
+                Description = v.Description,
+                Requirements = v.Requirements,
+                Category = v.Category,
+                Status = v.Status
+            })
+            .ToListAsync();
+    }
+
+    public async Task<bool> LinkVacancyAsync(Guid recruitmentId, LinkVacancyDto dto, Guid adminId, string? ipAddress)
+    {
+        var recruitment = await _context.PT_CandidateRecruitments
+            .FirstOrDefaultAsync(r => r.Id == recruitmentId && !r.IsDeleted);
+        if (recruitment == null) return false;
+
+        recruitment.PT_VacancyId = dto.VacancyId;
+        recruitment.UpdatedAt = DateTime.UtcNow;
+        recruitment.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "LinkVacancy", "PT_CandidateRecruitments", recruitmentId, null, ipAddress);
+        return true;
     }
 }

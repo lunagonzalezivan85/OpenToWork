@@ -66,6 +66,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code fences):
   ""portfolioUrl"": """",
   ""city"": """",
   ""country"": """",
+  ""nationality"": """",
   ""yearsOfExperience"": null,
   ""availability"": """",
   ""skills"": [""skill1"", ""skill2""],

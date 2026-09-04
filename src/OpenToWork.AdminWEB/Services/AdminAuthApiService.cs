@@ -240,11 +240,15 @@ public class AdminAuthApiService
         return await response.Content.ReadFromJsonAsync<RecruitmentPipelineDto>();
     }
 
-    public async Task<bool> MoveStageAsync(Guid recruitmentId, int toStage, string? notes = null)
+    public async Task<MoveStageResultDto> MoveStageAsync(Guid recruitmentId, int toStage, string? notes = null)
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/move-stage", new MoveStageDto { ToStage = toStage, Notes = notes });
-        return response.IsSuccessStatusCode;
+        if (response.IsSuccessStatusCode)
+            return new MoveStageResultDto { Success = true };
+
+        var errorBody = await response.Content.ReadAsStringAsync();
+        return new MoveStageResultDto { Success = false, Error = errorBody };
     }
 
     public async Task<bool> ToggleInvestigationStepAsync(Guid recruitmentId, ToggleInvestigationStepDto dto)
@@ -302,6 +306,13 @@ public class AdminAuthApiService
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment/{recruitmentId}/dismiss", new DismissCandidateDto { Reason = reason, Notes = notes });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> RestoreCandidateAsync(Guid recruitmentId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/admin/recruitment/{recruitmentId}/restore", null);
         return response.IsSuccessStatusCode;
     }
 
@@ -393,6 +404,77 @@ public class AdminAuthApiService
             return new LinkedinSearchResponseDto { Success = false, Error = msg };
         }
         return await response.Content.ReadFromJsonAsync<LinkedinSearchResponseDto>();
+    }
+
+    public async Task<CandidateRecruitmentPreferencesDto?> GetRecruitmentPreferencesAsync(Guid recruitmentId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/recruitment/{recruitmentId}/preferences");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateRecruitmentPreferencesDto>();
+    }
+
+    public async Task<CandidateRecruitmentPreferencesDto?> SaveRecruitmentPreferencesAsync(
+        Guid recruitmentId, UpdateRecruitmentPreferencesDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/preferences", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateRecruitmentPreferencesDto>();
+    }
+
+    public async Task<List<DocumentTypeDto>> GetDocumentTypesAsync()
+    {
+        await SetAuthHeaderAsync();
+        return await _httpClient.GetFromJsonAsync<List<DocumentTypeDto>>("api/admin/recruitment/document-types") ?? new();
+    }
+
+    public async Task<List<RecruitmentDocumentDto>> GetRecruitmentDocumentsAsync(Guid recruitmentId)
+    {
+        await SetAuthHeaderAsync();
+        return await _httpClient.GetFromJsonAsync<List<RecruitmentDocumentDto>>($"api/admin/recruitment/{recruitmentId}/documents") ?? new();
+    }
+
+    public async Task<RecruitmentDocumentDto?> RequestDocumentAsync(Guid recruitmentId, RequestDocumentDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment/{recruitmentId}/documents", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<RecruitmentDocumentDto>();
+    }
+
+    public async Task<bool> UpdateDocumentStatusAsync(Guid documentId, UpdateDocumentStatusDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/documents/{documentId}", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeleteDocumentAsync(Guid documentId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/recruitment/documents/{documentId}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UpdateMigrationInfoAsync(Guid recruitmentId, UpdateMigrationInfoDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/migration-info", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<VacancyOptionDto>> GetVacancyOptionsAsync()
+    {
+        await SetAuthHeaderAsync();
+        return await _httpClient.GetFromJsonAsync<List<VacancyOptionDto>>("api/admin/recruitment/vacancies") ?? new();
+    }
+
+    public async Task<bool> LinkVacancyAsync(Guid recruitmentId, LinkVacancyDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment/{recruitmentId}/link-vacancy", dto);
+        return response.IsSuccessStatusCode;
     }
 
     public async Task SetAuthHeaderAsync()

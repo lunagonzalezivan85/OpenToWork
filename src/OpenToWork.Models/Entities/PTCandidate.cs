@@ -65,6 +65,19 @@ public class PTCandidate : BaseEntity
 
     public int? WorkAuthorization { get; set; }
 
+    [MaxLength(50)]
+    public string? WorkAuthorizations { get; set; }
+
+    public bool? HasTransport { get; set; }
+
+    [MaxLength(100)]
+    public string? Nationality { get; set; }
+
+    public bool? HasPassport { get; set; }
+
+    [MaxLength(50)]
+    public string? PassportNumber { get; set; }
+
     public bool IsProfilePublic { get; set; } = true;
 
     public DateTime? CompletedAt { get; set; }

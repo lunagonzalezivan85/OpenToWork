@@ -189,7 +189,7 @@
         SelectedVacancyTitle = "";
     }
 
-    private void GoToCreateVacancy() => Nav.NavigateTo("/vacancies/create");
+    private void GoToCreateVacancy() => Nav.NavigateTo("/my-vacancies?action=create");
     private void GoToApplicantProfile(Guid candidateId) => Nav.NavigateTo($"/applicant-profile/{candidateId}");
 
     private static string GetInitials(string name)

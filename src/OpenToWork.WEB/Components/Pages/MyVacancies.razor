@@ -1,14 +1,25 @@
 @page "/my-vacancies"
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
+@using Microsoft.AspNetCore.WebUtilities
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <PageTitle>@Lang.T("vacancies.myTitle")</PageTitle>
 
 <div class="page-container">
-    <h1 class="mb-lg">@Lang.T("vacancies.myTitle")</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h1 style="margin: 0;">@Lang.T("vacancies.myTitle")</h1>
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => ShowCreateForm = true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-right: 0.4rem;">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            @Lang.T("vacancies.create")
+        </button>
+    </div>
 
     @if (IsLoading)
     {
@@ -173,6 +184,11 @@
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
+
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("action", out var action) && action == "create")
+            ShowCreateForm = true;
+
         await LoadVacancies();
     }
 

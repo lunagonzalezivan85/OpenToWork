@@ -50,6 +50,20 @@ public class RecruitmentController : AdminControllerBase
     [HttpPut("{id}/move-stage")]
     public async Task<IActionResult> MoveStage(Guid id, [FromBody] MoveStageDto dto)
     {
+        if (dto.ToStage > 0)
+        {
+            var prefs = await _recruitmentService.GetPreferencesAsync(id);
+            if (prefs == null || !prefs.IsCompleted)
+                return BadRequest(new { error = "Debe completar las preferencias del candidato antes de avanzar la etapa." });
+        }
+
+        if (dto.ToStage == 4)
+        {
+            var detail = await _recruitmentService.GetDetailAsync(id);
+            if (detail != null && !detail.VacancyId.HasValue)
+                return BadRequest(new { error = "Debe vincular el candidato a una vacante antes de marcarlo como Listo a Entregar." });
+        }
+
         var result = await _recruitmentService.MoveStageAsync(id, dto.ToStage, dto.Notes, AdminId, ClientIp);
         return result ? NoContent() : NotFound();
     }
@@ -110,6 +124,13 @@ public class RecruitmentController : AdminControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    [HttpPost("{id}/restore")]
+    public async Task<IActionResult> Restore(Guid id)
+    {
+        var result = await _recruitmentService.RestoreCandidateAsync(id, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpPut("{id}/unassign")]
     public async Task<IActionResult> Unassign(Guid id)
     {
@@ -157,5 +178,75 @@ public class RecruitmentController : AdminControllerBase
     {
         var result = await _recruitmentService.GetCulturalInterviewAsync(id);
         return result != null ? Ok(result) : NotFound();
+    }
+
+    [HttpGet("{id}/preferences")]
+    public async Task<IActionResult> GetPreferences(Guid id)
+    {
+        var result = await _recruitmentService.GetPreferencesAsync(id);
+        return result != null ? Ok(result) : Ok(new { isCompleted = false });
+    }
+
+    [HttpPut("{id}/preferences")]
+    public async Task<IActionResult> SavePreferences(Guid id, [FromBody] UpdateRecruitmentPreferencesDto dto)
+    {
+        var result = await _recruitmentService.SavePreferencesAsync(id, dto, AdminId, ClientIp);
+        return result != null ? Ok(result) : NotFound();
+    }
+
+    [HttpGet("document-types")]
+    public async Task<IActionResult> GetDocumentTypes()
+    {
+        var result = await _recruitmentService.GetDocumentTypesAsync();
+        return Ok(result);
+    }
+
+    [HttpGet("{id}/documents")]
+    public async Task<IActionResult> GetDocuments(Guid id)
+    {
+        var result = await _recruitmentService.GetDocumentsAsync(id);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/documents")]
+    public async Task<IActionResult> RequestDocument(Guid id, [FromBody] RequestDocumentDto dto)
+    {
+        var result = await _recruitmentService.RequestDocumentAsync(id, dto, AdminId, ClientIp);
+        return result != null ? Ok(result) : NotFound();
+    }
+
+    [HttpPut("documents/{documentId}")]
+    public async Task<IActionResult> UpdateDocumentStatus(Guid documentId, [FromBody] UpdateDocumentStatusDto dto)
+    {
+        var result = await _recruitmentService.UpdateDocumentStatusAsync(documentId, dto, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
+    [HttpDelete("documents/{documentId}")]
+    public async Task<IActionResult> DeleteDocument(Guid documentId)
+    {
+        var result = await _recruitmentService.DeleteDocumentAsync(documentId, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
+    [HttpPut("{id}/migration-info")]
+    public async Task<IActionResult> UpdateMigrationInfo(Guid id, [FromBody] UpdateMigrationInfoDto dto)
+    {
+        var result = await _recruitmentService.UpdateMigrationInfoAsync(id, dto, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
+    [HttpGet("vacancies")]
+    public async Task<IActionResult> GetVacancyOptions()
+    {
+        var result = await _recruitmentService.GetVacancyOptionsAsync();
+        return Ok(result);
+    }
+
+    [HttpPut("{id}/link-vacancy")]
+    public async Task<IActionResult> LinkVacancy(Guid id, [FromBody] LinkVacancyDto dto)
+    {
+        var result = await _recruitmentService.LinkVacancyAsync(id, dto, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
     }
 }

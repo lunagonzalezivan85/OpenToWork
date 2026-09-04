@@ -31,6 +31,14 @@ public class RecruitmentDetailDto
     public string? City { get; set; }
     public string? LinkedInUrl { get; set; }
     public string? PortfolioUrl { get; set; }
+    public string? Nationality { get; set; }
+    public bool? HasPassport { get; set; }
+    public string? PassportNumber { get; set; }
+    public int? WorkAuthorization { get; set; }
+    public string? WorkAuthorizations { get; set; }
+    public bool? HasTransport { get; set; }
+    public Guid? VacancyId { get; set; }
+    public string? VacancyTitle { get; set; }
     public int CurrentStage { get; set; }
     public string? AssignedToName { get; set; }
     public Guid? AssignedToUserId { get; set; }
@@ -170,6 +178,12 @@ public class MoveStageDto
     public string? Notes { get; set; }
 }
 
+public class MoveStageResultDto
+{
+    public bool Success { get; set; }
+    public string? Error { get; set; }
+}
+
 public class ToggleInvestigationStepDto
 {
     public int Step { get; set; }
@@ -192,4 +206,21 @@ public class RecruitmentPipelineResultDto
     public int PageSize { get; set; }
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
     public Dictionary<int, int> CountByStage { get; set; } = new();
+}
+
+public class VacancyOptionDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? CompanyName { get; set; }
+    public string? Location { get; set; }
+    public string? Description { get; set; }
+    public string? Requirements { get; set; }
+    public string? Category { get; set; }
+    public int Status { get; set; }
+}
+
+public class LinkVacancyDto
+{
+    public Guid? VacancyId { get; set; }
 }

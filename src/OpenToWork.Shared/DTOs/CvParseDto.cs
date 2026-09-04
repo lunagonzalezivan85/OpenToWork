@@ -12,6 +12,7 @@ public class CvParseResultDto
     public string? PortfolioUrl { get; set; }
     public string? City { get; set; }
     public string? Country { get; set; }
+    public string? Nationality { get; set; }
     public int? YearsOfExperience { get; set; }
     public string? Availability { get; set; }
     public List<string> Skills { get; set; } = new();

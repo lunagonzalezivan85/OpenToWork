@@ -34,5 +34,7 @@ public class PTCandidateRecruitment : BaseEntity
     public virtual ICollection<PTRecruitmentStageLog> StageLogs { get; set; } = new List<PTRecruitmentStageLog>();
     public virtual ICollection<PTInvestigationChecklist> InvestigationChecklist { get; set; } = new List<PTInvestigationChecklist>();
     public virtual ICollection<PTTechnicalEvaluation> TechnicalEvaluations { get; set; } = new List<PTTechnicalEvaluation>();
+    public virtual PTCandidateRecruitmentPreferences? Preferences { get; set; }
+    public virtual ICollection<PTRecruitmentDocument> RecruitmentDocuments { get; set; } = new List<PTRecruitmentDocument>();
     public virtual PTRecruitmentDismissal? Dismissal { get; set; }
 }
