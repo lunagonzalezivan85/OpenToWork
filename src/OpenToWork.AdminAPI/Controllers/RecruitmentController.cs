@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using OpenToWork.AdminAPI.Authorization;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
 [Route("api/admin/recruitment")]
+[RequireStaffRole(AdminStaffRole.Reclutador)]
 public class RecruitmentController : AdminControllerBase
 {
     private readonly IRecruitmentService _recruitmentService;

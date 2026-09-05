@@ -6,6 +6,9 @@
     "candidates": "Candidates",
     "assigned": "Assigned",
     "pipeline": "Pipeline",
+    "staff": "Staff",
+    "settings": "Settings",
+    "createUsers": "Create users",
     "logout": "Log out"
   },
   "login": {
@@ -16,7 +19,8 @@
     "button": "Sign In",
     "loading": "Signing in...",
     "errorInvalid": "Invalid credentials or the account is not an administrator.",
-    "errorGeneric": "Something went wrong. Please try again."
+    "errorGeneric": "Something went wrong. Please try again.",
+    "errorPasswordExpired": "Your password expired. Ask a SuperAdmin to reset it from Settings."
   },
   "dashboard": {
     "title": "Admin Dashboard",
@@ -112,6 +116,29 @@
     "columnScore": "Score",
     "yes": "Yes",
     "no": "No"
+  },
+  "staff": {
+    "title": "Administrative Staff",
+    "createNew": "Create new",
+    "create": "Create",
+    "createError": "Could not create the user (email already registered or invalid data)",
+    "notAuthorized": "Only a SuperAdmin can manage administrative staff.",
+    "empty": "No administrative staff loaded.",
+    "since": "Since",
+    "lastLogin": "Last login:",
+    "role": "Role",
+    "changeRole": "Change role",
+    "confirmRoleChange": "Change this user's role?",
+    "roleSuperAdmin": "SuperAdmin",
+    "roleReclutador": "Recruiter",
+    "roleComercial": "Sales",
+    "fullName": "Full name",
+    "phone": "Phone",
+    "resetPassword": "Reset password",
+    "confirmResetPassword": "Reset this user's password? The current password will stop working.",
+    "resetPasswordWarning": "Copy this temporary password and share it with the user through another channel (it won't be shown again). Expires in 90 days.",
+    "passwordExpired": "Password expired",
+    "passwordExpires": "Password expires:"
   },
   "vacancies": {
     "title": "Vacancy Moderation",
@@ -436,5 +463,21 @@
     "location": "Location",
     "empty": "No matches calculated for this vacancy yet.",
     "candidatesEvaluated": "candidates evaluated"
+  },
+  "negotiation": {
+    "title": "Negotiations",
+    "present": "Present to company",
+    "selectWinner": "Select winner...",
+    "close": "Close negotiation",
+    "confirmClose": "Close the negotiation with the selected candidate? The rest will be rejected and the vacancy closed.",
+    "statusPreparacion": "In preparation",
+    "statusPresentada": "Presented",
+    "statusEnConversacion": "In conversation",
+    "statusCerrada": "Closed",
+    "statusCancelada": "Cancelled",
+    "appPending": "Pending",
+    "appInReview": "In review",
+    "appAccepted": "Accepted",
+    "appRejected": "Rejected"
   }
 }

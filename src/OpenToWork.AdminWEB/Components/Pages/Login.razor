@@ -65,10 +65,14 @@
 
             var result = await AuthApi.LoginAsync(dto);
 
-            if (result != null)
+            if (result.Data != null)
             {
                 AuthProvider.NotifyAuthenticationStateChanged();
                 Nav.NavigateTo("/", forceLoad: true);
+            }
+            else if (result.PasswordExpired)
+            {
+                ErrorMessage = Lang.T("admin.login.errorPasswordExpired");
             }
             else
             {

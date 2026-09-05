@@ -53,6 +53,21 @@
                     <span class="admin-nav-label">@Lang.T("admin.nav.pipeline")</span>
                 </a>
             </div>
+            @if (IsSuperAdmin)
+            {
+                <div class="admin-nav-group">
+                    <div class="admin-nav-group-title">@Lang.T("admin.nav.settings")</div>
+                    <a href="/staff" class="admin-nav-item admin-nav-item--sub">
+                        <span class="admin-nav-icon-squircle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                            </svg>
+                        </span>
+                        <span class="admin-nav-label">@Lang.T("admin.nav.createUsers")</span>
+                    </a>
+                </div>
+            }
         </nav>
         <div class="admin-sidebar-footer">
             <button class="admin-logout-btn" @onclick="HandleLogout">
@@ -108,6 +123,8 @@
 </div>
 
 @code {
+    private bool IsSuperAdmin;
+
     protected override async Task OnInitializedAsync()
     {
         // Centralized auth guard: every page rendered through AdminLayout requires a session
@@ -122,6 +139,9 @@
 
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
+
+        var staffRoleRaw = await LocalStorage.GetItemAsync("otwadmin-staff-role");
+        IsSuperAdmin = int.TryParse(staffRoleRaw, out var role) && role == (int)OpenToWork.Shared.Enums.AdminStaffRole.SuperAdmin;
     }
 
     private async Task OnThemeChanged(ChangeEventArgs e)

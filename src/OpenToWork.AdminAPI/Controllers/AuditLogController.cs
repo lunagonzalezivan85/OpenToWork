@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using OpenToWork.AdminAPI.Authorization;
 using OpenToWork.Core.Interfaces;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
 [Route("api/admin/audit-log")]
+[RequireStaffRole]
 public class AuditLogController : AdminControllerBase
 {
     private readonly IAuditLogService _auditLogService;

@@ -11,4 +11,6 @@ public abstract class AdminControllerBase : ControllerBase
     protected Guid AdminId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     protected string? ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString();
+
+    protected int? StaffRole => int.TryParse(User.FindFirstValue("staffRole"), out var r) ? r : null;
 }

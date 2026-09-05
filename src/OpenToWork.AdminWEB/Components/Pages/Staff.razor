@@ -1,0 +1,270 @@
+@page "/staff"
+@using Microsoft.AspNetCore.Components
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>@Lang.T("admin.staff.title")</PageTitle>
+
+<div class="admin-page-header">
+    <h1>@Lang.T("admin.staff.title")</h1>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenCreateModal">@Lang.T("admin.staff.createNew")</button>
+    </div>
+</div>
+
+@if (!IsSuperAdmin)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.staff.notAuthorized")</div>
+    </div>
+}
+else if (StaffList == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (StaffList.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.staff.empty")</div>
+    </div>
+}
+else
+{
+    <div class="admin-users-grid">
+        @foreach (var staff in StaffList)
+        {
+            <div class="admin-user-card">
+                <div class="admin-user-card-header">
+                    <div class="admin-user-card-avatar">@AvatarText(staff)</div>
+                    <div class="admin-user-card-info">
+                        <div class="admin-user-card-name">@(string.IsNullOrWhiteSpace(staff.FullName) ? staff.Email : staff.FullName)</div>
+                        <div class="admin-user-card-email">@staff.Email@(string.IsNullOrWhiteSpace(staff.Phone) ? "" : $" · {staff.Phone}")</div>
+                    </div>
+                    <div class="admin-user-card-status @(staff.IsActive ? "admin-user-card-status--active" : "admin-user-card-status--inactive")">
+                        @(staff.IsActive ? Lang.T("admin.users.active") : Lang.T("admin.users.inactive"))
+                    </div>
+                </div>
+                <div class="admin-user-card-body">
+                    <span class="admin-result-badge admin-result-badge--info">@StaffRoleLabel(staff.StaffRole)</span>
+                    @if (staff.PasswordExpiresAt.HasValue)
+                    {
+                        <span class="admin-result-badge @(IsPasswordExpired(staff) ? "admin-result-badge--danger" : "admin-result-badge--success")">
+                            @(IsPasswordExpired(staff) ? Lang.T("admin.staff.passwordExpired") : $"{Lang.T("admin.staff.passwordExpires")} {staff.PasswordExpiresAt.Value.ToLocalTime():dd MMM yyyy}")
+                        </span>
+                    }
+                </div>
+                <div class="admin-user-card-footer">
+                    <span class="admin-user-card-date">@Lang.T("admin.staff.since") @staff.CreatedAt.ToLocalTime().ToString("dd MMM yyyy") · @Lang.T("admin.staff.lastLogin") @(staff.LastLoginAt?.ToLocalTime().ToString("dd MMM yyyy") ?? "—")</span>
+                    <div class="admin-user-card-actions">
+                        <select class="admin-select admin-role-select" value="@staff.StaffRole"
+                                @onchange="(e) => ChangeStaffRole(staff.Id, e)"
+                                disabled="@(staff.Id == CurrentAdminId)" title="@Lang.T("admin.staff.changeRole")">
+                            <option value="0">@Lang.T("admin.staff.roleSuperAdmin")</option>
+                            <option value="1">@Lang.T("admin.staff.roleReclutador")</option>
+                            <option value="2">@Lang.T("admin.staff.roleComercial")</option>
+                        </select>
+                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ResetPassword(staff.Id)">@Lang.T("admin.staff.resetPassword")</button>
+                        @if (staff.IsActive)
+                        {
+                            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(staff.Id == CurrentAdminId)" @onclick="() => Deactivate(staff.Id)">@Lang.T("admin.users.deactivate")</button>
+                        }
+                        else
+                        {
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Activate(staff.Id)">@Lang.T("admin.users.activate")</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (ShowCreateModal)
+{
+    <div class="admin-modal-overlay" @onclick="CloseCreateModal">
+        <div class="admin-modal" @onclick:stopPropagation="true">
+            <h3 class="admin-modal-title">@Lang.T("admin.staff.createNew")</h3>
+            <div class="admin-modal-body">
+                @if (!string.IsNullOrEmpty(CreateError))
+                {
+                    <div class="alert alert-error">@CreateError</div>
+                }
+                <label>@Lang.T("admin.staff.fullName")</label>
+                <input class="admin-modal-input" type="text" @bind="NewFullName" />
+                <label>@Lang.T("admin.common.email")</label>
+                <input class="admin-modal-input" type="email" @bind="NewEmail" />
+                <label>@Lang.T("admin.staff.phone")</label>
+                <input class="admin-modal-input" type="tel" @bind="NewPhone" />
+                <label>@Lang.T("admin.common.password")</label>
+                <input class="admin-modal-input" type="password" @bind="NewPassword" />
+                <label>@Lang.T("admin.staff.role")</label>
+                <select class="admin-modal-select" @bind="NewStaffRole">
+                    <option value="0">@Lang.T("admin.staff.roleSuperAdmin")</option>
+                    <option value="1">@Lang.T("admin.staff.roleReclutador")</option>
+                    <option value="2">@Lang.T("admin.staff.roleComercial")</option>
+                </select>
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseCreateModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsCreating" @onclick="CreateStaff">@Lang.T("admin.staff.create")</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(ResetTempPassword))
+{
+    <div class="admin-modal-overlay" @onclick="CloseResetModal">
+        <div class="admin-modal" @onclick:stopPropagation="true">
+            <h3 class="admin-modal-title">@Lang.T("admin.staff.resetPassword")</h3>
+            <div class="admin-modal-body">
+                <p>@Lang.T("admin.staff.resetPasswordWarning")</p>
+                <div class="admin-modal-input" style="font-family: monospace; font-weight: 700; text-align: center; font-size: 1.2rem; user-select: all;">
+                    @ResetTempPassword
+                </div>
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="CloseResetModal">@Lang.T("admin.common.cancel")</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<StaffUserDto>? StaffList;
+    private Guid? CurrentAdminId;
+    private bool IsSuperAdmin;
+
+    private bool ShowCreateModal;
+    private bool IsCreating;
+    private string NewEmail = "";
+    private string NewPassword = "";
+    private string NewFullName = "";
+    private string NewPhone = "";
+    private int NewStaffRole = (int)AdminStaffRole.Reclutador;
+    private string? CreateError;
+
+    private string? ResetTempPassword;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var userIdRaw = await LocalStorage.GetItemAsync("otwadmin-user-id");
+        if (Guid.TryParse(userIdRaw, out var parsedId))
+            CurrentAdminId = parsedId;
+
+        var staffRoleRaw = await LocalStorage.GetItemAsync("otwadmin-staff-role");
+        IsSuperAdmin = int.TryParse(staffRoleRaw, out var role) && role == (int)AdminStaffRole.SuperAdmin;
+
+        if (IsSuperAdmin)
+            await LoadStaff();
+    }
+
+    private async Task LoadStaff()
+    {
+        StaffList = await AuthApi.GetStaffAsync();
+    }
+
+    private string AvatarText(StaffUserDto staff)
+    {
+        var name = string.IsNullOrWhiteSpace(staff.FullName) ? staff.Email : staff.FullName;
+        return name.Length >= 2 ? name.Substring(0, 2).ToUpper() : name.ToUpper();
+    }
+
+    private bool IsPasswordExpired(StaffUserDto staff) => staff.PasswordExpiresAt.HasValue && staff.PasswordExpiresAt.Value < DateTime.UtcNow;
+
+    private string StaffRoleLabel(int role) => (AdminStaffRole)role switch
+    {
+        AdminStaffRole.SuperAdmin => Lang.T("admin.staff.roleSuperAdmin"),
+        AdminStaffRole.Reclutador => Lang.T("admin.staff.roleReclutador"),
+        AdminStaffRole.Comercial => Lang.T("admin.staff.roleComercial"),
+        _ => role.ToString()
+    };
+
+    private void OpenCreateModal()
+    {
+        NewEmail = "";
+        NewPassword = "";
+        NewFullName = "";
+        NewPhone = "";
+        NewStaffRole = (int)AdminStaffRole.Reclutador;
+        CreateError = null;
+        ShowCreateModal = true;
+    }
+
+    private void CloseCreateModal() => ShowCreateModal = false;
+
+    private async Task CreateStaff()
+    {
+        IsCreating = true;
+        CreateError = null;
+        var (success, error) = await AuthApi.CreateStaffAsync(new CreateStaffDto
+        {
+            Email = NewEmail,
+            Password = NewPassword,
+            FullName = string.IsNullOrWhiteSpace(NewFullName) ? null : NewFullName,
+            Phone = string.IsNullOrWhiteSpace(NewPhone) ? null : NewPhone,
+            StaffRole = NewStaffRole
+        });
+        IsCreating = false;
+
+        if (!success)
+        {
+            CreateError = Lang.T("admin.staff.createError");
+            return;
+        }
+
+        ShowCreateModal = false;
+        await LoadStaff();
+    }
+
+    private async Task ChangeStaffRole(Guid id, ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var newRole)) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", Lang.T("admin.staff.confirmRoleChange"));
+        if (!confirmed)
+        {
+            await LoadStaff();
+            return;
+        }
+
+        await AuthApi.ChangeStaffRoleAsync(id, newRole);
+        await LoadStaff();
+    }
+
+    private async Task Activate(Guid id)
+    {
+        await AuthApi.ActivateStaffAsync(id);
+        await LoadStaff();
+    }
+
+    private async Task Deactivate(Guid id)
+    {
+        await AuthApi.DeactivateStaffAsync(id);
+        await LoadStaff();
+    }
+
+    private async Task ResetPassword(Guid id)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", Lang.T("admin.staff.confirmResetPassword"));
+        if (!confirmed) return;
+
+        var result = await AuthApi.ResetStaffPasswordAsync(id);
+        if (result != null)
+        {
+            ResetTempPassword = result.TempPassword;
+            await LoadStaff();
+        }
+    }
+
+    private void CloseResetModal() => ResetTempPassword = null;
+}

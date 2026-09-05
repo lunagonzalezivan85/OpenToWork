@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using OpenToWork.AdminAPI.Authorization;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
 [Route("api/admin/users")]
+[RequireStaffRole]
 public class UsersController : AdminControllerBase
 {
     private readonly IAdminUserService _userService;

@@ -102,6 +102,7 @@ else
                                     <table class="ot-table">
                                         <thead>
                                             <tr>
+                                                <th></th>
                                                 <th>@Lang.T("admin.shortlist.candidate")</th>
                                                 <th>@Lang.T("admin.shortlist.matchPercentage")</th>
                                                 <th>@Lang.T("admin.shortlist.skills")</th>
@@ -113,6 +114,7 @@ else
                                             @foreach (var m in Shortlist)
                                             {
                                                 <tr>
+                                                    <td><input type="checkbox" checked="@SelectedCandidateIds.Contains(m.CandidateId)" @onchange="(e) => ToggleCandidateSelection(m.CandidateId, e)" /></td>
                                                     <td>@m.CandidateName</td>
                                                     <td><strong>@m.MatchPercentage%</strong></td>
                                                     <td>@m.SkillsMatch%</td>
@@ -122,6 +124,41 @@ else
                                             }
                                         </tbody>
                                     </table>
+                                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@(SelectedCandidateIds.Count == 0 || IsNegotiationBusy)" @onclick="() => PresentToCompanyAsync(v.Id)">
+                                        @Lang.T("admin.negotiation.present")
+                                    </button>
+                                }
+
+                                @if (Negotiations.Count > 0)
+                                {
+                                    <h4 class="admin-profile-section-title">@Lang.T("admin.negotiation.title")</h4>
+                                    @foreach (var n in Negotiations)
+                                    {
+                                        <div class="admin-profile-section" style="margin: 0.5rem 0;">
+                                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                                <span class="admin-result-badge admin-result-badge--info">@NegotiationStatusLabel(n.Status)</span>
+                                                @if ((NegotiationStatus)n.Status != NegotiationStatus.Cerrada && (NegotiationStatus)n.Status != NegotiationStatus.Cancelada)
+                                                {
+                                                    <select class="admin-select" @bind="SelectedWinnerByNegotiation[n.Id]">
+                                                        <option value="">@Lang.T("admin.negotiation.selectWinner")</option>
+                                                        @foreach (var c in n.Candidates)
+                                                        {
+                                                            <option value="@c.ApplicationId">@c.CandidateName</option>
+                                                        }
+                                                    </select>
+                                                    <button class="ot-btn ot-btn--danger ot-btn--small" disabled="@IsNegotiationBusy" @onclick="() => CloseNegotiationAsync(n.Id, v.Id)">
+                                                        @Lang.T("admin.negotiation.close")
+                                                    </button>
+                                                }
+                                            </div>
+                                            <ul>
+                                                @foreach (var c in n.Candidates)
+                                                {
+                                                    <li>@c.CandidateName — @ApplicationStatusLabel(c.ApplicationStatus)</li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
                                 }
                             </div>
                         </td>
@@ -141,6 +178,12 @@ else
     private int? LastEvaluatedCount { get; set; }
     private bool IsShortlistBusy { get; set; }
 
+    // Negociaciones (rol Comercial): presentar candidatos del shortlist a la empresa y cerrar.
+    private HashSet<Guid> SelectedCandidateIds { get; set; } = new();
+    private List<NegotiationDto> Negotiations { get; set; } = new();
+    private Dictionary<Guid, string> SelectedWinnerByNegotiation { get; set; } = new();
+    private bool IsNegotiationBusy { get; set; }
+
     private async Task ToggleShortlist(Guid vacancyId)
     {
         if (ShortlistVacancyId == vacancyId)
@@ -150,8 +193,74 @@ else
         }
         ShortlistVacancyId = vacancyId;
         LastEvaluatedCount = null;
+        SelectedCandidateIds.Clear();
         Shortlist = await AuthApi.GetVacancyShortlistAsync(vacancyId);
+        await LoadNegotiations(vacancyId);
     }
+
+    private async Task LoadNegotiations(Guid vacancyId)
+    {
+        Negotiations = await AuthApi.GetNegotiationsByVacancyAsync(vacancyId);
+        foreach (var n in Negotiations)
+            if (!SelectedWinnerByNegotiation.ContainsKey(n.Id))
+                SelectedWinnerByNegotiation[n.Id] = "";
+    }
+
+    private void ToggleCandidateSelection(Guid candidateId, ChangeEventArgs e)
+    {
+        var isChecked = e.Value is bool b && b;
+        if (isChecked) SelectedCandidateIds.Add(candidateId);
+        else SelectedCandidateIds.Remove(candidateId);
+    }
+
+    private async Task PresentToCompanyAsync(Guid vacancyId)
+    {
+        if (SelectedCandidateIds.Count == 0 || IsNegotiationBusy) return;
+        IsNegotiationBusy = true;
+        await AuthApi.CreateNegotiationAsync(new CreateNegotiationDto
+        {
+            VacancyId = vacancyId,
+            CandidateIds = SelectedCandidateIds.ToList()
+        });
+        SelectedCandidateIds.Clear();
+        await LoadNegotiations(vacancyId);
+        IsNegotiationBusy = false;
+    }
+
+    private async Task CloseNegotiationAsync(Guid negotiationId, Guid vacancyId)
+    {
+        if (IsNegotiationBusy) return;
+        if (!SelectedWinnerByNegotiation.TryGetValue(negotiationId, out var winnerRaw) || !Guid.TryParse(winnerRaw, out var winnerId))
+            return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", Lang.T("admin.negotiation.confirmClose"));
+        if (!confirmed) return;
+
+        IsNegotiationBusy = true;
+        await AuthApi.CloseNegotiationAsync(negotiationId, winnerId);
+        await LoadNegotiations(vacancyId);
+        await LoadVacancies();
+        IsNegotiationBusy = false;
+    }
+
+    private string NegotiationStatusLabel(int status) => (NegotiationStatus)status switch
+    {
+        NegotiationStatus.Preparacion => Lang.T("admin.negotiation.statusPreparacion"),
+        NegotiationStatus.Presentada => Lang.T("admin.negotiation.statusPresentada"),
+        NegotiationStatus.EnConversacion => Lang.T("admin.negotiation.statusEnConversacion"),
+        NegotiationStatus.Cerrada => Lang.T("admin.negotiation.statusCerrada"),
+        NegotiationStatus.Cancelada => Lang.T("admin.negotiation.statusCancelada"),
+        _ => status.ToString()
+    };
+
+    private string ApplicationStatusLabel(int status) => (ApplicationStatus)status switch
+    {
+        ApplicationStatus.Pending => Lang.T("admin.negotiation.appPending"),
+        ApplicationStatus.InReview => Lang.T("admin.negotiation.appInReview"),
+        ApplicationStatus.Accepted => Lang.T("admin.negotiation.appAccepted"),
+        ApplicationStatus.Rejected => Lang.T("admin.negotiation.appRejected"),
+        _ => status.ToString()
+    };
 
     private async Task CalculateShortlistAsync(Guid vacancyId)
     {

@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using OpenToWork.AdminAPI.Authorization;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
 [Route("api/admin/vacancies")]
+[RequireStaffRole(AdminStaffRole.Comercial)]
 public class VacanciesController : AdminControllerBase
 {
     private readonly IAdminVacancyService _vacancyService;

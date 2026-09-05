@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
+using OpenToWork.AdminAPI.Authorization;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Core.Services;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 using System.Text;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
 [Route("api/admin/candidates")]
+[RequireStaffRole(AdminStaffRole.Reclutador)]
 public class CandidatesController : AdminControllerBase
 {
     private readonly IAdminCandidateService _candidateService;

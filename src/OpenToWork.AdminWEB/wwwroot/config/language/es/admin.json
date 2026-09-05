@@ -6,6 +6,9 @@
     "candidates": "Candidatos",
     "assigned": "Asignados",
     "pipeline": "Pipeline",
+    "staff": "Personal",
+    "settings": "Configuración",
+    "createUsers": "Crear usuarios",
     "logout": "Cerrar sesión"
   },
   "login": {
@@ -16,7 +19,8 @@
     "button": "Ingresar",
     "loading": "Ingresando...",
     "errorInvalid": "Credenciales invalidas o la cuenta no es de administrador.",
-    "errorGeneric": "Ocurrio un error. Intenta de nuevo."
+    "errorGeneric": "Ocurrio un error. Intenta de nuevo.",
+    "errorPasswordExpired": "Tu contraseña venció. Pedile a un SuperAdmin que te la restablezca desde Configuración."
   },
   "dashboard": {
     "title": "Panel de administración",
@@ -112,6 +116,29 @@
     "columnScore": "Score",
     "yes": "Sí",
     "no": "No"
+  },
+  "staff": {
+    "title": "Personal Administrativo",
+    "createNew": "Crear nuevo",
+    "create": "Crear",
+    "createError": "No se pudo crear el usuario (email ya registrado o datos inválidos)",
+    "notAuthorized": "Solo un SuperAdmin puede gestionar el personal administrativo.",
+    "empty": "No hay personal administrativo cargado.",
+    "since": "Desde",
+    "lastLogin": "Último ingreso:",
+    "role": "Rol",
+    "changeRole": "Cambiar rol",
+    "confirmRoleChange": "¿Cambiar el rol de este usuario?",
+    "roleSuperAdmin": "SuperAdmin",
+    "roleReclutador": "Reclutador",
+    "roleComercial": "Comercial",
+    "fullName": "Nombre completo",
+    "phone": "Teléfono",
+    "resetPassword": "Restablecer contraseña",
+    "confirmResetPassword": "¿Restablecer la contraseña de este usuario? La contraseña actual dejará de funcionar.",
+    "resetPasswordWarning": "Copiá esta contraseña temporal y pasásela al usuario por otro medio (no va a volver a mostrarse). Vence en 90 días.",
+    "passwordExpired": "Contraseña vencida",
+    "passwordExpires": "Contraseña vence:"
   },
   "vacancies": {
     "title": "Moderación de vacantes",
@@ -436,5 +463,21 @@
     "location": "Ubicación",
     "empty": "Todavía no hay matches calculados para esta vacante.",
     "candidatesEvaluated": "candidatos evaluados"
+  },
+  "negotiation": {
+    "title": "Negociaciones",
+    "present": "Presentar a empresa",
+    "selectWinner": "Elegir ganador...",
+    "close": "Cerrar negociación",
+    "confirmClose": "¿Cerrar la negociación con el candidato seleccionado? Se rechazará al resto y se cerrará la vacante.",
+    "statusPreparacion": "En preparación",
+    "statusPresentada": "Presentada",
+    "statusEnConversacion": "En conversación",
+    "statusCerrada": "Cerrada",
+    "statusCancelada": "Cancelada",
+    "appPending": "Pendiente",
+    "appInReview": "En revisión",
+    "appAccepted": "Aceptado",
+    "appRejected": "Rechazado"
   }
 }

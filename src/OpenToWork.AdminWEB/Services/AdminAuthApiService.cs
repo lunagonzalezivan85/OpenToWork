@@ -6,6 +6,12 @@ using OpenToWork.SharedUI.Services;
 
 namespace OpenToWork.AdminWEB.Services;
 
+public class AdminLoginResult
+{
+    public AuthResponseDto? Data { get; set; }
+    public bool PasswordExpired { get; set; }
+}
+
 public class AdminAuthApiService
 {
     private readonly HttpClient _httpClient;
@@ -17,14 +23,18 @@ public class AdminAuthApiService
         _localStorage = localStorage;
     }
 
-    public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
+    public async Task<AdminLoginResult> LoginAsync(LoginDto dto)
     {
         var response = await _httpClient.PostAsJsonAsync("api/admin/auth/login", dto);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            return new AdminLoginResult { PasswordExpired = error.Contains("Password expired") };
+        }
 
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         if (result != null) await PersistAuthAsync(result);
-        return result;
+        return new AdminLoginResult { Data = result };
     }
 
     public async Task<List<AuditLogDto>> GetAuditLogAsync(int page = 1, int pageSize = 20)
@@ -489,6 +499,13 @@ public class AdminAuthApiService
         await _localStorage.SetItemAsync("otwadmin-token", auth.Token);
         await _localStorage.SetItemAsync("otwadmin-refresh-token", auth.RefreshToken);
         await _localStorage.SetItemAsync("otwadmin-user-id", auth.User.Id.ToString());
+        await _localStorage.SetItemAsync("otwadmin-staff-role", auth.User.StaffRole?.ToString() ?? "");
+    }
+
+    public async Task<int?> GetStaffRoleAsync()
+    {
+        var value = await _localStorage.GetItemAsync("otwadmin-staff-role");
+        return int.TryParse(value, out var role) ? role : null;
     }
 
     // --- Fase 3, sub-fase 3.8: Gestion de scores + Verificaciones manuales ---
@@ -578,6 +595,88 @@ public class AdminAuthApiService
         await _localStorage.RemoveItemAsync("otwadmin-token");
         await _localStorage.RemoveItemAsync("otwadmin-refresh-token");
         await _localStorage.RemoveItemAsync("otwadmin-user-id");
+        await _localStorage.RemoveItemAsync("otwadmin-staff-role");
         _httpClient.DefaultRequestHeaders.Authorization = null;
+    }
+
+    // --- Personal Administrativo (roles de staff) ---
+
+    public async Task<List<StaffUserDto>> GetStaffAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/staff");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<StaffUserDto>>() ?? new();
+    }
+
+    public async Task<(bool Success, string? Error)> CreateStaffAsync(CreateStaffDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/staff", dto);
+        if (response.IsSuccessStatusCode) return (true, null);
+        return (false, await response.Content.ReadAsStringAsync());
+    }
+
+    public async Task<bool> ChangeStaffRoleAsync(Guid id, int staffRole)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/staff/{id}/role", new ChangeStaffRoleDto { StaffRole = staffRole });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ActivateStaffAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsync($"api/admin/staff/{id}/activate", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DeactivateStaffAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsync($"api/admin/staff/{id}/deactivate", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<ResetStaffPasswordResultDto?> ResetStaffPasswordAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/admin/staff/{id}/reset-password", null);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<ResetStaffPasswordResultDto>();
+    }
+
+    // --- Negociaciones (Comercial) ---
+
+    public async Task<NegotiationDto?> CreateNegotiationAsync(CreateNegotiationDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/negotiations", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<NegotiationDto>();
+    }
+
+    public async Task<NegotiationDto?> CloseNegotiationAsync(Guid id, Guid winningApplicationId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/negotiations/{id}/close", new CloseNegotiationDto { WinningApplicationId = winningApplicationId });
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<NegotiationDto>();
+    }
+
+    public async Task<NegotiationDto?> UpdateNegotiationStatusAsync(Guid id, int status)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/negotiations/{id}/status", new UpdateNegotiationStatusDto { Status = status });
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<NegotiationDto>();
+    }
+
+    public async Task<List<NegotiationDto>> GetNegotiationsByVacancyAsync(Guid vacancyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/negotiations/vacancy/{vacancyId}");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<NegotiationDto>>() ?? new();
     }
 }

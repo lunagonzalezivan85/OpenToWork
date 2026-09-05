@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using OpenToWork.AdminAPI.Authorization;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
@@ -10,6 +12,7 @@ namespace OpenToWork.AdminAPI.Controllers;
 /// mismo criterio ya usado en 3.4 (api/admin/vacancies/{id}/matches).
 /// </summary>
 [Route("api/admin/skill-tests")]
+[RequireStaffRole(AdminStaffRole.Reclutador)]
 public class SkillTestsController : AdminControllerBase
 {
     private readonly ISkillTestService _skillTestService;
