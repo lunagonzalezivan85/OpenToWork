@@ -4,10 +4,15 @@
 @inject LanguageService Lang
 @inject ApiAuthService AuthApi
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
-<PageTitle>OpenToWork</PageTitle>
+<PageTitle>Trato Directo</PageTitle>
 
 <div class="home-hero">
+    <video class="home-hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto">
+        <source src="@HeroVideoSrc" type="video/mp4" />
+    </video>
+    <div class="home-hero-overlay"></div>
     <div class="home-hero-container">
         <h1 class="home-hero-title">@Lang.T("common.home.heroTitle")</h1>
         <p class="home-hero-subtitle">@Lang.T("common.home.heroSubtitle")</p>
@@ -111,6 +116,9 @@
     private HashSet<string> SelectedCategories { get; set; } = new();
     private List<VacancyDto> VacancyList { get; set; } = new();
     private bool IsLoading { get; set; }
+    private string HeroVideoSrc { get; set; } = string.Empty;
+
+    private static readonly string[] HeroVideos = { "/v01.mp4", "/v02.mp4", "/v03.mp4" };
 
     private Dictionary<string, string> Categories => new()
     {
@@ -126,9 +134,27 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var rnd = new Random();
+        HeroVideoSrc = HeroVideos[rnd.Next(HeroVideos.Length)];
+
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
         await LoadVacancies();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("eval", @"
+                var v = document.getElementById('heroVideo');
+                if (v) {
+                    v.muted = true;
+                    v.volume = 0;
+                    v.play().catch(function(){});
+                }
+            ");
+        }
     }
 
     private async Task LoadVacancies()

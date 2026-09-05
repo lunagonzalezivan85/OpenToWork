@@ -6,7 +6,7 @@
 // which then surfaces as "The POST request does not specify which form is
 // being submitted" when a form on that stale page is submitted. Bumping the
 // cache name also purges any already-cached bad entries from v1 installs.
-const CACHE_NAME = 'opentowork-v4';
+const CACHE_NAME = 'tratodirecto-v1';
 const ASSETS = [
   '/icon.svg',
   '/manifest.json',

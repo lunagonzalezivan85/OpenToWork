@@ -1,5 +1,5 @@
 {
-  "brand": "OpenToWork Admin",
+  "brand": "Trato Directo Admin",
   "nav": {
     "dashboard": "Dashboard",
     "recruitment": "Recruitment",
@@ -11,7 +11,7 @@
   "login": {
     "title": "Administrator Access",
     "subtitle": "Sign in with your administrator account",
-    "emailPlaceholder": "admin@opentowork.com",
+    "emailPlaceholder": "admin@tratodirecto.com",
     "passwordPlaceholder": "Your password",
     "button": "Sign In",
     "loading": "Signing in...",
@@ -20,7 +20,7 @@
   },
   "dashboard": {
     "title": "Admin Dashboard",
-    "welcome": "Welcome to the OpenToWork admin portal.",
+    "welcome": "Welcome to the Trato Directo admin portal.",
     "sectionProfiles": "Profiles",
     "sectionVacancies": "Vacancies & Companies",
     "sectionVerifications": "Candidate Verifications",
