@@ -40,6 +40,8 @@ public class AppDbContext : DbContext
     public DbSet<PTCandidateReference> PT_CandidateReferences => Set<PTCandidateReference>();
     public DbSet<PTSkillTest> PT_SkillTests => Set<PTSkillTest>();
     public DbSet<PTCandidateTestResult> PT_CandidateTestResults => Set<PTCandidateTestResult>();
+    public DbSet<PTNegotiation> PT_Negotiations => Set<PTNegotiation>();
+    public DbSet<PTNegotiationCandidate> PT_NegotiationCandidates => Set<PTNegotiationCandidate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -327,6 +329,35 @@ public class AppDbContext : DbContext
             e.ToTable("PT_CandidateTestResults");
             e.HasIndex(r => new { r.PT_CandidateId, r.IsDeleted });
             e.HasIndex(r => new { r.PT_SkillTestId, r.IsDeleted });
+        });
+
+        modelBuilder.Entity<PTNegotiation>(e =>
+        {
+            e.ToTable("PT_Negotiations");
+            e.HasIndex(n => new { n.PT_VacancyId, n.IsDeleted });
+            e.HasIndex(n => new { n.Status, n.IsDeleted });
+            e.HasOne(n => n.AssignedStaff)
+                .WithMany()
+                .HasForeignKey(n => n.AssignedStaffId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(n => n.WinningApplication)
+                .WithMany()
+                .HasForeignKey(n => n.WinningApplicationId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PTNegotiationCandidate>(e =>
+        {
+            e.ToTable("PT_NegotiationCandidates");
+            e.HasIndex(nc => new { nc.PT_NegotiationId, nc.PT_ApplicationId, nc.IsDeleted }).IsUnique();
+            e.HasOne(nc => nc.Negotiation)
+                .WithMany(n => n.Candidates)
+                .HasForeignKey(nc => nc.PT_NegotiationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(nc => nc.Application)
+                .WithMany()
+                .HasForeignKey(nc => nc.PT_ApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         SeedWizardSteps(modelBuilder);

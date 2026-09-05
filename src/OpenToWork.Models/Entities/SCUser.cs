@@ -13,11 +13,23 @@ public class SCUser : BaseEntity
 
     public int PrimaryRole { get; set; } = 0;
 
+    public int? StaffRole { get; set; }
+
+    [MaxLength(200)]
+    public string? FullName { get; set; }
+
     [MaxLength(50)]
     public string? Identification { get; set; }
 
     [MaxLength(20)]
     public string? Phone { get; set; }
+
+    /// <summary>
+    /// Solo se usa para PrimaryRole=Admin (personal administrativo). Sin SMTP configurado en
+    /// el proyecto, el vencimiento se aplica junto con el reseteo admin-mediado (ver
+    /// StaffService.ResetPasswordAsync) en vez de un flujo de auto-servicio por email.
+    /// </summary>
+    public DateTime? PasswordExpiresAt { get; set; }
 
     public bool EmailVerified { get; set; } = false;
 

@@ -216,11 +216,39 @@ public class AdminUserService : IAdminUserService
 
         var user = await _context.SC_Users
             .Include(u => u.UserRoles)
+            .Include(u => u.Candidate)
+            .Include(u => u.Company)
             .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted);
         if (user == null) return false;
 
         var previousRole = user.PrimaryRole;
         if (previousRole == newRole) return true;
+
+        // El perfil del rol anterior (PTCandidate/PTCompany) queda huerfano si no se limpia -
+        // encontrado en produccion con donald@gmail.com/eresiezar@gmail.com, limpiados a mano.
+        if (previousRole == (int)UserRole.Candidate && user.Candidate != null && !user.Candidate.IsDeleted)
+        {
+            user.Candidate.IsDeleted = true;
+            user.Candidate.DeletedAt = DateTime.UtcNow;
+            user.Candidate.DeletedBy = adminId;
+        }
+        else if (previousRole == (int)UserRole.Company && user.Company != null && !user.Company.IsDeleted)
+        {
+            user.Company.IsDeleted = true;
+            user.Company.DeletedAt = DateTime.UtcNow;
+            user.Company.DeletedBy = adminId;
+        }
+        else if (previousRole == (int)UserRole.Admin)
+        {
+            user.StaffRole = null;
+        }
+
+        // Si pasa a ser Admin sin StaffRole (ej. desde /users, no desde /staff), Reclutador es el
+        // default menos privilegiado que no lo deja bloqueado por RequireStaffRoleAttribute.
+        if (newRole == (int)UserRole.Admin && user.StaffRole == null)
+        {
+            user.StaffRole = (int)AdminStaffRole.Reclutador;
+        }
 
         user.PrimaryRole = newRole;
         user.UpdatedAt = DateTime.UtcNow;

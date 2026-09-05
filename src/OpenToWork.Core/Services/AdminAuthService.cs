@@ -38,6 +38,9 @@ public class AdminAuthService : IAdminAuthService
         if (user.PrimaryRole != (int)UserRole.Admin)
             throw new UnauthorizedAccessException("Invalid credentials");
 
+        if (user.PasswordExpiresAt.HasValue && user.PasswordExpiresAt.Value < DateTime.UtcNow)
+            throw new UnauthorizedAccessException("Password expired");
+
         user.LastLoginAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -72,6 +75,7 @@ public class AdminAuthService : IAdminAuthService
                 Id = user.Id,
                 Email = user.Email,
                 PrimaryRole = user.PrimaryRole,
+                StaffRole = user.StaffRole,
                 EmailVerified = user.EmailVerified,
                 IsActive = user.IsActive,
                 Roles = user.UserRoles.Select(r => r.Role).ToList()
@@ -88,6 +92,7 @@ public class AdminAuthService : IAdminAuthService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new("primaryRole", user.PrimaryRole.ToString()),
+            new("staffRole", user.StaffRole?.ToString() ?? string.Empty),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Role, UserRole.Admin.ToString())
         };
