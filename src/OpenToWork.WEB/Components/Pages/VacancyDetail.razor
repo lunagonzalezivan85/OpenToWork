@@ -154,6 +154,14 @@
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
+
+        var token = await AuthApi.GetTokenAsync();
+        if (string.IsNullOrEmpty(token))
+        {
+            NavManager.NavigateTo($"/login?returnUrl=/vacancy/{Id}");
+            return;
+        }
+
         try
         {
             Vacancy = await AuthApi.GetPermanentVacancyAsync(Id);

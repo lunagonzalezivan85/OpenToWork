@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        <EditForm Model="RegisterModel" OnValidSubmit="HandleRegister" FormName="register" Enhance="false">
+        <EditForm Model="RegisterModel" OnValidSubmit="HandleRegister">
             <div class="ot-input-group mb-md">
                 <label class="ot-input-label">@Lang.T("common.labels.email")</label>
                 <InputText class="ot-input-field" @bind-Value="RegisterModel.Email" placeholder="@Lang.T("auth.login.emailPlaceholder")" />
@@ -64,7 +64,7 @@
 
         <p class="auth-link">
             @Lang.T("auth.register.haveAccount")
-            <a href="/login">@Lang.T("auth.register.loginHere")</a>
+            <a href="@LoginLink">@Lang.T("auth.register.loginHere")</a>
         </p>
     </div>
 </div>
@@ -74,6 +74,8 @@
     private int SelectedRole { get; set; } = 0;
     private bool IsLoading { get; set; }
     private string? ErrorMessage { get; set; }
+    private string? ReturnUrl { get; set; }
+    private string LoginLink => string.IsNullOrEmpty(ReturnUrl) ? "/login" : $"/login?returnUrl={Uri.EscapeDataString(ReturnUrl)}";
 
     protected override async Task OnInitializedAsync()
     {
@@ -85,6 +87,10 @@
         var roleStr = query["role"];
         if (int.TryParse(roleStr, out var role) && role == 1)
             SelectedRole = 1;
+
+        var returnUrl = query["returnUrl"];
+        if (!string.IsNullOrEmpty(returnUrl) && returnUrl.StartsWith("/") && !returnUrl.StartsWith("//"))
+            ReturnUrl = returnUrl;
     }
 
     private void SelectRole(int role)
@@ -110,13 +116,17 @@
 
             var result = await AuthApi.RegisterAsync(dto);
 
-            if (result != null)
+            if (result.Data != null)
             {
                 AuthProvider.NotifyAuthenticationStateChanged();
-                if (SelectedRole == 0 && !result.User.WizardCompleted)
+                if (SelectedRole == 0 && !result.Data.User.WizardCompleted)
                     Nav.NavigateTo("/wizard");
                 else
-                    Nav.NavigateTo("/dashboard");
+                    Nav.NavigateTo(!string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/dashboard");
+            }
+            else if (result.EmailAlreadyRegistered)
+            {
+                ErrorMessage = Lang.T("auth.register.emailExists");
             }
             else
             {

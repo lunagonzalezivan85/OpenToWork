@@ -2,6 +2,7 @@
 @layout OpenToWork.WEB.Components.Layout.AuthLayout
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
+@using Microsoft.AspNetCore.WebUtilities
 @inject ApiAuthService AuthApi
 @inject AppAuthStateProvider AuthProvider
 @inject LanguageService Lang
@@ -19,7 +20,7 @@
             <div class="alert alert-error">@ErrorMessage</div>
         }
 
-        <EditForm Model="LoginModel" OnValidSubmit="HandleLogin" FormName="login" Enhance="false">
+        <EditForm Model="LoginModel" OnValidSubmit="HandleLogin">
             <div class="ot-input-group mb-md">
                 <label class="ot-input-label">@Lang.T("common.labels.email")</label>
                 <InputText class="ot-input-field" @bind-Value="LoginModel.Email" placeholder="@Lang.T("auth.login.emailPlaceholder")" />
@@ -54,7 +55,7 @@
 
         <p class="auth-link">
             @Lang.T("auth.login.noAccount")
-            <a href="/register">@Lang.T("auth.login.registerHere")</a>
+            <a href="@RegisterLink">@Lang.T("auth.login.registerHere")</a>
         </p>
     </div>
 </div>
@@ -63,11 +64,17 @@
     private LoginFormData LoginModel { get; set; } = new();
     private bool IsLoading { get; set; }
     private string? ErrorMessage { get; set; }
+    private string? ReturnUrl { get; set; }
+    private string RegisterLink => string.IsNullOrEmpty(ReturnUrl) ? "/register" : $"/register?returnUrl={Uri.EscapeDataString(ReturnUrl)}";
 
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
+
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("returnUrl", out var ru))
+            ReturnUrl = ru.ToString();
     }
 
     private async Task HandleLogin()
@@ -89,7 +96,10 @@
             if (result != null)
             {
                 AuthProvider.NotifyAuthenticationStateChanged();
-                var redirectTo = result.User.PrimaryRole == 1 ? "/company-dashboard" : "/dashboard";
+                var defaultRedirect = result.User.PrimaryRole == 1 ? "/company-dashboard" : "/dashboard";
+                var redirectTo = !string.IsNullOrEmpty(ReturnUrl) && ReturnUrl.StartsWith("/") && !ReturnUrl.StartsWith("//")
+                    ? ReturnUrl
+                    : defaultRedirect;
                 Nav.NavigateTo(redirectTo);
             }
             else

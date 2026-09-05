@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
+@using Microsoft.AspNetCore.Components
 @inject LanguageService Lang
 @inject ApiAuthService AuthApi
 @inject NavigationManager Nav
@@ -26,7 +27,7 @@
                         <path d="m21 21-4.35-4.35" />
                     </svg>
                 </div>
-                <input type="text" class="cmd-search-input" @bind="SearchKeyword" @bind:event="oninput"
+                <input type="text" class="cmd-search-input" @ref="SearchInputRef" @bind="SearchKeyword" @bind:event="oninput"
                        placeholder="@Lang.T("common.home.searchPlaceholder")"
                        @onkeydown="HandleKeyDown" />
                 <div class="cmd-search-location">
@@ -117,19 +118,21 @@
     private List<VacancyDto> VacancyList { get; set; } = new();
     private bool IsLoading { get; set; }
     private string HeroVideoSrc { get; set; } = string.Empty;
+    private ElementReference SearchInputRef;
 
     private static readonly string[] HeroVideos = { "/v01.mp4", "/v02.mp4", "/v03.mp4" };
 
     private Dictionary<string, string> Categories => new()
     {
-        { "Desarrollo", Lang.T("common.nav.categoryIT") },
-        { "Finanzas", Lang.T("common.nav.categoryFinance") },
-        { "Salud", Lang.T("common.nav.categoryHealth") },
-        { "Educacion", Lang.T("common.nav.categoryEducation") },
-        { "Marketing", Lang.T("common.nav.categoryMarketing") },
-        { "Ingenieria", Lang.T("common.nav.categoryEngineering") },
-        { "Ventas", Lang.T("common.nav.categorySales") },
-        { "Diseno", Lang.T("common.nav.categoryDesign") }
+        { "Camarero", Lang.T("common.nav.categoryCamarero") },
+        { "AyudanteCamarero", Lang.T("common.nav.categoryAyudanteCamarero") },
+        { "Cocinero", Lang.T("common.nav.categoryCocinero") },
+        { "AyudanteCocina", Lang.T("common.nav.categoryAyudanteCocina") },
+        { "JefeSala", Lang.T("common.nav.categoryJefeSala") },
+        { "Barman", Lang.T("common.nav.categoryBarman") },
+        { "AyudanteBarra", Lang.T("common.nav.categoryAyudanteBarra") },
+        { "ResponsableLocal", Lang.T("common.nav.categoryResponsableLocal") },
+        { "RecepcionistaHotel", Lang.T("common.nav.categoryRecepcionistaHotel") }
     };
 
     protected override async Task OnInitializedAsync()
@@ -154,6 +157,7 @@
                     v.play().catch(function(){});
                 }
             ");
+            await SearchInputRef.FocusAsync();
         }
     }
 

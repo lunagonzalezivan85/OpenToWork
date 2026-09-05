@@ -6,6 +6,12 @@ using OpenToWork.SharedUI.Services;
 
 namespace OpenToWork.WEB.Services;
 
+public class RegisterResult
+{
+    public AuthResponseDto? Data { get; set; }
+    public bool EmailAlreadyRegistered { get; set; }
+}
+
 public class ApiAuthService
 {
     private readonly HttpClient _httpClient;
@@ -28,18 +34,18 @@ public class ApiAuthService
         return result;
     }
 
-    public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
+    public async Task<RegisterResult> RegisterAsync(RegisterDto dto)
     {
         var response = await _httpClient.PostAsJsonAsync("api/auth/register", dto);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadAsStringAsync();
             _logger.LogWarning("Register failed: {Error}", error);
-            return null;
+            return new RegisterResult { EmailAlreadyRegistered = response.StatusCode == System.Net.HttpStatusCode.Conflict };
         }
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         if (result != null) await PersistAuthAsync(result);
-        return result;
+        return new RegisterResult { Data = result };
     }
 
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)

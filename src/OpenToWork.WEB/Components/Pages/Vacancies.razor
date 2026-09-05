@@ -2,6 +2,7 @@
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
 @using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.AspNetCore.Components
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
 @inject NavigationManager Nav
@@ -12,6 +13,35 @@
     <div class="vacancies-page-header">
         <h1 class="vacancies-page-title">@Lang.T("vacancies.title")</h1>
         <span class="vacancies-page-count">@TotalResults @Lang.T("vacancies.results")</span>
+    </div>
+
+    <div class="cmd-search-wrapper">
+        <div class="cmd-search-bar">
+            <div class="cmd-search-prefix">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+            </div>
+            <input type="text" class="cmd-search-input" @ref="SearchInputRef" @bind="SearchKeyword" @bind:event="oninput"
+                   placeholder="@Lang.T("common.home.searchPlaceholder")"
+                   @onkeydown="HandleSearchKeyDown" />
+            <div class="cmd-search-location">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                </svg>
+                <input type="text" class="cmd-search-location-input" @bind="SearchLocation" @bind:event="oninput"
+                       placeholder="@Lang.T("common.home.locationPlaceholder")"
+                       @onkeydown="HandleSearchKeyDown" />
+            </div>
+            <button class="cmd-search-btn" @onclick="HandleSearchClick">
+                <span>@Lang.T("common.buttons.search")</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
     </div>
 
     @if (!string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory))
@@ -87,10 +117,13 @@
     private string ActiveQuery { get; set; } = "";
     private string ActiveLocation { get; set; } = "";
     private string ActiveCategory { get; set; } = "";
+    private string SearchKeyword { get; set; } = "";
+    private string SearchLocation { get; set; } = "";
     private int CurrentPage { get; set; } = 1;
     private int TotalResults { get; set; }
     private int TotalPages => (int)Math.Ceiling((double)TotalResults / 12);
     private bool IsLoading { get; set; }
+    private ElementReference SearchInputRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -105,7 +138,34 @@
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("category", out var cat))
             ActiveCategory = cat.ToString();
 
+        SearchKeyword = ActiveQuery;
+        SearchLocation = ActiveLocation;
+
         await LoadVacancies();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await SearchInputRef.FocusAsync();
+        }
+    }
+
+    private void HandleSearchClick()
+    {
+        ActiveQuery = SearchKeyword;
+        ActiveLocation = SearchLocation;
+        CurrentPage = 1;
+        UpdateUrl();
+    }
+
+    private void HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            HandleSearchClick();
+        }
     }
 
     private async Task LoadVacancies()
@@ -146,6 +206,7 @@
     private void ClearQuery()
     {
         ActiveQuery = "";
+        SearchKeyword = "";
         CurrentPage = 1;
         UpdateUrl();
     }
@@ -153,6 +214,7 @@
     private void ClearLocation()
     {
         ActiveLocation = "";
+        SearchLocation = "";
         CurrentPage = 1;
         UpdateUrl();
     }
@@ -178,14 +240,15 @@
     {
         return category switch
         {
-            "Desarrollo" => Lang.T("common.nav.categoryIT"),
-            "Finanzas" => Lang.T("common.nav.categoryFinance"),
-            "Salud" => Lang.T("common.nav.categoryHealth"),
-            "Educacion" => Lang.T("common.nav.categoryEducation"),
-            "Marketing" => Lang.T("common.nav.categoryMarketing"),
-            "Ingenieria" => Lang.T("common.nav.categoryEngineering"),
-            "Ventas" => Lang.T("common.nav.categorySales"),
-            "Diseno" => Lang.T("common.nav.categoryDesign"),
+            "Camarero" => Lang.T("common.nav.categoryCamarero"),
+            "AyudanteCamarero" => Lang.T("common.nav.categoryAyudanteCamarero"),
+            "Cocinero" => Lang.T("common.nav.categoryCocinero"),
+            "AyudanteCocina" => Lang.T("common.nav.categoryAyudanteCocina"),
+            "JefeSala" => Lang.T("common.nav.categoryJefeSala"),
+            "Barman" => Lang.T("common.nav.categoryBarman"),
+            "AyudanteBarra" => Lang.T("common.nav.categoryAyudanteBarra"),
+            "ResponsableLocal" => Lang.T("common.nav.categoryResponsableLocal"),
+            "RecepcionistaHotel" => Lang.T("common.nav.categoryRecepcionistaHotel"),
             _ => category
         };
     }
