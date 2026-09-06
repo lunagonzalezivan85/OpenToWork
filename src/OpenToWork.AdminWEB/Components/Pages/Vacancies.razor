@@ -71,9 +71,62 @@ else
                             {
                                 <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Moderate(v.Id, (int)VacancyStatus.Closed)">@Lang.T("admin.vacancies.close")</button>
                             }
+                            @if ((VacancyStatus)v.Status == VacancyStatus.Active)
+                            {
+                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ToggleShortlist(v.Id)">@Lang.T("admin.shortlist.title")</button>
+                            }
                         </div>
                     </td>
                 </tr>
+                @if (ShortlistVacancyId == v.Id)
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="admin-profile-section" style="margin: 0;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <h3 class="admin-profile-section-title">@Lang.T("admin.shortlist.title") - @v.Title</h3>
+                                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => CalculateShortlistAsync(v.Id)" disabled="@IsShortlistBusy">
+                                        @Lang.T("admin.shortlist.calculate")
+                                    </button>
+                                </div>
+                                @if (LastEvaluatedCount.HasValue)
+                                {
+                                    <p class="admin-profile-info-value">@LastEvaluatedCount @Lang.T("admin.shortlist.candidatesEvaluated")</p>
+                                }
+                                @if (Shortlist.Count == 0)
+                                {
+                                    <p class="admin-profile-info-value">@Lang.T("admin.shortlist.empty")</p>
+                                }
+                                else
+                                {
+                                    <table class="ot-table">
+                                        <thead>
+                                            <tr>
+                                                <th>@Lang.T("admin.shortlist.candidate")</th>
+                                                <th>@Lang.T("admin.shortlist.matchPercentage")</th>
+                                                <th>@Lang.T("admin.shortlist.skills")</th>
+                                                <th>@Lang.T("admin.shortlist.experience")</th>
+                                                <th>@Lang.T("admin.shortlist.location")</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var m in Shortlist)
+                                            {
+                                                <tr>
+                                                    <td>@m.CandidateName</td>
+                                                    <td><strong>@m.MatchPercentage%</strong></td>
+                                                    <td>@m.SkillsMatch%</td>
+                                                    <td>@m.ExperienceMatch%</td>
+                                                    <td>@m.LocationMatch%</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
             }
         </tbody>
     </table>
@@ -81,6 +134,33 @@ else
 
 @code {
     private List<AdminVacancyDto>? VacanciesList;
+
+    // Fase 3, sub-fase 3.8: cola de shortlist (vista simple, sin workflow de aprobacion - ver fase-3-sub8.md pregunta 3).
+    private Guid? ShortlistVacancyId { get; set; }
+    private List<JobMatchDto> Shortlist { get; set; } = new();
+    private int? LastEvaluatedCount { get; set; }
+    private bool IsShortlistBusy { get; set; }
+
+    private async Task ToggleShortlist(Guid vacancyId)
+    {
+        if (ShortlistVacancyId == vacancyId)
+        {
+            ShortlistVacancyId = null;
+            return;
+        }
+        ShortlistVacancyId = vacancyId;
+        LastEvaluatedCount = null;
+        Shortlist = await AuthApi.GetVacancyShortlistAsync(vacancyId);
+    }
+
+    private async Task CalculateShortlistAsync(Guid vacancyId)
+    {
+        if (IsShortlistBusy) return;
+        IsShortlistBusy = true;
+        LastEvaluatedCount = await AuthApi.CalculateVacancyMatchesAsync(vacancyId);
+        Shortlist = await AuthApi.GetVacancyShortlistAsync(vacancyId);
+        IsShortlistBusy = false;
+    }
 
     protected override async Task OnInitializedAsync()
     {

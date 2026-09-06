@@ -45,6 +45,15 @@ public class PTVacancy : BaseEntity
 
     public int ViewsCount { get; set; } = 0;
 
+    /// <summary>
+    /// Pesos del Job Match Score que la empresa configuro para esta vacante (scorecard, sub-fase
+    /// 3.8), JSON ej. {"skills":0.5,"experience":0.3,"location":0.2}. Null = usar los defaults
+    /// de CompatibilityService. Agregado en 3.8 - en 3.4 este dato vivia solo en
+    /// PTJobMatchScore.WeightsConfig (el resultado de un calculo ya hecho), sin un lugar propio
+    /// de la vacante para que la empresa lo configure antes de que exista ningun match calculado.
+    /// </summary>
+    public string? WeightsConfig { get; set; }
+
     public virtual ICollection<PTApplication> Applications { get; set; } = new List<PTApplication>();
     public virtual ICollection<PTVacancySkill> VacancySkills { get; set; } = new List<PTVacancySkill>();
 }

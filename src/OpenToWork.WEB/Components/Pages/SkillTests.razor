@@ -1,0 +1,244 @@
+@page "/skill-tests"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@implements IAsyncDisposable
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>@Lang.T("dashboard.skillTests.title")</PageTitle>
+
+<div class="page-container">
+    <div class="dash-banner-card">
+        <div class="dash-banner-info">
+            <h1 class="dash-banner-title">@Lang.T("dashboard.skillTests.title")</h1>
+        </div>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("dashboard.skillTests.back")</button>
+    </div>
+
+    @if (CandidateId == null)
+    {
+        <div class="wizard-loading"><div class="wizard-skeleton-main"></div></div>
+    }
+    else if (CurrentAttempt != null)
+    {
+        <!-- Modo: tomando el reto -->
+        <div class="bento-grid">
+            <div class="bento-card bento-card--full">
+                <div class="dash-score-header">
+                    <span class="bento-card-title">@CurrentAttempt.Test.Title</span>
+                    <span class="dash-score-status">@Lang.T("dashboard.skillTests.timeLeft"): @FormatTime(SecondsRemaining)</span>
+                </div>
+
+                @for (int i = 0; i < CurrentAttempt.Test.Questions.Count; i++)
+                {
+                    var qIndex = i;
+                    var q = CurrentAttempt.Test.Questions[qIndex];
+                    <div class="wizard-timeline-card" style="margin-bottom: var(--space-md);">
+                        <h4 class="wizard-timeline-title">@(qIndex + 1). @q.Question</h4>
+                        <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                            @for (int j = 0; j < q.Options.Count; j++)
+                            {
+                                var optIndex = j;
+                                <label class="wizard-checkbox">
+                                    <input type="radio" name="@($"q{qIndex}")" checked="@(Answers[qIndex] == optIndex)" @onchange="() => Answers[qIndex] = optIndex" />
+                                    <span>@q.Options[optIndex]</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <button class="ot-btn ot-btn--primary" @onclick="SubmitAsync" disabled="@IsBusy">
+                    @Lang.T("dashboard.skillTests.submit")
+                </button>
+            </div>
+        </div>
+    }
+    else if (LastResult != null)
+    {
+        <!-- Modo: resultado -->
+        <div class="bento-grid">
+            <div class="bento-card bento-card--full" style="text-align:center;">
+                <span class="bento-card-title">@Lang.T("dashboard.skillTests.resultTitle")</span>
+                <div class="dash-chart-percent" style="font-size:3rem; margin: var(--space-md) 0;">@LastResult.Score%</div>
+                <p class="dash-chart-info-text">@LastResult.TestTitle</p>
+                <button class="ot-btn ot-btn--primary" @onclick="BackToListAsync">@Lang.T("dashboard.skillTests.backToList")</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Modo: lista -->
+        <div class="bento-grid">
+            <div class="bento-card bento-card--full">
+                <span class="bento-card-title">@Lang.T("dashboard.skillTests.availableTitle")</span>
+                @if (!WizardCompleted)
+                {
+                    <p class="dash-chart-info-text">⚠ @Lang.T("dashboard.skillTests.wizardRequired")</p>
+                }
+                @if (AvailableTests.Count == 0)
+                {
+                    <p class="dash-chart-info-text">@Lang.T("dashboard.skillTests.empty")</p>
+                }
+                else
+                {
+                    <div class="dash-verifications-list">
+                        @foreach (var t in AvailableTests)
+                        {
+                            <div class="dash-verification-row">
+                                <div>
+                                    <span class="dash-verification-name">@t.Title</span>
+                                    <span class="dash-chart-info-text"> · @t.Category · @t.TimeLimit @Lang.T("dashboard.skillTests.minutes")</span>
+                                </div>
+                                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => StartAsync(t.Id)" disabled="@(IsBusy || !WizardCompleted)">
+                                    @Lang.T("dashboard.skillTests.start")
+                                </button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="bento-card bento-card--full">
+                <span class="bento-card-title">@Lang.T("dashboard.skillTests.myResultsTitle")</span>
+                @if (MyResults.Count == 0)
+                {
+                    <p class="dash-chart-info-text">@Lang.T("dashboard.skillTests.noResultsYet")</p>
+                }
+                else
+                {
+                    <div class="dash-verifications-list">
+                        @foreach (var r in MyResults)
+                        {
+                            <div class="dash-verification-row">
+                                <span class="dash-verification-name">@r.TestTitle</span>
+                                <span class="dash-verification-pill @(r.Score >= 60 ? "dash-verification-pill--verified" : "dash-verification-pill--failed")">@r.Score%</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private Guid? CandidateId { get; set; }
+    private bool WizardCompleted { get; set; }
+    private List<SkillTestPublicDto> AvailableTests { get; set; } = new();
+    private List<TestResultDto> MyResults { get; set; } = new();
+    private TestAttemptDto? CurrentAttempt { get; set; }
+    private TestResultDto? LastResult { get; set; }
+    private List<int> Answers { get; set; } = new();
+    private int SecondsRemaining { get; set; }
+    private bool IsBusy { get; set; }
+    private PeriodicTimer? _timer;
+    private CancellationTokenSource? _timerCts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var candidate = await AuthApi.GetCandidateProfileAsync();
+        // No redirige en null - ver el mismo comentario en References.razor (prerender estatico
+        // sin JS/localStorage todavia, un NavigateTo aca rompe la navegacion directa a esta ruta).
+        if (candidate == null) return;
+
+        CandidateId = candidate.Id;
+        WizardCompleted = candidate.WizardCompleted;
+        await LoadListsAsync();
+    }
+
+    private async Task LoadListsAsync()
+    {
+        AvailableTests = await AuthApi.GetAvailableSkillTestsAsync();
+        MyResults = await AuthApi.GetMySkillTestResultsAsync();
+    }
+
+    private async Task StartAsync(Guid testId)
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        var (attempt, _) = await AuthApi.StartSkillTestAsync(testId);
+        if (attempt != null)
+        {
+            CurrentAttempt = attempt;
+            Answers = Enumerable.Repeat(-1, attempt.Test.Questions.Count).ToList();
+            SecondsRemaining = attempt.SecondsRemaining;
+            await JS.InvokeVoidAsync("eval", "window.otAntiCheatFlags = 0; window.otAntiCheatHandler && document.removeEventListener('visibilitychange', window.otAntiCheatHandler); window.otAntiCheatHandler = () => { if (document.hidden) window.otAntiCheatFlags++; }; document.addEventListener('visibilitychange', window.otAntiCheatHandler);");
+            StartTimer();
+        }
+        IsBusy = false;
+    }
+
+    private void StartTimer()
+    {
+        _timerCts?.Cancel();
+        _timerCts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        _ = TickAsync(_timerCts.Token);
+    }
+
+    private async Task TickAsync(CancellationToken token)
+    {
+        try
+        {
+            while (_timer != null && await _timer.WaitForNextTickAsync(token))
+            {
+                if (SecondsRemaining <= 0)
+                {
+                    await SubmitAsync();
+                    return;
+                }
+                SecondsRemaining--;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (CurrentAttempt == null || IsBusy) return;
+        IsBusy = true;
+        _timerCts?.Cancel();
+
+        var antiCheatFlags = 0;
+        try
+        {
+            antiCheatFlags = await JS.InvokeAsync<int>("eval", "window.otAntiCheatFlags || 0");
+        }
+        catch { }
+
+        var result = await AuthApi.SubmitSkillTestAsync(CurrentAttempt.ResultId, new SubmitTestAnswersDto { Answers = Answers }, antiCheatFlags);
+        LastResult = result;
+        CurrentAttempt = null;
+        IsBusy = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task BackToListAsync()
+    {
+        LastResult = null;
+        await LoadListsAsync();
+    }
+
+    private void GoBack() => Nav.NavigateTo("/dashboard");
+
+    private static string FormatTime(int seconds)
+    {
+        var m = seconds / 60;
+        var s = seconds % 60;
+        return $"{m:00}:{s:00}";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _timerCts?.Cancel();
+        _timer?.Dispose();
+        await Task.CompletedTask;
+    }
+}

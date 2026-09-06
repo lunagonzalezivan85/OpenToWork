@@ -1,0 +1,249 @@
+@page "/skill-tests"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>@Lang.T("admin.skillTests.title")</PageTitle>
+
+<div class="admin-page-header">
+    <h1>@Lang.T("admin.skillTests.title")</h1>
+</div>
+
+<div class="admin-profile-section">
+    <h3 class="admin-profile-section-title">@(EditingId == null ? Lang.T("admin.skillTests.create") : Lang.T("admin.skillTests.edit"))</h3>
+
+    <div class="admin-inline-form" style="flex-wrap: wrap;">
+        <div class="ot-input-group">
+            <label class="ot-input-label">@Lang.T("admin.skillTests.category")</label>
+            <input class="ot-input-field" @bind="Form.Category" />
+        </div>
+        <div class="ot-input-group">
+            <label class="ot-input-label">@Lang.T("admin.skillTests.difficulty")</label>
+            <select class="ot-input-field" @bind="Form.Difficulty">
+                <option value="0">@Lang.T("admin.skillTests.difficultyEasy")</option>
+                <option value="1">@Lang.T("admin.skillTests.difficultyMedium")</option>
+                <option value="2">@Lang.T("admin.skillTests.difficultyHard")</option>
+            </select>
+        </div>
+        <div class="ot-input-group">
+            <label class="ot-input-label">@Lang.T("admin.skillTests.timeLimit")</label>
+            <input type="number" min="1" class="ot-input-field" @bind="Form.TimeLimit" style="width:100px;" />
+        </div>
+        <div class="ot-input-group">
+            <label class="ot-input-label">
+                <input type="checkbox" @bind="Form.IsActive" /> @Lang.T("admin.skillTests.active")
+            </label>
+        </div>
+    </div>
+    <div class="ot-input-group">
+        <label class="ot-input-label">@Lang.T("admin.skillTests.titleField")</label>
+        <input class="ot-input-field" @bind="Form.Title" style="width:100%;" />
+    </div>
+    <div class="ot-input-group">
+        <label class="ot-input-label">@Lang.T("admin.skillTests.description")</label>
+        <textarea class="ot-input-field" rows="2" @bind="Form.Description" style="width:100%;"></textarea>
+    </div>
+
+    <h4 class="admin-profile-section-title">@Lang.T("admin.skillTests.questions")</h4>
+    @for (int qi = 0; qi < Form.Questions.Count; qi++)
+    {
+        var qIndex = qi;
+        var q = Form.Questions[qIndex];
+        <div class="admin-profile-section" style="background: var(--bg-tertiary, #f8fafc);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong>@Lang.T("admin.skillTests.question") @(qIndex + 1)</strong>
+                <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => RemoveQuestion(qIndex)">@Lang.T("admin.skillTests.delete")</button>
+            </div>
+            <input class="ot-input-field" style="width:100%; margin: 6px 0;" @bind="q.Question" placeholder="@Lang.T("admin.skillTests.question")" />
+            @for (int oi = 0; oi < q.Options.Count; oi++)
+            {
+                var oIndex = oi;
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:4px;">
+                    <input type="radio" name="@($"correct{qIndex}")" checked="@(q.CorrectIndex == oIndex)" @onchange="() => q.CorrectIndex = oIndex" />
+                    <input class="ot-input-field" style="flex:1;" @bind="q.Options[oIndex]" placeholder="@Lang.T("admin.skillTests.options") @(oIndex + 1)" />
+                    @if (q.Options.Count > 2)
+                    {
+                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => q.Options.RemoveAt(oIndex)">×</button>
+                    }
+                </div>
+            }
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => q.Options.Add(string.Empty)">+ @Lang.T("admin.skillTests.options")</button>
+        </div>
+    }
+    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="AddQuestion">+ @Lang.T("admin.skillTests.addQuestion")</button>
+
+    <div style="margin-top: var(--space-md); display:flex; gap:8px;">
+        <button class="ot-btn ot-btn--primary" @onclick="SaveAsync">@Lang.T("admin.skillTests.save")</button>
+        @if (EditingId != null)
+        {
+            <button class="ot-btn ot-btn--outline" @onclick="ResetForm">@Lang.T("admin.skillTests.cancel")</button>
+        }
+        <button class="ot-btn ot-btn--outline" @onclick="() => ShowPreview = !ShowPreview">@Lang.T("admin.skillTests.preview")</button>
+    </div>
+
+    @if (ShowPreview)
+    {
+        <div class="admin-profile-section" style="border: 1px dashed var(--border-color, #cbd5e1);">
+            <strong>@Form.Title</strong>
+            <p>@Form.Category · @Form.TimeLimit min</p>
+            @foreach (var q in Form.Questions)
+            {
+                <p><strong>@q.Question</strong></p>
+                <ul>
+                    @for (int i = 0; i < q.Options.Count; i++)
+                    {
+                        <li style="@(i == q.CorrectIndex ? "color: var(--success, green); font-weight:700;" : "")">@q.Options[i]</li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+</div>
+
+@if (TestsList == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (TestsList.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-icon">&#9632;</div>
+        <div class="admin-empty-text">@Lang.T("admin.skillTests.empty")</div>
+    </div>
+}
+else
+{
+    <table class="ot-table">
+        <thead>
+            <tr>
+                <th>@Lang.T("admin.skillTests.titleField")</th>
+                <th>@Lang.T("admin.skillTests.category")</th>
+                <th>@Lang.T("admin.skillTests.difficulty")</th>
+                <th>@Lang.T("admin.skillTests.questions")</th>
+                <th>@Lang.T("admin.skillTests.active")</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in TestsList)
+            {
+                <tr>
+                    <td>@t.Title</td>
+                    <td>@t.Category</td>
+                    <td>@DifficultyLabel(t.Difficulty)</td>
+                    <td>@t.Questions.Count</td>
+                    <td>@(t.IsActive ? "✓" : "-")</td>
+                    <td>
+                        <div class="admin-table-actions">
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => EditTest(t)">@Lang.T("admin.skillTests.edit")</button>
+                            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => DeleteTest(t.Id)">@Lang.T("admin.skillTests.delete")</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<SkillTestAdminDto>? TestsList;
+    private CreateSkillTestDto Form { get; set; } = NewForm();
+    private Guid? EditingId { get; set; }
+    private bool ShowPreview { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        await LoadTestsAsync();
+    }
+
+    private async Task LoadTestsAsync()
+    {
+        TestsList = await AuthApi.GetSkillTestsAsync();
+    }
+
+    private static CreateSkillTestDto NewForm() => new()
+    {
+        TimeLimit = 15,
+        IsActive = true,
+        Questions = new() { NewQuestion() }
+    };
+
+    private static SkillTestQuestionDto NewQuestion() => new() { Options = new() { "", "" } };
+
+    private void AddQuestion() => Form.Questions.Add(NewQuestion());
+    private void RemoveQuestion(int index) => Form.Questions.RemoveAt(index);
+
+    private void EditTest(SkillTestAdminDto t)
+    {
+        EditingId = t.Id;
+        Form = new CreateSkillTestDto
+        {
+            Category = t.Category,
+            Difficulty = t.Difficulty,
+            Title = t.Title,
+            Description = t.Description,
+            TimeLimit = t.TimeLimit,
+            IsActive = t.IsActive,
+            Questions = t.Questions.Select(q => new SkillTestQuestionDto { Question = q.Question, Options = new List<string>(q.Options), CorrectIndex = q.CorrectIndex }).ToList()
+        };
+        ShowPreview = false;
+    }
+
+    private void ResetForm()
+    {
+        EditingId = null;
+        Form = NewForm();
+        ShowPreview = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Form.Title) || Form.Questions.Count == 0) return;
+
+        if (EditingId == null)
+        {
+            await AuthApi.CreateSkillTestAsync(Form);
+        }
+        else
+        {
+            await AuthApi.UpdateSkillTestAsync(EditingId.Value, new UpdateSkillTestDto
+            {
+                Category = Form.Category,
+                Difficulty = Form.Difficulty,
+                Title = Form.Title,
+                Description = Form.Description,
+                TimeLimit = Form.TimeLimit,
+                IsActive = Form.IsActive,
+                Questions = Form.Questions
+            });
+        }
+
+        ResetForm();
+        await LoadTestsAsync();
+    }
+
+    private async Task DeleteTest(Guid id)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", Lang.T("admin.skillTests.confirmDelete"));
+        if (!confirmed) return;
+
+        await AuthApi.DeleteSkillTestAsync(id);
+        await LoadTestsAsync();
+    }
+
+    private string DifficultyLabel(int difficulty) => (SkillTestDifficulty)difficulty switch
+    {
+        SkillTestDifficulty.Easy => Lang.T("admin.skillTests.difficultyEasy"),
+        SkillTestDifficulty.Medium => Lang.T("admin.skillTests.difficultyMedium"),
+        SkillTestDifficulty.Hard => Lang.T("admin.skillTests.difficultyHard"),
+        _ => difficulty.ToString()
+    };
+}

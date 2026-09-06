@@ -21,6 +21,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAlertService, AlertService>();
         services.AddScoped<ICvParserService, CvParserService>();
         services.AddHttpClient<ICvParserService, CvParserService>();
+        services.AddScoped<IValidationService, ValidationService>();
+        services.AddHttpClient<IValidationService, ValidationService>();
+        services.AddScoped<IScoringService, ScoringService>();
+        services.AddScoped<ICompatibilityService, CompatibilityService>();
+        services.AddScoped<IReferenceService, ReferenceService>();
+        services.AddScoped<ISkillTestService, SkillTestService>();
+        services.AddScoped<IVerificationStatusService, VerificationStatusService>();
 
         return services;
     }
@@ -43,6 +50,13 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<ICvParserService, CvParserService>();
         services.AddScoped<IAdminCandidateRegistrationService, AdminCandidateRegistrationService>();
         services.AddHttpClient<ILinkedinSearchService, LinkedinSearchService>();
+        services.AddScoped<ICompatibilityService, CompatibilityService>();
+        services.AddScoped<ISkillTestService, SkillTestService>();
+        services.AddScoped<IScoringService, ScoringService>();
+        services.AddScoped<IVerificationStatusService, VerificationStatusService>();
+        services.AddScoped<IValidationService, ValidationService>();
+        services.AddHttpClient<IValidationService, ValidationService>();
+        services.AddScoped<IReferenceService, ReferenceService>();
 
         return services;
     }

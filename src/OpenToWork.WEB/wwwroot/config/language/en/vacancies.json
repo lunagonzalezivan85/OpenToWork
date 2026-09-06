@@ -85,5 +85,15 @@
         "location": "Location",
         "category": "Category"
     },
-    "notFound": "Could not load the vacancy. It may not exist or has been deleted."
+    "notFound": "Could not load the vacancy. It may not exist or has been deleted.",
+    "matchScore": {
+        "title": "Compatibility Ranking (Match Score)",
+        "scorecard": "Configure Scorecard",
+        "scorecardHint": "Adjust how each dimension of the Match Score is weighted for this vacancy (the 3 % values must add up to 100).",
+        "weightSkills": "Skills",
+        "weightExperience": "Experience",
+        "weightLocation": "Location",
+        "saveScorecard": "Save Scorecard",
+        "empty": "No ranked candidates for this vacancy yet. The OpenToWork team calculates this ranking periodically."
+    }
 }

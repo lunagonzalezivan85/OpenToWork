@@ -219,6 +219,71 @@ else
 
         @* === Right panel 65% — Recruitment data === *@
         <div class="admin-candidate-profile-right">
+            @if (Profile.CandidateId.HasValue)
+            {
+                <div class="admin-profile-section">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3 class="admin-profile-section-title">@Lang.T("admin.score.title")</h3>
+                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="RecalculateScoreAsync" disabled="@IsScoreBusy">
+                            @Lang.T("admin.score.recalculate")
+                        </button>
+                    </div>
+                    @if (Score != null)
+                    {
+                        <div class="admin-profile-info-grid">
+                            <div class="admin-profile-info-item">
+                                <span class="admin-profile-info-label">@Lang.T("admin.score.overall")</span>
+                                <span class="admin-profile-info-value"><strong>@Score.OverallScore</strong></span>
+                            </div>
+                            <div class="admin-profile-info-item">
+                                <span class="admin-profile-info-label">@Lang.T("admin.score.stability")</span>
+                                <span class="admin-profile-info-value">@Score.StabilityIndex</span>
+                            </div>
+                            <div class="admin-profile-info-item">
+                                <span class="admin-profile-info-label">@Lang.T("admin.score.reliability")</span>
+                                <span class="admin-profile-info-value">@Score.ReliabilityIndex</span>
+                            </div>
+                            <div class="admin-profile-info-item">
+                                <span class="admin-profile-info-label">@Lang.T("admin.score.evidence")</span>
+                                <span class="admin-profile-info-value">@Score.EvidenceIndex</span>
+                            </div>
+                            <div class="admin-profile-info-item">
+                                <span class="admin-profile-info-label">@Lang.T("admin.score.compatibility")</span>
+                                <span class="admin-profile-info-value">@Score.CompatibilityIndex</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="admin-profile-section">
+                    <h3 class="admin-profile-section-title">@Lang.T("admin.score.verifications")</h3>
+                    @if (Verifications.Count == 0)
+                    {
+                        <p class="admin-profile-info-value">@Lang.T("admin.score.noVerifications")</p>
+                    }
+                    else
+                    {
+                        <div class="admin-profile-info-list">
+                            @foreach (var v in Verifications)
+                            {
+                                <div class="admin-profile-info-row">
+                                    <span class="admin-profile-info-label">@VerificationTypeLabel(v.Type)</span>
+                                    <div style="display:flex; gap:6px; align-items:center;">
+                                        <span class="admin-result-badge @VerificationBadgeClass(v.Status)">@VerificationStatusLabel(v.Status)</span>
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ApproveVerification(v.Type)" disabled="@IsScoreBusy">
+                                            @Lang.T("admin.score.approve")
+                                        </button>
+                                        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => RejectVerification(v.Type)" disabled="@IsScoreBusy">
+                                            @Lang.T("admin.score.reject")
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
             @if (!string.IsNullOrEmpty(Profile.Summary))
             {
                 <div class="admin-profile-section">
@@ -655,6 +720,11 @@ else
     private bool ShowAssign { get; set; }
     private string SelectedAssignToUserId { get; set; } = "";
     private string NewValidationLabel { get; set; } = "";
+
+    // Fase 3, sub-fase 3.8.
+    private CandidateScoreDto? Score { get; set; }
+    private List<VerificationResultDto> Verifications { get; set; } = new();
+    private bool IsScoreBusy { get; set; }
     private bool ShowStageDetail { get; set; }
     private int StageDetailIndex { get; set; }
     private bool ShowScoreModal { get; set; }
@@ -699,7 +769,68 @@ else
         Profile = await AuthApi.GetUserProfileAsync(UserId);
         Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
         AssignableUsers = await AuthApi.GetUsersAsync(1, 100, 2);
+
+        if (Profile?.CandidateId != null)
+        {
+            await LoadScoreDataAsync();
+        }
     }
+
+    private async Task LoadScoreDataAsync()
+    {
+        if (Profile?.CandidateId == null) return;
+        Score = await AuthApi.GetCandidateScoreAsync(Profile.CandidateId.Value);
+        Verifications = await AuthApi.GetCandidateVerificationsAsync(Profile.CandidateId.Value);
+    }
+
+    private async Task RecalculateScoreAsync()
+    {
+        if (Profile?.CandidateId == null || IsScoreBusy) return;
+        IsScoreBusy = true;
+        await AuthApi.RecalculateCandidateScoreAsync(Profile.CandidateId.Value);
+        await LoadScoreDataAsync();
+        IsScoreBusy = false;
+    }
+
+    private async Task ApproveVerification(int type) => await SetVerification(type, 2);
+    private async Task RejectVerification(int type) => await SetVerification(type, 3);
+
+    private async Task SetVerification(int type, int status)
+    {
+        if (Profile?.CandidateId == null || IsScoreBusy) return;
+        IsScoreBusy = true;
+        await AuthApi.SetVerificationStatusAsync(Profile.CandidateId.Value, type, status);
+        await LoadScoreDataAsync();
+        IsScoreBusy = false;
+    }
+
+    private string VerificationTypeLabel(int type) => type switch
+    {
+        0 => Lang.T("admin.score.verificationIdentity"),
+        1 => "LinkedIn",
+        2 => Lang.T("admin.score.verificationPortfolio"),
+        3 => Lang.T("admin.score.verificationCvCoherence"),
+        4 => Lang.T("admin.score.verificationEducation"),
+        5 => Lang.T("admin.score.verificationReference"),
+        _ => "-"
+    };
+
+    private string VerificationStatusLabel(int status) => status switch
+    {
+        0 => Lang.T("admin.score.statusPending"),
+        1 => Lang.T("admin.score.statusInProgress"),
+        2 => Lang.T("admin.score.statusVerified"),
+        3 => Lang.T("admin.score.statusFailed"),
+        _ => "-"
+    };
+
+    private static string VerificationBadgeClass(int status) => status switch
+    {
+        2 => "admin-result-badge--success",
+        3 => "admin-result-badge--danger",
+        1 => "admin-result-badge--warning",
+        _ => "admin-result-badge--muted"
+    };
 
     private void GoBack() => Nav.NavigateTo("/candidates");
 

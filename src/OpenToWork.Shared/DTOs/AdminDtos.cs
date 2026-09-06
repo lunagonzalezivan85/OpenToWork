@@ -95,6 +95,8 @@ public class AdminUserProfileDto
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
 
+    /// <summary>Id de PTCandidate (no de SCUser) - null si este usuario no es candidato. Agregado en Fase 3, sub-fase 3.8 para poder llamar los endpoints de scoring/verificaciones desde el admin.</summary>
+    public Guid? CandidateId { get; set; }
     public string? CandidateName { get; set; }
     public string? Title { get; set; }
     public string? Summary { get; set; }

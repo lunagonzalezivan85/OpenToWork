@@ -417,6 +417,132 @@ public class ApiAuthService
         _httpClient.DefaultRequestHeaders.Authorization = null;
     }
 
+    // --- Fase 3 (Scoring/Verificaciones/Referencias/Retos) - sub-fase 3.8 ---
+
+    public async Task<CandidateScoreDto?> GetScoreAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/candidates/{candidateId}/score");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateScoreDto>();
+    }
+
+    public async Task<CandidateScoreDto?> RecalculateScoreAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/candidates/{candidateId}/score/recalculate", null);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateScoreDto>();
+    }
+
+    public async Task<VerificationStatusDto?> GetVerificationStatusAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/candidates/{candidateId}/verification-status");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<VerificationStatusDto>();
+    }
+
+    public async Task<List<VerificationResultDto>> GetVerificationsAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/candidates/{candidateId}/verifications");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<VerificationResultDto>>() ?? new();
+    }
+
+    public async Task<List<VerificationResultDto>> RunVerificationsAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/candidates/{candidateId}/verifications/run", null);
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<VerificationResultDto>>() ?? new();
+    }
+
+    public async Task<CandidateReferencesListDto?> GetReferencesAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/candidates/{candidateId}/references");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateReferencesListDto>();
+    }
+
+    public async Task<CandidateReferenceDto?> AddReferenceAsync(Guid candidateId, CreateReferenceDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/candidates/{candidateId}/references", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateReferenceDto>();
+    }
+
+    public async Task<ReferenceRequestLinkDto?> SendReferenceRequestAsync(Guid referenceId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/references/{referenceId}/send", null);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<ReferenceRequestLinkDto>();
+    }
+
+    public async Task<List<SkillTestPublicDto>> GetAvailableSkillTestsAsync(string? category = null)
+    {
+        await SetAuthHeaderAsync();
+        var url = string.IsNullOrEmpty(category) ? "api/skill-tests/available" : $"api/skill-tests/available?category={Uri.EscapeDataString(category)}";
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<SkillTestPublicDto>>() ?? new();
+    }
+
+    public async Task<(TestAttemptDto? Attempt, string? Error)> StartSkillTestAsync(Guid testId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/skill-tests/{testId}/start", null);
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            return (null, body);
+        }
+        return (await response.Content.ReadFromJsonAsync<TestAttemptDto>(), null);
+    }
+
+    public async Task<TestResultDto?> SubmitSkillTestAsync(Guid resultId, SubmitTestAnswersDto dto, int antiCheatFlags)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/skill-tests/results/{resultId}/submit?antiCheatFlags={antiCheatFlags}", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<TestResultDto>();
+    }
+
+    public async Task<List<TestResultDto>> GetMySkillTestResultsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/skill-tests/results");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<TestResultDto>>() ?? new();
+    }
+
+    public async Task<List<JobMatchDto>> GetVacancyMatchesAsync(Guid vacancyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/permanentvacancies/{vacancyId}/matches");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<JobMatchDto>>() ?? new();
+    }
+
+    public async Task<ScorecardDto?> GetVacancyScorecardAsync(Guid vacancyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/permanentvacancies/{vacancyId}/scorecard");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<ScorecardDto>();
+    }
+
+    public async Task<bool> UpdateVacancyScorecardAsync(Guid vacancyId, UpdateScorecardDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/permanentvacancies/{vacancyId}/scorecard", dto);
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<string?> GetTokenAsync() => await _localStorage.GetItemAsync("opentowork-token");
     public async Task<string?> GetRefreshTokenAsync() => await _localStorage.GetItemAsync("opentowork-refresh-token");
     public async Task<string?> GetUserIdAsync() => await _localStorage.GetItemAsync("opentowork-user-id");

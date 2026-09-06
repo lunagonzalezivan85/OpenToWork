@@ -245,6 +245,58 @@ else
                 </div>
             </div>
         </div>
+
+        @* === Fase 3, sub-fase 3.8: Shortlist por Match Score + Scorecard configurable === *@
+        <div class="ot-card vm-card" style="margin-top: var(--space-lg);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <h3 class="bento-card-title">@Lang.T("vacancies.matchScore.title")</h3>
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ShowScorecard = !ShowScorecard">
+                    @Lang.T("vacancies.matchScore.scorecard")
+                </button>
+            </div>
+
+            @if (ShowScorecard)
+            {
+                <div class="wizard-add-form">
+                    <p class="dash-chart-info-text">@Lang.T("vacancies.matchScore.scorecardHint")</p>
+                    <div class="wizard-form-grid">
+                        <div class="wizard-form-field">
+                            <label class="wizard-field-label">@Lang.T("vacancies.matchScore.weightSkills")</label>
+                            <input type="number" min="0" max="100" class="wizard-input" @bind="WeightSkills" />
+                        </div>
+                        <div class="wizard-form-field">
+                            <label class="wizard-field-label">@Lang.T("vacancies.matchScore.weightExperience")</label>
+                            <input type="number" min="0" max="100" class="wizard-input" @bind="WeightExperience" />
+                        </div>
+                        <div class="wizard-form-field">
+                            <label class="wizard-field-label">@Lang.T("vacancies.matchScore.weightLocation")</label>
+                            <input type="number" min="0" max="100" class="wizard-input" @bind="WeightLocation" />
+                        </div>
+                    </div>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SaveScorecardAsync">@Lang.T("vacancies.matchScore.saveScorecard")</button>
+                </div>
+            }
+
+            @if (Shortlist.Count == 0)
+            {
+                <p class="dash-chart-info-text">@Lang.T("vacancies.matchScore.empty")</p>
+            }
+            else
+            {
+                <div class="dash-verifications-list">
+                    @foreach (var m in Shortlist)
+                    {
+                        <div class="dash-verification-row">
+                            <div>
+                                <span class="dash-verification-name">@m.CandidateName</span>
+                                <span class="dash-chart-info-text"> · @Lang.T("vacancies.matchScore.weightSkills") @m.SkillsMatch% · @Lang.T("vacancies.matchScore.weightExperience") @m.ExperienceMatch% · @Lang.T("vacancies.matchScore.weightLocation") @m.LocationMatch%</span>
+                            </div>
+                            <span class="dash-verification-pill dash-verification-pill--verified">@m.MatchPercentage%</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     </div>
 }
 
@@ -254,6 +306,13 @@ else
     private List<ApplicationDto> Applications { get; set; } = new();
     private string CandidateFilter { get; set; } = "all";
     private bool IsLoading { get; set; }
+
+    // Fase 3, sub-fase 3.8: Shortlist + Scorecard.
+    private List<JobMatchDto> Shortlist { get; set; } = new();
+    private bool ShowScorecard { get; set; }
+    private int WeightSkills { get; set; } = 50;
+    private int WeightExperience { get; set; } = 30;
+    private int WeightLocation { get; set; } = 20;
 
     private List<ApplicationDto> FilteredApplications => CandidateFilter switch
     {
@@ -275,7 +334,34 @@ else
         IsLoading = true;
         Vacancy = await AuthApi.GetPermanentVacancyAsync(Id);
         Applications = await AuthApi.GetApplicationsByVacancyAsync(Id);
+        Shortlist = await AuthApi.GetVacancyMatchesAsync(Id);
+
+        var scorecard = await AuthApi.GetVacancyScorecardAsync(Id);
+        if (!string.IsNullOrEmpty(scorecard?.WeightsConfig))
+        {
+            try
+            {
+                var doc = System.Text.Json.JsonDocument.Parse(scorecard.WeightsConfig);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("skills", out var s)) WeightSkills = (int)Math.Round(s.GetDouble() * 100);
+                if (root.TryGetProperty("experience", out var e)) WeightExperience = (int)Math.Round(e.GetDouble() * 100);
+                if (root.TryGetProperty("location", out var l)) WeightLocation = (int)Math.Round(l.GetDouble() * 100);
+            }
+            catch { }
+        }
+
         IsLoading = false;
+    }
+
+    private async Task SaveScorecardAsync()
+    {
+        await AuthApi.UpdateVacancyScorecardAsync(Id, new UpdateScorecardDto
+        {
+            Skills = WeightSkills / 100.0,
+            Experience = WeightExperience / 100.0,
+            Location = WeightLocation / 100.0
+        });
+        ShowScorecard = false;
     }
 
     private void SetFilter(string filter) => CandidateFilter = filter;

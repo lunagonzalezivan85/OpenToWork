@@ -1,0 +1,214 @@
+@page "/references"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>@Lang.T("dashboard.references.title")</PageTitle>
+
+<div class="page-container">
+    <div class="dash-banner-card">
+        <div class="dash-banner-info">
+            <h1 class="dash-banner-title">@Lang.T("dashboard.references.title")</h1>
+        </div>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("dashboard.references.back")</button>
+    </div>
+
+    @if (CandidateId == null)
+    {
+        <div class="wizard-loading"><div class="wizard-skeleton-main"></div></div>
+    }
+    else
+    {
+        <div class="bento-grid">
+            <div class="bento-card bento-card--full">
+                <span class="bento-card-title">@Lang.T("dashboard.references.addTitle")</span>
+                <div class="wizard-add-form">
+                    <div class="wizard-form-grid">
+                        <div class="wizard-form-field">
+                            <label class="wizard-field-label">@Lang.T("dashboard.references.contactName")</label>
+                            <input class="wizard-input" @bind="NewRef.ContactName" />
+                        </div>
+                        <div class="wizard-form-field">
+                            <label class="wizard-field-label">@Lang.T("dashboard.references.companyName")</label>
+                            <input class="wizard-input" @bind="NewRef.CompanyName" />
+                        </div>
+                        <div class="wizard-form-field">
+                            <label class="wizard-field-label">@Lang.T("dashboard.references.email")</label>
+                            <input class="wizard-input" @bind="NewRef.Email" />
+                        </div>
+                        <div class="wizard-form-field">
+                            <label class="wizard-field-label">@Lang.T("dashboard.references.phone")</label>
+                            <input class="wizard-input" @bind="NewRef.Phone" />
+                        </div>
+                        <div class="wizard-form-field">
+                            <label class="wizard-field-label">@Lang.T("dashboard.references.relationship")</label>
+                            <select class="wizard-input" @bind="NewRef.Relationship">
+                                <option value="0">@Lang.T("dashboard.references.relationshipManager")</option>
+                                <option value="1">@Lang.T("dashboard.references.relationshipPeer")</option>
+                                <option value="2">@Lang.T("dashboard.references.relationshipSubordinate")</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="ot-btn ot-btn--primary" @onclick="AddReferenceAsync" disabled="@(string.IsNullOrWhiteSpace(NewRef.ContactName) || IsBusy)">
+                        @Lang.T("dashboard.references.add")
+                    </button>
+                </div>
+            </div>
+
+            <div class="bento-card bento-card--full">
+                <span class="bento-card-title">@Lang.T("dashboard.references.title")</span>
+                <p class="dash-chart-info-text">@Lang.T("dashboard.references.minimumHint")</p>
+
+                @if (MyReferences.Count == 0)
+                {
+                    <p class="dash-chart-info-text">@Lang.T("dashboard.references.empty")</p>
+                }
+                else
+                {
+                    <div class="wizard-timeline">
+                        @foreach (var r in MyReferences)
+                        {
+                            <div class="wizard-timeline-item">
+                                <div class="wizard-timeline-dot"></div>
+                                <div class="wizard-timeline-card">
+                                    <div class="wizard-timeline-card-header">
+                                        <div>
+                                            <h4 class="wizard-timeline-title">@r.ContactName</h4>
+                                            <span class="wizard-timeline-subtitle">@r.CompanyName</span>
+                                        </div>
+                                        <span class="dash-verification-pill @StatusPillClass(r.Status)">@StatusLabel(r.Status)</span>
+                                    </div>
+
+                                    @if (r.SameCompanyAsAnotherReference)
+                                    {
+                                        <p class="dash-chart-info-text" style="color: var(--warning, #f59e0b);">⚠ @Lang.T("dashboard.references.sameCompanyWarning")</p>
+                                    }
+
+                                    @if (r.Status == 0)
+                                    {
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => SendRequestAsync(r.Id)" disabled="@IsBusy">
+                                            @Lang.T("dashboard.references.sendRequest")
+                                        </button>
+                                    }
+
+                                    @if (ShareLinks.TryGetValue(r.Id, out var link))
+                                    {
+                                        <div class="wizard-form-field">
+                                            <label class="wizard-field-label">@Lang.T("dashboard.references.shareLink")</label>
+                                            <div style="display:flex; gap: var(--space-sm); align-items:center;">
+                                                <input class="wizard-input" readonly value="@link" />
+                                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => CopyLinkAsync(link, r.Id)">
+                                                    @((CopiedId == r.Id) ? Lang.T("dashboard.references.linkCopied") : Lang.T("dashboard.references.copyLink"))
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    @if (r.Status == 3 && r.Rating.HasValue)
+                                    {
+                                        <p class="wizard-timeline-desc"><strong>@Lang.T("dashboard.references.rating"):</strong> @r.Rating/5</p>
+                                        @if (!string.IsNullOrEmpty(r.Feedback))
+                                        {
+                                            <p class="wizard-timeline-desc"><strong>@Lang.T("dashboard.references.feedback"):</strong> @r.Feedback</p>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private Guid? CandidateId { get; set; }
+    private List<CandidateReferenceDto> MyReferences { get; set; } = new();
+    private CreateReferenceDto NewRef { get; set; } = new();
+    private Dictionary<Guid, string> ShareLinks { get; set; } = new();
+    private Guid? CopiedId { get; set; }
+    private bool IsBusy { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        // No redirige si candidate es null: durante el prerender estatico de Blazor Server
+        // no hay JS/localStorage todavia, asi que el token no esta disponible y esto siempre
+        // daria null en esa primera pasada - un NavigateTo aca dispara una redireccion HTTP
+        // real antes de que el circuito interactivo arranque. Mismo criterio tolerante que
+        // Dashboard.razor (no redirige, solo muestra un estado vacio/de carga).
+        var candidate = await AuthApi.GetCandidateProfileAsync();
+        if (candidate == null) return;
+
+        CandidateId = candidate.Id;
+        await LoadReferencesAsync();
+    }
+
+    private async Task LoadReferencesAsync()
+    {
+        if (CandidateId == null) return;
+        var result = await AuthApi.GetReferencesAsync(CandidateId.Value);
+        MyReferences = result?.References ?? new();
+    }
+
+    private async Task AddReferenceAsync()
+    {
+        if (CandidateId == null || IsBusy || string.IsNullOrWhiteSpace(NewRef.ContactName)) return;
+        IsBusy = true;
+        await AuthApi.AddReferenceAsync(CandidateId.Value, NewRef);
+        NewRef = new();
+        await LoadReferencesAsync();
+        IsBusy = false;
+    }
+
+    private async Task SendRequestAsync(Guid referenceId)
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        var result = await AuthApi.SendReferenceRequestAsync(referenceId);
+        if (result != null)
+        {
+            ShareLinks[referenceId] = result.ShareableLink;
+        }
+        await LoadReferencesAsync();
+        IsBusy = false;
+    }
+
+    private async Task CopyLinkAsync(string link, Guid referenceId)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", link);
+            CopiedId = referenceId;
+        }
+        catch { }
+    }
+
+    private void GoBack() => Nav.NavigateTo("/dashboard");
+
+    private string StatusLabel(int status) => status switch
+    {
+        0 => Lang.T("dashboard.references.statusPending"),
+        1 => Lang.T("dashboard.references.statusSent"),
+        2 => Lang.T("dashboard.references.statusResponded"),
+        3 => Lang.T("dashboard.references.statusVerified"),
+        4 => Lang.T("dashboard.references.statusFailed"),
+        _ => "-"
+    };
+
+    private static string StatusPillClass(int status) => status switch
+    {
+        0 => "dash-verification-pill--pending",
+        1 => "dash-verification-pill--progress",
+        2 => "dash-verification-pill--progress",
+        3 => "dash-verification-pill--verified",
+        4 => "dash-verification-pill--failed",
+        _ => "dash-verification-pill--pending"
+    };
+}
