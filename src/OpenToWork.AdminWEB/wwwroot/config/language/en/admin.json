@@ -204,7 +204,8 @@
     "save": "Save",
     "cancel": "Cancel",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "back": "Back"
   },
   "assigned": {
     "title": "Assigned candidates",
