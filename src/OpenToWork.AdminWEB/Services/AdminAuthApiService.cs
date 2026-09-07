@@ -580,4 +580,119 @@ public class AdminAuthApiService
         await _localStorage.RemoveItemAsync("otwadmin-user-id");
         _httpClient.DefaultRequestHeaders.Authorization = null;
     }
+
+    // --- Company CRM ---
+
+    public async Task<List<CompanyListDto>> GetCompaniesAsync(string? search = null, int? status = null, Guid? assignedTo = null, int page = 1, int pageSize = 50)
+    {
+        await SetAuthHeaderAsync();
+        var url = $"api/admin/company-crm/companies?page={page}&pageSize={pageSize}";
+        if (!string.IsNullOrEmpty(search)) url += $"&search={Uri.EscapeDataString(search)}";
+        if (status.HasValue) url += $"&status={status.Value}";
+        if (assignedTo.HasValue) url += $"&assignedTo={assignedTo.Value}";
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<CompanyListDto>>() ?? new();
+    }
+
+    public async Task<CompanyDetailDto?> GetCompanyAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/company-crm/companies/{id}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CompanyDetailDto>();
+    }
+
+    public async Task<CompanyDetailDto?> CreateCompanyAsync(CreateCompanyDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/company-crm/companies", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CompanyDetailDto>();
+    }
+
+    public async Task<CompanyDetailDto?> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/company-crm/companies/{id}", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CompanyDetailDto>();
+    }
+
+    public async Task<bool> DeleteCompanyAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/company-crm/companies/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<CompanyPipelineResultDto> GetCompanyPipelineAsync(int page = 1, int pageSize = 50, int? stage = null, Guid? assignedTo = null, string? search = null)
+    {
+        await SetAuthHeaderAsync();
+        var url = $"api/admin/company-crm/pipeline?page={page}&pageSize={pageSize}";
+        if (stage.HasValue) url += $"&stage={stage.Value}";
+        if (assignedTo.HasValue) url += $"&assignedTo={assignedTo.Value}";
+        if (!string.IsNullOrEmpty(search)) url += $"&search={Uri.EscapeDataString(search)}";
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<CompanyPipelineResultDto>() ?? new();
+    }
+
+    public async Task<CompanyPipelineDetailDto?> GetCompanyPipelineDetailAsync(Guid pipelineId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/company-crm/pipeline/{pipelineId}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CompanyPipelineDetailDto>();
+    }
+
+    public async Task<CompanyPipelineDto?> AssignCompanyAsync(AssignCompanyDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/company-crm/assign", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CompanyPipelineDto>();
+    }
+
+    public async Task<bool> MoveCompanyStageAsync(Guid pipelineId, CompanyMoveStageDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/company-crm/pipeline/{pipelineId}/move-stage", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UnassignCompanyAsync(Guid pipelineId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsync($"api/admin/company-crm/pipeline/{pipelineId}/unassign", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> DismissCompanyAsync(Guid pipelineId, DismissCompanyDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/company-crm/pipeline/{pipelineId}/dismiss", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> RestoreCompanyAsync(Guid pipelineId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/admin/company-crm/pipeline/{pipelineId}/restore", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ReassignCompanyAsync(Guid pipelineId, Guid newUserId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/company-crm/pipeline/{pipelineId}/reassign", new { newUserId });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<PlanDto>> GetPlansAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/company-crm/plans");
+        return await response.Content.ReadFromJsonAsync<List<PlanDto>>() ?? new();
+    }
 }

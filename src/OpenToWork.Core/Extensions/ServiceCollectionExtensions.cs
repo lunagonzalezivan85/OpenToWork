@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReferenceService, ReferenceService>();
         services.AddScoped<ISkillTestService, SkillTestService>();
         services.AddScoped<IVerificationStatusService, VerificationStatusService>();
+        services.AddScoped<ICompanyCrmService, CompanyCrmService>();
 
         return services;
     }
@@ -57,6 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IValidationService, ValidationService>();
         services.AddHttpClient<IValidationService, ValidationService>();
         services.AddScoped<IReferenceService, ReferenceService>();
+        services.AddScoped<ICompanyCrmService, CompanyCrmService>();
 
         return services;
     }

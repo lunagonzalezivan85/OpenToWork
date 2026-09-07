@@ -1,0 +1,128 @@
+@page "/companies"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>@Lang.T("admin.companies.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.companies.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.companies.subtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder='@Lang.T("admin.companies.searchPlaceholder")' class="admin-pipeline-search" />
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo("/companies/new"))">@Lang.T("admin.companies.add")</button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Companies.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.companies.empty")</div>
+    </div>
+}
+else
+{
+    <div class="admin-users-grid">
+        @foreach (var company in Companies)
+        {
+            <div class="admin-user-card admin-clickable" @onclick="() => ViewDetail(company.Id)">
+                <div class="admin-user-card-header">
+                    <div class="admin-user-card-avatar">
+                        @(company.Name.Length >= 2 ? company.Name.Substring(0, 2).ToUpper() : company.Name.ToUpper())
+                    </div>
+                    <div class="admin-user-card-info">
+                        <div class="admin-user-card-name">@company.Name</div>
+                        <div class="admin-user-card-email">@(company.ContactEmail ?? company.Industry ?? "-")</div>
+                    </div>
+                    <div class="admin-user-card-status @(company.Status == (int)CompanyStatus.Activa ? "admin-user-card-status--active" : "admin-user-card-status--inactive")">
+                        @GetStatusName(company.Status)
+                    </div>
+                </div>
+                <div class="admin-user-card-body">
+                    @if (!string.IsNullOrEmpty(company.Industry))
+                    {
+                        <span class="admin-result-badge admin-result-badge--info">@company.Industry</span>
+                    }
+                    @if (company.CurrentStage.HasValue)
+                    {
+                        <span class="admin-result-badge admin-result-badge--success">@GetStageName(company.CurrentStage.Value)</span>
+                    }
+                    @if (company.VacancyCount > 0)
+                    {
+                        <span class="admin-result-badge admin-result-badge--info">@company.VacancyCount vacantes</span>
+                    }
+                    @if (!string.IsNullOrEmpty(company.AssignedToName))
+                    {
+                        <span class="admin-result-badge admin-result-badge--warning">@company.AssignedToName</span>
+                    }
+                </div>
+                <div class="admin-user-card-footer">
+                    <span class="admin-user-card-date">@company.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<CompanyListDto> Companies = new();
+    private bool IsLoading = true;
+    private string SearchTerm = "";
+    private System.Threading.Timer? _debounceTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        await LoadCompanies();
+    }
+
+    private async Task LoadCompanies()
+    {
+        IsLoading = true;
+        Companies = await AuthApi.GetCompaniesAsync(string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm);
+        IsLoading = false;
+    }
+
+    private void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        _debounceTimer?.Dispose();
+        _debounceTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () => await LoadCompanies());
+            StateHasChanged();
+        }, null, 400, System.Threading.Timeout.Infinite);
+    }
+
+    private void ViewDetail(Guid id) => Nav.NavigateTo($"/companies/{id}");
+
+    private string GetStatusName(int status) => status switch
+    {
+        (int)CompanyStatus.Activa => Lang.T("admin.companies.statusActive"),
+        (int)CompanyStatus.Inactiva => Lang.T("admin.companies.statusInactive"),
+        (int)CompanyStatus.Prospecto => Lang.T("admin.companies.statusProspect"),
+        _ => "-"
+    };
+
+    private string GetStageName(int stage) => stage switch
+    {
+        (int)CompanyPipelineStage.Lead => Lang.T("admin.companies.stageLead"),
+        (int)CompanyPipelineStage.Contactado => Lang.T("admin.companies.stageContacted"),
+        (int)CompanyPipelineStage.ReunionAgendada => Lang.T("admin.companies.stageMeeting"),
+        (int)CompanyPipelineStage.PropuestaEnviada => Lang.T("admin.companies.stageProposal"),
+        (int)CompanyPipelineStage.Negociacion => Lang.T("admin.companies.stageNegotiation"),
+        (int)CompanyPipelineStage.CerradoGanado => Lang.T("admin.companies.stageWon"),
+        (int)CompanyPipelineStage.CerradoPerdido => Lang.T("admin.companies.stageLost"),
+        _ => "-"
+    };
+}

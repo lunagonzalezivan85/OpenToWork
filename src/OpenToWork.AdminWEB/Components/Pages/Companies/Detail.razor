@@ -1,0 +1,232 @@
+@page "/companies/{CompanyId}"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>@(Company?.Name ?? "Empresa")</PageTitle>
+
+@if (Company == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else
+{
+    <div class="admin-page-header">
+        <div>
+            <h1>@Company.Name</h1>
+            <p class="admin-page-header-subtitle">
+                @if (!string.IsNullOrEmpty(Company.Industry))
+                {
+                    <span class="admin-result-badge admin-result-badge--info" style="margin-right: 0.5rem;">@Company.Industry</span>
+                }
+                <span class="admin-result-badge @(Company.Status == (int)CompanyStatus.Activa ? "admin-result-badge--success" : Company.Status == (int)CompanyStatus.Inactiva ? "admin-result-badge--danger" : "admin-result-badge--warning")">
+                    @GetStatusName(Company.Status)
+                </span>
+            </p>
+        </div>
+        <div class="admin-page-actions">
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo("/companies"))">@Lang.T("admin.common.back")</button>
+        </div>
+    </div>
+
+    <div class="admin-users-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 1.5rem;">
+        <div class="admin-user-card" style="cursor: default;">
+            <div class="admin-user-card-header">
+                <div class="admin-user-card-avatar" style="background: #E8F1FF; color: #0066FF;">
+                    @(Company.Name.Length >= 2 ? Company.Name.Substring(0, 2).ToUpper() : Company.Name.ToUpper())
+                </div>
+                <div class="admin-user-card-info">
+                    <div class="admin-user-card-name">@Lang.T("admin.companies.contactInfo")</div>
+                </div>
+            </div>
+            <div class="admin-user-card-body" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.contactName")</span>
+                    <span style="font-weight: 500; font-size: 0.88rem;">@(Company.ContactName ?? "-")</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.contactPosition")</span>
+                    <span style="font-weight: 500; font-size: 0.88rem;">@(Company.ContactPosition ?? "-")</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.contactEmail")</span>
+                    @if (!string.IsNullOrEmpty(Company.ContactEmail))
+                    {
+                        <a href="mailto:@Company.ContactEmail" style="color: #0066FF; font-size: 0.88rem; text-decoration: none;">@Company.ContactEmail</a>
+                    }
+                    else
+                    {
+                        <span style="font-weight: 500; font-size: 0.88rem;">-</span>
+                    }
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0;">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.contactPhone")</span>
+                    <span style="font-weight: 500; font-size: 0.88rem;">@(Company.ContactPhone ?? "-")</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-user-card" style="cursor: default;">
+            <div class="admin-user-card-header">
+                <div class="admin-user-card-avatar" style="background: #F1F5F9; color: #3A506B;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M3 21h18M3 21V7l9-4 9 4v14M9 21v-6h6v6" /></svg>
+                </div>
+                <div class="admin-user-card-info">
+                    <div class="admin-user-card-name">@Lang.T("admin.companies.companyInfo")</div>
+                </div>
+            </div>
+            <div class="admin-user-card-body" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.legalName")</span>
+                    <span style="font-weight: 500; font-size: 0.88rem;">@(Company.LegalName ?? "-")</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.taxId")</span>
+                    <span style="font-weight: 500; font-size: 0.88rem;">@(Company.TaxId ?? "-")</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.website")</span>
+                    @if (!string.IsNullOrEmpty(Company.Website))
+                    {
+                        <a href="@Company.Website" target="_blank" style="color: #0066FF; font-size: 0.88rem; text-decoration: none;">@Company.Website</a>
+                    }
+                    else
+                    {
+                        <span style="font-weight: 500; font-size: 0.88rem;">-</span>
+                    }
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.country")</span>
+                    <span style="font-weight: 500; font-size: 0.88rem;">@(Company.Country ?? "-") / @(Company.City ?? "-")</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0;">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.linkedin")</span>
+                    @if (!string.IsNullOrEmpty(Company.LinkedInUrl))
+                    {
+                        <a href="@Company.LinkedInUrl" target="_blank" style="color: #0066FF; font-size: 0.88rem; text-decoration: none;">LinkedIn</a>
+                    }
+                    else
+                    {
+                        <span style="font-weight: 500; font-size: 0.88rem;">-</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Company.Pipeline != null)
+    {
+        <div class="admin-user-card" style="cursor: default;">
+            <div class="admin-user-card-header">
+                <div class="admin-user-card-avatar" style="background: #E8F1FF; color: #0066FF;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="6" height="18" rx="1" /><rect x="9" y="3" width="6" height="12" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" /></svg>
+                </div>
+                <div class="admin-user-card-info">
+                    <div class="admin-user-card-name">@Lang.T("admin.companies.pipelineInfo")</div>
+                    <div class="admin-user-card-email">@(Company.Pipeline.AssignedToName ?? Lang.T("admin.companies.unassigned"))</div>
+                </div>
+                <div class="admin-user-card-status admin-user-card-status--active">
+                    @GetStageName(Company.Pipeline.CurrentStage)
+                </div>
+            </div>
+            <div class="admin-user-card-body" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
+                @if (!string.IsNullOrEmpty(Company.Pipeline.Notes))
+                {
+                    <div style="padding: 0.5rem 0.75rem; background: #F1F5F9; border-radius: 10px; font-size: 0.85rem; color: #3A506B;">
+                        @Company.Pipeline.Notes
+                    </div>
+                }
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem;">
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/pipeline/{Company.Pipeline.Id}"))">
+                        @Lang.T("admin.companies.viewPipeline")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="admin-user-card" style="cursor: default; border: 2px dashed #E8F1FF;">
+            <div style="text-align: center; padding: 1.5rem 1rem;">
+                <div style="margin-bottom: 0.75rem; color: #778DA9;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" style="margin: 0 auto;"><rect x="3" y="3" width="6" height="18" rx="1" /><rect x="9" y="3" width="6" height="12" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" /></svg>
+                </div>
+                <p style="color: #3A506B; font-weight: 500; margin-bottom: 0.25rem;">@Lang.T("admin.companies.noPipeline")</p>
+                <p style="color: #778DA9; font-size: 0.85rem; margin-bottom: 1rem;">@Lang.T("admin.companies.noPipelineHint")</p>
+
+                @if (AdminUsers.Count > 0)
+                {
+                    <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center; flex-wrap: wrap;">
+                        <select class="admin-select" @bind="SelectedUserId" style="min-width: 220px;">
+                            @foreach (var u in AdminUsers)
+                            {
+                                <option value="@u.Id">@u.Email</option>
+                            }
+                        </select>
+                        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="AssignToUser" disabled="@IsAssigning">
+                            @(IsAssigning ? Lang.T("admin.common.loading") : Lang.T("admin.companies.assignAndCreate"))
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public string CompanyId { get; set; } = "";
+    private CompanyDetailDto? Company;
+    private List<AdminUserDto> AdminUsers = new();
+    private string SelectedUserId = "";
+    private bool IsAssigning = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        if (Guid.TryParse(CompanyId, out var id))
+            Company = await AuthApi.GetCompanyAsync(id);
+        AdminUsers = await AuthApi.GetUsersAsync(role: (int)UserRole.Admin);
+        SelectedUserId = AdminUsers.FirstOrDefault()?.Id.ToString() ?? "";
+    }
+
+    private async Task AssignToUser()
+    {
+        if (Company == null || !Guid.TryParse(SelectedUserId, out var userId)) return;
+        IsAssigning = true;
+        var result = await AuthApi.AssignCompanyAsync(new AssignCompanyDto
+        {
+            CompanyId = Company.Id,
+            AssignedToUserId = userId
+        });
+        IsAssigning = false;
+        if (result != null)
+        {
+            Company = await AuthApi.GetCompanyAsync(Company.Id);
+        }
+    }
+
+    private string GetStatusName(int status) => status switch
+    {
+        (int)CompanyStatus.Activa => Lang.T("admin.companies.statusActive"),
+        (int)CompanyStatus.Inactiva => Lang.T("admin.companies.statusInactive"),
+        (int)CompanyStatus.Prospecto => Lang.T("admin.companies.statusProspect"),
+        _ => "-"
+    };
+
+    private string GetStageName(int stage) => stage switch
+    {
+        (int)CompanyPipelineStage.Lead => Lang.T("admin.companies.stageLead"),
+        (int)CompanyPipelineStage.Contactado => Lang.T("admin.companies.stageContacted"),
+        (int)CompanyPipelineStage.ReunionAgendada => Lang.T("admin.companies.stageMeeting"),
+        (int)CompanyPipelineStage.PropuestaEnviada => Lang.T("admin.companies.stageProposal"),
+        (int)CompanyPipelineStage.Negociacion => Lang.T("admin.companies.stageNegotiation"),
+        (int)CompanyPipelineStage.CerradoGanado => Lang.T("admin.companies.stageWon"),
+        (int)CompanyPipelineStage.CerradoPerdido => Lang.T("admin.companies.stageLost"),
+        _ => "-"
+    };
+}
