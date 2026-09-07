@@ -44,7 +44,7 @@ else
         {
             var stageItems = PipelineData.Items.Where(i => i.CurrentStage == stage.Key && !i.IsDismissed).ToList();
             var stageCount = PipelineData.CountByStage.GetValueOrDefault(stage.Key, 0);
-            <div class="admin-kanban-column">
+            <div class="admin-kanban-column @StageAccentClass(stage.Key)">
                 <div class="admin-kanban-column-header">
                     <span class="admin-kanban-column-title">@stage.Value</span>
                     <span class="admin-kanban-column-count">@stageCount</span>
@@ -101,6 +101,21 @@ else
         { (int)CompanyPipelineStage.PropuestaEnviada, Lang.T("admin.companies.stageProposal") },
         { (int)CompanyPipelineStage.Negociacion, Lang.T("admin.companies.stageNegotiation") },
         { (int)CompanyPipelineStage.CerradoGanado, Lang.T("admin.companies.stageWon") },
+    };
+
+    // Progresion neutro -> frio -> marca -> calido -> ganado, para que el estado de cada
+    // columna se lea de un vistazo sin tener que abrir cada tarjeta (encontrado en QA: las 6
+    // columnas eran visualmente identicas, y la fecha/asignado de la tarjeta se veian pegados
+    // por falta de layout en .admin-kanban-card-footer).
+    private static string StageAccentClass(int stageKey) => (CompanyPipelineStage)stageKey switch
+    {
+        CompanyPipelineStage.Lead => "admin-kanban-column--neutral",
+        CompanyPipelineStage.Contactado => "admin-kanban-column--info",
+        CompanyPipelineStage.ReunionAgendada => "admin-kanban-column--primary",
+        CompanyPipelineStage.PropuestaEnviada => "admin-kanban-column--accent",
+        CompanyPipelineStage.Negociacion => "admin-kanban-column--warning",
+        CompanyPipelineStage.CerradoGanado => "admin-kanban-column--success",
+        _ => ""
     };
 
     protected override async Task OnInitializedAsync()

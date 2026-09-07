@@ -965,7 +965,7 @@ textarea.admin-input {
 
 .admin-result-card {
     background: #FFFFFF;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: 14px;
     padding: 1.25rem;
     -webkit-transition: box-shadow 0.2s, -webkit-transform 0.2s;
@@ -1096,7 +1096,7 @@ textarea.admin-input {
     align-items: center;
     gap: 1.25rem;
     background: #FFFFFF;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: 14px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
@@ -1166,7 +1166,7 @@ textarea.admin-input {
 
 .admin-profile-section {
     background: #FFFFFF;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: 14px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
@@ -1336,7 +1336,7 @@ textarea.admin-input {
 .admin-users-search input {
     width: 100%;
     padding: 0.6rem 1rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: 10px;
     font-size: 0.9rem;
     background: #FFFFFF;
@@ -1360,7 +1360,7 @@ textarea.admin-input {
     align-items: center;
     gap: 0.4rem;
     padding: 0.4rem 0.85rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: 999px;
     background: #FFFFFF;
     color: var(--text-secondary);
@@ -1407,7 +1407,7 @@ textarea.admin-input {
 
 .admin-user-card {
     background: #FFFFFF;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: 14px;
     padding: 1.25rem;
     transition: box-shadow 0.2s;
@@ -1492,7 +1492,7 @@ textarea.admin-input {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-color);
     padding-top: 0.75rem;
 }
 
@@ -1610,7 +1610,7 @@ textarea.admin-input {
 .admin-candidates-table-wrapper {
     overflow-x: auto;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     background: #FFFFFF;
 }
 
@@ -1631,7 +1631,7 @@ textarea.admin-input {
     font-size: 0.78rem;
     color: var(--text-secondary);
     white-space: nowrap;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .admin-candidates-table th.sortable {
@@ -1645,7 +1645,7 @@ textarea.admin-input {
 
 .admin-candidates-table td {
     padding: 0.7rem 0.8rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
 }
 
@@ -1723,7 +1723,7 @@ textarea.admin-input {
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     background: #FFFFFF;
     color: var(--text-secondary);
     cursor: pointer;
@@ -1785,7 +1785,7 @@ textarea.admin-input {
 .admin-pipeline-search {
     padding: 0.5rem 0.75rem;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     font-size: 0.85rem;
     min-width: 250px;
 }
@@ -1793,7 +1793,7 @@ textarea.admin-input {
 .admin-tabs {
     display: flex;
     gap: 0;
-    border-bottom: 2px solid var(--border);
+    border-bottom: 2px solid var(--border-color);
     margin-bottom: var(--space-md);
     overflow-x: auto;
 }
@@ -1865,7 +1865,7 @@ textarea.admin-input {
 
 .admin-candidate-pipeline-bar {
     background: var(--bg-secondary);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: 1rem 1.25rem;
     margin-bottom: var(--space-md);
@@ -1919,7 +1919,7 @@ textarea.admin-input {
     font-weight: 700;
     background: var(--bg-tertiary);
     color: var(--text-muted);
-    border: 2px solid var(--border);
+    border: 2px solid var(--border-color);
     flex-shrink: 0;
 }
 
@@ -1953,7 +1953,7 @@ textarea.admin-input {
 .admin-pipeline-step-line {
     width: 24px;
     height: 2px;
-    background: var(--border);
+    background: var(--border-color);
     margin: 0 0.25rem;
 }
 
@@ -1986,7 +1986,7 @@ textarea.admin-input {
     align-items: center;
     justify-content: space-between;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     margin-bottom: 0.5rem;
     font-size: 0.85rem;
 }
@@ -2030,7 +2030,7 @@ textarea.admin-input {
     border-radius: 50%;
     font-size: 0.7rem;
     color: var(--text-muted);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     flex-shrink: 0;
 }
 
@@ -2050,7 +2050,7 @@ textarea.admin-input {
 
 .admin-stage-detail-card {
     background: #FFFFFF;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 0.6rem;
     margin-bottom: 0.5rem;
@@ -2196,7 +2196,7 @@ textarea.admin-input {
     justify-content: space-between;
     padding: 0.6rem 0.75rem;
     background: #F0F7FF;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     margin-top: 0.5rem;
 }
@@ -2246,7 +2246,7 @@ textarea.admin-input {
     align-items: flex-start;
     gap: var(--space-sm);
     padding: 0.4rem 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .admin-profile-info-row:last-child {
@@ -2283,23 +2283,35 @@ textarea.admin-input {
     gap: var(--space-md);
     overflow-x: auto;
     padding-bottom: var(--space-md);
+    scroll-snap-type: x proximity;
 }
 
 .admin-kanban-column {
     flex: 0 0 280px;
     background: var(--bg-tertiary);
     border-radius: var(--radius-lg);
+    border-top: 3px solid var(--border-color);
     display: flex;
     flex-direction: column;
     max-height: 70vh;
+    scroll-snap-align: start;
 }
+
+/* Progresion neutro -> frio -> marca -> calido -> ganado: el color de cada columna se lee de
+   un vistazo, sin tener que abrir cada tarjeta para saber en que punto del proceso esta. */
+.admin-kanban-column--neutral { border-top-color: var(--text-muted); }
+.admin-kanban-column--info { border-top-color: var(--info); }
+.admin-kanban-column--primary { border-top-color: var(--accent-primary); }
+.admin-kanban-column--accent { border-top-color: var(--accent-secondary); }
+.admin-kanban-column--warning { border-top-color: var(--warning); }
+.admin-kanban-column--success { border-top-color: var(--success); }
 
 .admin-kanban-column-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .admin-kanban-column-title {
@@ -2342,7 +2354,7 @@ textarea.admin-input {
     border-radius: var(--radius-md);
     padding: 0.75rem;
     cursor: pointer;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     transition: box-shadow 0.15s, transform 0.15s;
 }
 
@@ -2402,7 +2414,7 @@ textarea.admin-input {
     flex: 1;
     height: 6px;
     border-radius: 999px;
-    background: var(--border);
+    background: var(--border-color);
     overflow: hidden;
 }
 
@@ -2428,8 +2440,30 @@ textarea.admin-input {
 }
 
 .admin-kanban-card-footer {
-    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-top: 1px solid var(--border-color);
     padding-top: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.admin-kanban-card-date {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex: none;
+}
+
+.admin-kanban-card-assignee {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .admin-kanban-assigned {
@@ -2470,7 +2504,7 @@ textarea.admin-input {
     width: 36px;
     height: 36px;
     border-radius: 999px;
-    border: 2px solid var(--border);
+    border: 2px solid var(--border-color);
     background: #FFFFFF;
     color: var(--text-muted);
     font-weight: 700;
@@ -2516,7 +2550,7 @@ textarea.admin-input {
     flex: 1;
     min-width: 30px;
     height: 2px;
-    background: var(--border);
+    background: var(--border-color);
     margin: 0 0.5rem;
     margin-bottom: 1.4rem;
 }
@@ -2539,7 +2573,7 @@ textarea.admin-input {
 .admin-recruitment-card {
     background: #FFFFFF;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     padding: 1.25rem;
 }
 
@@ -2554,7 +2588,7 @@ textarea.admin-input {
     display: flex;
     justify-content: space-between;
     padding: 0.4rem 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     font-size: 0.85rem;
 }
 
@@ -2589,7 +2623,7 @@ textarea.admin-input {
     padding: 1rem;
     background: #FFFFFF;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     transition: border-color 0.15s;
 }
 
@@ -2653,13 +2687,13 @@ textarea.admin-input {
     gap: 0.5rem;
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-color);
 }
 
 .admin-investigation-add-input {
     flex: 1;
     padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     font-size: 0.85rem;
     background: var(--bg-primary);
@@ -2711,7 +2745,7 @@ textarea.admin-input {
     padding: 0.75rem;
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
 }
 
 .admin-references-header {
@@ -2737,7 +2771,7 @@ textarea.admin-input {
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
     background: var(--bg-primary);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
 }
 
@@ -2776,7 +2810,7 @@ textarea.admin-input {
 .admin-reference-status {
     font-size: 0.72rem;
     padding: 0.2rem 0.4rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     background: var(--bg-primary);
     color: var(--text-primary);
@@ -2788,7 +2822,7 @@ textarea.admin-input {
     gap: 0.4rem;
     margin-top: 0.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-color);
 }
 
 .admin-reference-add-actions {
@@ -2802,7 +2836,7 @@ textarea.admin-input {
     padding: 0.6rem 0.75rem;
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
 }
 
 .admin-candidate-contact-row {
@@ -2880,7 +2914,7 @@ textarea.admin-input {
 
 .admin-notes-add-btn {
     background: none;
-    border: 1px dashed var(--border);
+    border: 1px dashed var(--border-color);
     color: var(--text-muted);
     cursor: pointer;
     font-size: 0.72rem;
@@ -2899,7 +2933,7 @@ textarea.admin-input {
     padding: 0.5rem 0.75rem;
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
 }
 
 .admin-step-context-row {
@@ -2928,7 +2962,7 @@ textarea.admin-input {
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.3rem 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .admin-cert-item:last-child {
@@ -2974,7 +3008,7 @@ textarea.admin-input {
 
 .admin-evaluation-card {
     background: #FFFFFF;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: 0.75rem;
 }
@@ -3046,7 +3080,7 @@ textarea.admin-input {
     padding: 0.6rem;
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
 }
 
 .admin-evaluation-summary {
@@ -3057,7 +3091,7 @@ textarea.admin-input {
     padding: 0.5rem 0.75rem;
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
 }
 
 .admin-evaluation-summary-label {
@@ -3119,7 +3153,7 @@ textarea.admin-input {
 
 .admin-delivery-card {
     background: #FFFFFF;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     overflow: hidden;
 }
@@ -3130,7 +3164,7 @@ textarea.admin-input {
     gap: 0.5rem;
     padding: 0.6rem 0.75rem;
     background: #F0F7FF;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .admin-delivery-card-icon {
@@ -3225,7 +3259,7 @@ textarea.admin-input {
     font-size: 0.75rem;
     color: var(--text-secondary);
     padding: 0.2rem 0;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-color);
 }
 
 .admin-delivery-detail-score {
@@ -3246,7 +3280,7 @@ textarea.admin-input {
     justify-content: space-between;
     padding: 0.75rem 1rem;
     background: #F0F7FF;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     margin-bottom: var(--space-md);
 }
@@ -3278,7 +3312,7 @@ textarea.admin-input {
     padding: 0.75rem 1rem;
     background: #FFFFFF;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
 }
 
 .admin-stage-history-arrow {
@@ -3350,7 +3384,7 @@ textarea.admin-input {
 .admin-modal-input {
     padding: 0.5rem 0.75rem;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     font-size: 0.85rem;
     width: 100%;
     box-sizing: border-box;
@@ -3366,14 +3400,14 @@ textarea.admin-input {
     font-size: 0.95rem;
     color: var(--text-primary);
     padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-color);
     margin-bottom: 0.5rem;
 }
 
 .admin-modal-select {
     padding: 0.5rem 0.75rem;
     border-radius: var(--radius-md);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-color);
     font-size: 0.85rem;
     width: 100%;
     box-sizing: border-box;
