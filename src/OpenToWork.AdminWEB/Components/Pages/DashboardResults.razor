@@ -124,13 +124,23 @@ else
         Results = filtered.Select(u => new ResultItem
         {
             UserId = u.Id,
-            AvatarText = (u.CandidateName ?? u.Email).Substring(0, 2).ToUpper(),
+            AvatarText = GetAvatarText(u.CandidateName, u.Email),
             DisplayName = u.CandidateName ?? u.Email,
             SubText = u.Email,
             StatusLabel = u.IsActive ? Lang.T("admin.users.active") : Lang.T("admin.users.inactive"),
             StatusClass = u.IsActive ? "admin-result-status--active" : "admin-result-status--inactive",
             Badges = BuildCandidateBadges(u)
         }).ToList();
+    }
+
+    // QA 07-Sep: (nombre ?? email).Substring(0,2) tiraba ArgumentOutOfRangeException y tumbaba
+    // todo el circuito de Blazor Server cuando el nombre era "" (no null, WizardCompleted en
+    // falso no siempre implica CandidateName null) o el email tenia menos de 2 caracteres.
+    private static string GetAvatarText(string? name, string? email)
+    {
+        var source = !string.IsNullOrEmpty(name) ? name : email;
+        if (string.IsNullOrEmpty(source)) return "?";
+        return source.Length >= 2 ? source[..2].ToUpper() : source.ToUpper();
     }
 
     private List<BadgeItem> BuildCandidateBadges(AdminUserDto u)
@@ -164,7 +174,7 @@ else
         Results = users.Select(u => new ResultItem
         {
             UserId = u.Id,
-            AvatarText = u.Email.Substring(0, 2).ToUpper(),
+            AvatarText = GetAvatarText(null, u.Email),
             DisplayName = u.Email,
             SubText = Lang.T("admin.users.filterCompanies"),
             StatusLabel = u.IsActive ? Lang.T("admin.users.active") : Lang.T("admin.users.inactive"),
