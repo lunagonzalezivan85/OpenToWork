@@ -42,6 +42,9 @@ public class AppDbContext : DbContext
     public DbSet<PTCandidateTestResult> PT_CandidateTestResults => Set<PTCandidateTestResult>();
     public DbSet<PTNegotiation> PT_Negotiations => Set<PTNegotiation>();
     public DbSet<PTNegotiationCandidate> PT_NegotiationCandidates => Set<PTNegotiationCandidate>();
+    public DbSet<PTCompanyPipeline> PT_CompanyPipelines => Set<PTCompanyPipeline>();
+    public DbSet<PTCompanyStageLog> PT_CompanyStageLogs => Set<PTCompanyStageLog>();
+    public DbSet<PTPlan> PT_Plans => Set<PTPlan>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -360,7 +363,56 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<PTCompany>(e =>
+        {
+            e.ToTable("PT_Companies");
+            e.HasIndex(c => new { c.Name, c.IsDeleted });
+            e.HasIndex(c => new { c.Status, c.IsDeleted });
+            e.HasIndex(c => c.SCUserId);
+        });
+
+        modelBuilder.Entity<PTCompanyPipeline>(e =>
+        {
+            e.ToTable("PT_CompanyPipelines");
+            e.HasIndex(p => new { p.PT_CompanyId, p.IsDeleted });
+            e.HasIndex(p => new { p.CurrentStage, p.IsDeleted });
+            e.HasIndex(p => new { p.AssignedToUserId, p.IsDeleted });
+            e.HasIndex(p => new { p.IsDismissed, p.IsDeleted });
+            e.HasOne(p => p.Company)
+                .WithMany(c => c.Pipelines)
+                .HasForeignKey(p => p.PT_CompanyId);
+        });
+
+        modelBuilder.Entity<PTPlan>(e =>
+        {
+            e.ToTable("PT_Plans");
+            e.HasIndex(p => new { p.IsActive, p.IsDeleted });
+        });
+
+        modelBuilder.Entity<PTCompanyStageLog>(e =>
+        {
+            e.ToTable("PT_CompanyStageLogs");
+            e.HasIndex(s => new { s.PT_CompanyPipelineId, s.IsDeleted });
+            e.HasIndex(s => s.ChangedByUserId);
+            e.HasOne(s => s.Pipeline)
+                .WithMany(p => p.StageLogs)
+                .HasForeignKey(s => s.PT_CompanyPipelineId);
+        });
+
         SeedWizardSteps(modelBuilder);
+        SeedPlans(modelBuilder);
+    }
+
+    private static void SeedPlans(ModelBuilder modelBuilder)
+    {
+        var plans = new[]
+        {
+            new PTPlan { Id = Guid.Parse("a1111111-1111-1111-1111-111111111111"), Name = "Basic", Description = "Plan básico con funcionalidades esenciales para empezar.", Price = 49.00m, Currency = "EUR", SortOrder = 1, IsActive = true },
+            new PTPlan { Id = Guid.Parse("a2222222-2222-2222-2222-222222222222"), Name = "Premium", Description = "Plan premium con herramientas avanzadas de gestión y soporte prioritario.", Price = 99.00m, Currency = "EUR", SortOrder = 2, IsActive = true },
+            new PTPlan { Id = Guid.Parse("a3333333-3333-3333-3333-333333333333"), Name = "Platinum", Description = "Plan platinum con todas las funcionalidades, soporte dedicado y personalización total.", Price = 199.00m, Currency = "EUR", SortOrder = 3, IsActive = true }
+        };
+
+        modelBuilder.Entity<PTPlan>().HasData(plans);
     }
 
     private static void SeedDocumentTypes(ModelBuilder modelBuilder)

@@ -15,6 +15,12 @@ public class PTCompany : BaseEntity
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
 
+    [MaxLength(200)]
+    public string? LegalName { get; set; }
+
+    [MaxLength(20)]
+    public string? TaxId { get; set; }
+
     public string? Description { get; set; }
 
     [MaxLength(500)]
@@ -43,10 +49,19 @@ public class PTCompany : BaseEntity
     [MaxLength(20)]
     public string? ContactPhone { get; set; }
 
+    [MaxLength(200)]
+    public string? ContactName { get; set; }
+
+    [MaxLength(200)]
+    public string? ContactPosition { get; set; }
+
     [MaxLength(500)]
     public string? LinkedInUrl { get; set; }
 
     public bool IsVerified { get; set; } = false;
 
+    public int Status { get; set; } = (int)OpenToWork.Shared.Enums.CompanyStatus.Prospecto;
+
     public virtual ICollection<PTVacancy> Vacancies { get; set; } = new List<PTVacancy>();
+    public virtual ICollection<PTCompanyPipeline> Pipelines { get; set; } = new List<PTCompanyPipeline>();
 }

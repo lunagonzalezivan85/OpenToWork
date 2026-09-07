@@ -16,7 +16,7 @@ El proyecto se compone de **3 portales independientes**:
 | Portal | Descripcion | Estado |
 |--------|-------------|--------|
 | **Portal de Candidatos** | Registro, perfil, wizard, busqueda de vacantes, postulaciones | 80% Completado |
-| **Portal Administrativo** | Verificaciones manuales, moderacion, gestion de usuarios, auditoria, pipeline de reclutamiento | 90% Completado + Pipeline de Reclutamiento (21-Ago) — solo quedan bloqueados 2 items de Fase 3 |
+| **Portal Administrativo** | Verificaciones manuales, moderacion, gestion de usuarios, auditoria, pipeline de reclutamiento, CRM de captacion de empresas | 95% Completado + Pipeline de Reclutamiento (21-Ago) + CRM de Empresas (06-Sep) |
 | **Portal Corporativo** | Dashboard, vacantes, postulantes, perfil de candidato, mensajeria | 70% Completado (estructura base en OpenToWork.WEB) — pendiente scoring/suscripciones (Fase 3) |
 
 ### Caracteristicas principales
@@ -30,6 +30,7 @@ El proyecto se compone de **3 portales independientes**:
 - **Soft delete** en todas las tablas (auditoria completa: CreatedAt, UpdatedAt, IsDeleted, etc.)
 - **Motor de evaluacion** con 4 indices: Estabilidad, Confiabilidad, Evidencia, Compatibilidad (Fase 3)
 - **Sistema de verificaciones** con checkmarks: identidad, LinkedIn, experiencia, portafolio, referencias (Fase 3)
+- **CRM de Captacion de Empresas** — pipeline comercial con 6 etapas, wizard progresivo, mapa interactivo para ubicacion, planes (Basic/Premium/Platinum), generacion de contratos
 
 ---
 
@@ -613,6 +614,7 @@ Perfil registrado → Perfil completo → Evaluado → Verificacion en proceso �
 - [x] Verificaciones manuales (aprobar/rechazar `PTVerification`) — resuelto en sub-fase 3.8: `CandidateProfile.razor` (admin) tiene botones Aprobar/Rechazar por verificacion, via `ValidationService.SetVerificationStatusAsync`
 - [x] Revision de validaciones automaticas — resuelto en sub-fase 3.8: score e indices visibles con boton Recalcular en el mismo perfil
 - [x] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar) (Dsiezar, 29-Ago)
+- [x] **CRM de Captacion de Empresas** (Iluna, 06-Sep) — pipeline de seguimiento comercial con 6 etapas (Lead, Contactado, Reunion, Propuesta Enviada, Negociacion, Cerrado Ganado), wizard por etapas, asignacion de responsables, descarte de empresas con motivo, restauracion, historial de cambios de etapa, mapa interactivo (Leaflet + OpenStreetMap) para pais/ciudad, seleccion de plan (Basic/Premium/Platinum) en etapa Propuesta Enviada, generacion de contrato de prestacion de servicios listo para firmar e imprimir
 
 **Deuda tecnica documentada (4 items) — resueltos 29-Ago (Dsiezar):**
 - [x] Unificar `AdminAuthService` con `AuthService` (logica duplicada) — extraida a `ITokenCryptoService` compartido en Core
@@ -791,8 +793,8 @@ Antes de marcar cualquier fase como completada, se debe validar:
 - **Fase 1 (Fundacion):** COMPLETADA
 - **Fase 2 (Portal de Candidatos):** COMPLETADA
 - **Fase 3 (Motor de Evaluacion y Scoring):** COMPLETADA (Dsiezar, 01-Sep-2026) — las 8 sub-fases del plan obligatorio de Iluna, en la rama `dsiezar-fase-3` (pusheada, pendiente de PR/revision). El **Pipeline de Reclutamiento manual** de Iluna (21-Ago) sigue activo en paralelo, ver nota en la seccion "Fases del Proyecto"
-- **Fase 4 (Portal Administrativo):** COMPLETADA — Dsiezar (roles + deuda tecnica, 29-Ago; verificaciones manuales, 01-Sep) + Pipeline de Reclutamiento completo (Iluna, 21-Ago: consola de candidatos, kanban, checklist de investigacion, evaluaciones tecnicas, entrevistas culturales, score general)
-- **Fase 5 (Portal Corporativo):** Parcial — estructura base + shortlist/scorecard (Fase 3) ya funcionan; falta suscripciones y busqueda avanzada por score
+- **Fase 4 (Portal Administrativo):** COMPLETADA — Dsiezar (roles + deuda tecnica, 29-Ago; verificaciones manuales, 01-Sep) + Pipeline de Reclutamiento completo (Iluna, 21-Ago) + CRM de Captacion de Empresas (Iluna, 06-Sep: pipeline comercial, planes, contratos, mapa interactivo) + RBAC de Personal Administrativo y flujo de Cierre de Negociaciones (Dsiezar, 05-Sep: roles SuperAdmin/Reclutador/Comercial con enforcement real, pantalla "Personal Administrativo", presentar candidatos a la empresa y cerrar negociacion)
+- **Fase 5 (Portal Corporativo):** Parcial — estructura base + shortlist/scorecard (Fase 3) + busqueda avanzada por score (Dsiezar) ya funcionan; categorias de vacante migradas al rubro de hosteleria y gate de login/registro en detalle de vacante (Dsiezar, 05-Sep); falta suscripciones
 - **Fases 6-8:** Pendientes
 
 ### Indicaciones para continuar
@@ -837,6 +839,32 @@ Antes de marcar cualquier fase como completada, se debe validar:
 | 2026-08-15 | Dsiezar | Docs | Respuesta a las 17 preguntas de RH + definicion estrategica consolidada (dos scores separados, verificacion como estado progresivo, retencion basada en estado) |
 | 2026-08-21 | Iluna | Fase 4 | Pipeline de Reclutamiento completo: consola de candidatos, kanban, checklist de investigacion, referencias automaticas, evaluaciones tecnicas, entrevistas culturales, score general (6 migraciones nuevas) |
 | 2026-08-24 | Dsiezar | Docs | Migraciones del Pipeline de Reclutamiento aplicadas localmente; README sincronizado con el estado real de Fase 3/4 (estaba desactualizado, faltaba registrar 60+ commits) |
+| 2026-09-06 | Iluna | Fase 4 | CRM de Captacion de Empresas: pipeline comercial 6 etapas (Lead → Contactado → Reunion → Propuesta Enviada → Negociacion → Cerrado Ganado), wizard progresivo con inputs unificados, mapa Leaflet+OpenStreetMap para pais/ciudad, tabla PT_Plans con 3 planes seed (Basic/Premium/Platinum), API endpoint GET /plans, seleccion de plan en etapa Propuesta Enviada con 3 cards, generacion de contrato de prestacion de servicios en HTML imprimible (Trato Directo), descarte/restauracion de empresas, historial de cambios de etapa |
+
+---
+
+## Observaciones para Darwin / Dsiezar
+
+> **Actualizado 06-Sep-2026 (Iluna):** Tareas pendientes derivadas del CRM de Captacion de Empresas.
+
+### 1. CRUD de Planes
+- Crear el CRUD completo de `PTPlan` en el portal administrativo para administrar los planes.
+- Modificar los 3 planes existentes (Basic, Premium, Platinum) para alinearlos a la marca **Trato Directo** (nombres, descripciones y precios reales).
+- Entidad `PTPlan` ya existe en `OpenToWork.Models/Entities/PTPlan.cs` con campos: Name, Description, Price, Currency, SortOrder, IsActive.
+- API endpoint ya existe: `GET /api/admin/company-crm/plans`.
+- Falta: `POST`, `PUT`, `DELETE` en el controller + servicio + UI en AdminWEB.
+
+### 2. Tabla de Configuracion del Sistema
+- Crear una tabla `SYSystemConfig` (o similar) para centralizar todas las configuraciones del sistema.
+- Con prioridad: **modelos de contrato** — guardar ahi el contrato modelo (template) para que el sistema rellene los espacios dinamicamente en lugar de tener el HTML hardcodeado en `contract-generator.js`.
+- Campos sugeridos: `Key` (string unico), `Value` (text/JSON), `Category` (string), `Description`, `IsActive`.
+- Ejemplos de configuracion: `contract_template_default` (HTML del contrato), `company_name` ("Trato Directo"), `company_tax_id`, `company_address`, etc.
+- El generador de contratos debe leer el template desde la BD y reemplazar variables (`{{CompanyName}}`, `{{PlanName}}`, `{{Price}}`, etc.) en lugar de usar un template fijo en JS.
+
+### 3. Consulta a IA y al Agente de RH
+- Consultar a la IA y al agente de Recursos Humanos (ver `.agents/rh.md`) si lo llevado hasta ahora cumple con lo alineado a **Trato Directo**.
+- Evaluar: que falta, por que no hemos iniciado el proceso de reclutamiento e investigacion, y que pasos siguen.
+- Documentar las respuestas en `docs/rh/` para trazabilidad.
 
 ---
 

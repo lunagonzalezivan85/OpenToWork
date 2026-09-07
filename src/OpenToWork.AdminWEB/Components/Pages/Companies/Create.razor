@@ -1,0 +1,102 @@
+@page "/companies/new"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.companies.create")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.companies.create")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.companies.createSubtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo("/companies"))">@Lang.T("admin.common.cancel")</button>
+    </div>
+</div>
+
+<div class="admin-form-card">
+    <EditForm Model="Dto" OnValidSubmit="Save">
+        <div class="admin-form-grid">
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.name") *</label>
+                <InputText @bind-Value="Dto.Name" class="admin-input" placeholder='@Lang.T("admin.companies.namePlaceholder")' />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.legalName")</label>
+                <InputText @bind-Value="Dto.LegalName" class="admin-input" placeholder='@Lang.T("admin.companies.legalNamePlaceholder")' />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.taxId")</label>
+                <InputText @bind-Value="Dto.TaxId" class="admin-input" placeholder="NIF / CIF / RUC" />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.industry")</label>
+                <InputText @bind-Value="Dto.Industry" class="admin-input" placeholder='@Lang.T("admin.companies.industryPlaceholder")' />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.website")</label>
+                <InputText @bind-Value="Dto.Website" class="admin-input" placeholder="https://..." />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.country")</label>
+                <InputText @bind-Value="Dto.Country" class="admin-input" placeholder='@Lang.T("admin.companies.countryPlaceholder")' />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.city")</label>
+                <InputText @bind-Value="Dto.City" class="admin-input" placeholder='@Lang.T("admin.companies.cityPlaceholder")' />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.address")</label>
+                <InputText @bind-Value="Dto.Address" class="admin-input" placeholder='@Lang.T("admin.companies.addressPlaceholder")' />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.contactName")</label>
+                <InputText @bind-Value="Dto.ContactName" class="admin-input" placeholder='@Lang.T("admin.companies.contactNamePlaceholder")' />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.contactPosition")</label>
+                <InputText @bind-Value="Dto.ContactPosition" class="admin-input" placeholder='@Lang.T("admin.companies.contactPositionPlaceholder")' />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.contactEmail")</label>
+                <InputText @bind-Value="Dto.ContactEmail" class="admin-input" placeholder="email@empresa.com" />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.companies.contactPhone")</label>
+                <InputText @bind-Value="Dto.ContactPhone" class="admin-input" placeholder="+34 ..." />
+            </div>
+            <div class="admin-form-field admin-form-field--full">
+                <label>@Lang.T("admin.companies.linkedin")</label>
+                <InputText @bind-Value="Dto.LinkedInUrl" class="admin-input" placeholder="https://linkedin.com/company/..." />
+            </div>
+            <div class="admin-form-field admin-form-field--full">
+                <label>@Lang.T("admin.companies.description")</label>
+                <InputTextArea @bind-Value="Dto.Description" class="admin-input" rows="3" placeholder='@Lang.T("admin.companies.descriptionPlaceholder")' />
+            </div>
+        </div>
+        <div class="admin-form-actions">
+            <button type="submit" class="ot-btn ot-btn--primary">@Lang.T("admin.companies.save")</button>
+            <button type="button" class="ot-btn ot-btn--outline" @onclick="@(() => Nav.NavigateTo("/companies"))">@Lang.T("admin.common.cancel")</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private CreateCompanyDto Dto = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+    }
+
+    private async Task Save()
+    {
+        var result = await AuthApi.CreateCompanyAsync(Dto);
+        if (result != null)
+            Nav.NavigateTo("/companies");
+    }
+}

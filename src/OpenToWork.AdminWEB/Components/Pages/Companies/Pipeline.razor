@@ -1,0 +1,144 @@
+@page "/companies/pipeline"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject LocalStorageService LocalStorage
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.companies.pipelineTitle")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.companies.pipelineTitle")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.companies.pipelineSubtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder='@Lang.T("admin.companies.searchPlaceholder")' class="admin-pipeline-search" />
+        @if (IsMyTray)
+        {
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ToggleMyTray">@Lang.T("admin.companies.allTrays")</button>
+        }
+        else
+        {
+            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="ToggleMyTray">@Lang.T("admin.companies.myTray")</button>
+        }
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (PipelineData == null || PipelineData.Items.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.companies.pipelineEmpty")</div>
+    </div>
+}
+else
+{
+    <div class="admin-pipeline-kanban">
+        @foreach (var stage in ActiveStages)
+        {
+            var stageItems = PipelineData.Items.Where(i => i.CurrentStage == stage.Key && !i.IsDismissed).ToList();
+            var stageCount = PipelineData.CountByStage.GetValueOrDefault(stage.Key, 0);
+            <div class="admin-kanban-column">
+                <div class="admin-kanban-column-header">
+                    <span class="admin-kanban-column-title">@stage.Value</span>
+                    <span class="admin-kanban-column-count">@stageCount</span>
+                </div>
+                <div class="admin-kanban-column-body">
+                    @if (stageItems.Count == 0)
+                    {
+                        <div class="admin-kanban-empty">@Lang.T("admin.companies.noCompanies")</div>
+                    }
+                    @foreach (var item in stageItems)
+                    {
+                        <div class="admin-kanban-card" @onclick="() => ViewDetail(item.Id)">
+                            <div class="admin-kanban-card-header">
+                                <div class="admin-result-avatar">@(item.CompanyName.Length >= 2 ? item.CompanyName.Substring(0, 2).ToUpper() : item.CompanyName.ToUpper())</div>
+                                <div class="admin-kanban-card-info">
+                                    <div class="admin-kanban-card-name">@item.CompanyName</div>
+                                    <div class="admin-kanban-card-email">@(item.ContactEmail ?? item.Industry ?? "-")</div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.Industry))
+                            {
+                                <div class="admin-kanban-card-tags">
+                                    <span class="admin-result-badge admin-result-badge--info">@item.Industry</span>
+                                </div>
+                            }
+                            <div class="admin-kanban-card-footer">
+                                <span class="admin-kanban-card-date">@item.CreatedAt.ToLocalTime().ToString("dd MMM")</span>
+                                @if (!string.IsNullOrEmpty(item.AssignedToName))
+                                {
+                                    <span class="admin-kanban-card-assignee">@item.AssignedToName</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private CompanyPipelineResultDto? PipelineData;
+    private bool IsLoading = true;
+    private string SearchTerm = "";
+    private bool IsMyTray = false;
+    private Guid? CurrentUserId;
+    private System.Threading.Timer? _debounceTimer;
+
+    private Dictionary<int, string> ActiveStages => new()
+    {
+        { (int)CompanyPipelineStage.Lead, Lang.T("admin.companies.stageLead") },
+        { (int)CompanyPipelineStage.Contactado, Lang.T("admin.companies.stageContacted") },
+        { (int)CompanyPipelineStage.ReunionAgendada, Lang.T("admin.companies.stageMeeting") },
+        { (int)CompanyPipelineStage.PropuestaEnviada, Lang.T("admin.companies.stageProposal") },
+        { (int)CompanyPipelineStage.Negociacion, Lang.T("admin.companies.stageNegotiation") },
+        { (int)CompanyPipelineStage.CerradoGanado, Lang.T("admin.companies.stageWon") },
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var userIdRaw = await LocalStorage.GetItemAsync("otwadmin-user-id");
+        if (Guid.TryParse(userIdRaw, out var parsedId))
+            CurrentUserId = parsedId;
+
+        await LoadPipeline();
+    }
+
+    private async Task LoadPipeline()
+    {
+        IsLoading = true;
+        PipelineData = await AuthApi.GetCompanyPipelineAsync(
+            search: string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm,
+            assignedTo: IsMyTray && CurrentUserId.HasValue ? CurrentUserId : null);
+        IsLoading = false;
+    }
+
+    private void ToggleMyTray()
+    {
+        IsMyTray = !IsMyTray;
+        _ = LoadPipeline();
+    }
+
+    private void OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        _debounceTimer?.Dispose();
+        _debounceTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () => await LoadPipeline());
+            StateHasChanged();
+        }, null, 400, System.Threading.Timeout.Infinite);
+    }
+
+    private void ViewDetail(Guid pipelineId) => Nav.NavigateTo($"/companies/pipeline/{pipelineId}");
+}

@@ -1,0 +1,816 @@
+@page "/companies/pipeline/{PipelineId}"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject LocalStorageService LocalStorage
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>@(Detail?.CompanyName ?? "Pipeline")</PageTitle>
+
+@if (Detail == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else
+{
+    <div class="admin-page-header">
+        <div>
+            <h1>@Detail.CompanyName</h1>
+            <p class="admin-page-header-subtitle">
+                @if (!string.IsNullOrEmpty(Detail.Industry))
+                {
+                    <span class="admin-result-badge admin-result-badge--info" style="margin-right: 0.5rem;">@Detail.Industry</span>
+                }
+                @if (Detail.IsDismissed)
+                {
+                    <span class="admin-result-badge admin-result-badge--danger">@Lang.T("admin.companies.dismissed")</span>
+                }
+                else
+                {
+                    <span class="admin-result-badge admin-result-badge--success">@GetStageName(Detail.CurrentStage)</span>
+                }
+                @if (!string.IsNullOrEmpty(Detail.AssignedToName))
+                {
+                    <span class="admin-result-badge admin-result-badge--warning" style="margin-left: 0.5rem;">@Detail.AssignedToName</span>
+                }
+            </p>
+        </div>
+        <div class="admin-page-actions">
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Detail.CompanyId}"))">@Lang.T("admin.common.back")</button>
+        </div>
+    </div>
+
+    <!-- Wizard steps bar -->
+    <div class="admin-user-card" style="cursor: default; margin-bottom: 1.5rem;">
+        <div style="padding: 0.75rem 0.5rem;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0; overflow-x: auto;">
+                @for (var i = 0; i < WizardSteps.Count; i++)
+                {
+                    var step = WizardSteps[i];
+                    var isDone = step.Key < Detail.CurrentStage && !Detail.IsDismissed;
+                    var isActive = step.Key == Detail.CurrentStage && !Detail.IsDismissed;
+                    <div style="display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 90px; position: relative;">
+                        @if (i < WizardSteps.Count - 1)
+                        {
+                            <div style="position: absolute; top: 16px; left: 50%; width: 100%; height: 2px; background: @(isDone ? "#0066FF" : "#E8F1FF"); z-index: 0;"></div>
+                        }
+                        <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; z-index: 1; background: @(isDone ? "#0066FF" : isActive ? "#0066FF" : "#F1F5F9"); color: @(isDone || isActive ? "#FFFFFF" : "#778DA9"); border: 2px solid @(isDone || isActive ? "#0066FF" : "#CBD5E1"); transition: all 0.2s;">
+                            @(isDone ? "\u2713" : (i + 1).ToString())
+                        </div>
+                        <span style="margin-top: 0.4rem; font-size: 0.7rem; text-align: center; color: @(isActive ? "#0066FF" : isDone ? "#0B132B" : "#778DA9"); font-weight: @(isActive ? "600" : "400"); line-height: 1.2;">
+                            @step.Value
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Wizard form for current stage -->
+    @if (!Detail.IsDismissed)
+    {
+        <div class="admin-user-card" style="cursor: default; margin-bottom: 1.5rem;">
+            <div class="admin-user-card-header">
+                <div class="admin-user-card-avatar" style="background: #E8F1FF; color: #0066FF;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                </div>
+                <div class="admin-user-card-info">
+                    <div class="admin-user-card-name">@GetStageName(Detail.CurrentStage)</div>
+                    <div class="admin-user-card-email">@GetStageHint(Detail.CurrentStage)</div>
+                </div>
+            </div>
+            <div class="admin-user-card-body" style="flex-direction: column; align-items: stretch; gap: 0.75rem;">
+                @* Stage 0: Lead - Basic company info *@
+                @if (Detail.CurrentStage == (int)CompanyPipelineStage.Lead)
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.name")</label>
+                            <input @bind="EditName" class="admin-input" />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.industry")</label>
+                            <input @bind="EditIndustry" class="admin-input" placeholder='@Lang.T("admin.companies.industryPlaceholder")' />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.website")</label>
+                            <input @bind="EditWebsite" class="admin-input" placeholder="https://..." />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.country")</label>
+                            <input @bind="EditCountry" class="admin-input" placeholder='@Lang.T("admin.companies.countryPlaceholder")' />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.city")</label>
+                            <input @bind="EditCity" class="admin-input" placeholder='@Lang.T("admin.companies.cityPlaceholder")' />
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="OpenMapModal">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 0.35rem;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                @Lang.T("admin.companies.searchOnMap")
+                            </button>
+                        </div>
+                    </div>
+                }
+                @* Stage 1: Contactado - Contact info *@
+                else if (Detail.CurrentStage == (int)CompanyPipelineStage.Contactado)
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.contactName")</label>
+                            <input @bind="EditContactName" class="admin-input" placeholder='@Lang.T("admin.companies.contactNamePlaceholder")' />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.contactPosition")</label>
+                            <input @bind="EditContactPosition" class="admin-input" placeholder='@Lang.T("admin.companies.contactPositionPlaceholder")' />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.contactEmail")</label>
+                            <input @bind="EditContactEmail" class="admin-input" placeholder="email@empresa.com" />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.contactPhone")</label>
+                            <input @bind="EditContactPhone" class="admin-input" placeholder="+34..." />
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label class="admin-form-label">@Lang.T("admin.companies.linkedin")</label>
+                            <input @bind="EditLinkedIn" class="admin-input" placeholder="https://linkedin.com/company/..." />
+                        </div>
+                    </div>
+                }
+                @* Stage 2: Reunion Agendada - Company legal details *@
+                else if (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada)
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.legalName")</label>
+                            <input @bind="EditLegalName" class="admin-input" placeholder='@Lang.T("admin.companies.legalNamePlaceholder")' />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.taxId")</label>
+                            <input @bind="EditTaxId" class="admin-input" placeholder="B12345678" />
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label class="admin-form-label">@Lang.T("admin.companies.address")</label>
+                            <input @bind="EditAddress" class="admin-input" placeholder='@Lang.T("admin.companies.addressPlaceholder")' />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.companySize")</label>
+                            <input type="number" @bind="EditCompanySize" class="admin-input" placeholder="50" />
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label class="admin-form-label">@Lang.T("admin.companies.description")</label>
+                            <textarea @bind="EditDescription" rows="3" class="admin-input" placeholder='@Lang.T("admin.companies.descriptionPlaceholder")'></textarea>
+                        </div>
+                    </div>
+                }
+                @* Stage 3: Propuesta Enviada - Select plan *@
+                else if (Detail.CurrentStage == (int)CompanyPipelineStage.PropuestaEnviada)
+                {
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+                        @for (var pi = 0; pi < Plans.Count; pi++)
+                        {
+                            var plan = Plans[pi];
+                            var isSelected = SelectedPlanId == plan.Id;
+                            var accentColor = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
+                            var accentBg = pi == 0 ? "#F1F5F9" : pi == 1 ? "#E8F1FF" : "#F0F7FF";
+                            var accentBorder = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
+                            <div @onclick="() => SelectPlan(plan.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1.25rem 1rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: all 0.2s; display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden;">
+                                @if (isSelected)
+                                {
+                                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: @accentBorder;"></div>
+                                }
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span style="font-size: 0.92rem; font-weight: 700; color: @(isSelected ? accentBorder : "#0B132B");">@plan.Name</span>
+                                    @if (isSelected)
+                                    {
+                                        <div style="width: 22px; height: 22px; border-radius: 50%; background: @accentBorder; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12" /></svg>
+                                        </div>
+                                    }
+                                </div>
+                                <div style="display: flex; align-items: baseline; gap: 0.15rem;">
+                                    <span style="font-size: 1.6rem; font-weight: 800; color: @accentColor;">@plan.Price.ToString("0")</span>
+                                    <span style="font-size: 0.85rem; font-weight: 600; color: @accentColor;">€</span>
+                                    <span style="font-size: 0.75rem; font-weight: 400; color: #778DA9;">/@Lang.T("admin.companies.month")</span>
+                                </div>
+                                <p style="font-size: 0.78rem; color: #778DA9; margin: 0; line-height: 1.4;">@plan.Description</p>
+                            </div>
+                        }
+                    </div>
+                    <div style="margin-top: 0.75rem;">
+                        <label class="admin-form-label">@Lang.T("admin.companies.proposalNotes")</label>
+                        <textarea @bind="EditNotes" rows="3" class="admin-input" placeholder='@Lang.T("admin.companies.proposalNotesPlaceholder")'></textarea>
+                    </div>
+                }
+                @* Stage 4: Negociacion - Negotiation notes *@
+                else if (Detail.CurrentStage == (int)CompanyPipelineStage.Negociacion)
+                {
+                    <div>
+                        <label class="admin-form-label">@Lang.T("admin.companies.negotiationNotes")</label>
+                        <textarea @bind="EditNotes" rows="5" class="admin-input" placeholder='@Lang.T("admin.companies.negotiationNotesPlaceholder")'></textarea>
+                    </div>
+                }
+                @* Stage 5: Cerrado Ganado - Contract *@
+                else if (Detail.CurrentStage == (int)CompanyPipelineStage.CerradoGanado)
+                {
+                    <div style="text-align: center; padding: 1rem 0;">
+                        <div style="width: 56px; height: 56px; border-radius: 50%; background: #E8F1FF; color: #0066FF; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><polyline points="20 6 9 17 4 12" /></svg>
+                        </div>
+                        <p style="font-size: 0.95rem; font-weight: 600; color: #0B132B; margin-bottom: 0.25rem;">@Lang.T("admin.companies.wonTitle")</p>
+                        <p style="font-size: 0.85rem; color: #778DA9; margin-bottom: 1rem;">@Lang.T("admin.companies.wonHint")</p>
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GenerateContract">@Lang.T("admin.companies.generateContract")</button>
+                            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="MarkAsActive">@Lang.T("admin.companies.markAsActive")</button>
+                        </div>
+                    </div>
+                }
+
+                <!-- Action buttons -->
+                @if (Detail.CurrentStage != (int)CompanyPipelineStage.CerradoGanado)
+                {
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; padding-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.06); margin-top: 0.25rem;">
+                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="SaveProgress" disabled="@IsSaving">
+                            @(IsSaving ? Lang.T("admin.common.loading") : Lang.T("admin.companies.saveProgress"))
+                        </button>
+                        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenAdvanceModal">
+                            @Lang.T("admin.companies.advanceStage")
+                        </button>
+                        <div style="flex: 1;"></div>
+                        <button class="ot-btn ot-btn--small" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;" @onclick="OpenDismissModal">@Lang.T("admin.companies.dismiss")</button>
+                        @if (AdminUsers.Count > 0)
+                        {
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="OpenReassignModal">@Lang.T("admin.companies.reassignBtn")</button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="admin-user-card" style="cursor: default; margin-bottom: 1.5rem; border: 2px dashed #FECACA;">
+            <div style="text-align: center; padding: 1.25rem;">
+                <p style="color: #DC2626; font-weight: 500; margin-bottom: 0.5rem;">@Lang.T("admin.companies.dismissed")</p>
+                <p style="color: #778DA9; font-size: 0.85rem; margin-bottom: 0.75rem;">@(Detail.DismissalReason ?? "-")</p>
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenRestoreModal">@Lang.T("admin.companies.restore")</button>
+            </div>
+        </div>
+    }
+
+    <!-- Checklist colapsable -->
+    <div class="admin-user-card" style="cursor: default; margin-bottom: 1.5rem;">
+        <div class="admin-user-card-header" style="cursor: pointer; user-select: none;" @onclick="ToggleChecklist">
+            <div class="admin-user-card-avatar" style="background: #E8F1FF; color: #0066FF;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+            </div>
+            <div class="admin-user-card-info">
+                <div class="admin-user-card-name">@Lang.T("admin.companies.progressChecklist")</div>
+                <div class="admin-user-card-email">@Lang.T("admin.companies.checklistHint")</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: #0066FF;">@GetProgressPercent%</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#778DA9" stroke-width="2" width="20" height="20" style="transform: @(ShowChecklist ? "rotate(180deg)" : "rotate(0)"); transition: transform 0.2s;">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </div>
+        </div>
+        @if (ShowChecklist)
+        {
+            <div class="admin-user-card-body" style="flex-direction: column; align-items: stretch; gap: 0;">
+                @for (var i = 0; i < ChecklistItems.Count; i++)
+                {
+                    var item = ChecklistItems[i];
+                    <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: @(i < ChecklistItems.Count - 1 ? "1px solid rgba(0,0,0,0.04)" : "none");">
+                        <div style="width: 22px; height: 22px; border-radius: 5px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: @(item.IsCompleted ? "#0066FF" : item.IsCurrent ? "#E8F1FF" : "#F1F5F9"); border: 2px solid @(item.IsCompleted ? "#0066FF" : item.IsCurrent ? "#0066FF" : "#CBD5E1");">
+                            @if (item.IsCompleted)
+                            {
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="12" height="12"><polyline points="20 6 9 17 4 12" /></svg>
+                            }
+                            else if (item.IsCurrent)
+                            {
+                                <div style="width: 7px; height: 7px; border-radius: 50%; background: #0066FF;"></div>
+                            }
+                        </div>
+                        <span style="font-size: 0.85rem; font-weight: @(item.IsCurrent ? "600" : "400"); color: @(item.IsCompleted ? "#0B132B" : item.IsCurrent ? "#0066FF" : "#778DA9");">@item.Label</span>
+                    </div>
+                }
+                <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.06);">
+                    <div style="height: 6px; border-radius: 3px; background: #F1F5F9; overflow: hidden;">
+                        <div style="height: 100%; width: @GetProgressPercent%; background: linear-gradient(90deg, #0066FF, #0052CC); border-radius: 3px; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Historial -->
+    @if (Detail.StageLogs.Count > 0)
+    {
+        <div class="admin-user-card" style="cursor: default;">
+            <div class="admin-user-card-header">
+                <div class="admin-user-card-avatar" style="background: #F1F5F9; color: #3A506B;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                </div>
+                <div class="admin-user-card-info">
+                    <div class="admin-user-card-name">@Lang.T("admin.companies.stageHistory")</div>
+                </div>
+            </div>
+            <div class="admin-user-card-body" style="flex-direction: column; align-items: stretch; gap: 0;">
+                @foreach (var log in Detail.StageLogs.OrderByDescending(l => l.CreatedAt))
+                {
+                    <div style="display: flex; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(0,0,0,0.04);">
+                        <div style="width: 28px; height: 28px; border-radius: 8px; background: #E8F1FF; color: #0066FF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 11 12 14 22 4" /></svg>
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 0.85rem; font-weight: 500; color: #0B132B;">
+                                @GetStageName(log.FromStage) <span style="color: #778DA9;">&rarr;</span> @GetStageName(log.ToStage)
+                            </div>
+                            <div style="font-size: 0.75rem; color: #778DA9; margin-top: 0.15rem;">
+                                @(log.ChangedByName ?? "-") &middot; @log.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")
+                            </div>
+                            @if (!string.IsNullOrEmpty(log.Notes))
+                            {
+                                <div style="font-size: 0.8rem; color: #3A506B; margin-top: 0.25rem; padding: 0.35rem 0.6rem; background: #F1F5F9; border-radius: 8px;">@log.Notes</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Modal: Avanzar etapa -->
+    @if (ShowAdvanceModal)
+    {
+        <div style="position: fixed; inset: 0; background: rgba(11,19,43,0.4); z-index: 9999; display: flex; align-items: center; justify-content: center;" @onclick="CloseAdvanceModal">
+            <div style="background: #fff; border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);" @onclick:stopPropagation="true">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 700; color: #0B132B;">@Lang.T("admin.companies.advanceStageTitle")</h3>
+                <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #778DA9;">
+                    @GetStageName(Detail.CurrentStage) <span style="color: #0066FF;">&rarr;</span> <strong style="color: #0066FF;">@GetStageName(Detail.CurrentStage + 1)</strong>
+                </p>
+                <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">@Lang.T("admin.companies.commentRequired") *</label>
+                <textarea @bind="ActionNotes" rows="4" class="admin-input" placeholder="@Lang.T("admin.companies.advanceCommentPlaceholder")"></textarea>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseAdvanceModal">@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(ActionNotes)" @onclick="ConfirmAdvance">@Lang.T("admin.companies.confirmAdvance")</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Modal: Descartar -->
+    @if (ShowDismissModal)
+    {
+        <div style="position: fixed; inset: 0; background: rgba(11,19,43,0.4); z-index: 9999; display: flex; align-items: center; justify-content: center;" @onclick="CloseDismissModal">
+            <div style="background: #fff; border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);" @onclick:stopPropagation="true">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 700; color: #DC2626;">@Lang.T("admin.companies.dismissTitle")</h3>
+                <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #778DA9;">@Lang.T("admin.companies.dismissHint")</p>
+                <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">@Lang.T("admin.companies.dismissReason") *</label>
+                <textarea @bind="DismissReason" rows="3" class="admin-input" placeholder="@Lang.T("admin.companies.dismissReasonPlaceholder")"></textarea>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseDismissModal">@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--small" style="background: #DC2626; color: #fff; border: none;" disabled="@string.IsNullOrWhiteSpace(DismissReason)" @onclick="ConfirmDismiss">@Lang.T("admin.companies.confirmDismiss")</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Modal: Reasignar -->
+    @if (ShowReassignModal)
+    {
+        <div style="position: fixed; inset: 0; background: rgba(11,19,43,0.4); z-index: 9999; display: flex; align-items: center; justify-content: center;" @onclick="CloseReassignModal">
+            <div style="background: #fff; border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);" @onclick:stopPropagation="true">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 700; color: #0B132B;">@Lang.T("admin.companies.reassignTitle")</h3>
+                <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #778DA9;">@Lang.T("admin.companies.reassignHint")</p>
+                <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">@Lang.T("admin.companies.selectUser")</label>
+                <select class="admin-select" @bind="SelectedUserId" style="width: 100%; margin-bottom: 1rem;">
+                    @foreach (var u in AdminUsers)
+                    {
+                        <option value="@u.Id">@u.Email</option>
+                    }
+                </select>
+                <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">@Lang.T("admin.companies.commentRequired") *</label>
+                <textarea @bind="ActionNotes" rows="3" class="admin-input" placeholder="@Lang.T("admin.companies.reassignCommentPlaceholder")"></textarea>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseReassignModal">@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(ActionNotes)" @onclick="ConfirmReassign">@Lang.T("admin.companies.reassignBtn")</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Modal: Restaurar -->
+    @if (ShowRestoreModal)
+    {
+        <div style="position: fixed; inset: 0; background: rgba(11,19,43,0.4); z-index: 9999; display: flex; align-items: center; justify-content: center;" @onclick="CloseRestoreModal">
+            <div style="background: #fff; border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);" @onclick:stopPropagation="true">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 700; color: #0B132B;">@Lang.T("admin.companies.restoreTitle")</h3>
+                <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #778DA9;">@Lang.T("admin.companies.restoreHint")</p>
+                <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">@Lang.T("admin.companies.commentRequired") *</label>
+                <textarea @bind="ActionNotes" rows="3" class="admin-input" placeholder="@Lang.T("admin.companies.commentPlaceholder")"></textarea>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseRestoreModal">@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(ActionNotes)" @onclick="ConfirmRestore">@Lang.T("admin.companies.restore")</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Modal: Mapa -->
+    @if (ShowMapModal)
+    {
+        <div style="position: fixed; inset: 0; background: rgba(11,19,43,0.4); z-index: 9999; display: flex; align-items: center; justify-content: center;" @onclick="CloseMapModal">
+            <div style="background: #fff; border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 640px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);" @onclick:stopPropagation="true">
+                <h3 style="margin: 0 0 0.75rem 0; font-size: 1.1rem; font-weight: 700; color: #0B132B;">@Lang.T("admin.companies.searchOnMap")</h3>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                    <input @bind="MapSearchQuery" class="admin-input" placeholder='@Lang.T("admin.companies.mapSearchPlaceholder")' @onkeyup="OnMapSearchKeyUp" />
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SearchOnMap">@Lang.T("admin.companies.search")</button>
+                </div>
+                <div id="map-container" style="width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 1px solid #E8F1FF;"></div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseMapModal">@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="CloseMapModal">@Lang.T("admin.companies.useLocation")</button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public string PipelineId { get; set; } = "";
+    private Guid _pipelineId;
+    private CompanyPipelineDetailDto? Detail;
+    private List<AdminUserDto> AdminUsers = new();
+    private string SelectedUserId = "";
+    private bool IsSaving = false;
+
+    // Modal state
+    private bool ShowChecklist = false;
+    private bool ShowAdvanceModal;
+    private bool ShowDismissModal;
+    private string DismissReason = "";
+    private bool ShowReassignModal;
+    private bool ShowRestoreModal;
+    private string ActionNotes = "";
+
+    // Map modal state
+    private bool ShowMapModal;
+    private string MapSearchQuery = "";
+
+    // Plans
+    private List<PlanDto> Plans = new();
+    private Guid? SelectedPlanId;
+
+    // Editable fields
+    private string EditName = "";
+    private string? EditIndustry;
+    private string? EditWebsite;
+    private string? EditCountry;
+    private string? EditCity;
+    private string? EditContactName;
+    private string? EditContactPosition;
+    private string? EditContactEmail;
+    private string? EditContactPhone;
+    private string? EditLinkedIn;
+    private string? EditLegalName;
+    private string? EditTaxId;
+    private string? EditAddress;
+    private int? EditCompanySize;
+    private string? EditDescription;
+    private string? EditNotes;
+
+    private List<KeyValuePair<int, string>> WizardSteps => new()
+    {
+        new((int)CompanyPipelineStage.Lead, Lang.T("admin.companies.stageLead")),
+        new((int)CompanyPipelineStage.Contactado, Lang.T("admin.companies.stageContacted")),
+        new((int)CompanyPipelineStage.ReunionAgendada, Lang.T("admin.companies.stageMeeting")),
+        new((int)CompanyPipelineStage.PropuestaEnviada, Lang.T("admin.companies.stageProposal")),
+        new((int)CompanyPipelineStage.Negociacion, Lang.T("admin.companies.stageNegotiation")),
+        new((int)CompanyPipelineStage.CerradoGanado, Lang.T("admin.companies.stageWon")),
+    };
+
+    private class ChecklistItem
+    {
+        public string Label { get; set; } = "";
+        public bool IsCompleted { get; set; }
+        public bool IsCurrent { get; set; }
+    }
+
+    private List<ChecklistItem> ChecklistItems
+    {
+        get
+        {
+            var items = new List<ChecklistItem>();
+            foreach (var step in WizardSteps)
+            {
+                items.Add(new ChecklistItem
+                {
+                    Label = step.Value,
+                    IsCompleted = !Detail!.IsDismissed && step.Key < Detail.CurrentStage,
+                    IsCurrent = !Detail!.IsDismissed && step.Key == Detail.CurrentStage
+                });
+            }
+            return items;
+        }
+    }
+
+    private int GetProgressPercent
+    {
+        get
+        {
+            if (Detail == null || Detail.IsDismissed) return 0;
+            var completed = ChecklistItems.Count(i => i.IsCompleted);
+            return (int)Math.Round((double)completed / ChecklistItems.Count * 100);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        if (!Guid.TryParse(PipelineId, out _pipelineId)) return;
+        await LoadDetail();
+        AdminUsers = await AuthApi.GetUsersAsync(role: (int)UserRole.Admin);
+        SelectedUserId = AdminUsers.FirstOrDefault()?.Id.ToString() ?? "";
+        Plans = await AuthApi.GetPlansAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("mapPicker.init", DotNetObjectReference.Create(this));
+        }
+    }
+
+    private async Task LoadDetail()
+    {
+        Detail = await AuthApi.GetCompanyPipelineDetailAsync(_pipelineId);
+        if (Detail != null) PopulateEditFields();
+    }
+
+    private void PopulateEditFields()
+    {
+        EditName = Detail!.CompanyName;
+        EditIndustry = string.IsNullOrWhiteSpace(Detail.Industry) ? "Hosteleria" : Detail.Industry;
+        EditWebsite = Detail.Website;
+        EditCountry = Detail.Country;
+        EditCity = Detail.City;
+        EditContactName = Detail.ContactName;
+        EditContactPosition = Detail.ContactPosition;
+        EditContactEmail = Detail.ContactEmail;
+        EditContactPhone = Detail.ContactPhone;
+        EditLinkedIn = Detail.LinkedInUrl;
+        EditLegalName = Detail.LegalName;
+        EditTaxId = Detail.TaxId;
+        EditAddress = Detail.Address;
+        EditCompanySize = Detail.CompanySize;
+        EditDescription = Detail.Description;
+        EditNotes = Detail.Notes;
+    }
+
+    private void ToggleChecklist()
+    {
+        ShowChecklist = !ShowChecklist;
+    }
+
+    private void SelectPlan(Guid planId)
+    {
+        SelectedPlanId = planId;
+    }
+
+    // --- Map ---
+    private async Task OpenMapModal()
+    {
+        ShowMapModal = true;
+        StateHasChanged();
+        await Task.Delay(100);
+        await JS.InvokeVoidAsync("mapPicker.openMap", "map-container", 40.4168, -3.7038);
+    }
+
+    private async Task CloseMapModal()
+    {
+        ShowMapModal = false;
+        await JS.InvokeVoidAsync("mapPicker.closeMap");
+    }
+
+    private async Task SearchOnMap()
+    {
+        if (string.IsNullOrWhiteSpace(MapSearchQuery)) return;
+        await JS.InvokeVoidAsync("mapPicker.searchLocation", MapSearchQuery);
+    }
+
+    private void OnMapSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            _ = SearchOnMap();
+        }
+    }
+
+    [Microsoft.JSInterop.JSInvokable]
+    public void OnLocationSelected(string country, string city)
+    {
+        if (!string.IsNullOrWhiteSpace(country)) EditCountry = country;
+        if (!string.IsNullOrWhiteSpace(city)) EditCity = city;
+        StateHasChanged();
+    }
+
+    private async Task SaveProgress()
+    {
+        if (Detail == null) return;
+        IsSaving = true;
+        var dto = new UpdateCompanyDto
+        {
+            Name = EditName,
+            Industry = EditIndustry,
+            Website = EditWebsite,
+            Country = EditCountry,
+            City = EditCity,
+            ContactName = EditContactName,
+            ContactPosition = EditContactPosition,
+            ContactEmail = EditContactEmail,
+            ContactPhone = EditContactPhone,
+            LinkedInUrl = EditLinkedIn,
+            LegalName = EditLegalName,
+            TaxId = EditTaxId,
+            Address = EditAddress,
+            CompanySize = EditCompanySize,
+            Description = EditDescription,
+            Status = Detail.Status
+        };
+        await AuthApi.UpdateCompanyAsync(Detail.CompanyId, dto);
+        await LoadDetail();
+        IsSaving = false;
+    }
+
+    // --- Advance stage ---
+    private void OpenAdvanceModal()
+    {
+        ActionNotes = "";
+        ShowAdvanceModal = true;
+    }
+
+    private void CloseAdvanceModal()
+    {
+        ShowAdvanceModal = false;
+        ActionNotes = "";
+    }
+
+    private async Task ConfirmAdvance()
+    {
+        if (string.IsNullOrWhiteSpace(ActionNotes)) return;
+        await SaveProgress();
+        var nextStage = Detail!.CurrentStage + 1;
+        var success = await AuthApi.MoveCompanyStageAsync(_pipelineId, new CompanyMoveStageDto { ToStage = nextStage, Notes = ActionNotes });
+        ShowAdvanceModal = false;
+        ActionNotes = "";
+        if (success) await LoadDetail();
+    }
+
+    // --- Dismiss ---
+    private void OpenDismissModal()
+    {
+        DismissReason = "";
+        ShowDismissModal = true;
+    }
+
+    private void CloseDismissModal()
+    {
+        ShowDismissModal = false;
+        DismissReason = "";
+    }
+
+    private async Task ConfirmDismiss()
+    {
+        if (string.IsNullOrWhiteSpace(DismissReason)) return;
+        var success = await AuthApi.DismissCompanyAsync(_pipelineId, new DismissCompanyDto { Reason = DismissReason });
+        ShowDismissModal = false;
+        DismissReason = "";
+        if (success) await LoadDetail();
+    }
+
+    // --- Reassign ---
+    private void OpenReassignModal()
+    {
+        ActionNotes = "";
+        ShowReassignModal = true;
+    }
+
+    private void CloseReassignModal()
+    {
+        ShowReassignModal = false;
+        ActionNotes = "";
+    }
+
+    private async Task ConfirmReassign()
+    {
+        if (string.IsNullOrWhiteSpace(ActionNotes)) return;
+        if (!Guid.TryParse(SelectedUserId, out var userId)) return;
+        var success = await AuthApi.ReassignCompanyAsync(_pipelineId, userId);
+        ShowReassignModal = false;
+        ActionNotes = "";
+        if (success) await LoadDetail();
+    }
+
+    // --- Restore ---
+    private void OpenRestoreModal()
+    {
+        ActionNotes = "";
+        ShowRestoreModal = true;
+    }
+
+    private void CloseRestoreModal()
+    {
+        ShowRestoreModal = false;
+        ActionNotes = "";
+    }
+
+    private async Task ConfirmRestore()
+    {
+        if (string.IsNullOrWhiteSpace(ActionNotes)) return;
+        var success = await AuthApi.RestoreCompanyAsync(_pipelineId);
+        ShowRestoreModal = false;
+        ActionNotes = "";
+        if (success) await LoadDetail();
+    }
+
+    // --- Contract / Active ---
+    private async Task GenerateContract()
+    {
+        if (Detail == null) return;
+        var selectedPlan = Plans.FirstOrDefault(p => p.Id == SelectedPlanId);
+        var contractData = new
+        {
+            CompanyName = Detail.CompanyName,
+            LegalName = Detail.LegalName,
+            TaxId = Detail.TaxId,
+            Address = Detail.Address,
+            City = Detail.City,
+            Country = Detail.Country,
+            ContactName = Detail.ContactName,
+            ContactPosition = Detail.ContactPosition,
+            ContactEmail = Detail.ContactEmail,
+            SelectedPlanName = selectedPlan?.Name,
+            SelectedPlanPrice = selectedPlan?.Price.ToString("0"),
+            SelectedPlanCurrency = selectedPlan?.Currency,
+            ContractRef = Detail.CompanyId.ToString().Substring(0, 8).ToUpper()
+        };
+        await JS.InvokeVoidAsync("contractGenerator.generate", contractData);
+    }
+
+    private async Task MarkAsActive()
+    {
+        if (Detail == null) return;
+        var dto = new UpdateCompanyDto
+        {
+            Name = Detail.CompanyName,
+            Industry = Detail.Industry,
+            Website = Detail.Website,
+            Country = Detail.Country,
+            City = Detail.City,
+            ContactName = Detail.ContactName,
+            ContactPosition = Detail.ContactPosition,
+            ContactEmail = Detail.ContactEmail,
+            ContactPhone = Detail.ContactPhone,
+            LinkedInUrl = Detail.LinkedInUrl,
+            LegalName = Detail.LegalName,
+            TaxId = Detail.TaxId,
+            Address = Detail.Address,
+            CompanySize = Detail.CompanySize,
+            Description = Detail.Description,
+            Status = (int)CompanyStatus.Activa
+        };
+        await AuthApi.UpdateCompanyAsync(Detail.CompanyId, dto);
+        await LoadDetail();
+    }
+
+    private string GetStageName(int stage) => stage switch
+    {
+        (int)CompanyPipelineStage.Lead => Lang.T("admin.companies.stageLead"),
+        (int)CompanyPipelineStage.Contactado => Lang.T("admin.companies.stageContacted"),
+        (int)CompanyPipelineStage.ReunionAgendada => Lang.T("admin.companies.stageMeeting"),
+        (int)CompanyPipelineStage.PropuestaEnviada => Lang.T("admin.companies.stageProposal"),
+        (int)CompanyPipelineStage.Negociacion => Lang.T("admin.companies.stageNegotiation"),
+        (int)CompanyPipelineStage.CerradoGanado => Lang.T("admin.companies.stageWon"),
+        (int)CompanyPipelineStage.CerradoPerdido => Lang.T("admin.companies.stageLost"),
+        _ => "-"
+    };
+
+    private string GetStageHint(int stage) => stage switch
+    {
+        (int)CompanyPipelineStage.Lead => Lang.T("admin.companies.hintLead"),
+        (int)CompanyPipelineStage.Contactado => Lang.T("admin.companies.hintContacted"),
+        (int)CompanyPipelineStage.ReunionAgendada => Lang.T("admin.companies.hintMeeting"),
+        (int)CompanyPipelineStage.PropuestaEnviada => Lang.T("admin.companies.hintProposal"),
+        (int)CompanyPipelineStage.Negociacion => Lang.T("admin.companies.hintNegotiation"),
+        (int)CompanyPipelineStage.CerradoGanado => Lang.T("admin.companies.hintWon"),
+        _ => ""
+    };
+}
