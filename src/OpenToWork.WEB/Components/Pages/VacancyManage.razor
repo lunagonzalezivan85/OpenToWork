@@ -158,98 +158,48 @@ else
                 </div>
             </div>
 
-            <!-- Right 60%: Candidates Panel -->
+            <!-- Right 60%: Blind Funnel Summary -->
             <div class="vm-right">
                 <div class="ot-card vm-card">
-                    <!-- Filter Tabs -->
-                    <div class="vm-candidates-toolbar">
-                        <div class="vm-filter-tabs">
-                            <button class="vm-filter-tab @(CandidateFilter == "all" ? "vm-filter-tab--active" : "")" @onclick='() => SetFilter("all")'>
-                                @Lang.T("vacancies.candidateFilters.all")
-                                <span class="vm-filter-count">@Applications.Count</span>
-                            </button>
-                            <button class="vm-filter-tab @(CandidateFilter == "new" ? "vm-filter-tab--active" : "")" @onclick='() => SetFilter("new")'>
-                                @Lang.T("vacancies.candidateFilters.new")
-                                <span class="vm-filter-count">@Applications.Count(a => a.Status == 0)</span>
-                            </button>
-                            <button class="vm-filter-tab @(CandidateFilter == "shortlisted" ? "vm-filter-tab--active" : "")" @onclick='() => SetFilter("shortlisted")'>
-                                @Lang.T("vacancies.candidateFilters.shortlisted")
-                                <span class="vm-filter-count">@Applications.Count(a => a.Status == 1 || a.Status == 2)</span>
-                            </button>
-                            <button class="vm-filter-tab @(CandidateFilter == "rejected" ? "vm-filter-tab--active" : "")" @onclick='() => SetFilter("rejected")'>
-                                @Lang.T("vacancies.candidateFilters.rejected")
-                                <span class="vm-filter-count">@Applications.Count(a => a.Status == 3)</span>
-                            </button>
+                    <h3 class="vm-section-title" style="margin-bottom: 1rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        @Lang.T("vacancies.candidateFilters.all")
+                    </h3>
+                    <div class="vm-funnel-summary">
+                        <div class="vm-funnel-stat">
+                            <span class="vm-funnel-count">@(Summary?.Total ?? 0)</span>
+                            <span class="vm-funnel-label">@Lang.T("vacancies.applicantsTotal")</span>
+                        </div>
+                        <div class="vm-funnel-stat">
+                            <span class="vm-funnel-count">@(Summary?.InVerification ?? 0)</span>
+                            <span class="vm-funnel-label">@Lang.T("vacancies.inVerification")</span>
+                        </div>
+                        <div class="vm-funnel-stat">
+                            <span class="vm-funnel-count vm-funnel-count--accent">@(Summary?.Delivered ?? 0)</span>
+                            <span class="vm-funnel-label">@Lang.T("vacancies.personalVerified")</span>
                         </div>
                     </div>
-
-                    @if (FilteredApplications.Any())
-                    {
-                        <div class="vm-candidates-list">
-                            @foreach (var app in FilteredApplications)
-                            {
-                                <div class="vm-candidate">
-                                    <div class="vm-candidate-avatar">@(GetInitials(app.CandidateName))</div>
-                                    <div class="vm-candidate-body">
-                                        <div class="vm-candidate-main">
-                                            <span class="vm-candidate-name">@app.CandidateName</span>
-                                            @if (!string.IsNullOrEmpty(app.CandidateTitle))
-                                            {
-                                                <span class="vm-candidate-title">@app.CandidateTitle</span>
-                                            }
-                                        </div>
-                                        <div class="vm-candidate-meta">
-                                            @if (app.ExpectedSalary.HasValue)
-                                            {
-                                                <span class="vm-candidate-salary">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                                                        <line x1="12" y1="1" x2="12" y2="23" />
-                                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                                                    </svg>
-                                                    $@app.ExpectedSalary.Value.ToString("N0")
-                                                </span>
-                                            }
-                                            <span class="vm-candidate-date">@app.CreatedAt.ToString("MMM dd, yyyy")</span>
-                                        </div>
-                                    </div>
-                                    <div class="vm-candidate-actions">
-                                        <select class="ot-input-field vm-status-select" @bind="app.Status" @bind:after="() => UpdateApplicationStatus(app.Id, app.Status)">
-                                            <option value="0">@Lang.T("applications.status.pending")</option>
-                                            <option value="1">@Lang.T("applications.status.inReview")</option>
-                                            <option value="2">@Lang.T("applications.status.accepted")</option>
-                                            <option value="3">@Lang.T("applications.status.rejected")</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="vm-candidates-empty">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                <circle cx="9" cy="7" r="4" />
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                            </svg>
-                            <p class="vm-empty-text">@Lang.T("vacancies.noCandidates")</p>
-                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CopyPublicLink">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                                </svg>
-                                @Lang.T("vacancies.copyLink")
-                            </button>
-                        </div>
-                    }
+                    <p class="dash-chart-info-text" style="margin: 1rem 0;">
+                        @Lang.T("vacancies.blindFunnelHint")
+                    </p>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="GoToVerifiedPersonnel">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <path d="M20 6L9 17l-5-5" />
+                        </svg>
+                        @Lang.T("vacancies.personalVerified")
+                    </button>
                 </div>
             </div>
         </div>
 
-        @* === Fase 3, sub-fase 3.8: Shortlist por Match Score + Scorecard configurable === *@
+        @* === Scorecard de pesos (config para el calculo de TD) === *@
         <div class="ot-card vm-card" style="margin-top: var(--space-lg);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                <h3 class="bento-card-title">@Lang.T("vacancies.matchScore.title")</h3>
+                <h3 class="bento-card-title">@Lang.T("vacancies.matchScore.scorecard")</h3>
                 <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ShowScorecard = !ShowScorecard">
                     @Lang.T("vacancies.matchScore.scorecard")
                 </button>
@@ -276,26 +226,6 @@ else
                     <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SaveScorecardAsync">@Lang.T("vacancies.matchScore.saveScorecard")</button>
                 </div>
             }
-
-            @if (Shortlist.Count == 0)
-            {
-                <p class="dash-chart-info-text">@Lang.T("vacancies.matchScore.empty")</p>
-            }
-            else
-            {
-                <div class="dash-verifications-list">
-                    @foreach (var m in Shortlist)
-                    {
-                        <div class="dash-verification-row">
-                            <div>
-                                <span class="dash-verification-name">@m.CandidateName</span>
-                                <span class="dash-chart-info-text"> · @Lang.T("vacancies.matchScore.weightSkills") @m.SkillsMatch% · @Lang.T("vacancies.matchScore.weightExperience") @m.ExperienceMatch% · @Lang.T("vacancies.matchScore.weightLocation") @m.LocationMatch%</span>
-                            </div>
-                            <span class="dash-verification-pill dash-verification-pill--verified">@m.MatchPercentage%</span>
-                        </div>
-                    }
-                </div>
-            }
         </div>
     </div>
 }
@@ -303,24 +233,14 @@ else
 @code {
     [Parameter] public Guid Id { get; set; }
     private VacancyDto? Vacancy { get; set; }
-    private List<ApplicationDto> Applications { get; set; } = new();
-    private string CandidateFilter { get; set; } = "all";
+    private VacancyApplicantSummaryDto? Summary { get; set; }
     private bool IsLoading { get; set; }
 
-    // Fase 3, sub-fase 3.8: Shortlist + Scorecard.
-    private List<JobMatchDto> Shortlist { get; set; } = new();
+    // Scorecard de pesos (config usada por TD para calcular compatibilidad).
     private bool ShowScorecard { get; set; }
     private int WeightSkills { get; set; } = 50;
     private int WeightExperience { get; set; } = 30;
     private int WeightLocation { get; set; } = 20;
-
-    private List<ApplicationDto> FilteredApplications => CandidateFilter switch
-    {
-        "new" => Applications.Where(a => a.Status == 0).ToList(),
-        "shortlisted" => Applications.Where(a => a.Status == 1 || a.Status == 2).ToList(),
-        "rejected" => Applications.Where(a => a.Status == 3).ToList(),
-        _ => Applications
-    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -333,8 +253,7 @@ else
     {
         IsLoading = true;
         Vacancy = await AuthApi.GetPermanentVacancyAsync(Id);
-        Applications = await AuthApi.GetApplicationsByVacancyAsync(Id);
-        Shortlist = await AuthApi.GetVacancyMatchesAsync(Id);
+        Summary = await AuthApi.GetVacancyApplicantSummaryAsync(Id);
 
         var scorecard = await AuthApi.GetVacancyScorecardAsync(Id);
         if (!string.IsNullOrEmpty(scorecard?.WeightsConfig))
@@ -364,9 +283,9 @@ else
         ShowScorecard = false;
     }
 
-    private void SetFilter(string filter) => CandidateFilter = filter;
-
     private void GoBack() => Nav.NavigateTo("/my-vacancies");
+
+    private void GoToVerifiedPersonnel() => Nav.NavigateTo("/verified-applicants");
 
     private void EditVacancy() => Nav.NavigateTo($"/my-vacancies/{Id}/edit");
 
@@ -416,11 +335,6 @@ else
             await AuthApi.DeleteVacancyAsync(Id);
             Nav.NavigateTo("/my-vacancies");
         }
-    }
-
-    private async Task UpdateApplicationStatus(Guid appId, int status)
-    {
-        await AuthApi.UpdateApplicationStatusAsync(appId, status);
     }
 
     private async Task CopyPublicLink()

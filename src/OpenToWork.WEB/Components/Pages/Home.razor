@@ -10,9 +10,7 @@
 <PageTitle>Trato Directo</PageTitle>
 
 <div class="home-hero">
-    <video class="home-hero-video" id="heroVideo" autoplay muted loop playsinline preload="auto">
-        <source src="@HeroVideoSrc" type="video/mp4" />
-    </video>
+    <video class="home-hero-video" id="heroVideo" autoplay muted playsinline preload="auto" src="/v01.mp4?v=2"></video>
     <div class="home-hero-overlay"></div>
     <div class="home-hero-container">
         <h1 class="home-hero-title">@Lang.T("common.home.heroTitle")</h1>
@@ -117,10 +115,7 @@
     private HashSet<string> SelectedCategories { get; set; } = new();
     private List<VacancyDto> VacancyList { get; set; } = new();
     private bool IsLoading { get; set; }
-    private string HeroVideoSrc { get; set; } = string.Empty;
     private ElementReference SearchInputRef;
-
-    private static readonly string[] HeroVideos = { "/v01.mp4", "/v02.mp4", "/v03.mp4" };
 
     private Dictionary<string, string> Categories => new()
     {
@@ -137,9 +132,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var rnd = new Random();
-        HeroVideoSrc = HeroVideos[rnd.Next(HeroVideos.Length)];
-
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
         await LoadVacancies();
@@ -154,6 +146,13 @@
                 if (v) {
                     v.muted = true;
                     v.volume = 0;
+                    var playlist = ['/v01.mp4?v=2', '/v02.mp4?v=2'];
+                    var idx = 0;
+                    v.addEventListener('ended', function () {
+                        idx = (idx + 1) % playlist.length;
+                        v.src = playlist[idx];
+                        v.play().catch(function(){});
+                    });
                     v.play().catch(function(){});
                 }
             ");

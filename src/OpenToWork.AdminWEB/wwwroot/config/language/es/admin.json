@@ -415,7 +415,17 @@
     "assignCandidate": "Asignar candidato",
     "assignTo": "Asignar a",
     "selectUser": "Seleccionar usuario",
-    "confirmAssign": "Confirmar asignación"
+    "confirmAssign": "Confirmar asignación",
+    "deliverToCompany": "Entrega a empresa",
+    "deliverButton": "Entregar a empresa",
+    "deliverRequiresVacancy": "Vincula una vacante antes de poder entregar al candidato.",
+    "deliverModalTitle": "Entregar candidato verificado",
+    "deliverVacancy": "Vacante destino",
+    "deliverSelectVacancy": "Seleccionar vacante...",
+    "adminNote": "Nota de presentación",
+    "adminNotePlaceholder": "Nota opcional para la empresa (presentación del candidato)",
+    "deliverConfirm": "Entregar",
+    "deliverError": "No se pudo entregar al candidato. Verifica que esté Verificado TD y en etapa Listo a Entregar."
   },
   "score": {
     "title": "Score del Candidato",

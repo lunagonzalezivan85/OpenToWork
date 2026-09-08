@@ -1,15 +1,16 @@
 @page "/verified-applicants"
 @using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
 @using OpenToWork.WEB.Services
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
 @inject NavigationManager Nav
 
-<PageTitle>Postulantes verificados</PageTitle>
+<PageTitle>Personal verificado</PageTitle>
 
 <div class="page-container">
-    <h1 class="dash-title">Postulantes verificados</h1>
-    <p class="dash-subtitle">Candidatos que se han postulado a tus vacantes</p>
+    <h1 class="dash-title">Personal verificado</h1>
+    <p class="dash-subtitle">Candidatos verificados y entregados por Trato Directo a tus vacantes</p>
 
     @if (Loading)
     {
@@ -17,7 +18,7 @@
             <p>Cargando...</p>
         </div>
     }
-    else if (SelectedVacancyId.HasValue && Applicants.Any())
+    else if (SelectedVacancyId.HasValue)
     {
         <div class="va-back-bar">
             <button class="ot-btn ot-btn--ghost ot-btn--small" @onclick="BackToVacancies">
@@ -27,70 +28,59 @@
                 Volver
             </button>
             <span class="va-vacancy-title">@SelectedVacancyTitle</span>
-            <span class="va-applicant-count">@Applicants.Count postulantes</span>
+            <span class="va-applicant-count">@Deliveries.Count entregados</span>
         </div>
 
-        <div class="va-applicant-list">
-            @foreach (var app in Applicants)
-            {
-                <div class="va-applicant-card" style="cursor: pointer;" @onclick="() => GoToApplicantProfile(app.CandidateId)">
-                    <div class="va-applicant-avatar">@(GetInitials(app.CandidateName))</div>
-                    <div class="va-applicant-body">
-                        <div class="va-applicant-primary">
-                            <span class="va-applicant-name">@app.CandidateName</span>
-                            @if (VerificationBadges.TryGetValue(app.CandidateId, out var vStatus))
-                            {
-                                @if (vStatus.IsVerifiedTD)
+        @if (Deliveries.Any())
+        {
+            <div class="va-applicant-list">
+                @foreach (var d in Deliveries)
+                {
+                    <div class="va-applicant-card" style="cursor: pointer;" @onclick="() => GoToApplicantProfile(d.CandidateId)">
+                        <div class="va-applicant-avatar">@(GetInitials(d.CandidateName))</div>
+                        <div class="va-applicant-body">
+                            <div class="va-applicant-primary">
+                                <span class="va-applicant-name">@d.CandidateName</span>
+                                @if (d.IsVerifiedTD)
                                 {
                                     <span class="dash-score-badge" title="Verificado TD">★ Verificado TD</span>
                                 }
-                                else
-                                {
-                                    <span class="dash-score-status">@VerificationStatusLabel(vStatus.Status)</span>
-                                }
-                            }
-                            <span class="va-applicant-title">@(app.CandidateTitle ?? "Sin titulo")</span>
+                                <span class="va-applicant-title">@(d.CandidateTitle ?? "Sin titulo")</span>
+                            </div>
+                            <div class="va-applicant-secondary">
+                                <span class="va-applicant-status va-applicant-status--@GetDeliveryStatusClass(d.Status)">
+                                    @GetDeliveryStatusLabel(d.Status)
+                                </span>
+                                <span class="va-applicant-date">@d.DeliveredAt.ToString("dd/MM/yyyy")</span>
+                            </div>
                         </div>
-                        <div class="va-applicant-secondary">
-                            <span class="va-applicant-status va-applicant-status--@GetStatusClass(app.Status)">
-                                @GetStatusLabel(app.Status)
-                            </span>
-                            <span class="va-applicant-date">@app.CreatedAt.ToString("dd/MM/yyyy")</span>
+                        <div class="va-applicant-progress">
+                            <div class="va-progress-ring" style="--pct: @d.ProfileCompletionPercentage">
+                                <span>@d.ProfileCompletionPercentage%</span>
+                            </div>
+                        </div>
+                        <div class="va-applicant-arrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
                         </div>
                     </div>
-                    <div class="va-applicant-progress">
-                        <div class="va-progress-ring" style="--pct: @app.ProfileCompletionPercentage">
-                            <span>@app.ProfileCompletionPercentage%</span>
-                        </div>
-                    </div>
-                    <div class="va-applicant-arrow">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                            <path d="M9 18l6-6-6-6" />
-                        </svg>
-                    </div>
-                </div>
-            }
-        </div>
-    }
-    else if (SelectedVacancyId.HasValue && !Applicants.Any())
-    {
-        <div class="va-back-bar">
-            <button class="ot-btn ot-btn--ghost ot-btn--small" @onclick="BackToVacancies">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="bento-card dash-empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
-                Volver
-            </button>
-            <span class="va-vacancy-title">@SelectedVacancyTitle</span>
-        </div>
-        <div class="bento-card dash-empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-            </svg>
-            <h3>Sin postulantes para esta vacante</h3>
-            <p>Aun no hay candidatos que se hayan postulado</p>
-        </div>
+                <h3>Sin personal verificado entregado</h3>
+                <p>Trato Directo te entregara personal verificado para esta vacante</p>
+            </div>
+        }
     }
     else if (Vacancies.Any())
     {
@@ -112,8 +102,12 @@
                         </div>
                     </div>
                     <div class="va-vacancy-applicants">
-                        <span class="va-vacancy-count">@(VacancyApplicantCounts.GetValueOrDefault(v.Id, 0))</span>
+                        <span class="va-vacancy-count">@(Summaries.GetValueOrDefault(v.Id)?.Total ?? 0)</span>
                         <span class="va-vacancy-count-label">postulantes</span>
+                    </div>
+                    <div class="va-vacancy-applicants" style="margin-left: 0.75rem;">
+                        <span class="va-vacancy-count" style="color: #778DA9;">@(Summaries.GetValueOrDefault(v.Id)?.InVerification ?? 0)</span>
+                        <span class="va-vacancy-count-label">en verificación</span>
                     </div>
                     <div class="va-applicant-arrow">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -143,11 +137,10 @@
 @code {
     private bool Loading { get; set; } = true;
     private List<VacancyDto> Vacancies { get; set; } = new();
-    private List<ApplicationDto> Applicants { get; set; } = new();
-    private Dictionary<Guid, int> VacancyApplicantCounts { get; set; } = new();
+    private Dictionary<Guid, VacancyApplicantSummaryDto> Summaries { get; set; } = new();
+    private List<DeliveryDto> Deliveries { get; set; } = new();
     private Guid? SelectedVacancyId { get; set; }
     private string SelectedVacancyTitle { get; set; } = "";
-    private Dictionary<Guid, VerificationStatusDto> VerificationBadges { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -162,12 +155,12 @@
             {
                 try
                 {
-                    var apps = await AuthApi.GetVacancyApplicationsAsync(v.Id);
-                    VacancyApplicantCounts[v.Id] = apps.Count;
+                    var summary = await AuthApi.GetVacancyApplicantSummaryAsync(v.Id);
+                    if (summary != null) Summaries[v.Id] = summary;
                 }
                 catch
                 {
-                    VacancyApplicantCounts[v.Id] = 0;
+                    // sin resumen disponible
                 }
             }
         }
@@ -186,35 +179,36 @@
 
         try
         {
-            Applicants = await AuthApi.GetVacancyApplicationsAsync(vacancy.Id);
+            Deliveries = await AuthApi.GetMyDeliveriesAsync(vacancy.Id);
         }
         catch
         {
-            Applicants = new();
-        }
-
-        VerificationBadges = new();
-        foreach (var app in Applicants)
-        {
-            var status = await AuthApi.GetVerificationStatusAsync(app.CandidateId);
-            if (status != null) VerificationBadges[app.CandidateId] = status;
+            Deliveries = new();
         }
     }
 
-    private static string VerificationStatusLabel(int status) => status switch
+    private static string GetDeliveryStatusLabel(int status) => status switch
     {
-        0 => "Perfil registrado",
-        1 => "Perfil completo",
-        2 => "Evaluado",
-        3 => "Verificacion en proceso",
-        4 => "Verificado TD",
+        (int)DeliveryStatus.Delivered => "Entregado",
+        (int)DeliveryStatus.ViewedByCompany => "Visto",
+        (int)DeliveryStatus.Interested => "Interesado",
+        (int)DeliveryStatus.Hired => "Contratado",
+        (int)DeliveryStatus.RejectedByCompany => "Descartado",
         _ => "-"
+    };
+
+    private static string GetDeliveryStatusClass(int status) => status switch
+    {
+        (int)DeliveryStatus.Hired => "active",
+        (int)DeliveryStatus.Interested => "active",
+        (int)DeliveryStatus.RejectedByCompany => "closed",
+        _ => "draft"
     };
 
     private void BackToVacancies()
     {
         SelectedVacancyId = null;
-        Applicants = new();
+        Deliveries = new();
         SelectedVacancyTitle = "";
     }
 

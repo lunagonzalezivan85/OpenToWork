@@ -1077,6 +1077,35 @@ else
             <span class="admin-delivery-overall-label">@Lang.T("admin.recruitment.overallScore")</span>
             <span class="admin-delivery-overall-value">@OverallScore.ToString("0.#")/100</span>
         </div>
+
+        @* Deliver to company *@
+        <div class="admin-recruitment-card" style="margin-top: 1rem;">
+            <h3 class="admin-recruitment-card-title">
+                @Lang.T("admin.recruitment.deliverToCompany")
+                <button class="ot-btn ot-btn--primary ot-btn--small" style="margin-left: 0.75rem;" @onclick="OpenDeliverModal" disabled="@(Detail.VacancyId == null)">
+                    @Lang.T("admin.recruitment.deliverButton")
+                </button>
+            </h3>
+            @if (Detail.VacancyId == null)
+            {
+                <p style="color: var(--text-muted); font-size: 0.85rem;">@Lang.T("admin.recruitment.deliverRequiresVacancy")</p>
+            }
+            @if (Deliveries.Count > 0)
+            {
+                <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                    @foreach (var d in Deliveries)
+                    {
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; background: var(--bg-soft, #F1F5F9); border-radius: 10px;">
+                            <div>
+                                <div style="font-size: 0.85rem; font-weight: 600;">@d.VacancyTitle</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">@d.CompanyName · @d.DeliveredAt.ToString("yyyy-MM-dd HH:mm")</div>
+                            </div>
+                            <span class="admin-result-badge @GetDeliveryBadgeClass(d.Status)">@GetDeliveryStatusLabel(d.Status)</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     }
 
     @* === Stage history === *@
@@ -1095,6 +1124,36 @@ else
                     }
                 </div>
             }
+        </div>
+    }
+
+    @* === Deliver to company modal === *@
+    @if (ShowDeliverModal)
+    {
+        <div class="admin-modal-overlay" @onclick="CloseDeliverModal">
+            <div class="admin-modal" @onclick:stopPropagation="true" style="max-width: 480px;">
+                <h3 class="admin-modal-title">@Lang.T("admin.recruitment.deliverModalTitle")</h3>
+                <div class="admin-modal-body">
+                    <label>@Lang.T("admin.recruitment.deliverVacancy")</label>
+                    <select @bind="DeliverVacancyId" class="admin-modal-input">
+                        <option value="">@Lang.T("admin.recruitment.deliverSelectVacancy")</option>
+                        @foreach (var v in VacancyOptions.Where(v => v.Status == 1))
+                        {
+                            <option value="@v.Id">@v.Title @(string.IsNullOrEmpty(v.CompanyName) ? "" : $" — {v.CompanyName}")</option>
+                        }
+                    </select>
+                    <label>@Lang.T("admin.recruitment.adminNote")</label>
+                    <textarea @bind="DeliverAdminNote" rows="3" class="admin-modal-input" placeholder="@Lang.T("admin.recruitment.adminNotePlaceholder")"></textarea>
+                    @if (!string.IsNullOrEmpty(DeliverError))
+                    {
+                        <p style="color: #DC2626; font-size: 0.8rem; margin-top: 0.5rem;">@DeliverError</p>
+                    }
+                </div>
+                <div class="admin-modal-actions">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseDeliverModal">@Lang.T("admin.common.cancel")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="DeliverCandidate" disabled="@(string.IsNullOrEmpty(DeliverVacancyId))">@Lang.T("admin.recruitment.deliverConfirm")</button>
+                </div>
+            </div>
         </div>
     }
 
@@ -1256,6 +1315,11 @@ else
     private Guid? SelectedVacancyId { get; set; }
     private string VacancySearch { get; set; } = "";
     private bool ShowSmartMatches { get; set; } = true;
+    private bool ShowDeliverModal { get; set; }
+    private List<DeliveryDto> Deliveries { get; set; } = new();
+    private string DeliverVacancyId { get; set; } = "";
+    private string DeliverAdminNote { get; set; } = "";
+    private string? DeliverError { get; set; }
     private static readonly Dictionary<string, string> AvailableDayOptions = new()
     {
         { "L", "Lunes" },
@@ -1308,6 +1372,7 @@ else
             Documents = await AuthApi.GetRecruitmentDocumentsAsync(Detail.Id);
             DocumentTypes = await AuthApi.GetDocumentTypesAsync();
             VacancyOptions = await AuthApi.GetVacancyOptionsAsync();
+            Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail.Id);
             SelectedVacancyId = Detail.VacancyId;
             if (Preferences != null)
             {
@@ -1593,6 +1658,56 @@ else
         ShowSmartMatches = true;
         ShowVacancySelector = true;
     }
+
+    private void OpenDeliverModal()
+    {
+        DeliverVacancyId = Detail.VacancyId?.ToString() ?? "";
+        DeliverAdminNote = "";
+        DeliverError = null;
+        ShowDeliverModal = true;
+    }
+
+    private void CloseDeliverModal() => ShowDeliverModal = false;
+
+    private async Task DeliverCandidate()
+    {
+        if (Detail == null || !Guid.TryParse(DeliverVacancyId, out var vacancyId)) return;
+
+        DeliverError = null;
+        var result = await AuthApi.DeliverCandidateAsync(new DeliverCandidateDto
+        {
+            RecruitmentId = Detail.Id,
+            VacancyId = vacancyId,
+            AdminNote = string.IsNullOrWhiteSpace(DeliverAdminNote) ? null : DeliverAdminNote.Trim()
+        });
+
+        if (result == null)
+        {
+            DeliverError = Lang.T("admin.recruitment.deliverError");
+            return;
+        }
+
+        ShowDeliverModal = false;
+        await LoadDetail();
+    }
+
+    private static string GetDeliveryStatusLabel(int status) => status switch
+    {
+        (int)DeliveryStatus.Delivered => "Entregado",
+        (int)DeliveryStatus.ViewedByCompany => "Visto",
+        (int)DeliveryStatus.Interested => "Interesado",
+        (int)DeliveryStatus.Hired => "Contratado",
+        (int)DeliveryStatus.RejectedByCompany => "Descartado",
+        _ => "-"
+    };
+
+    private static string GetDeliveryBadgeClass(int status) => status switch
+    {
+        (int)DeliveryStatus.Hired => "admin-result-badge--success",
+        (int)DeliveryStatus.Interested => "admin-result-badge--success",
+        (int)DeliveryStatus.RejectedByCompany => "admin-result-badge--danger",
+        _ => "admin-result-badge--warning"
+    };
 
     private List<VacancyOptionDto> GetSmartMatchVacancies()
     {
