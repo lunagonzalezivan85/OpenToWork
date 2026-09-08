@@ -13,11 +13,13 @@ namespace OpenToWork.API.Controllers;
 public class ApplicationsController : ControllerBase
 {
     private readonly IApplicationService _applicationService;
+    private readonly IDeliveryService _deliveryService;
     private readonly AppDbContext _context;
 
-    public ApplicationsController(IApplicationService applicationService, AppDbContext context)
+    public ApplicationsController(IApplicationService applicationService, IDeliveryService deliveryService, AppDbContext context)
     {
         _applicationService = applicationService;
+        _deliveryService = deliveryService;
         _context = context;
     }
 
@@ -60,18 +62,9 @@ public class ApplicationsController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var result = await _applicationService.GetApplicationsByVacancyAsync(vacancyId, userId.Value);
-        return Ok(result);
-    }
-
-    [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateApplicationStatusDto dto)
-    {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-
-        var result = await _applicationService.UpdateApplicationStatusAsync(id, dto.Status, userId.Value);
-        return result != null ? Ok(result) : NotFound();
+        // Embudo ciego: la empresa solo recibe conteos, nunca identidad de postulantes.
+        var summary = await _deliveryService.GetVacancySummaryAsync(vacancyId, userId.Value);
+        return summary == null ? NotFound() : Ok(summary);
     }
 
     private Guid? GetUserId()

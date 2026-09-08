@@ -45,6 +45,7 @@ public class AppDbContext : DbContext
     public DbSet<PTCompanyPipeline> PT_CompanyPipelines => Set<PTCompanyPipeline>();
     public DbSet<PTCompanyStageLog> PT_CompanyStageLogs => Set<PTCompanyStageLog>();
     public DbSet<PTPlan> PT_Plans => Set<PTPlan>();
+    public DbSet<PTCandidateDelivery> PT_CandidateDeliveries => Set<PTCandidateDelivery>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -397,6 +398,30 @@ public class AppDbContext : DbContext
             e.HasOne(s => s.Pipeline)
                 .WithMany(p => p.StageLogs)
                 .HasForeignKey(s => s.PT_CompanyPipelineId);
+        });
+
+        modelBuilder.Entity<PTCandidateDelivery>(e =>
+        {
+            e.ToTable("PT_CandidateDeliveries");
+            e.HasIndex(d => new { d.PT_CompanyId, d.IsDeleted });
+            e.HasIndex(d => new { d.PT_VacancyId, d.IsDeleted });
+            e.HasIndex(d => new { d.PT_CandidateRecruitmentId, d.IsDeleted });
+            e.HasIndex(d => new { d.Status, d.IsDeleted });
+            e.HasOne(d => d.Recruitment)
+                .WithMany()
+                .HasForeignKey(d => d.PT_CandidateRecruitmentId);
+            e.HasOne(d => d.Candidate)
+                .WithMany()
+                .HasForeignKey(d => d.PT_CandidateId);
+            e.HasOne(d => d.Vacancy)
+                .WithMany()
+                .HasForeignKey(d => d.PT_VacancyId);
+            e.HasOne(d => d.Company)
+                .WithMany()
+                .HasForeignKey(d => d.PT_CompanyId);
+            e.HasOne(d => d.DeliveredByUser)
+                .WithMany()
+                .HasForeignKey(d => d.DeliveredByUserId);
         });
 
         SeedWizardSteps(modelBuilder);

@@ -488,6 +488,20 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<DeliveryDto?> DeliverCandidateAsync(DeliverCandidateDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/recruitment-deliveries", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<DeliveryDto>();
+    }
+
+    public async Task<List<DeliveryDto>> GetDeliveriesByRecruitmentAsync(Guid recruitmentId)
+    {
+        await SetAuthHeaderAsync();
+        return await _httpClient.GetFromJsonAsync<List<DeliveryDto>>($"api/admin/recruitment-deliveries/recruitment/{recruitmentId}") ?? new();
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");
