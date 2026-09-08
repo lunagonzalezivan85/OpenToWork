@@ -193,6 +193,33 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<List<ApplicationDto>>() ?? new();
     }
 
+    // === Embudo ciego: entregas de personal verificado ===
+
+    public async Task<List<DeliveryDto>> GetMyDeliveriesAsync(Guid? vacancyId = null)
+    {
+        await SetAuthHeaderAsync();
+        var url = vacancyId.HasValue ? $"api/deliveries/my?vacancyId={vacancyId}" : "api/deliveries/my";
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<DeliveryDto>>() ?? new();
+    }
+
+    public async Task<VacancyApplicantSummaryDto?> GetVacancyApplicantSummaryAsync(Guid vacancyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/deliveries/vacancy-summary/{vacancyId}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<VacancyApplicantSummaryDto>();
+    }
+
+    public async Task<bool> RespondToDeliveryAsync(Guid deliveryId, int status, string? feedback)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/deliveries/{deliveryId}/respond",
+            new RespondDeliveryDto { Status = status, Feedback = feedback });
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<VacancyDto?> CreateVacancyAsync(CreateVacancyDto dto)
     {
         await SetAuthHeaderAsync();

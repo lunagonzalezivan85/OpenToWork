@@ -122,27 +122,27 @@
             </div>
         </div>
 
-        <!-- Applicants List (30%) -->
+        <!-- Verified Personnel List (30%) -->
         <div class="applicant-list-card">
             <div class="applicant-list-header">
-                <h3 class="applicant-list-title">Postulantes recientes</h3>
-                <span class="applicant-list-count">@RecentApplicants.Count</span>
+                <h3 class="applicant-list-title">Personal verificado entregado</h3>
+                <span class="applicant-list-count">@RecentDeliveries.Count</span>
             </div>
-            @if (RecentApplicants.Any())
+            @if (RecentDeliveries.Any())
             {
                 <div class="applicant-list-body">
-                    @foreach (var app in RecentApplicants.Take(6))
+                    @foreach (var d in RecentDeliveries.Take(6))
                     {
-                        <div class="applicant-item" style="cursor: pointer;" @onclick="() => GoToApplicantProfile(app.CandidateId)">
+                        <div class="applicant-item" style="cursor: pointer;" @onclick="() => GoToApplicantProfile(d.CandidateId)">
                             <div class="applicant-item-main">
-                                <div class="applicant-item-name">@app.CandidateName</div>
+                                <div class="applicant-item-name">@d.CandidateName</div>
                                 <div class="applicant-item-meta">
-                                    <span class="applicant-item-vacancy">@app.VacancyTitle</span>
+                                    <span class="applicant-item-vacancy">@d.VacancyTitle</span>
                                 </div>
                             </div>
                             <div class="applicant-item-progress">
-                                <div class="applicant-progress-ring" style="--pct: @app.ProfileCompletionPercentage">
-                                    <span>@app.ProfileCompletionPercentage%</span>
+                                <div class="applicant-progress-ring" style="--pct: @d.ProfileCompletionPercentage">
+                                    <span>@d.ProfileCompletionPercentage%</span>
                                 </div>
                             </div>
                         </div>
@@ -156,7 +156,7 @@
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                         <circle cx="9" cy="7" r="4" />
                     </svg>
-                    <p>Sin postulantes aun</p>
+                    <p>Sin personal verificado entregado aun</p>
                 </div>
             }
         </div>
@@ -172,7 +172,7 @@
     private bool ShowCommandSuggestions { get; set; }
     private int CurrentSlide { get; set; }
     private List<HeroSlide> Slides { get; set; } = new();
-    private List<ApplicationDto> RecentApplicants { get; set; } = new();
+    private List<DeliveryDto> RecentDeliveries { get; set; } = new();
 
     private int DraftVacancies => Vacancies.Count(v => v.Status == 0);
     private int TotalApplicants => VacancyApplicantCounts.Values.Sum();
@@ -237,21 +237,22 @@
         {
             Vacancies = await AuthApi.GetMyCompanyVacanciesAsync();
 
-            var allApps = new List<ApplicationDto>();
             foreach (var v in Vacancies)
             {
                 try
                 {
-                    var apps = await AuthApi.GetVacancyApplicationsAsync(v.Id);
-                    VacancyApplicantCounts[v.Id] = apps.Count;
-                    allApps.AddRange(apps);
+                    var summary = await AuthApi.GetVacancyApplicantSummaryAsync(v.Id);
+                    if (summary != null)
+                    {
+                        VacancyApplicantCounts[v.Id] = summary.Total;
+                    }
                 }
                 catch
                 {
                     VacancyApplicantCounts[v.Id] = 0;
                 }
             }
-            RecentApplicants = allApps.OrderByDescending(a => a.CreatedAt).ToList();
+            RecentDeliveries = await AuthApi.GetMyDeliveriesAsync();
         }
         catch
         {

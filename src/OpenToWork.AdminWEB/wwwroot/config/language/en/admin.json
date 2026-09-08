@@ -415,7 +415,17 @@
     "assignCandidate": "Assign candidate",
     "assignTo": "Assign to",
     "selectUser": "Select user",
-    "confirmAssign": "Confirm assignment"
+    "confirmAssign": "Confirm assignment",
+    "deliverToCompany": "Delivery to company",
+    "deliverButton": "Deliver to company",
+    "deliverRequiresVacancy": "Link a vacancy before delivering the candidate.",
+    "deliverModalTitle": "Deliver verified candidate",
+    "deliverVacancy": "Target vacancy",
+    "deliverSelectVacancy": "Select vacancy...",
+    "adminNote": "Presentation note",
+    "adminNotePlaceholder": "Optional note for the company (candidate presentation)",
+    "deliverConfirm": "Deliver",
+    "deliverError": "Could not deliver the candidate. Verify they are Verified TD and at the Ready to Deliver stage."
   },
   "score": {
     "title": "Candidate Score",
