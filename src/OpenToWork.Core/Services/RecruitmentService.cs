@@ -1227,9 +1227,12 @@ public class RecruitmentService : IRecruitmentService
 
     public async Task<List<VacancyOptionDto>> GetVacancyOptionsAsync()
     {
+        // QA 08-Sep: filtraba Status == 0 (Borrador) en vez de 1 (Activa) - el modal "Vincular
+        // vacante" de PipelineDetail.razor siempre mostraba "No hay vacantes activas disponibles"
+        // aunque hubiera vacantes activas reales, dejando inutilizable la entrega a empresas.
         return await _context.PT_Vacancies
             .Include(v => v.Company)
-            .Where(v => !v.IsDeleted && v.Status == 0)
+            .Where(v => !v.IsDeleted && v.Status == 1)
             .OrderByDescending(v => v.CreatedAt)
             .Select(v => new VacancyOptionDto
             {
