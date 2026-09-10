@@ -147,7 +147,7 @@ public class CompanyCrmService : ICompanyCrmService
             ContactPosition = dto.ContactPosition,
             LinkedInUrl = dto.LinkedInUrl,
             Status = (int)CompanyStatus.Prospecto,
-            SCUserId = adminId,
+            SCUserId = null, // prospecto del CRM: sin cuenta de usuario asociada
             CreatedBy = adminId
         };
 

@@ -5,11 +5,13 @@ namespace OpenToWork.Models.Entities;
 
 public class PTCompany : BaseEntity
 {
-    [Required]
-    public Guid SCUserId { get; set; }
+    // Nullable: una empresa registrada por un usuario tiene su Id aqui;
+    // una empresa "prospecto" captada desde el CRM administrativo no tiene
+    // cuenta de usuario asociada todavia y queda en null.
+    public Guid? SCUserId { get; set; }
 
     [ForeignKey("SCUserId")]
-    public virtual SCUser User { get; set; } = null!;
+    public virtual SCUser? User { get; set; }
 
     [Required]
     [MaxLength(200)]
