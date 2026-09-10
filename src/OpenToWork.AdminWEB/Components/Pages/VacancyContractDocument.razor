@@ -1,0 +1,287 @@
+@page "/vacancies/{VacancyId:guid}/contract/document"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject IJSRuntime Js
+
+<PageTitle>@Lang.T("admin.contract.docTitle")</PageTitle>
+
+<div class="admin-page-header contract-doc-page-header">
+    <div>
+        <h1>@Lang.T("admin.contract.docTitle")</h1>
+        <p class="admin-page-header-subtitle">@(Contract?.ContractNumber ?? "")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="PrintDocumentAsync">@Lang.T("admin.contract.print")</button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.contract.backToVacancy")</button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Contract == null || Vacancy == null)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.vacancies.notFound")</div></div>
+}
+else
+{
+    <div class="contract-doc">
+        @* === Membrete corporativo === *@
+        <header class="cd-letterhead">
+            <div class="cd-letterhead-left">
+                <div class="cd-logo">TD</div>
+            </div>
+            <div class="cd-letterhead-center">
+                <div class="cd-brand-name">Trato Directo</div>
+                <div class="cd-brand-sub">@Lang.T("admin.contract.docServiceTitle")</div>
+            </div>
+            <div class="cd-letterhead-right">
+                <div class="cd-date-label">@Lang.T("admin.contract.docDate")</div>
+                <div class="cd-date-value">@Contract.CreatedAt.ToString("dd/MM/yyyy")</div>
+            </div>
+        </header>
+
+        @* === Strip de identificacion === *@
+        <div class="cd-id-strip">
+            <div class="cd-id-item">
+                <span class="cd-id-label">@Lang.T("admin.contract.docNumber")</span>
+                <span class="cd-id-value">@Contract.ContractNumber</span>
+            </div>
+            <div class="cd-id-item">
+                <span class="cd-id-label">@Lang.T("admin.contract.status")</span>
+                <span class="cd-id-value @GetStatusCss(Contract.Status)">@GetStatusLabel(Contract.Status)</span>
+            </div>
+        </div>
+
+        @* === Empresa solicitante === *@
+        <section class="cd-section">
+            <h3 class="cd-section-title">@Lang.T("admin.contract.docRequester")</h3>
+            <div class="cd-info-grid">
+                <div class="cd-info-cell">
+                    <span class="cd-info-label">@Lang.T("admin.vacancies.company")</span>
+                    <span class="cd-info-value">@(Contract.CompanyName ?? "-")</span>
+                </div>
+                <div class="cd-info-cell">
+                    <span class="cd-info-label">@Lang.T("admin.contract.docContact")</span>
+                    <span class="cd-info-value">@(string.IsNullOrWhiteSpace(Contract.CompanyContactName) ? "-" : Contract.CompanyContactName)@(string.IsNullOrWhiteSpace(Contract.CompanyContactPhone) ? "" : " · " + Contract.CompanyContactPhone)</span>
+                </div>
+                <div class="cd-info-cell">
+                    <span class="cd-info-label">@Lang.T("admin.contract.docRequesterVacancy")</span>
+                    <span class="cd-info-value">@Vacancy.Title@(string.IsNullOrEmpty(Vacancy.Category) ? "" : " — " + Vacancy.Category)@(string.IsNullOrEmpty(Vacancy.Location) ? "" : " — " + Vacancy.Location)</span>
+                </div>
+                @if (Vacancy.SalaryMin.HasValue || Vacancy.SalaryMax.HasValue)
+                {
+                    <div class="cd-info-cell">
+                        <span class="cd-info-label">@Lang.T("admin.vacancies.salaryRange")</span>
+                        <span class="cd-info-value">@FormatEur(Vacancy.SalaryMin) — @FormatEur(Vacancy.SalaryMax)</span>
+                    </div>
+                }
+            </div>
+        </section>
+
+        @* === Alcance del servicio y plazos === *@
+        <section class="cd-section">
+            <h3 class="cd-section-title">@Lang.T("admin.contract.scopeTitle")</h3>
+            <div class="cd-scope-services">
+                @foreach (var svc in GetScopeList())
+                {
+                    <span class="cd-scope-pill">@svc</span>
+                }
+            </div>
+            <div class="cd-info-grid cd-info-grid--metrics">
+                <div class="cd-info-cell">
+                    <span class="cd-info-label">@Lang.T("admin.contract.targetCandidates")</span>
+                    <span class="cd-info-value cd-info-value--big">@(Contract.TargetCandidates?.ToString() ?? "[●]")</span>
+                    <span class="cd-info-hint">@Lang.T("admin.contract.targetCandidatesHint")</span>
+                </div>
+                <div class="cd-info-cell">
+                    <span class="cd-info-label">@Lang.T("admin.contract.targetCoverage")</span>
+                    <span class="cd-info-value cd-info-value--big">@(Contract.TargetCoverageDays?.ToString() ?? "[●]") @Lang.T("admin.contract.businessDays")</span>
+                    <span class="cd-info-hint">@Lang.T("admin.contract.docPerJobType")</span>
+                </div>
+            </div>
+            <p class="cd-ref-note">@Lang.T("admin.contract.docRefTableIntro")</p>
+            <table class="cd-table">
+                <thead>
+                    <tr><th>@Lang.T("admin.contract.jobType")</th><th>@Lang.T("admin.contract.docCoverageCol")</th></tr>
+                </thead>
+                <tbody>
+                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.Operational ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.Operational)</td><td>10 @Lang.T("admin.contract.businessDays")</td></tr>
+                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.SupervisorsTechnicians ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.SupervisorsTechnicians)</td><td>15 @Lang.T("admin.contract.businessDays")</td></tr>
+                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.BusinessManagers ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.BusinessManagers)</td><td>20 @Lang.T("admin.contract.businessDays")</td></tr>
+                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.QualifiedProfiles ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.QualifiedProfiles)</td><td>30 @Lang.T("admin.contract.businessDays")</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        @* === Garantia === *@
+        <section class="cd-section">
+            <h3 class="cd-section-title">@Lang.T("admin.contract.warrantyTitle")</h3>
+            <div class="cd-info-grid cd-info-grid--metrics">
+                <div class="cd-info-cell">
+                    <span class="cd-info-label">@Lang.T("admin.contract.warrantyDays")</span>
+                    <span class="cd-info-value cd-info-value--big">@(Contract.WarrantyDays?.ToString() ?? "[●]")</span>
+                    <span class="cd-info-hint">@Lang.T("admin.contract.docWarrantyRef")</span>
+                </div>
+            </div>
+        </section>
+
+        @* === Condiciones economicas === *@
+        <section class="cd-section">
+            <h3 class="cd-section-title">@Lang.T("admin.contract.economicsTitle")</h3>
+            <div class="cd-fee-highlight">
+                <span class="cd-fee-label">@Lang.T("admin.contract.feeAmount")</span>
+                <span class="cd-fee-amount">@FormatEur(Contract.FeeAmount)</span>
+                <span class="cd-fee-application">@GetFeeApplicationLabel(Contract.FeeApplicationType)</span>
+            </div>
+            <div class="cd-payment-grid">
+                <div class="cd-payment-card">
+                    <div class="cd-payment-pct">@FormatPct(Contract.PaymentOpeningPct)</div>
+                    <div class="cd-payment-label">@Lang.T("admin.contract.paymentOpening")</div>
+                </div>
+                <div class="cd-payment-card">
+                    <div class="cd-payment-pct">@FormatPct(Contract.PaymentValidationPct)</div>
+                    <div class="cd-payment-label">@Lang.T("admin.contract.paymentValidation")</div>
+                </div>
+                <div class="cd-payment-card">
+                    <div class="cd-payment-pct">@FormatPct(Contract.PaymentConsolidationPct)</div>
+                    <div class="cd-payment-label">@Lang.T("admin.contract.paymentConsolidation")</div>
+                </div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Contract.FeeExceptions))
+            {
+                <div class="cd-exceptions">
+                    <span class="cd-info-label">@Lang.T("admin.contract.feeExceptions")</span>
+                    <p class="cd-exceptions-text">@Contract.FeeExceptions</p>
+                </div>
+            }
+        </section>
+
+        @* === Firmas === *@
+        <div class="cd-signatures">
+            <div class="cd-signature-block">
+                <div class="cd-signature-line"></div>
+                <p class="cd-signature-name">@Lang.T("admin.contract.docTdSignature")</p>
+            </div>
+            <div class="cd-signature-block">
+                <div class="cd-signature-line"></div>
+                <p class="cd-signature-name">@Lang.T("admin.contract.docCompanySignature")</p>
+                <p class="cd-signature-company"><strong>@(Contract.CompanyName)</strong></p>
+            </div>
+        </div>
+
+        @if (Contract.Status == (int)ContractStatus.Accepted)
+        {
+            <div class="cd-accepted-stamp">
+                @Lang.T("admin.contract.docAcceptedStamp") @Contract.AcceptedAt?.ToString("dd/MM/yyyy")
+            </div>
+        }
+
+        <footer class="cd-footer">
+            <span>Trato Directo · @Lang.T("admin.contract.docServiceTitle")</span>
+        </footer>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid VacancyId { get; set; }
+
+    private VacancyDto? Vacancy;
+    private AdminVacancyContractDto? Contract;
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        Vacancy = await AuthApi.GetVacancyDetailAsync(VacancyId);
+        Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+        IsLoading = false;
+    }
+
+    private void GoBack() => Nav.NavigateTo($"/vacancies/{VacancyId}/contract");
+
+    private async Task PrintDocumentAsync()
+    {
+        await Js.InvokeVoidAsync("window.print");
+    }
+
+    private static string FormatEur(decimal? amount) => amount.HasValue
+        ? amount.Value.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("es-ES")) + " €"
+        : "[●]";
+
+    private static string FormatPct(decimal pct)
+        => pct.ToString("0.00", System.Globalization.CultureInfo.GetCultureInfo("es-ES")) + "%";
+
+    private string GetStatusLabel(int status) => ((ContractStatus)status) switch
+    {
+        ContractStatus.Draft => Lang.T("admin.contract.statusDraft"),
+        ContractStatus.Sent => Lang.T("admin.contract.statusSent"),
+        ContractStatus.Accepted => Lang.T("admin.contract.statusAccepted"),
+        ContractStatus.Rejected => Lang.T("admin.contract.statusRejected"),
+        ContractStatus.Cancelled => Lang.T("admin.contract.statusCancelled"),
+        _ => "-"
+    };
+
+    private string GetJobTypeLabel(int jobType) => jobType switch
+    {
+        (int)ContractJobType.Operational => Lang.T("admin.contract.jobTypeOperational"),
+        (int)ContractJobType.SupervisorsTechnicians => Lang.T("admin.contract.jobTypeSupervisors"),
+        (int)ContractJobType.BusinessManagers => Lang.T("admin.contract.jobTypeBusiness"),
+        (int)ContractJobType.QualifiedProfiles => Lang.T("admin.contract.jobTypeQualified"),
+        _ => "-"
+    };
+
+    private string GetFeeApplicationLabel(int type) => type switch
+    {
+        (int)FeeApplicationType.PerPosition => Lang.T("admin.contract.feePerPosition"),
+        (int)FeeApplicationType.PerProcess => Lang.T("admin.contract.feePerProcess"),
+        (int)FeeApplicationType.GlobalPrice => Lang.T("admin.contract.feeGlobalPrice"),
+        _ => "-"
+    };
+
+    private string GetScopeText()
+    {
+        var list = GetScopeList();
+        return list.Count == 0 ? "-" : string.Join(", ", list);
+    }
+
+    private List<string> GetScopeList()
+    {
+        var codes = Contract?.ScopeServices ?? new List<string>();
+        if (codes.Count == 0) return new List<string>();
+        return ScopeCatalog
+            .Where(s => codes.Contains(s.Code))
+            .Select(s => Lang.T(s.Key))
+            .ToList();
+    }
+
+    private static string GetStatusCss(int status) => ((ContractStatus)status) switch
+    {
+        ContractStatus.Draft => "cd-status--draft",
+        ContractStatus.Sent => "cd-status--sent",
+        ContractStatus.Accepted => "cd-status--accepted",
+        ContractStatus.Rejected => "cd-status--rejected",
+        ContractStatus.Cancelled => "cd-status--cancelled",
+        _ => ""
+    };
+
+    private static readonly (string Code, string Key)[] ScopeCatalog =
+    {
+        ("publicacion", "admin.contract.scopePublicacion"),
+        ("busqueda", "admin.contract.scopeBusqueda"),
+        ("screening", "admin.contract.scopeScreening"),
+        ("entrevista", "admin.contract.scopeEntrevista"),
+        ("evaluacion", "admin.contract.scopeEvaluacion"),
+        ("referencias", "admin.contract.scopeReferencias"),
+        ("shortlist", "admin.contract.scopeShortlist"),
+        ("briefing", "admin.contract.scopeBriefing"),
+        ("seguimiento", "admin.contract.scopeSeguimiento")
+    };
+}

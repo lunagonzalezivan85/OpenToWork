@@ -13,6 +13,7 @@
 <div class="admin-page-header">
     <h1>@Lang.T("admin.vacancies.title")</h1>
     <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenWizard">+ @Lang.T("admin.vacancies.create")</button>
         <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ExportCsv">@Lang.T("admin.vacancies.exportCsv")</button>
     </div>
 </div>
@@ -63,6 +64,7 @@ else
                     </td>
                     <td>
                         <div class="admin-table-actions">
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => OpenDetail(v.Id)">@Lang.T("admin.vacancies.view")</button>
                             @if (v.Status != (int)VacancyStatus.Active)
                             {
                                 <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Moderate(v.Id, (int)VacancyStatus.Active)">@Lang.T("admin.vacancies.approve")</button>
@@ -169,8 +171,278 @@ else
     </table>
 }
 
+@* === Wizard: nueva vacante === *@
+@if (ShowWizard)
+{
+    <div class="admin-modal-overlay" @onclick="CloseWizard">
+        <div class="admin-modal" @onclick:stopPropagation="true" style="max-width: 640px; max-height: 90vh; overflow-y: auto;">
+            <h3 class="admin-modal-title">@Lang.T("admin.vacancies.wizardTitle")</h3>
+
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem;">
+                @for (var i = 1; i <= 4; i++)
+                {
+                    var step = i;
+                    <div style="flex: 1; text-align: center;">
+                        <div style="height: 4px; border-radius: 2px; background: @(step <= WizardStep ? "var(--accent-primary)" : "var(--input-border)");"></div>
+                        <div style="font-size: 0.7rem; margin-top: 0.35rem; color: @(step == WizardStep ? "var(--text-primary)" : "var(--text-muted)"); font-weight: @(step == WizardStep ? 600 : 400);">
+                            @GetWizardStepName(step)
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="admin-modal-body">
+                @if (WizardStep == 1)
+                {
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">@Lang.T("admin.vacancies.company") *</label>
+                        <select @bind="WizardModel.CompanyId" class="admin-modal-input">
+                            <option value="">@Lang.T("admin.vacancies.selectCompany")</option>
+                            @foreach (var c in WizardCompanies)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">@Lang.T("admin.vacancies.jobTitle") *</label>
+                        <input type="text" @bind="WizardModel.Title" class="admin-modal-input" maxlength="200" placeholder="@Lang.T("admin.vacancies.jobTitlePlaceholder")" />
+                    </div>
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">@Lang.T("admin.vacancies.category")</label>
+                        <input type="text" @bind="WizardModel.Category" class="admin-modal-input" maxlength="100" placeholder="@Lang.T("admin.vacancies.categoryPlaceholder")" />
+                    </div>
+                }
+                else if (WizardStep == 2)
+                {
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">@Lang.T("admin.vacancies.description")</label>
+                        <textarea @bind="WizardModel.Description" class="admin-modal-input" rows="5" placeholder="@Lang.T("admin.vacancies.descriptionPlaceholder")"></textarea>
+                    </div>
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">@Lang.T("admin.vacancies.requirements") *</label>
+                        <textarea @bind="WizardModel.Requirements" class="admin-modal-input" rows="6" placeholder="@Lang.T("admin.vacancies.requirementsPlaceholder")"></textarea>
+                        <p style="color: var(--text-muted); font-size: 0.75rem; margin: 0.4rem 0 0;">@Lang.T("admin.vacancies.requirementsHint")</p>
+                    </div>
+                }
+                else if (WizardStep == 3)
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div class="ot-input-group">
+                            <label class="ot-input-label">@Lang.T("admin.vacancies.salaryMin")</label>
+                            <input type="number" step="0.01" min="0" @bind="WizardModel.SalaryMin" class="admin-modal-input" />
+                        </div>
+                        <div class="ot-input-group">
+                            <label class="ot-input-label">@Lang.T("admin.vacancies.salaryMax")</label>
+                            <input type="number" step="0.01" min="0" @bind="WizardModel.SalaryMax" class="admin-modal-input" />
+                        </div>
+                        <div class="ot-input-group">
+                            <label class="ot-input-label">@Lang.T("admin.vacancies.location")</label>
+                            <input type="text" @bind="WizardModel.Location" class="admin-modal-input" maxlength="200" />
+                        </div>
+                        <div class="ot-input-group">
+                            <label class="ot-input-label">@Lang.T("admin.vacancies.workMode")</label>
+                            <select @bind="WizardModel.WorkMode" class="admin-modal-input">
+                                <option value="0">@Lang.T("admin.vacancies.workOnSite")</option>
+                                <option value="1">@Lang.T("admin.vacancies.workHybrid")</option>
+                                <option value="2">@Lang.T("admin.vacancies.workRemote")</option>
+                            </select>
+                        </div>
+                        <div class="ot-input-group">
+                            <label class="ot-input-label">@Lang.T("admin.vacancies.contractType")</label>
+                            <select @bind="WizardModel.ContractType" class="admin-modal-input">
+                                <option value="0">@Lang.T("admin.vacancies.contractFullTime")</option>
+                                <option value="1">@Lang.T("admin.vacancies.contractPartTime")</option>
+                                <option value="2">@Lang.T("admin.vacancies.contractByContract")</option>
+                                <option value="3">@Lang.T("admin.vacancies.contractRemote")</option>
+                            </select>
+                        </div>
+                        <div class="ot-input-group">
+                            <label class="ot-input-label">@Lang.T("admin.vacancies.experienceLevel")</label>
+                            <select @bind="WizardModel.ExperienceLevel" class="admin-modal-input">
+                                <option value="">@Lang.T("admin.common.notSpecified")</option>
+                                <option value="0">@Lang.T("admin.vacancies.expEntry")</option>
+                                <option value="1">@Lang.T("admin.vacancies.expJunior")</option>
+                                <option value="2">@Lang.T("admin.vacancies.expMid")</option>
+                                <option value="3">@Lang.T("admin.vacancies.expSenior")</option>
+                                <option value="4">@Lang.T("admin.vacancies.expLead")</option>
+                            </select>
+                        </div>
+                        <div class="ot-input-group">
+                            <label class="ot-input-label">@Lang.T("admin.vacancies.yearsExperience")</label>
+                            <input type="number" min="0" max="50" step="1" @bind="WizardModel.YearsExperience" class="admin-modal-input" />
+                        </div>
+                        <div class="ot-input-group">
+                            <label class="ot-input-label">@Lang.T("admin.vacancies.requiredApplicants")</label>
+                            <input type="number" min="1" max="999" step="1" @bind="WizardModel.RequiredApplicants" class="admin-modal-input" />
+                            <small style="color: var(--text-muted); font-size: 0.72rem;">@Lang.T("admin.vacancies.requiredApplicantsHint")</small>
+                        </div>
+                        <div class="ot-input-group">
+                            <label class="ot-input-label">@Lang.T("admin.vacancies.englishLevel")</label>
+                            <select @bind="WizardModel.EnglishLevel" class="admin-modal-input">
+                                <option value="">@Lang.T("admin.common.notSpecified")</option>
+                                <option value="0">@Lang.T("admin.vacancies.engNone")</option>
+                                <option value="1">@Lang.T("admin.vacancies.engBasic")</option>
+                                <option value="2">@Lang.T("admin.vacancies.engIntermediate")</option>
+                                <option value="3">@Lang.T("admin.vacancies.engAdvanced")</option>
+                                <option value="4">@Lang.T("admin.vacancies.engNative")</option>
+                            </select>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem;">@Lang.T("admin.vacancies.reviewHint")</p>
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.company")</span><strong>@(WizardCompanies.FirstOrDefault(c => c.Id == WizardModel.CompanyId)?.Name ?? "-")</strong></div>
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.jobTitle")</span><strong>@WizardModel.Title</strong></div>
+                    @if (!string.IsNullOrEmpty(WizardModel.Category))
+                    {
+                        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.category")</span><strong>@WizardModel.Category</strong></div>
+                    }
+                    @if (!string.IsNullOrEmpty(WizardModel.Location))
+                    {
+                        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.location")</span><strong>@WizardModel.Location</strong></div>
+                    }
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.contractType")</span><strong>@GetContractTypeLabel(WizardModel.ContractType)</strong></div>
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.workMode")</span><strong>@GetWorkModeLabel(WizardModel.WorkMode)</strong></div>
+                    @if (WizardModel.SalaryMin.HasValue || WizardModel.SalaryMax.HasValue)
+                    {
+                        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.salaryRange")</span><strong>@(WizardModel.SalaryMin?.ToString("N0") ?? "-") - @(WizardModel.SalaryMax?.ToString("N0") ?? "-")</strong></div>
+                    }
+                    @if (WizardModel.YearsExperience.HasValue)
+                    {
+                        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.yearsExperience")</span><strong>@WizardModel.YearsExperience</strong></div>
+                    }
+                    @if (WizardModel.RequiredApplicants.HasValue)
+                    {
+                        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.requiredApplicants")</span><strong>@WizardModel.RequiredApplicants</strong></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(WizardModel.Requirements))
+                    {
+                        <div class="admin-recruitment-info-row" style="flex-direction: column; align-items: flex-start; gap: 0.3rem;">
+                            <span>@Lang.T("admin.vacancies.requirements")</span>
+                            <strong style="white-space: pre-line; font-weight: 400;">@WizardModel.Requirements</strong>
+                        </div>
+                    }
+                }
+
+                @if (!string.IsNullOrEmpty(WizardError))
+                {
+                    <p style="color: var(--danger); font-size: 0.8rem; margin-top: 0.75rem;">@WizardError</p>
+                }
+            </div>
+
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseWizard">@Lang.T("admin.common.cancel")</button>
+                @if (WizardStep > 1)
+                {
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="WizardBack">@Lang.T("admin.vacancies.back")</button>
+                }
+                @if (WizardStep < 4)
+                {
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="WizardNext">@Lang.T("admin.vacancies.next")</button>
+                }
+                else
+                {
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="CreateVacancy" disabled="@IsCreatingVacancy">@Lang.T("admin.vacancies.publish")</button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<AdminVacancyDto>? VacanciesList;
+
+    // === Wizard: nueva vacante ===
+    private bool ShowWizard { get; set; }
+    private int WizardStep { get; set; } = 1;
+    private AdminCreateVacancyDto WizardModel { get; set; } = new();
+    private List<CompanyListDto> WizardCompanies { get; set; } = new();
+    private string? WizardError { get; set; }
+    private bool IsCreatingVacancy { get; set; }
+
+    private void OpenDetail(Guid id) => Nav.NavigateTo($"/vacancies/{id}");
+
+    private async Task OpenWizard()
+    {
+        WizardModel = new AdminCreateVacancyDto();
+        WizardStep = 1;
+        WizardError = null;
+        ShowWizard = true;
+        WizardCompanies = await AuthApi.GetCompaniesAsync(pageSize: 200);
+    }
+
+    private void CloseWizard() => ShowWizard = false;
+
+    private string GetWizardStepName(int step) => step switch
+    {
+        1 => Lang.T("admin.vacancies.stepCompany"),
+        2 => Lang.T("admin.vacancies.stepContent"),
+        3 => Lang.T("admin.vacancies.stepTerms"),
+        4 => Lang.T("admin.vacancies.stepReview"),
+        _ => ""
+    };
+
+    private string GetContractTypeLabel(int type) => type switch
+    {
+        0 => Lang.T("admin.vacancies.contractFullTime"),
+        1 => Lang.T("admin.vacancies.contractPartTime"),
+        2 => Lang.T("admin.vacancies.contractByContract"),
+        3 => Lang.T("admin.vacancies.contractRemote"),
+        _ => "-"
+    };
+
+    private string GetWorkModeLabel(int mode) => mode switch
+    {
+        0 => Lang.T("admin.vacancies.workOnSite"),
+        1 => Lang.T("admin.vacancies.workHybrid"),
+        2 => Lang.T("admin.vacancies.workRemote"),
+        _ => "-"
+    };
+
+    private bool ValidateStep(int step) => step switch
+    {
+        1 => WizardModel.CompanyId != Guid.Empty && !string.IsNullOrWhiteSpace(WizardModel.Title),
+        2 => !string.IsNullOrWhiteSpace(WizardModel.Requirements),
+        _ => true
+    };
+
+    private void WizardNext()
+    {
+        if (!ValidateStep(WizardStep))
+        {
+            WizardError = Lang.T("admin.vacancies.wizardRequired");
+            return;
+        }
+        WizardError = null;
+        WizardStep++;
+    }
+
+    private void WizardBack()
+    {
+        WizardError = null;
+        WizardStep--;
+    }
+
+    private async Task CreateVacancy()
+    {
+        if (IsCreatingVacancy) return;
+        IsCreatingVacancy = true;
+        WizardError = null;
+
+        var result = await AuthApi.CreateVacancyAsync(WizardModel);
+        if (result == null)
+        {
+            WizardError = Lang.T("admin.vacancies.wizardError");
+            IsCreatingVacancy = false;
+            return;
+        }
+
+        ShowWizard = false;
+        await LoadVacancies();
+        IsCreatingVacancy = false;
+    }
 
     // Fase 3, sub-fase 3.8: cola de shortlist (vista simple, sin workflow de aprobacion - ver fase-3-sub8.md pregunta 3).
     private Guid? ShortlistVacancyId { get; set; }

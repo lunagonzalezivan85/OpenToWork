@@ -18,6 +18,8 @@ public class VacancyDto
     public string? Category { get; set; }
     public int? ExperienceLevel { get; set; }
     public int? EnglishLevel { get; set; }
+    public int? RequiredApplicants { get; set; }
+    public int? YearsExperience { get; set; }
     public int Status { get; set; }
     public DateTime? PublishedAt { get; set; }
     public int ViewsCount { get; set; }
@@ -36,6 +38,8 @@ public class CreateVacancyDto
     public string? Category { get; set; }
     public int? ExperienceLevel { get; set; }
     public int? EnglishLevel { get; set; }
+    public int? RequiredApplicants { get; set; }
+    public int? YearsExperience { get; set; }
 }
 
 public class UpdateVacancyDto

@@ -38,6 +38,37 @@ public class ModerateVacancyDto
     public int Status { get; set; }
 }
 
+/// <summary>
+/// Creacion de vacante desde el portal admin (wizard). La vacante nace activa porque la crea
+/// personal de TD de confianza; se audita con el admin que la creo.
+/// </summary>
+public class AdminCreateVacancyDto
+{
+    public Guid CompanyId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Requirements { get; set; }
+    public decimal? SalaryMin { get; set; }
+    public decimal? SalaryMax { get; set; }
+    public string? Location { get; set; }
+    public int ContractType { get; set; }
+    public int WorkMode { get; set; }
+    public string? Category { get; set; }
+    public int? ExperienceLevel { get; set; }
+    public int? EnglishLevel { get; set; }
+    public int? RequiredApplicants { get; set; }
+    public int? YearsExperience { get; set; }
+}
+
+/// <summary>
+/// Postulacion creada por el admin a nombre de un candidato (desde la lista de
+/// candidatos que cumplen el perfil pero no se han postulado). Fuente: AdminCurated.
+/// </summary>
+public class AdminCreateApplicationDto
+{
+    public Guid CandidateId { get; set; }
+}
+
 public class ChangeRoleDto
 {
     public int Role { get; set; }

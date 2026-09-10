@@ -18,4 +18,10 @@ public interface ICompatibilityService
     Task<int> CalculateMatchesForVacancyAsync(Guid vacancyId);
 
     Task<List<JobMatchDto>> GenerateShortlist(Guid vacancyId, int? limit = null);
+
+    /// <summary>
+    /// Candidatos con match calculado que cumplen el perfil de la vacante pero NO se han
+    /// postulado (prospectos para outreach del reclutador).
+    /// </summary>
+    Task<List<JobMatchDto>> GetNonApplicantMatchesAsync(Guid vacancyId, int? limit = null, int minPercentage = 0);
 }

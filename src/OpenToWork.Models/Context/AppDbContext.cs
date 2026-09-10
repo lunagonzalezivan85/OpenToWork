@@ -46,6 +46,7 @@ public class AppDbContext : DbContext
     public DbSet<PTCompanyStageLog> PT_CompanyStageLogs => Set<PTCompanyStageLog>();
     public DbSet<PTPlan> PT_Plans => Set<PTPlan>();
     public DbSet<PTCandidateDelivery> PT_CandidateDeliveries => Set<PTCandidateDelivery>();
+    public DbSet<PTVacancyContract> PT_VacancyContracts => Set<PTVacancyContract>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -175,6 +176,20 @@ public class AppDbContext : DbContext
             e.HasIndex(a => new { a.PT_CandidateId, a.Status, a.IsDeleted });
             e.Property(a => a.Status).HasDefaultValue(0);
             e.Property(a => a.ApplicationSource).HasDefaultValue(0);
+        });
+
+        modelBuilder.Entity<PTVacancyContract>(e =>
+        {
+            e.ToTable("PT_VacancyContracts");
+            // Un anexo vigente por vacante (1:1 entre contratos no eliminados).
+            e.HasIndex(c => new { c.PT_VacancyId, c.IsDeleted }).IsUnique();
+            e.HasIndex(c => new { c.PT_CompanyId, c.IsDeleted });
+            e.Property(c => c.Status).HasDefaultValue(0);
+            e.Property(c => c.Currency).HasDefaultValue("EUR");
+            e.Property(c => c.FeeApplicationType).HasDefaultValue(0);
+            e.Property(c => c.PaymentOpeningPct).HasDefaultValue(30m);
+            e.Property(c => c.PaymentValidationPct).HasDefaultValue(50m);
+            e.Property(c => c.PaymentConsolidationPct).HasDefaultValue(20m);
         });
 
         modelBuilder.Entity<PTCandidateExperience>(e =>

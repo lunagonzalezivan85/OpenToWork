@@ -37,6 +37,15 @@ public class PTVacancy : BaseEntity
 
     public int? EnglishLevel { get; set; }
 
+    /// <summary>
+    /// Cantidad de postulantes que TD se comprometio a captar para esta vacante. Es una meta de
+    /// captacion para el reclutador, NO un parametro de validacion del proceso.
+    /// </summary>
+    public int? RequiredApplicants { get; set; }
+
+    /// <summary>Anos de experiencia requeridos para el puesto (informativo, distinto de ExperienceLevel).</summary>
+    public int? YearsExperience { get; set; }
+
     public int Status { get; set; } = 0;
 
     public DateTime? PublishedAt { get; set; }

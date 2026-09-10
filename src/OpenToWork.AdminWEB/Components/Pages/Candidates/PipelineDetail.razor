@@ -168,6 +168,25 @@ else
         </div>
     </div>
 
+    @* === Requisitos de la vacante vinculada (validar al llamar al postulante) === *@
+    @if (Detail.VacancyId.HasValue)
+    {
+        <div class="admin-recruitment-card" style="margin-top: 1.5rem; border-left: 4px solid var(--accent-primary);">
+            <h3 class="admin-recruitment-card-title">
+                @Lang.T("admin.recruitment.vacancyRequirements")
+                <span class="admin-result-badge admin-result-badge--info" style="margin-left: 0.5rem;">@Detail.VacancyTitle</span>
+            </h3>
+            @if (string.IsNullOrWhiteSpace(Detail.VacancyRequirements))
+            {
+                <p style="color: var(--text-muted); font-size: 0.85rem;">@Lang.T("admin.recruitment.vacancyNoRequirements")</p>
+            }
+            else
+            {
+                <p style="white-space: pre-line; font-size: 0.9rem; line-height: 1.5; margin: 0;">@Detail.VacancyRequirements</p>
+            }
+        </div>
+    }
+
     @* === Preferences Form (Stage 0) === *@
     @if (Detail.Dismissal == null && Detail.CurrentStage == 0)
     {

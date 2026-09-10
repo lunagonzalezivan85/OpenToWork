@@ -12,11 +12,13 @@ public class VacanciesController : AdminControllerBase
 {
     private readonly IAdminVacancyService _vacancyService;
     private readonly ICompatibilityService _compatibilityService;
+    private readonly IAdminApplicationService _applicationService;
 
-    public VacanciesController(IAdminVacancyService vacancyService, ICompatibilityService compatibilityService)
+    public VacanciesController(IAdminVacancyService vacancyService, ICompatibilityService compatibilityService, IAdminApplicationService applicationService)
     {
         _vacancyService = vacancyService;
         _compatibilityService = compatibilityService;
+        _applicationService = applicationService;
     }
 
     [HttpGet]
@@ -24,6 +26,20 @@ public class VacanciesController : AdminControllerBase
     {
         var vacancies = await _vacancyService.GetVacanciesAsync(page, pageSize, status);
         return Ok(vacancies);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetVacancy(Guid id)
+    {
+        var result = await _vacancyService.GetByIdAsync(id);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateVacancy([FromBody] AdminCreateVacancyDto dto)
+    {
+        var result = await _vacancyService.CreateAsync(dto, AdminId, ClientIp);
+        return result == null ? BadRequest() : Ok(result);
     }
 
     [HttpPut("{id}/moderate")]
@@ -50,5 +66,29 @@ public class VacanciesController : AdminControllerBase
     {
         var shortlist = await _compatibilityService.GenerateShortlist(id, limit);
         return Ok(shortlist);
+    }
+
+    /// <summary>Postulantes de la vacante (el admin si puede ver identidad; el embudo ciego solo aplica a empresas).</summary>
+    [HttpGet("{id}/applicants")]
+    public async Task<IActionResult> GetApplicants(Guid id)
+    {
+        var applicants = await _applicationService.GetByVacancyAsync(id);
+        return Ok(applicants);
+    }
+
+    /// <summary>Candidatos que cumplen el perfil pero no se han postulado (prospectos para outreach).</summary>
+    [HttpGet("{id}/non-applicant-matches")]
+    public async Task<IActionResult> GetNonApplicantMatches(Guid id, [FromQuery] int? limit = null, [FromQuery] int minPercentage = 0)
+    {
+        var matches = await _compatibilityService.GetNonApplicantMatchesAsync(id, limit, minPercentage);
+        return Ok(matches);
+    }
+
+    /// <summary>Postula al candidato seleccionado a nombre de TD (fuente AdminCurated).</summary>
+    [HttpPost("{id}/applications")]
+    public async Task<IActionResult> CreateApplication(Guid id, [FromBody] AdminCreateApplicationDto dto)
+    {
+        var created = await _vacancyService.CreateApplicationAsync(id, dto, AdminId, ClientIp);
+        return created ? NoContent() : BadRequest();
     }
 }

@@ -145,6 +145,41 @@ public class CompatibilityService : ICompatibilityService
             .ToListAsync();
     }
 
+    public async Task<List<JobMatchDto>> GetNonApplicantMatchesAsync(Guid vacancyId, int? limit = null, int minPercentage = 0)
+    {
+        var take = limit is > 0 ? limit.Value : DefaultShortlistLimit;
+
+        var appliedCandidateIds = await _context.PT_Applications
+            .Where(a => a.PT_VacancyId == vacancyId && !a.IsDeleted)
+            .Select(a => a.PT_CandidateId)
+            .ToListAsync();
+
+        var query = _context.PT_JobMatchScores
+            .Where(m => m.PT_VacancyId == vacancyId && !m.IsDeleted && m.MatchPercentage >= minPercentage);
+
+        if (appliedCandidateIds.Count > 0)
+            query = query.Where(m => !appliedCandidateIds.Contains(m.PT_CandidateId));
+
+        return await query
+            .Include(m => m.Candidate)
+            .OrderByDescending(m => m.MatchPercentage)
+            .Take(take)
+            .Select(m => new JobMatchDto
+            {
+                CandidateId = m.PT_CandidateId,
+                CandidateName = (m.Candidate.FirstName + " " + m.Candidate.LastName).Trim(),
+                CandidateTitle = m.Candidate.Title,
+                VacancyId = m.PT_VacancyId,
+                MatchPercentage = m.MatchPercentage,
+                SkillsMatch = m.SkillsMatch,
+                ExperienceMatch = m.ExperienceMatch,
+                EducationMatch = m.EducationMatch,
+                LocationMatch = m.LocationMatch,
+                CalculatedAt = m.CalculatedAt
+            })
+            .ToListAsync();
+    }
+
     private static int CalculateSkillsMatch(PTCandidate candidate, PTVacancy vacancy)
     {
         var vacancySkills = vacancy.VacancySkills.Where(vs => !vs.IsDeleted).ToList();

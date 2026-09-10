@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    Admin Layout - One UI Sidebar + Topbar
    ============================================ */
 
@@ -676,7 +676,7 @@ textarea.admin-input {
 .admin-stat-card--danger .admin-stat-value { color: var(--danger); }
 
 /* ============================================
-   Admin Charts — Donut, Progress, Bar
+   Admin Charts â€” Donut, Progress, Bar
    ============================================ */
 
 .admin-chart-grid {
@@ -3446,5 +3446,422 @@ textarea.admin-input {
     .admin-modal {
         min-width: 90vw;
         margin: 1rem;
+    }
+}
+
+
+/* ================================================================
+   Documento formal de contrato — diseno corporativo imprimible
+   ================================================================ */
+
+.contract-doc {
+    background: #ffffff;
+    max-width: 880px;
+    margin: 0 auto 2rem auto;
+    padding: 0;
+    color: #1a1a1a;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    box-shadow: 0 4px 24px rgba(11, 19, 43, 0.10);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* --- Membrete --- */
+.cd-letterhead {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    background: #0b132b;
+    color: #ffffff;
+    padding: 1.5rem 2.5rem;
+}
+
+.cd-letterhead-left {
+    justify-self: start;
+}
+
+.cd-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0b132b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+}
+
+.cd-letterhead-center {
+    text-align: center;
+}
+
+.cd-brand-name {
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.cd-brand-sub {
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #a0b4d0;
+    margin-top: 0.2rem;
+}
+
+.cd-letterhead-right {
+    justify-self: end;
+    text-align: right;
+}
+
+.cd-date-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #a0b4d0;
+}
+
+.cd-date-value {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 0.15rem;
+}
+
+/* --- Strip de identificacion --- */
+.cd-id-strip {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.cd-id-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 2.5rem;
+    border-right: 1px solid #e2e8f0;
+}
+
+.cd-id-item:last-child {
+    border-right: none;
+}
+
+.cd-id-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #778da9;
+}
+
+.cd-id-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #0b132b;
+}
+
+.cd-status--draft { color: #b45309; }
+.cd-status--sent { color: #1d4ed8; }
+.cd-status--accepted { color: #15803d; }
+.cd-status--rejected { color: #b91c1c; }
+.cd-status--cancelled { color: #6b7280; }
+
+/* --- Secciones --- */
+.cd-section {
+    padding: 1.5rem 2.5rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.cd-section:last-of-type {
+    border-bottom: none;
+}
+
+.cd-section-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0b132b;
+    margin: 0 0 1rem 0;
+    padding-left: 0.75rem;
+    border-left: 3px solid #0066ff;
+}
+
+/* --- Grid de informacion --- */
+.cd-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.cd-info-grid--metrics {
+    grid-template-columns: 1fr 1fr;
+}
+
+.cd-info-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.65rem 0.85rem;
+    background: #f8fafc;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.cd-info-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #778da9;
+    font-weight: 600;
+}
+
+.cd-info-value {
+    font-size: 0.9rem;
+    color: #0b132b;
+    font-weight: 500;
+}
+
+.cd-info-value--big {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.cd-info-hint {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* --- Pills de alcance --- */
+.cd-scope-services {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+}
+
+.cd-scope-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.7rem;
+    background: #e8f1ff;
+    color: #0052cc;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+/* --- Tabla de referencia --- */
+.cd-ref-note {
+    font-size: 0.78rem;
+    font-style: italic;
+    color: #3a506b;
+    margin: 0.75rem 0 0.5rem 0;
+}
+
+.cd-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.cd-table thead th {
+    background: #0b132b;
+    color: #ffffff;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cd-table tbody td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.cd-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.cd-row-active td {
+    background: #e8f1ff !important;
+    font-weight: 700;
+    color: #0052cc;
+}
+
+/* --- Tarifa destacada --- */
+.cd-fee-highlight {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #f0f7ff 0%, #e8f1ff 100%);
+    border: 1px solid #c7dbf5;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.cd-fee-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #3a506b;
+    font-weight: 600;
+}
+
+.cd-fee-amount {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #0066ff;
+}
+
+.cd-fee-application {
+    font-size: 0.8rem;
+    color: #3a506b;
+    margin-left: auto;
+    font-weight: 500;
+}
+
+/* --- Distribucion de pago --- */
+.cd-payment-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.cd-payment-card {
+    text-align: center;
+    padding: 0.85rem 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    border-top: 3px solid #0066ff;
+}
+
+.cd-payment-pct {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #0b132b;
+}
+
+.cd-payment-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #778da9;
+    margin-top: 0.15rem;
+}
+
+/* --- Excepciones --- */
+.cd-exceptions {
+    padding: 0.65rem 0.85rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+}
+
+.cd-exceptions-text {
+    margin: 0.3rem 0 0 0;
+    font-size: 0.85rem;
+    color: #1a1a1a;
+    white-space: pre-line;
+}
+
+/* --- Firmas --- */
+.cd-signatures {
+    display: flex;
+    justify-content: space-between;
+    gap: 3rem;
+    padding: 2rem 2.5rem 1.5rem 2.5rem;
+    page-break-inside: avoid;
+}
+
+.cd-signature-block {
+    flex: 1;
+    text-align: center;
+}
+
+.cd-signature-line {
+    border-bottom: 1.5px solid #0b132b;
+    height: 2.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.cd-signature-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #0b132b;
+    margin: 0;
+}
+
+.cd-signature-company {
+    font-size: 0.8rem;
+    color: #3a506b;
+    margin: 0.15rem 0 0 0;
+}
+
+/* --- Sello aceptado --- */
+.cd-accepted-stamp {
+    margin: 0 2.5rem 1.5rem 2.5rem;
+    padding: 0.6rem 1.25rem;
+    border: 2.5px solid #15803d;
+    color: #15803d;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-align: center;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* --- Footer --- */
+.cd-footer {
+    padding: 0.75rem 2.5rem;
+    background: #0b132b;
+    color: #a0b4d0;
+    font-size: 0.72rem;
+    text-align: center;
+    letter-spacing: 0.04em;
+}
+
+/* --- Impresion --- */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .contract-doc,
+    .contract-doc * {
+        visibility: visible;
+    }
+
+    .contract-doc {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .admin-page-header,
+    .admin-sidebar,
+    .admin-topbar {
+        display: none !important;
+    }
+
+    .cd-section {
+        page-break-inside: avoid;
     }
 }

@@ -1,0 +1,382 @@
+@page "/vacancies/{Id:guid}"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.vacancies.detailTitle")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@(Vacancy?.Title ?? Lang.T("admin.vacancies.detailTitle"))</h1>
+        <p class="admin-page-header-subtitle">@(Vacancy?.CompanyName ?? "")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="GoToContract">@Lang.T("admin.contract.generate")</button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.vacancies.backToList")</button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Vacancy == null)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.vacancies.notFound")</div></div>
+}
+else
+{
+    @* === Tabs === *@
+    <div class="admin-tabs">
+        <button class="admin-tab @(ActiveTab == 0 ? "admin-tab--active" : "")" @onclick="() => ActivateTab(0)">
+            @Lang.T("admin.vacancies.tabInfo")
+        </button>
+        <button class="admin-tab @(ActiveTab == 1 ? "admin-tab--active" : "")" @onclick="() => ActivateTab(1)">
+            @Lang.T("admin.vacancies.tabApplicants")
+            <span class="admin-tab-badge admin-tab-badge--info">@Applicants.Count</span>
+        </button>
+        <button class="admin-tab @(ActiveTab == 2 ? "admin-tab--active" : "")" @onclick="() => ActivateTab(2)">
+            @Lang.T("admin.vacancies.tabMatches")
+            <span class="admin-tab-badge admin-tab-badge--success">@NonApplicantMatches.Count</span>
+        </button>
+    </div>
+
+    @* === Tab 1: Info de la vacante === *@
+    @if (ActiveTab == 0)
+    {
+        <div class="admin-recruitment-grid" style="margin-top: 1.5rem;">
+            <div class="admin-recruitment-card">
+                <h3 class="admin-recruitment-card-title">@Lang.T("admin.vacancies.stepTerms")</h3>
+                @if (!string.IsNullOrEmpty(Vacancy.Category))
+                {
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.category")</span><strong>@Vacancy.Category</strong></div>
+                }
+                @if (!string.IsNullOrEmpty(Vacancy.Location))
+                {
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.location")</span><strong>@Vacancy.Location</strong></div>
+                }
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.contractType")</span><strong>@GetContractTypeLabel(Vacancy.ContractType)</strong></div>
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.workMode")</span><strong>@GetWorkModeLabel(Vacancy.WorkMode)</strong></div>
+                @if (Vacancy.ExperienceLevel.HasValue)
+                {
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.experienceLevel")</span><strong>@GetExperienceLevelLabel(Vacancy.ExperienceLevel.Value)</strong></div>
+                }
+                @if (Vacancy.EnglishLevel.HasValue)
+                {
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.englishLevel")</span><strong>@GetEnglishLevelLabel(Vacancy.EnglishLevel.Value)</strong></div>
+                }
+                @if (Vacancy.SalaryMin.HasValue || Vacancy.SalaryMax.HasValue)
+                {
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.salaryRange")</span><strong>@(Vacancy.SalaryMin?.ToString("N0") ?? "-") - @(Vacancy.SalaryMax?.ToString("N0") ?? "-")</strong></div>
+                }
+                @if (Vacancy.YearsExperience.HasValue)
+                {
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.yearsExperience")</span><strong>@Vacancy.YearsExperience</strong></div>
+                }
+                @if (Vacancy.RequiredApplicants.HasValue)
+                {
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.requiredApplicants")</span><strong>@Vacancy.RequiredApplicants</strong></div>
+                }
+            </div>
+
+            <div class="admin-recruitment-card">
+                <h3 class="admin-recruitment-card-title">@Lang.T("admin.recruitment.recruitmentInfo")</h3>
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.company")</span><strong>@Vacancy.CompanyName</strong></div>
+                <div class="admin-recruitment-info-row">
+                    <span>@Lang.T("admin.vacancies.columnStatus")</span>
+                    <strong>
+                        @if ((VacancyStatus)Vacancy.Status == VacancyStatus.Active)
+                        {
+                            <span class="admin-status admin-status--active">@StatusLabel(Vacancy.Status)</span>
+                        }
+                        else if ((VacancyStatus)Vacancy.Status == VacancyStatus.Draft)
+                        {
+                            <span class="admin-status admin-status--draft">@StatusLabel(Vacancy.Status)</span>
+                        }
+                        else
+                        {
+                            <span class="admin-status admin-status--closed">@StatusLabel(Vacancy.Status)</span>
+                        }
+                    </strong>
+                </div>
+                @if (Vacancy.PublishedAt.HasValue)
+                {
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.published")</span><strong>@Vacancy.PublishedAt.Value.ToString("yyyy-MM-dd")</strong></div>
+                }
+                @if (!string.IsNullOrEmpty(Vacancy.Category))
+                {
+                    <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.category")</span><strong>@Vacancy.Category</strong></div>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Vacancy.Description))
+        {
+            <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+                <h3 class="admin-recruitment-card-title">@Lang.T("admin.vacancies.description")</h3>
+                <p style="white-space: pre-line; font-size: 0.9rem; line-height: 1.5; margin: 0;">@Vacancy.Description</p>
+            </div>
+        }
+
+        <div class="admin-recruitment-card" style="margin-top: 1.5rem; border-left: 4px solid var(--accent-primary);">
+            <h3 class="admin-recruitment-card-title">@Lang.T("admin.recruitment.vacancyRequirements")</h3>
+            @if (string.IsNullOrWhiteSpace(Vacancy.Requirements))
+            {
+                <p style="color: var(--text-muted); font-size: 0.85rem;">@Lang.T("admin.recruitment.vacancyNoRequirements")</p>
+            }
+            else
+            {
+                <p style="white-space: pre-line; font-size: 0.9rem; line-height: 1.5; margin: 0;">@Vacancy.Requirements</p>
+            }
+        </div>
+    }
+
+    @* === Tab 2: Postulantes === *@
+    else if (ActiveTab == 1)
+    {
+        <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+            @if (Applicants.Count == 0)
+            {
+                <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.vacancies.applicantsEmpty")</div></div>
+            }
+            else
+            {
+                <table class="ot-table">
+                    <thead>
+                        <tr>
+                            <th>@Lang.T("admin.vacancies.candidateName")</th>
+                            <th>@Lang.T("admin.common.email")</th>
+                            <th>@Lang.T("admin.applications.columnStatus")</th>
+                            <th>@Lang.T("admin.vacancies.expectedSalary")</th>
+                            <th>@Lang.T("admin.vacancies.availableFrom")</th>
+                            <th>@Lang.T("admin.vacancies.appliedAt")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Applicants)
+                        {
+                            <tr>
+                                <td>
+                                    <button class="ot-btn ot-btn--link ot-btn--small" @onclick="() => OpenProfile(a.UserId)" style="padding: 0; text-decoration: underline;">
+                                        <strong>@a.CandidateName</strong>
+                                    </button>
+                                </td>
+                                <td>@a.CandidateEmail</td>
+                                <td>@ApplicationStatusLabel(a.Status)</td>
+                                <td>@(a.ExpectedSalary?.ToString("N0") ?? "-")</td>
+                                <td>@(a.AvailableFromDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                <td>@a.CreatedAt.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    }
+
+    @* === Tab 3: Cumplen requisitos pero no se postularon === *@
+    else
+    {
+        <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                <h3 class="admin-recruitment-card-title" style="margin: 0;">@Lang.T("admin.vacancies.tabMatches")</h3>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <select class="admin-select" @bind="MinMatchPercentage" style="width: auto;">
+                        <option value="0">@Lang.T("admin.vacancies.minMatchAny")</option>
+                        <option value="50">≥ 50%</option>
+                        <option value="70">≥ 70%</option>
+                        <option value="80">≥ 80%</option>
+                    </select>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="RecalculateMatchesAsync" disabled="@IsRecalculating">
+                        @Lang.T("admin.vacancies.calculateMatches")
+                    </button>
+                    <button class="ot-btn ot-btn--success ot-btn--small" @onclick="ApplySelectedAsync" disabled="@(!SelectedCandidates.Any() || IsApplying)">
+                        @Lang.T("admin.vacancies.applySelected")@(SelectedCandidates.Any() ? $" ({SelectedCandidates.Count})" : "")
+                    </button>
+                </div>
+            </div>
+
+            @if (NonApplicantMatches.Count == 0)
+            {
+                <div class="admin-empty">
+                    <div class="admin-empty-text">@Lang.T("admin.vacancies.matchesEmpty")</div>
+                    <div class="admin-empty-text" style="font-size: 0.8rem; color: var(--text-muted);">@Lang.T("admin.vacancies.matchesHint")</div>
+                </div>
+            }
+            else
+            {
+                <table class="ot-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"><input type="checkbox" checked="@(SelectedCandidates.Count > 0 && SelectedCandidates.Count == NonApplicantMatches.Count)" @onchange="ToggleSelectAll" /></th>
+                            <th>@Lang.T("admin.vacancies.candidateName")</th>
+                            <th>@Lang.T("admin.candidates.columnTitle")</th>
+                            <th>@Lang.T("admin.shortlist.matchPercentage")</th>
+                            <th>@Lang.T("admin.shortlist.skills")</th>
+                            <th>@Lang.T("admin.shortlist.experience")</th>
+                            <th>@Lang.T("admin.shortlist.location")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in NonApplicantMatches)
+                        {
+                            <tr>
+                                <td><input type="checkbox" checked="@SelectedCandidates.Contains(m.CandidateId)" @onchange="e => ToggleCandidate(m.CandidateId, (bool)(e.Value ?? false))" /></td>
+                                <td><strong>@m.CandidateName</strong></td>
+                                <td>@(m.CandidateTitle ?? "-")</td>
+                                <td><strong>@m.MatchPercentage%</strong></td>
+                                <td>@m.SkillsMatch%</td>
+                                <td>@m.ExperienceMatch%</td>
+                                <td>@m.LocationMatch%</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private VacancyDto? Vacancy;
+    private bool IsLoading { get; set; } = true;
+
+    // === Tabs ===
+    private int ActiveTab { get; set; }
+    private List<AdminApplicationDto> Applicants { get; set; } = new();
+    private List<JobMatchDto> NonApplicantMatches { get; set; } = new();
+    private int MinMatchPercentage { get; set; }
+    private bool IsRecalculating { get; set; }
+    private bool ApplicantsLoaded { get; set; }
+    private bool MatchesLoaded { get; set; }
+    private HashSet<Guid> SelectedCandidates { get; set; } = new();
+    private bool IsApplying { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        Vacancy = await AuthApi.GetVacancyDetailAsync(Id);
+        IsLoading = false;
+    }
+
+    private async Task ActivateTab(int tab)
+    {
+        ActiveTab = tab;
+        if (tab == 1 && !ApplicantsLoaded)
+        {
+            Applicants = await AuthApi.GetVacancyApplicantsAsync(Id);
+            ApplicantsLoaded = true;
+        }
+        else if (tab == 2 && !MatchesLoaded)
+        {
+            NonApplicantMatches = await AuthApi.GetVacancyNonApplicantMatchesAsync(Id, MinMatchPercentage);
+            MatchesLoaded = true;
+        }
+    }
+
+    private async Task RecalculateMatchesAsync()
+    {
+        if (IsRecalculating) return;
+        IsRecalculating = true;
+        await AuthApi.CalculateVacancyMatchesAsync(Id);
+        NonApplicantMatches = await AuthApi.GetVacancyNonApplicantMatchesAsync(Id, MinMatchPercentage);
+        Applicants = await AuthApi.GetVacancyApplicantsAsync(Id);
+        ApplicantsLoaded = true;
+        SelectedCandidates.Clear();
+        IsRecalculating = false;
+    }
+
+    private void ToggleCandidate(Guid candidateId, bool selected)
+    {
+        if (selected) SelectedCandidates.Add(candidateId);
+        else SelectedCandidates.Remove(candidateId);
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        SelectedCandidates.Clear();
+        if ((bool)(e.Value ?? false))
+            foreach (var m in NonApplicantMatches)
+                SelectedCandidates.Add(m.CandidateId);
+    }
+
+    private async Task ApplySelectedAsync()
+    {
+        if (IsApplying || SelectedCandidates.Count == 0) return;
+        IsApplying = true;
+        foreach (var candidateId in SelectedCandidates)
+            await AuthApi.ApplyCandidateToVacancyAsync(Id, candidateId);
+        SelectedCandidates.Clear();
+        Applicants = await AuthApi.GetVacancyApplicantsAsync(Id);
+        ApplicantsLoaded = true;
+        NonApplicantMatches = await AuthApi.GetVacancyNonApplicantMatchesAsync(Id, MinMatchPercentage);
+        IsApplying = false;
+    }
+
+    private void GoBack() => Nav.NavigateTo("/vacancies");
+
+    private void GoToContract() => Nav.NavigateTo($"/vacancies/{Id}/contract");
+
+    private void OpenProfile(Guid userId) => Nav.NavigateTo($"/candidates/profile/{userId}");
+
+    private string ApplicationStatusLabel(int status) => (ApplicationStatus)status switch
+    {
+        ApplicationStatus.Pending => Lang.T("admin.negotiation.appPending"),
+        ApplicationStatus.InReview => Lang.T("admin.negotiation.appInReview"),
+        ApplicationStatus.Accepted => Lang.T("admin.negotiation.appAccepted"),
+        ApplicationStatus.Rejected => Lang.T("admin.negotiation.appRejected"),
+        _ => status.ToString()
+    };
+
+    private string StatusLabel(int status) => (VacancyStatus)status switch
+    {
+        VacancyStatus.Draft => Lang.T("admin.vacancies.statusDraft"),
+        VacancyStatus.Active => Lang.T("admin.vacancies.statusActive"),
+        VacancyStatus.Closed => Lang.T("admin.vacancies.statusClosed"),
+        _ => status.ToString()
+    };
+
+    private string GetContractTypeLabel(int type) => type switch
+    {
+        0 => Lang.T("admin.vacancies.contractFullTime"),
+        1 => Lang.T("admin.vacancies.contractPartTime"),
+        2 => Lang.T("admin.vacancies.contractByContract"),
+        3 => Lang.T("admin.vacancies.contractRemote"),
+        _ => "-"
+    };
+
+    private string GetWorkModeLabel(int mode) => mode switch
+    {
+        0 => Lang.T("admin.vacancies.workOnSite"),
+        1 => Lang.T("admin.vacancies.workHybrid"),
+        2 => Lang.T("admin.vacancies.workRemote"),
+        _ => "-"
+    };
+
+    private string GetExperienceLevelLabel(int level) => level switch
+    {
+        0 => Lang.T("admin.vacancies.expEntry"),
+        1 => Lang.T("admin.vacancies.expJunior"),
+        2 => Lang.T("admin.vacancies.expMid"),
+        3 => Lang.T("admin.vacancies.expSenior"),
+        4 => Lang.T("admin.vacancies.expLead"),
+        _ => "-"
+    };
+
+    private string GetEnglishLevelLabel(int level) => level switch
+    {
+        0 => Lang.T("admin.vacancies.engNone"),
+        1 => Lang.T("admin.vacancies.engBasic"),
+        2 => Lang.T("admin.vacancies.engIntermediate"),
+        3 => Lang.T("admin.vacancies.engAdvanced"),
+        4 => Lang.T("admin.vacancies.engNative"),
+        _ => "-"
+    };
+}

@@ -44,6 +44,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IStaffService, StaffService>();
         services.AddScoped<INegotiationService, NegotiationService>();
         services.AddScoped<IAdminVacancyService, AdminVacancyService>();
+        services.AddScoped<IAdminContractService, AdminContractService>();
         services.AddScoped<IAdminSkillService, AdminSkillService>();
         services.AddScoped<IAdminDashboardService, AdminDashboardService>();
         services.AddScoped<IExportService, ExportService>();

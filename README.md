@@ -233,7 +233,30 @@ dotnet run --project src/OpenToWork.AdminWEB
 > UPDATE SC_Users SET PrimaryRole = 2 WHERE Email = 'admin@opentowork.com';
 > ```
 
-### 6. Migraciones (solo si se modifican entidades)
+### 6. Flujo de trabajo con Git
+
+Antes de comenzar cualquier tarea, **siempre** seguir este checklist:
+
+1. **Validar la fecha actual** — confirmar que se trabaja en el dia correspondiente.
+2. **Crear una nueva rama** para la tarea o feature:
+   ```bash
+   git checkout -b feature/nombre-descriptivo
+   ```
+3. **Validar siempre cambios pendientes de todos** — antes de empezar, revisar si hay cambios sin commitear (propios o de otros agentes):
+   ```bash
+   git status
+   git log --oneline -5
+   ```
+   Si hay cambios pendientes, commitearlos o coordinar antes de continuar.
+4. **Commitear frecuentemente** con mensajes descriptivos.
+5. **Hacer push al finalizar** la tarea:
+   ```bash
+   git add .
+   git commit -m "feat: descripcion del cambio"
+   git push origin feature/nombre-descriptivo
+   ```
+
+### 7. Migraciones (solo si se modifican entidades)
 
 Crear nueva migracion:
 
@@ -247,7 +270,7 @@ Aplicar migracion:
 dotnet ef database update --project src/OpenToWork.Models --startup-project src/OpenToWork.Models
 ```
 
-### 7. Estructura de puertos
+### 8. Estructura de puertos
 
 | Proyecto | Puerto | Descripcion |
 |---|---|---|

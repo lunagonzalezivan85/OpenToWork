@@ -1,0 +1,429 @@
+@page "/vacancies/{VacancyId:guid}/contract"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.contract.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.contract.title")</h1>
+        <p class="admin-page-header-subtitle">
+            @(Contract?.ContractNumber ?? Vacancy?.Title ?? "")
+        </p>
+    </div>
+    <div class="admin-page-actions">
+        @if (Contract != null)
+        {
+            var badge = GetStatusBadgeInfo(Contract.Status);
+            <span class="admin-status @badge.CssClass">@Lang.T(badge.Label)</span>
+            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="GoToDocument">@Lang.T("admin.contract.viewDocument")</button>
+        }
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.contract.backToVacancy")</button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Vacancy == null)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.vacancies.notFound")</div></div>
+}
+else if (IsEditing)
+{
+    @* === Formulario (sin contrato o borrador) === *@
+    @if (FormError != null)
+    {
+        <p style="color: var(--danger); font-size: 0.85rem;">@FormError</p>
+    }
+    <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+        <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.scopeTitle")</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0 0 1rem 0;">@Lang.T("admin.contract.scopeServicesHint")</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; margin-bottom: 1.25rem;">
+            @foreach (var svc in ScopeServiceCodes)
+            {
+                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;">
+                    <input type="checkbox" checked="@FormScope.Contains(svc.Code)" @onchange="e => ToggleScope(svc.Code, (bool)(e.Value ?? false))" />
+                    @Lang.T(svc.Key)
+                </label>
+            }
+        </div>
+        <div class="admin-recruitment-grid">
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.contract.targetCandidates")</label>
+                <input type="number" min="1" step="1" @bind="FormTargetCandidates" class="admin-modal-input" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.contract.jobType")</label>
+                <select value="@FormJobType.ToString()" @onchange="OnJobTypeChanged" class="admin-modal-input">
+                    <option value="0">@Lang.T("admin.contract.jobTypeOperational")</option>
+                    <option value="1">@Lang.T("admin.contract.jobTypeSupervisors")</option>
+                    <option value="2">@Lang.T("admin.contract.jobTypeBusiness")</option>
+                    <option value="3">@Lang.T("admin.contract.jobTypeQualified")</option>
+                </select>
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.contract.targetCoverage")</label>
+                <input type="number" min="1" step="1" @bind="FormCoverageDays" class="admin-modal-input" />
+            </div>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.contract.coverageRefHint")</p>
+    </div>
+
+    <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+        <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.warrantyTitle")</h3>
+        <div class="ot-input-group" style="max-width: 320px;">
+            <label class="ot-input-label">@Lang.T("admin.contract.warrantyDays")</label>
+            <input type="number" min="0" step="1" @bind="FormWarrantyDays" class="admin-modal-input" />
+        </div>
+    </div>
+
+    <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+        <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.economicsTitle")</h3>
+        <div class="admin-recruitment-grid">
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.contract.feeAmount")</label>
+                <input type="number" min="0" step="0.01" @bind="FormFeeAmount" class="admin-modal-input" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.contract.feeApplication")</label>
+                <select @bind="FormFeeApplicationType" class="admin-modal-input">
+                    <option value="0">@Lang.T("admin.contract.feePerPosition")</option>
+                    <option value="1">@Lang.T("admin.contract.feePerProcess")</option>
+                    <option value="2">@Lang.T("admin.contract.feeGlobalPrice")</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin-recruitment-grid" style="margin-top: 0.5rem;">
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.contract.paymentOpening") (%)</label>
+                <input type="number" min="0" max="100" step="1" @bind="FormOpeningPct" class="admin-modal-input" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.contract.paymentValidation") (%)</label>
+                <input type="number" min="0" max="100" step="1" @bind="FormValidationPct" class="admin-modal-input" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.contract.paymentConsolidation") (%)</label>
+                <input type="number" min="0" step="1" @bind="FormConsolidationPct" class="admin-modal-input" />
+            </div>
+        </div>
+        @if (FormPaymentSumError)
+        {
+            <p style="color: var(--danger); font-size: 0.8rem;">@Lang.T("admin.contract.paymentSumError")</p>
+        }
+        <div class="ot-input-group" style="margin-top: 0.75rem;">
+            <label class="ot-input-label">@Lang.T("admin.contract.feeExceptions")</label>
+            <textarea @bind="FormFeeExceptions" class="admin-modal-input" rows="2" placeholder="@Lang.T("admin.contract.feeExceptionsPlaceholder")"></textarea>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SaveContractAsync" disabled="@IsSaving">
+            @(Contract == null ? Lang.T("admin.contract.generate") : Lang.T("admin.common.save"))
+        </button>
+        @if (Contract != null && Contract.Status == (int)ContractStatus.Draft)
+        {
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="SendContractAsync" disabled="@IsSaving">
+                @Lang.T("admin.contract.send")
+            </button>
+        }
+    </div>
+}
+else if (Contract != null)
+{
+    @* === Vista documento (Sent/Accepted/Rejected/Cancelled) === *@
+    @if (Contract.Status == (int)ContractStatus.Rejected && !string.IsNullOrEmpty(Contract.RejectionReason))
+    {
+        <div class="admin-recruitment-card" style="margin-top: 1.5rem; border-left: 4px solid var(--danger);">
+            <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.rejectReason")</h3>
+            <p style="margin: 0; font-size: 0.9rem;">@Contract.RejectionReason</p>
+        </div>
+    }
+    @if (Contract.Status == (int)ContractStatus.Accepted)
+    {
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.75rem;">@Lang.T("admin.contract.readOnlyHint")</p>
+    }
+
+    <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+        <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.scopeTitle")</h3>
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.scopeServices")</span><strong>@GetScopeText()</strong></div>
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.targetCandidates")</span><strong>@(Contract.TargetCandidates?.ToString() ?? "-")</strong></div>
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.targetCoverage")</span><strong>@(Contract.TargetCoverageDays?.ToString() ?? "-") @Lang.T("admin.contract.businessDays")</strong></div>
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.jobType")</span><strong>@GetJobTypeLabel(Contract.JobTypeCategory)</strong></div>
+    </div>
+
+    <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+        <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.warrantyTitle")</h3>
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.warrantyDays")</span><strong>@(Contract.WarrantyDays?.ToString() ?? "-")</strong></div>
+    </div>
+
+    <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+        <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.economicsTitle")</h3>
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.feeAmount")</span><strong>@FormatEur(Contract.FeeAmount)</strong></div>
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.feeApplication")</span><strong>@GetFeeApplicationLabel(Contract.FeeApplicationType)</strong></div>
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.paymentDistribution")</span><strong>@FormatPct(Contract.PaymentOpeningPct) @Lang.T("admin.contract.paymentOpening") / @FormatPct(Contract.PaymentValidationPct) @Lang.T("admin.contract.paymentValidation") / @FormatPct(Contract.PaymentConsolidationPct) @Lang.T("admin.contract.paymentConsolidation")</strong></div>
+        @if (!string.IsNullOrWhiteSpace(Contract.FeeExceptions))
+        {
+            <div class="admin-recruitment-info-row" style="flex-direction: column; align-items: flex-start; gap: 0.3rem;">
+                <span>@Lang.T("admin.contract.feeExceptions")</span>
+                <strong style="white-space: pre-line; font-weight: 400;">@Contract.FeeExceptions</strong>
+            </div>
+        }
+ @if (Contract.AcceptedAt.HasValue)
+        {
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.acceptedAt")</span><strong>@Contract.AcceptedAt.Value.ToString("yyyy-MM-dd")</strong></div>
+        }
+        @if (Contract.RejectedAt.HasValue)
+        {
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.rejectedAt")</span><strong>@Contract.RejectedAt.Value.ToString("yyyy-MM-dd")</strong></div>
+        }
+    </div>
+
+        @if (Contract.Status == (int)ContractStatus.Sent)
+        {
+            <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => DecideAsync(true)">@Lang.T("admin.contract.accept")</button>
+                <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => ShowRejectReason = true">@Lang.T("admin.contract.reject")</button>
+            </div>
+        }
+    @if (ShowRejectReason)
+    {
+        <div class="admin-recruitment-card" style="margin-top: 1rem; border-left: 4px solid var(--danger);">
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.contract.rejectReason") *</label>
+                <textarea @bind="RejectReasonInput" class="admin-modal-input" rows="2"></textarea>
+            </div>
+            @if (RejectError)
+            {
+                <p style="color: var(--danger); font-size: 0.8rem;">@Lang.T("admin.contract.rejectReasonRequired")</p>
+            }
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="ConfirmRejectAsync">@Lang.T("admin.contract.reject")</button>
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ShowRejectReason = false">@Lang.T("admin.common.cancel")</button>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid VacancyId { get; set; }
+
+    private VacancyDto? Vacancy;
+    private AdminVacancyContractDto? Contract;
+    private bool IsLoading { get; set; } = true;
+
+    // Modo edicion: sin contrato, o contrato en Draft (o Rejected que se reabre al guardar).
+    private bool IsEditing => Contract == null || Contract.Status == (int)ContractStatus.Draft;
+
+    // Formulario
+    private HashSet<string> FormScope { get; set; } = new();
+    private int? FormTargetCandidates { get; set; }
+    private int FormJobType { get; set; }
+    private int? FormCoverageDays { get; set; }
+    private int? FormWarrantyDays { get; set; }
+    private decimal? FormFeeAmount { get; set; }
+    private int FormFeeApplicationType { get; set; }
+    private decimal FormOpeningPct { get; set; } = 30m;
+    private decimal FormValidationPct { get; set; } = 50m;
+    private decimal FormConsolidationPct { get; set; } = 20m;
+    private string? FormFeeExceptions { get; set; }
+    private string? FormError { get; set; }
+    private bool FormPaymentSumError { get; set; }
+    private bool IsSaving { get; set; }
+
+    // Decision
+    private bool ShowRejectReason { get; set; }
+    private string? RejectReasonInput { get; set; }
+    private bool RejectError { get; set; }
+
+    private static readonly (string Code, string Key)[] ScopeCatalog =
+    {
+        ("publicacion", "admin.contract.scopePublicacion"),
+        ("busqueda", "admin.contract.scopeBusqueda"),
+        ("screening", "admin.contract.scopeScreening"),
+        ("entrevista", "admin.contract.scopeEntrevista"),
+        ("evaluacion", "admin.contract.scopeEvaluacion"),
+        ("referencias", "admin.contract.scopeReferencias"),
+        ("shortlist", "admin.contract.scopeShortlist"),
+        ("briefing", "admin.contract.scopeBriefing"),
+        ("seguimiento", "admin.contract.scopeSeguimiento")
+    };
+
+    private static IEnumerable<(string Code, string Key)> ScopeServiceCodes => ScopeCatalog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        Vacancy = await AuthApi.GetVacancyDetailAsync(VacancyId);
+        Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+        LoadForm();
+        IsLoading = false;
+    }
+
+    private void LoadForm()
+    {
+        if (Contract == null)
+        {
+            FormTargetCandidates = Vacancy?.RequiredApplicants;
+            FormCoverageDays = ReferenceDays(FormJobType);
+            return;
+        }
+
+        FormScope = new HashSet<string>(Contract.ScopeServices);
+        FormTargetCandidates = Contract.TargetCandidates;
+        FormJobType = Contract.JobTypeCategory;
+        FormCoverageDays = Contract.TargetCoverageDays;
+        FormWarrantyDays = Contract.WarrantyDays;
+        FormFeeAmount = Contract.FeeAmount;
+        FormFeeApplicationType = Contract.FeeApplicationType;
+        FormOpeningPct = Contract.PaymentOpeningPct;
+        FormValidationPct = Contract.PaymentValidationPct;
+        FormConsolidationPct = Contract.PaymentConsolidationPct;
+        FormFeeExceptions = Contract.FeeExceptions;
+    }
+
+    private void ToggleScope(string code, bool selected)
+    {
+        if (selected) FormScope.Add(code);
+        else FormScope.Remove(code);
+    }
+
+    private void OnJobTypeChanged(ChangeEventArgs e)
+    {
+        FormJobType = int.TryParse(e.Value?.ToString(), out var v) ? v : 0;
+        FormCoverageDays = ReferenceDays(FormJobType);
+    }
+
+    private static int ReferenceDays(int jobType) => jobType switch
+    {
+        (int)ContractJobType.Operational => 10,
+        (int)ContractJobType.SupervisorsTechnicians => 15,
+        (int)ContractJobType.BusinessManagers => 20,
+        (int)ContractJobType.QualifiedProfiles => 30,
+        _ => 15
+    };
+
+    private async Task SaveContractAsync()
+    {
+        if (IsSaving) return;
+        FormError = null;
+        FormPaymentSumError = false;
+
+        if (FormOpeningPct + FormValidationPct + FormConsolidationPct != 100m)
+        {
+            FormPaymentSumError = true;
+            return;
+        }
+
+        IsSaving = true;
+        var dto = new AdminSaveVacancyContractDto
+        {
+            ScopeServices = FormScope.ToList(),
+            TargetCandidates = FormTargetCandidates,
+            JobTypeCategory = FormJobType,
+            TargetCoverageDays = FormCoverageDays,
+            WarrantyDays = FormWarrantyDays,
+            FeeAmount = FormFeeAmount,
+            Currency = "EUR",
+            FeeApplicationType = FormFeeApplicationType,
+            PaymentOpeningPct = FormOpeningPct,
+            PaymentValidationPct = FormValidationPct,
+            PaymentConsolidationPct = FormConsolidationPct,
+            FeeExceptions = FormFeeExceptions
+        };
+        var result = await AuthApi.SaveVacancyContractAsync(VacancyId, dto);
+        if (result == null)
+        {
+            FormError = Lang.T("admin.contract.saveError");
+        }
+        else
+        {
+            Contract = result;
+            LoadForm();
+        }
+        IsSaving = false;
+    }
+
+    private async Task SendContractAsync()
+    {
+        if (IsSaving) return;
+        IsSaving = true;
+        if (await AuthApi.SendVacancyContractAsync(VacancyId))
+            Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+        IsSaving = false;
+    }
+
+    private async Task ConfirmRejectAsync()
+    {
+        RejectError = string.IsNullOrWhiteSpace(RejectReasonInput);
+        if (RejectError) return;
+
+        if (await AuthApi.DecideVacancyContractAsync(VacancyId, false, RejectReasonInput))
+            Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+        ShowRejectReason = false;
+    }
+
+    private async Task DecideAsync(bool accepted)
+    {
+        if (await AuthApi.DecideVacancyContractAsync(VacancyId, accepted))
+            Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+    }
+
+    private void GoBack() => Nav.NavigateTo($"/vacancies/{VacancyId}");
+
+    private void GoToDocument() => Nav.NavigateTo($"/vacancies/{VacancyId}/contract/document");
+
+    private string GetScopeText()
+    {
+        if (FormScope.Count == 0 && Contract != null)
+            FormScope = new HashSet<string>(Contract.ScopeServices);
+        var codes = Contract?.ScopeServices ?? new List<string>();
+        if (codes.Count == 0) return "-";
+        var names = ScopeCatalog
+            .Where(s => codes.Contains(s.Code))
+            .Select(s => Lang.T(s.Key));
+        return string.Join(", ", names);
+    }
+
+    private static string FormatEur(decimal? amount) => amount.HasValue
+        ? amount.Value.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("es-ES")) + " €"
+        : "-";
+
+    private static string FormatPct(decimal pct)
+        => pct.ToString("0.00", System.Globalization.CultureInfo.GetCultureInfo("es-ES")) + "%";
+
+    private string GetJobTypeLabel(int jobType) => jobType switch
+    {
+        (int)ContractJobType.Operational => Lang.T("admin.contract.jobTypeOperational"),
+        (int)ContractJobType.SupervisorsTechnicians => Lang.T("admin.contract.jobTypeSupervisors"),
+        (int)ContractJobType.BusinessManagers => Lang.T("admin.contract.jobTypeBusiness"),
+        (int)ContractJobType.QualifiedProfiles => Lang.T("admin.contract.jobTypeQualified"),
+        _ => "-"
+    };
+
+    private string GetFeeApplicationLabel(int type) => type switch
+    {
+        (int)FeeApplicationType.PerPosition => Lang.T("admin.contract.feePerPosition"),
+        (int)FeeApplicationType.PerProcess => Lang.T("admin.contract.feePerProcess"),
+        (int)FeeApplicationType.GlobalPrice => Lang.T("admin.contract.feeGlobalPrice"),
+        _ => "-"
+    };
+
+    private (string CssClass, string Label) GetStatusBadgeInfo(int status) => ((ContractStatus)status) switch
+    {
+        ContractStatus.Draft => ("admin-status--draft", "admin.contract.statusDraft"),
+        ContractStatus.Sent => ("admin-status--info", "admin.contract.statusSent"),
+        ContractStatus.Accepted => ("admin-status--active", "admin.contract.statusAccepted"),
+        ContractStatus.Rejected => ("admin-status--closed", "admin.contract.statusRejected"),
+        ContractStatus.Cancelled => ("admin-status--closed", "admin.contract.statusCancelled"),
+        _ => ("admin-status--draft", "admin.contract.statusDraft")
+    };
+}

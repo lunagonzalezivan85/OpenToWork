@@ -39,6 +39,7 @@ public class RecruitmentDetailDto
     public bool? HasTransport { get; set; }
     public Guid? VacancyId { get; set; }
     public string? VacancyTitle { get; set; }
+    public string? VacancyRequirements { get; set; }
     public int CurrentStage { get; set; }
     public string? AssignedToName { get; set; }
     public Guid? AssignedToUserId { get; set; }
