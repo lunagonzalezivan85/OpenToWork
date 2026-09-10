@@ -1,0 +1,46 @@
+@page "/faq"
+@using OpenToWork.WEB.Services
+@inject LanguageService Lang
+
+<PageTitle>@Lang.T("common.faq.title")</PageTitle>
+
+<div class="page-container">
+    <div class="about-hero">
+        <h1 class="about-hero-title">@Lang.T("common.faq.title")</h1>
+        <p class="about-hero-subtitle">@Lang.T("common.faq.subtitle")</p>
+    </div>
+
+    <div class="faq-list">
+        @for (var i = 1; i <= QuestionCount; i++)
+        {
+            var index = i;
+            <div class="faq-item @(OpenIndex == index ? "faq-item--open" : "")">
+                <button class="faq-question" @onclick="() => Toggle(index)" aria-expanded="@(OpenIndex == index)">
+                    <span>@Lang.T($"common.faq.q{index}")</span>
+                    <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                </button>
+                @if (OpenIndex == index)
+                {
+                    <div class="faq-answer">
+                        <p>@Lang.T($"common.faq.a{index}")</p>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private const int QuestionCount = 10;
+    private int OpenIndex = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+    }
+
+    private void Toggle(int index) => OpenIndex = OpenIndex == index ? 0 : index;
+}
