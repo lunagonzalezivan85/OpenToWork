@@ -384,7 +384,15 @@ public class AppDbContext : DbContext
             e.ToTable("PT_Companies");
             e.HasIndex(c => new { c.Name, c.IsDeleted });
             e.HasIndex(c => new { c.Status, c.IsDeleted });
-            e.HasIndex(c => c.SCUserId);
+            // Unico por usuario, pero SCUserId es nullable: MySQL permite multiples
+            // filas con NULL en un indice unico, asi que los prospectos del CRM
+            // (SCUserId = null) no colisionan entre si.
+            e.HasIndex(c => c.SCUserId).IsUnique();
+            e.HasOne(c => c.User)
+                .WithOne(u => u.Company)
+                .HasForeignKey<PTCompany>(c => c.SCUserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<PTCompanyPipeline>(e =>

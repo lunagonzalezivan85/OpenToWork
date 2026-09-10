@@ -46,7 +46,7 @@ public class CompanyDetailDto
     public int Status { get; set; }
     public bool IsVerified { get; set; }
     public DateTime CreatedAt { get; set; }
-    public Guid SCUserId { get; set; }
+    public Guid? SCUserId { get; set; }
     public CompanyPipelineDto? Pipeline { get; set; }
 }
 
