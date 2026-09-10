@@ -31,6 +31,7 @@ El proyecto se compone de **3 portales independientes**:
 - **Motor de evaluacion** con 4 indices: Estabilidad, Confiabilidad, Evidencia, Compatibilidad (Fase 3)
 - **Sistema de verificaciones** con checkmarks: identidad, LinkedIn, experiencia, portafolio, referencias (Fase 3)
 - **CRM de Captacion de Empresas** — pipeline comercial con 6 etapas, wizard progresivo, mapa interactivo para ubicacion, planes (Basic/Premium/Platinum), generacion de contratos
+- **Embudo Ciego** — la empresa nunca ve candidatos ni identidades, solo el conteo de postulantes por vacante; Trato Directo investiga/evalua/entrevista en el pipeline y luego *entrega* personal verificado a una vacante concreta (`PTCandidateDelivery`); la empresa responde Interesado/Contratado/No encaja sobre lo entregado
 
 ---
 
@@ -615,6 +616,7 @@ Perfil registrado → Perfil completo → Evaluado → Verificacion en proceso �
 - [x] Revision de validaciones automaticas — resuelto en sub-fase 3.8: score e indices visibles con boton Recalcular en el mismo perfil
 - [x] Gestion de roles de usuario (cambiar rol, no solo activar/desactivar) (Dsiezar, 29-Ago)
 - [x] **CRM de Captacion de Empresas** (Iluna, 06-Sep) — pipeline de seguimiento comercial con 6 etapas (Lead, Contactado, Reunion, Propuesta Enviada, Negociacion, Cerrado Ganado), wizard por etapas, asignacion de responsables, descarte de empresas con motivo, restauracion, historial de cambios de etapa, mapa interactivo (Leaflet + OpenStreetMap) para pais/ciudad, seleccion de plan (Basic/Premium/Platinum) en etapa Propuesta Enviada, generacion de contrato de prestacion de servicios listo para firmar e imprimir
+- [x] **Entrega de personal verificado (Embudo Ciego)** (Iluna, 08-Sep) — `DeliveriesController` en AdminAPI + `DeliveryService`: el reclutador entrega un candidato en etapa "Listo a Entregar" y con distintivo Verificado TD a una vacante/empresa concreta (`PTCandidateDelivery`, migracion `20260908113350_CandidateDeliveries`). La empresa solo ve conteos, nunca identidades, hasta la entrega
 
 **Deuda tecnica documentada (4 items) — resueltos 29-Ago (Dsiezar):**
 - [x] Unificar `AdminAuthService` con `AuthService` (logica duplicada) — extraida a `ITokenCryptoService` compartido en Core
@@ -643,6 +645,14 @@ Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-f
 - [x] Ranking automatico de candidatos por compatibilidad — `CompatibilityService.GenerateShortlist`, sub-fase 3.4
 - [x] Shortlist con Job Match Score — visible en `VacancyManage.razor` ("Ranking por Compatibilidad"), sub-fase 3.8
 - [x] Scorecard configurable por vacante — `PTVacancy.WeightsConfig`, formulario en `VacancyManage.razor`, sub-fase 3.8
+
+**Embudo Ciego — entrega de personal verificado (Iluna, 08-Sep-2026):**
+- [x] La empresa NO ve candidatos ni identidades — `CompanyDashboard.razor` y `VerifiedApplicants.razor` muestran solo conteos ("X postulantes / Y en verificacion") por vacante
+- [x] Entidad `PTCandidateDelivery` (`DeliveryStatus`: Delivered/ViewedByCompany/Interested/Hired/RejectedByCompany) + migracion `20260908113350_CandidateDeliveries`
+- [x] `DeliveryService.DeliverCandidateAsync` — exige etapa `ReadyToDeliver` + `IsVerifiedTD == true` + vacante con empresa + no entregado dos veces a la misma vacante
+- [x] `DeliveriesController` en AdminAPI (entregar) y en API publica (la empresa consulta y responde)
+- [x] Videos `v01.mp4` / `v02.mp4` en bucle en login y home; seed de hosteleria (`docs/seed-hosteleria.sql`); menu de empresa sin "Busqueda avanzada" (se reactiva cuando la empresa tome un plan destinado a eso, otra fase)
+- [x] Validacion del flujo con el agente de RH — `docs/rh/validacion-flujo-negocio-2026-09-08.md`, `docs/rh/guia-embudo-ciego-iluna.md`
 
 **Pendiente:**
 - [ ] Sistema de suscripciones (planes: Basic, Pro, Enterprise) — requiere definir modelo de ingresos
@@ -794,9 +804,10 @@ Antes de marcar cualquier fase como completada, se debe validar:
 - **Fase 2 (Portal de Candidatos):** COMPLETADA
 - **Fase 3 (Motor de Evaluacion y Scoring):** COMPLETADA (Dsiezar, 01-Sep-2026) — las 8 sub-fases del plan obligatorio de Iluna. Mergeada a `main` el 07-Sep. El **Pipeline de Reclutamiento manual** de Iluna (21-Ago) sigue activo en paralelo, ver nota en la seccion "Fases del Proyecto"
 - **Fase 4 (Portal Administrativo):** COMPLETADA — Dsiezar (roles + deuda tecnica, 29-Ago; verificaciones manuales, 01-Sep) + Pipeline de Reclutamiento completo (Iluna, 21-Ago) + CRM de Captacion de Empresas (Iluna, 06-Sep: pipeline comercial, planes, contratos, mapa interactivo) + RBAC de Personal Administrativo y flujo de Cierre de Negociaciones (Dsiezar, 05-Sep: roles SuperAdmin/Reclutador/Comercial con enforcement real, pantalla "Personal Administrativo", presentar candidatos a la empresa y cerrar negociacion). Todo mergeado a `main` el 07-Sep, con 5 bugs de integracion encontrados y corregidos en QA (ver bitacora 07-Sep)
-- **Fase 5 (Portal Corporativo):** Parcial — estructura base + shortlist/scorecard (Fase 3) + busqueda avanzada por score (Dsiezar) ya funcionan; categorias de vacante migradas al rubro de hosteleria y gate de login/registro en detalle de vacante (Dsiezar, 05-Sep); falta suscripciones
+- **Fase 5 (Portal Corporativo):** Parcial — estructura base + shortlist/scorecard (Fase 3) + busqueda avanzada por score (Dsiezar) ya funcionan; categorias de vacante migradas al rubro de hosteleria y gate de login/registro en detalle de vacante (Dsiezar, 05-Sep); **Embudo Ciego** operativo (Iluna, 08-Sep: la empresa solo ve conteos, TD entrega personal verificado via `PTCandidateDelivery`); falta suscripciones
 - **Fases 6-8:** Pendientes
-- **`main` esta al dia** con todo lo anterior desde el 07-Sep-2026 (antes habia 16 commits de diferencia entre `dsiezar-fase-5` y `main`)
+- **`main` esta al dia** con todo lo anterior. Ultimos merges: Embudo Ciego (Iluna, 08-Sep), fix de `RecruitmentService.GetVacancyOptionsAsync` (Dsiezar, 08-Sep), pagina publica de Preguntas Frecuentes (Dsiezar, 09-Sep)
+- **Rama pendiente de integrar:** `iluna-embudo-ciego` (`40e2bc5`, Iluna, 09-Sep) — feature de **Contrato de vacantes** (documento corporativo formal, formato EUR, entidad `PTVacancyContract`, 2 migraciones nuevas) + seccion "Flujo de trabajo con Git" en este README. Contiene todo lo de `main` y hace fast-forward limpio; falta decidir el merge
 
 ### Indicaciones para continuar
 
@@ -843,6 +854,10 @@ Antes de marcar cualquier fase como completada, se debe validar:
 | 2026-09-06 | Iluna | Fase 4 | CRM de Captacion de Empresas: pipeline comercial 6 etapas (Lead → Contactado → Reunion → Propuesta Enviada → Negociacion → Cerrado Ganado), wizard progresivo con inputs unificados, mapa Leaflet+OpenStreetMap para pais/ciudad, tabla PT_Plans con 3 planes seed (Basic/Premium/Platinum), API endpoint GET /plans, seleccion de plan en etapa Propuesta Enviada con 3 cards, generacion de contrato de prestacion de servicios en HTML imprimible (Trato Directo), descarte/restauracion de empresas, historial de cambios de etapa |
 | 2026-09-07 | Dsiezar | Merge | Fusionados a `main`: RBAC de personal administrativo + negociaciones + rubro hosteleria (Fase 5, `dsiezar-fase-5`) junto con el CRM de Empresas de Iluna. Conflictos resueltos a mano (nav de AdminLayout, i18n, DI, `AppDbContext`); `AppDbContextModelSnapshot.cs` (3500+ lineas, 26 conflictos) regenerado con `dotnet ef migrations add` en vez de resuelto linea por linea |
 | 2026-09-07 | Dsiezar | QA | QA automatizado del portal administrativo (Panel, Candidatos, Empresas/CRM), con datos reales contra MySQL. 5 bugs reales encontrados y corregidos: (1) `OpenToWork.API` no arrancaba por un DI mal registrado en el commit del CRM; (2) crash de circuito Blazor al abrir el perfil de un candidato sin nombre (`Substring` fuera de rango); (3) `PT_Companies` sin las columnas nuevas del CRM (`LegalName`/`TaxId`/`ContactName`/`ContactPosition`/`Status`) - faltaba la migracion real, tiraba 500 en Empresas/Pipeline/Captacion; (4) clave de traduccion `admin.common.back` faltante; (5) 52 reglas de `admin.css` usaban `var(--border)`, variable inexistente en los temas - todos los bordes/separadores del panel admin se veian planos. De paso, rediseno del Pipeline de Empresas: color por etapa (progresion neutro→frio→marca→calido→ganado) y fix del layout de las tarjetas (fecha y responsable aparecian pegados sin espacio) |
+| 2026-09-07 | Dsiezar | Docs | Analisis RH: alineacion con el modelo Trato Directo y por que no arranco el reclutamiento real (`docs/rh/alineacion-trato-directo-y-arranque.md`). Hallazgo: el gate de `CandidateSearchService` era `IsProfilePublic && WizardCompleted` - la verificacion era un filtro opcional, no un piso obligatorio |
+| 2026-09-08 | Iluna | Fase 5 | **Embudo Ciego** - entrega de personal verificado a empresas: entidad `PTCandidateDelivery` + `DeliveryStatus`, `DeliveryService.DeliverCandidateAsync` (exige etapa "Listo a Entregar" + Verificado TD + vacante con empresa), `DeliveriesController` en AdminAPI y API publica, migracion `20260908113350_CandidateDeliveries`. `CompanyDashboard`/`VerifiedApplicants` ahora muestran solo conteos, nunca identidades. Videos v01/v02 en bucle en login y home, seed de hosteleria, menu de empresa sin "Busqueda avanzada", validacion del flujo con el agente RH (`docs/rh/`) |
+| 2026-09-08 | Dsiezar | Fix | `RecruitmentService.GetVacancyOptionsAsync` filtraba `Status == 0` (Borrador) en vez de `1` (Activa) - el modal "Vincular vacante" del flujo de entrega siempre decia "No hay vacantes activas", dejando la feature de Embudo Ciego inutilizable. Adoptada la implementacion de Iluna sobre la propia (`git reset` de un commit no pusheado que duplicaba el mismo flujo) |
+| 2026-09-09 | Dsiezar | Fase 2 | Pagina publica de **Preguntas Frecuentes** (`/faq`, `Faq.razor`) - acordeon con 10 Q&A alineadas al modelo (gratis para candidatos, la empresa ve conteos no perfiles, distintivo Verificado TD, evaluacion, datos personales, vigencia de perfil, idiomas). Claves `common.faq.*` en es/en, estilos `.faq-*` en `components.css` (v24→v25). Resuelve el enlace del footer a `/faq` que devolvia 404 |
 
 ---
 
@@ -864,10 +879,13 @@ Antes de marcar cualquier fase como completada, se debe validar:
 - Ejemplos de configuracion: `contract_template_default` (HTML del contrato), `company_name` ("Trato Directo"), `company_tax_id`, `company_address`, etc.
 - El generador de contratos debe leer el template desde la BD y reemplazar variables (`{{CompanyName}}`, `{{PlanName}}`, `{{Price}}`, etc.) en lugar de usar un template fijo en JS.
 
-### 3. Consulta a IA y al Agente de RH
-- Consultar a la IA y al agente de Recursos Humanos (ver `.agents/rh.md`) si lo llevado hasta ahora cumple con lo alineado a **Trato Directo**.
-- Evaluar: que falta, por que no hemos iniciado el proceso de reclutamiento e investigacion, y que pasos siguen.
-- Documentar las respuestas en `docs/rh/` para trazabilidad.
+### 3. Consulta a IA y al Agente de RH — HECHO (Dsiezar, 07-Sep) + validado (Iluna, 08-Sep)
+- ~~Consultar a la IA y al agente de Recursos Humanos (ver `.agents/rh.md`) si lo llevado hasta ahora cumple con lo alineado a **Trato Directo**.~~ → `docs/rh/alineacion-trato-directo-y-arranque.md`
+- ~~Evaluar: que falta, por que no hemos iniciado el proceso de reclutamiento e investigacion, y que pasos siguen.~~ → mismo doc; hallazgo principal: el gate de busqueda no exigia verificacion como piso obligatorio
+- El Embudo Ciego (Iluna, 08-Sep) implementa la conclusion: la empresa solo ve conteos y TD entrega personal verificado. Validado en `docs/rh/validacion-flujo-negocio-2026-09-08.md`
+
+### 1 y 2 (CRUD de Planes, tabla `SYSystemConfig` para templates de contrato) — siguen pendientes
+- La rama `iluna-embudo-ciego` (`40e2bc5`, 09-Sep) adelanta parte del punto 2 con la feature de **Contrato de vacantes** (`PTVacancyContract`), pero el template sigue sin salir de codigo a una tabla de configuracion. Pendiente de integrar a `main`.
 
 ---
 
@@ -1436,6 +1454,29 @@ Pruebas totales: 44
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-09 — Página pública de Preguntas Frecuentes (Dsiezar)
+
+Nueva página `/faq` ([`Faq.razor`](src/OpenToWork.WEB/Components/Pages/Faq.razor)) en el portal público — acordeón, primer ítem abierto por defecto, chevron que rota, borde con acento en el ítem abierto. Cierra el enlace del footer a `/faq` que devolvía 404.
+
+**10 preguntas y respuestas** alineadas al modelo de negocio (Embudo Ciego): qué es Trato Directo, gratis para candidatos, cómo funciona para una empresa (ve conteos, no perfiles), por qué no ve a todos los postulantes, distintivo "Verificado TD", cómo se evalúa a un candidato, visibilidad de la puntuación para el candidato, datos personales, vigencia del perfil (12 meses), idiomas.
+
+- Claves `common.faq.*` (title, subtitle, q1–q10, a1–a10) en `es/common.json` y `en/common.json`.
+- Estilos `.faq-*` en `components.css`, cache-buster `v=24` → `v=25` en `App.razor`.
+- Commit `aad9e0f` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
+### Sesión 2026-09-08 — Embudo Ciego: entrega de personal verificado + adopción sobre implementación propia (Iluna + Dsiezar)
+
+**Iluna (`a02f727`..`2e76e4c`)** — la empresa deja de ver candidatos: solo ve el conteo de postulantes por vacante. Trato Directo investiga y evalúa en el pipeline y luego *entrega* a la empresa un candidato concreto.
+
+- Entidad `PTCandidateDelivery` (`PT_CandidateRecruitmentId`, `PT_CandidateId`, `PT_VacancyId`, `PT_CompanyId`, `DeliveredByUserId`, `Status`, `AdminNote`, `CompanyFeedback`) + enum `DeliveryStatus` (Delivered/ViewedByCompany/Interested/Hired/RejectedByCompany). Migración `20260908113350_CandidateDeliveries`.
+- `DeliveryService.DeliverCandidateAsync` valida: reclutamiento en etapa `ReadyToDeliver`, candidato `IsVerifiedTD == true`, vacante existente con empresa, sin entrega previa a esa vacante.
+- `DeliveriesController` en AdminAPI (el reclutador entrega) y en la API pública (la empresa consulta lo entregado y responde).
+- `CompanyDashboard.razor` y `VerifiedApplicants.razor` reescritos para mostrar solo conteos ("X postulantes / Y en verificación").
+- Videos `v01.mp4` / `v02.mp4` en bucle en login y home; `docs/seed-hosteleria.sql`; menú de empresa sin "Búsqueda avanzada" (se reactivará cuando la empresa tome un plan destinado a eso, en otra fase).
+- Validación del flujo con el agente de RH: `docs/rh/validacion-flujo-negocio-2026-09-08.md`, `docs/rh/guia-embudo-ciego-iluna.md`, `docs/rh/guia-implementacion-iluna.md`.
+
+**Dsiezar (`a3f3ab4`, `97c419f`)** — análisis RH previo (`docs/rh/alineacion-trato-directo-y-arranque.md`): el gate de `CandidateSearchService` dejaba pasar perfiles con `IsProfilePublic && WizardCompleted` sin exigir verificación. Tras el merge del embudo ciego se detectó que `RecruitmentService.GetVacancyOptionsAsync` filtraba `Status == 0` (Borrador) en vez de `1` (Activa) — el modal "Vincular vacante" siempre decía "No hay vacantes activas" y la entrega era inutilizable; corregido. Un commit propio no pusheado que implementaba el mismo flujo de forma paralela se descartó (`git reset`) para adoptar la versión de Iluna.
 
 ### Sesión 2026-09-01 — Fase 3 completa: Motor de Evaluación y Scoring Automático, 8 sub-fases (Dsiezar)
 
