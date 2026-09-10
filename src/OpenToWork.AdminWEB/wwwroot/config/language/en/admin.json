@@ -614,6 +614,7 @@
     "notes": "Notes",
     "createdAt": "Created Date",
     "viewPipeline": "View Pipeline",
+    "viewVacancies": "View Vacancies",
     "noPipeline": "This company has no active pipeline",
     "noPipelineHint": "Assign a user to start the capture process",
     "unassigned": "Unassigned",

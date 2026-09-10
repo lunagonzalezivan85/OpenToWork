@@ -1,4 +1,5 @@
 @page "/vacancies"
+@page "/companies/{CompanyId:guid}/vacancies"
 @using OpenToWork.AdminWEB.Services
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.Shared.Enums
@@ -17,6 +18,14 @@
         <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ExportCsv">@Lang.T("admin.vacancies.exportCsv")</button>
     </div>
 </div>
+
+@if (CompanyId.HasValue && !string.IsNullOrEmpty(CompanyFilterName))
+{
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.6rem 1rem; background: #E8F1FF; border-radius: 10px;">
+        <span style="font-size: 0.85rem; color: #0052CC; font-weight: 600;">@Lang.T("admin.companies.title"): @CompanyFilterName</span>
+        <button class="ot-btn ot-btn--outline ot-btn--small" style="margin-left: auto;" @onclick="@(() => Nav.NavigateTo($"/companies/{CompanyId}"))">@Lang.T("admin.common.back")</button>
+    </div>
+}
 
 @if (VacanciesList == null)
 {
@@ -353,6 +362,8 @@ else
 
 @code {
     private List<AdminVacancyDto>? VacanciesList;
+    [Parameter] public Guid? CompanyId { get; set; }
+    private string? CompanyFilterName { get; set; }
 
     // === Wizard: nueva vacante ===
     private bool ShowWizard { get; set; }
@@ -548,12 +559,18 @@ else
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
 
+        if (CompanyId.HasValue)
+        {
+            var company = await AuthApi.GetCompanyAsync(CompanyId.Value);
+            CompanyFilterName = company?.Name;
+        }
+
         await LoadVacancies();
     }
 
     private async Task LoadVacancies()
     {
-        VacanciesList = await AuthApi.GetVacanciesAsync();
+        VacanciesList = await AuthApi.GetVacanciesAsync(companyId: CompanyId);
     }
 
     private async Task Moderate(Guid id, int status)

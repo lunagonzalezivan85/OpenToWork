@@ -18,13 +18,13 @@ public class AdminVacancyService : IAdminVacancyService
         _auditLog = auditLog;
     }
 
-    public async Task<List<AdminVacancyDto>> GetVacanciesAsync(int page, int pageSize, int? status)
+    public async Task<List<AdminVacancyDto>> GetVacanciesAsync(int page, int pageSize, int? status, Guid? companyId = null)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 1_000_000);
 
         var permanentQuery = _context.PT_Vacancies
-            .Where(v => !v.IsDeleted)
+            .Where(v => !v.IsDeleted && (companyId == null || v.PT_CompanyId == companyId.Value))
             .Select(v => new AdminVacancyDto
             {
                 Id = v.Id,
@@ -42,7 +42,7 @@ public class AdminVacancyService : IAdminVacancyService
             });
 
         var tempQuery = _context.PT_TempVacancies
-            .Where(v => !v.IsDeleted)
+            .Where(v => !v.IsDeleted && companyId == null)
             .Select(v => new AdminVacancyDto
             {
                 Id = v.Id,

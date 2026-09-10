@@ -614,6 +614,7 @@
     "notes": "Notas",
     "createdAt": "Fecha Creación",
     "viewPipeline": "Ver Pipeline",
+    "viewVacancies": "Ver Vacantes",
     "noPipeline": "Esta empresa no tiene pipeline activo",
     "noPipelineHint": "Asigna un usuario para iniciar el proceso de captación",
     "unassigned": "Sin asignar",

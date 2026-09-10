@@ -22,9 +22,9 @@ public class VacanciesController : AdminControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetVacancies([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] int? status = null)
+    public async Task<IActionResult> GetVacancies([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] int? status = null, [FromQuery] Guid? companyId = null)
     {
-        var vacancies = await _vacancyService.GetVacanciesAsync(page, pageSize, status);
+        var vacancies = await _vacancyService.GetVacanciesAsync(page, pageSize, status, companyId);
         return Ok(vacancies);
     }
 

@@ -29,6 +29,7 @@ else
             </p>
         </div>
         <div class="admin-page-actions">
+            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Company.Id}/vacancies"))">@Lang.T("admin.companies.viewVacancies")</button>
             <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo("/companies"))">@Lang.T("admin.common.back")</button>
         </div>
     </div>
