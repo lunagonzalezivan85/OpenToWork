@@ -206,12 +206,62 @@ public class CompanyCrmService : ICompanyCrmService
         var company = await _db.PT_Companies.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         if (company == null) return false;
 
+        var now = DateTime.UtcNow;
+
+        // Soft-delete vacancies
+        var vacancies = await _db.PT_Vacancies.Where(v => v.PT_CompanyId == id && !v.IsDeleted).ToListAsync();
+        foreach (var v in vacancies)
+        {
+            v.IsDeleted = true;
+            v.DeletedAt = now;
+            v.DeletedBy = adminId;
+        }
+
+        // Soft-delete contracts and their junction entries
+        var contracts = await _db.PT_VacancyContracts.Where(c => c.PT_CompanyId == id && !c.IsDeleted).ToListAsync();
+        var contractIds = contracts.Select(c => c.Id).ToList();
+        if (contractIds.Count > 0)
+        {
+            var junctions = await _db.PT_ContractVacancies.Where(j => contractIds.Contains(j.PT_ContractId) && !j.IsDeleted).ToListAsync();
+            foreach (var j in junctions)
+            {
+                j.IsDeleted = true;
+                j.DeletedAt = now;
+                j.DeletedBy = adminId;
+            }
+        }
+        foreach (var c in contracts)
+        {
+            c.IsDeleted = true;
+            c.DeletedAt = now;
+            c.DeletedBy = adminId;
+        }
+
+        // Soft-delete pipelines
+        var pipelines = await _db.PT_CompanyPipelines.Where(p => p.PT_CompanyId == id && !p.IsDeleted).ToListAsync();
+        foreach (var p in pipelines)
+        {
+            p.IsDeleted = true;
+            p.DeletedAt = now;
+            p.DeletedBy = adminId;
+        }
+
+        // Soft-delete candidate deliveries
+        var deliveries = await _db.PT_CandidateDeliveries.Where(d => d.PT_CompanyId == id && !d.IsDeleted).ToListAsync();
+        foreach (var d in deliveries)
+        {
+            d.IsDeleted = true;
+            d.DeletedAt = now;
+            d.DeletedBy = adminId;
+        }
+
+        // Soft-delete company
         company.IsDeleted = true;
-        company.DeletedAt = DateTime.UtcNow;
+        company.DeletedAt = now;
         company.DeletedBy = adminId;
 
         await _db.SaveChangesAsync();
-        await _auditLog.LogAsync(adminId, "CompanyCrm.Delete", "PTCompany", id, $"Empresa eliminada: {company.Name}", ipAddress);
+        await _auditLog.LogAsync(adminId, "CompanyCrm.Delete", "PTCompany", id, $"Empresa eliminada (cascada): {company.Name} - {vacancies.Count} vacantes, {contracts.Count} contratos, {pipelines.Count} pipelines, {deliveries.Count} deliveries", ipAddress);
 
         return true;
     }

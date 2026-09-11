@@ -30,6 +30,9 @@ else
         </div>
         <div class="admin-page-actions">
             <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Company.Id}/vacancies"))">@Lang.T("admin.companies.viewVacancies")</button>
+            <button class="ot-btn ot-btn--danger ot-btn--small" disabled="@IsDeleting" @onclick="DeleteCompany">
+                @(IsDeleting ? Lang.T("admin.common.loading") : Lang.T("admin.companies.delete"))
+            </button>
             <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo("/companies"))">@Lang.T("admin.common.back")</button>
         </div>
     </div>
@@ -184,6 +187,7 @@ else
     private List<AdminUserDto> AdminUsers = new();
     private string SelectedUserId = "";
     private bool IsAssigning = false;
+    private bool IsDeleting = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -208,6 +212,41 @@ else
         if (result != null)
         {
             Company = await AuthApi.GetCompanyAsync(Company.Id);
+        }
+    }
+
+    private async Task DeleteCompany()
+    {
+        if (Company == null) return;
+        var confirmed = await JS.InvokeAsync<bool>("eval", $@"
+            Swal.fire({{
+                title: '{Lang.T("admin.companies.delete")}',
+                text: '{Lang.T("admin.companies.deleteConfirm")}',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#778DA9',
+                confirmButtonText: '{Lang.T("admin.common.confirm")}',
+                cancelButtonText: '{Lang.T("admin.common.cancel")}'
+            }}).then((result) => result.isConfirmed);
+        ");
+        if (!confirmed) return;
+        IsDeleting = true;
+        var success = await AuthApi.DeleteCompanyAsync(Company.Id);
+        IsDeleting = false;
+        if (success)
+        {
+            await JS.InvokeVoidAsync("eval", $@"
+                Swal.fire({{
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: '{Lang.T("admin.companies.deleted")}',
+                    showConfirmButton: false,
+                    timer: 2000
+                }});
+            ");
+            Nav.NavigateTo("/companies");
         }
     }
 

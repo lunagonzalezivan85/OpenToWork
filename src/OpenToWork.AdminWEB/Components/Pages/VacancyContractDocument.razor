@@ -1,4 +1,4 @@
-@page "/vacancies/{VacancyId:guid}/contract/document"
+@page "/contracts/{ContractId:guid}/document"
 @using OpenToWork.AdminWEB.Services
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.Shared.Enums
@@ -24,7 +24,7 @@
 {
     <div class="admin-loading">@Lang.T("admin.common.loading")</div>
 }
-else if (Contract == null || Vacancy == null)
+else if (Contract == null)
 {
     <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.vacancies.notFound")</div></div>
 }
@@ -72,15 +72,17 @@ else
                 </div>
                 <div class="cd-info-cell">
                     <span class="cd-info-label">@Lang.T("admin.contract.docRequesterVacancy")</span>
-                    <span class="cd-info-value">@Vacancy.Title@(string.IsNullOrEmpty(Vacancy.Category) ? "" : " — " + Vacancy.Category)@(string.IsNullOrEmpty(Vacancy.Location) ? "" : " — " + Vacancy.Location)</span>
+                    <span class="cd-info-value">
+                        @if (Contract.Vacancies.Any())
+                        {
+                            @string.Join(" · ", Contract.Vacancies.Select(v => v.Title))
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </span>
                 </div>
-                @if (Vacancy.SalaryMin.HasValue || Vacancy.SalaryMax.HasValue)
-                {
-                    <div class="cd-info-cell">
-                        <span class="cd-info-label">@Lang.T("admin.vacancies.salaryRange")</span>
-                        <span class="cd-info-value">@FormatEur(Vacancy.SalaryMin) — @FormatEur(Vacancy.SalaryMax)</span>
-                    </div>
-                }
             </div>
         </section>
 
@@ -189,9 +191,8 @@ else
 }
 
 @code {
-    [Parameter] public Guid VacancyId { get; set; }
+    [Parameter] public Guid ContractId { get; set; }
 
-    private VacancyDto? Vacancy;
     private AdminVacancyContractDto? Contract;
     private bool IsLoading { get; set; } = true;
 
@@ -200,12 +201,17 @@ else
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
 
-        Vacancy = await AuthApi.GetVacancyDetailAsync(VacancyId);
-        Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+        Contract = await AuthApi.GetContractAsync(ContractId);
         IsLoading = false;
     }
 
-    private void GoBack() => Nav.NavigateTo($"/vacancies/{VacancyId}/contract");
+    private void GoBack()
+    {
+        if (Contract?.Vacancies.FirstOrDefault() != null)
+            Nav.NavigateTo($"/vacancies/{Contract.Vacancies.First().VacancyId}/contract");
+        else
+            Nav.NavigateTo("/vacancies");
+    }
 
     private async Task PrintDocumentAsync()
     {

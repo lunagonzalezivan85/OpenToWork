@@ -47,6 +47,7 @@ public class AppDbContext : DbContext
     public DbSet<PTPlan> PT_Plans => Set<PTPlan>();
     public DbSet<PTCandidateDelivery> PT_CandidateDeliveries => Set<PTCandidateDelivery>();
     public DbSet<PTVacancyContract> PT_VacancyContracts => Set<PTVacancyContract>();
+    public DbSet<PTContractVacancy> PT_ContractVacancies => Set<PTContractVacancy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -181,8 +182,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PTVacancyContract>(e =>
         {
             e.ToTable("PT_VacancyContracts");
-            // Un anexo vigente por vacante (1:1 entre contratos no eliminados).
-            e.HasIndex(c => new { c.PT_VacancyId, c.IsDeleted }).IsUnique();
             e.HasIndex(c => new { c.PT_CompanyId, c.IsDeleted });
             e.Property(c => c.Status).HasDefaultValue(0);
             e.Property(c => c.Currency).HasDefaultValue("EUR");
@@ -190,6 +189,13 @@ public class AppDbContext : DbContext
             e.Property(c => c.PaymentOpeningPct).HasDefaultValue(30m);
             e.Property(c => c.PaymentValidationPct).HasDefaultValue(50m);
             e.Property(c => c.PaymentConsolidationPct).HasDefaultValue(20m);
+        });
+
+        modelBuilder.Entity<PTContractVacancy>(e =>
+        {
+            e.ToTable("PT_ContractVacancies");
+            e.HasIndex(cv => new { cv.PT_ContractId, cv.IsDeleted });
+            e.HasIndex(cv => new { cv.PT_VacancyId, cv.IsDeleted }).IsUnique();
         });
 
         modelBuilder.Entity<PTCandidateExperience>(e =>

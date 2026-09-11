@@ -263,7 +263,8 @@ else if (Contract != null)
             await Lang.InitializeAsync();
 
         Vacancy = await AuthApi.GetVacancyDetailAsync(VacancyId);
-        Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+        if (Vacancy != null)
+            Contract = await AuthApi.GetContractByCompanyAsync(Vacancy.CompanyId);
         LoadForm();
         IsLoading = false;
     }
@@ -326,6 +327,7 @@ else if (Contract != null)
         IsSaving = true;
         var dto = new AdminSaveVacancyContractDto
         {
+            VacancyIds = new List<Guid> { VacancyId },
             ScopeServices = FormScope.ToList(),
             TargetCandidates = FormTargetCandidates,
             JobTypeCategory = FormJobType,
@@ -339,7 +341,13 @@ else if (Contract != null)
             PaymentConsolidationPct = FormConsolidationPct,
             FeeExceptions = FormFeeExceptions
         };
-        var result = await AuthApi.SaveVacancyContractAsync(VacancyId, dto);
+        AdminVacancyContractDto? result;
+        if (Contract != null)
+            result = await AuthApi.SaveContractAsync(Contract.Id, dto);
+        else if (Vacancy != null)
+            result = await AuthApi.CreateContractAsync(Vacancy.CompanyId, dto);
+        else
+            result = null;
         if (result == null)
         {
             FormError = Lang.T("admin.contract.saveError");
@@ -356,8 +364,8 @@ else if (Contract != null)
     {
         if (IsSaving) return;
         IsSaving = true;
-        if (await AuthApi.SendVacancyContractAsync(VacancyId))
-            Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+        if (await AuthApi.SendContractAsync(Contract!.Id))
+            Contract = await AuthApi.GetContractAsync(Contract.Id);
         IsSaving = false;
     }
 
@@ -366,20 +374,20 @@ else if (Contract != null)
         RejectError = string.IsNullOrWhiteSpace(RejectReasonInput);
         if (RejectError) return;
 
-        if (await AuthApi.DecideVacancyContractAsync(VacancyId, false, RejectReasonInput))
-            Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+        if (await AuthApi.DecideContractAsync(Contract!.Id, false, RejectReasonInput))
+            Contract = await AuthApi.GetContractAsync(Contract.Id);
         ShowRejectReason = false;
     }
 
     private async Task DecideAsync(bool accepted)
     {
-        if (await AuthApi.DecideVacancyContractAsync(VacancyId, accepted))
-            Contract = await AuthApi.GetVacancyContractAsync(VacancyId);
+        if (await AuthApi.DecideContractAsync(Contract!.Id, accepted))
+            Contract = await AuthApi.GetContractAsync(Contract.Id);
     }
 
     private void GoBack() => Nav.NavigateTo($"/vacancies/{VacancyId}");
 
-    private void GoToDocument() => Nav.NavigateTo($"/vacancies/{VacancyId}/contract/document");
+    private void GoToDocument() => Nav.NavigateTo($"/contracts/{Contract!.Id}/document");
 
     private string GetScopeText()
     {

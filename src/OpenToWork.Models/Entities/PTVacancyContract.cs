@@ -4,18 +4,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace OpenToWork.Models.Entities;
 
 /// <summary>
-/// Anexo de contrato de servicio por vacante (TD -> empresa solicitante). Establece alcance,
-/// plazos, garantia y condiciones economicas. 1:1 con la vacante (indice unico). Solo editable
-/// en estado Draft; Accepted/Rejected/Cancelled quedan bloqueados. Secciones 5/6/7 del anexo.
+/// Anexo de contrato de servicio (TD -> empresa solicitante). Establece alcance,
+/// plazos, garantia y condiciones economicas. 1:N con vacantes via PT_ContractVacancies.
+/// Solo editable en estado Draft; Accepted/Rejected/Cancelled quedan bloqueados.
+/// Secciones 5/6/7 del anexo.
 /// </summary>
 public class PTVacancyContract : BaseEntity
 {
-    [Required]
-    public Guid PT_VacancyId { get; set; }
-
-    [ForeignKey("PT_VacancyId")]
-    public virtual PTVacancy Vacancy { get; set; } = null!;
-
     [Required]
     public Guid PT_CompanyId { get; set; }
 
@@ -74,4 +69,7 @@ public class PTVacancyContract : BaseEntity
     /// <summary>Motivo del rechazo (obligatorio al rechazar).</summary>
     [MaxLength(1000)]
     public string? RejectionReason { get; set; }
+
+    /// <summary>Vacantes incluidas en este contrato (1:N).</summary>
+    public virtual ICollection<PTContractVacancy> ContractVacancies { get; set; } = new List<PTContractVacancy>();
 }

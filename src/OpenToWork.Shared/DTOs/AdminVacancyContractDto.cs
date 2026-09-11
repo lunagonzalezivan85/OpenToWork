@@ -1,20 +1,22 @@
 namespace OpenToWork.Shared.DTOs;
 
 /// <summary>
-/// Anexo de contrato por vacante (secciones 5/6/7). Solo editable en Draft;
+/// Anexo de contrato de servicio por empresa (secciones 5/6/7). Un contrato agrupa
+/// N vacantes de la misma empresa. Solo editable en Draft;
 /// Accepted/Rejected/Cancelled son de solo lectura.
 /// </summary>
 public class AdminVacancyContractDto
 {
     public Guid Id { get; set; }
-    public Guid VacancyId { get; set; }
     public Guid CompanyId { get; set; }
     public string? CompanyName { get; set; }
     public string? CompanyContactName { get; set; }
     public string? CompanyContactPhone { get; set; }
-    public string? VacancyTitle { get; set; }
     public string ContractNumber { get; set; } = string.Empty;
     public int Status { get; set; }
+
+    // Vacantes incluidas en el contrato (1:N)
+    public List<ContractVacancyItemDto> Vacancies { get; set; } = new();
 
     // 5. Alcance del servicio y plazos
     public List<string> ScopeServices { get; set; } = new();
@@ -42,6 +44,7 @@ public class AdminVacancyContractDto
 
 public class AdminSaveVacancyContractDto
 {
+    public List<Guid> VacancyIds { get; set; } = new();
     public List<string> ScopeServices { get; set; } = new();
     public int? TargetCandidates { get; set; }
     public int JobTypeCategory { get; set; }
@@ -62,4 +65,13 @@ public class AdminContractDecisionDto
 
     /// <summary>Motivo obligatorio al rechazar.</summary>
     public string? Reason { get; set; }
+}
+
+/// <summary>Vacante incluida en un contrato.</summary>
+public class ContractVacancyItemDto
+{
+    public Guid VacancyId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Location { get; set; }
+    public int? RequiredApplicants { get; set; }
 }

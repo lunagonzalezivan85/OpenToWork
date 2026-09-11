@@ -1,6 +1,7 @@
 @page "/companies/new"
 @using OpenToWork.AdminWEB.Services
 @using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
 @inject LanguageService Lang
 @inject AdminAuthApiService AuthApi
 @inject NavigationManager Nav
@@ -13,79 +14,297 @@
         <p class="admin-page-header-subtitle">@Lang.T("admin.companies.createSubtitle")</p>
     </div>
     <div class="admin-page-actions">
-        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo("/companies"))">@Lang.T("admin.common.cancel")</button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="Cancel">@Lang.T("admin.common.cancel")</button>
     </div>
 </div>
 
-<div class="admin-form-card">
-    <EditForm Model="Dto" OnValidSubmit="Save">
-        <div class="admin-form-grid">
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.name") *</label>
-                <InputText @bind-Value="Dto.Name" class="admin-input" placeholder='@Lang.T("admin.companies.namePlaceholder")' />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.legalName")</label>
-                <InputText @bind-Value="Dto.LegalName" class="admin-input" placeholder='@Lang.T("admin.companies.legalNamePlaceholder")' />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.taxId")</label>
-                <InputText @bind-Value="Dto.TaxId" class="admin-input" placeholder="NIF / CIF / RUC" />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.industry")</label>
-                <InputText @bind-Value="Dto.Industry" class="admin-input" placeholder='@Lang.T("admin.companies.industryPlaceholder")' />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.website")</label>
-                <InputText @bind-Value="Dto.Website" class="admin-input" placeholder="https://..." />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.country")</label>
-                <InputText @bind-Value="Dto.Country" class="admin-input" placeholder='@Lang.T("admin.companies.countryPlaceholder")' />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.city")</label>
-                <InputText @bind-Value="Dto.City" class="admin-input" placeholder='@Lang.T("admin.companies.cityPlaceholder")' />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.address")</label>
-                <InputText @bind-Value="Dto.Address" class="admin-input" placeholder='@Lang.T("admin.companies.addressPlaceholder")' />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.contactName")</label>
-                <InputText @bind-Value="Dto.ContactName" class="admin-input" placeholder='@Lang.T("admin.companies.contactNamePlaceholder")' />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.contactPosition")</label>
-                <InputText @bind-Value="Dto.ContactPosition" class="admin-input" placeholder='@Lang.T("admin.companies.contactPositionPlaceholder")' />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.contactEmail")</label>
-                <InputText @bind-Value="Dto.ContactEmail" class="admin-input" placeholder="email@empresa.com" />
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.companies.contactPhone")</label>
-                <InputText @bind-Value="Dto.ContactPhone" class="admin-input" placeholder="+34 ..." />
-            </div>
-            <div class="admin-form-field admin-form-field--full">
-                <label>@Lang.T("admin.companies.linkedin")</label>
-                <InputText @bind-Value="Dto.LinkedInUrl" class="admin-input" placeholder="https://linkedin.com/company/..." />
-            </div>
-            <div class="admin-form-field admin-form-field--full">
-                <label>@Lang.T("admin.companies.description")</label>
-                <InputTextArea @bind-Value="Dto.Description" class="admin-input" rows="3" placeholder='@Lang.T("admin.companies.descriptionPlaceholder")' />
+@* === Stepper === *@
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+    @for (var i = 1; i <= 4; i++)
+    {
+        var step = i;
+        <div style="flex: 1; text-align: center;">
+            <div style="height: 4px; border-radius: 2px; background: @(step <= WizardStep ? "var(--accent-primary)" : "var(--input-border)");"></div>
+            <div style="font-size: 0.7rem; margin-top: 0.35rem; color: @(step == WizardStep ? "var(--text-primary)" : "var(--text-muted)"); font-weight: @(step == WizardStep ? 600 : 400);">
+                @GetStepName(step)
             </div>
         </div>
-        <div class="admin-form-actions">
-            <button type="submit" class="ot-btn ot-btn--primary">@Lang.T("admin.companies.save")</button>
-            <button type="button" class="ot-btn ot-btn--outline" @onclick="@(() => Nav.NavigateTo("/companies"))">@Lang.T("admin.common.cancel")</button>
-        </div>
-    </EditForm>
+    }
 </div>
 
+@if (WizardStep == 1)
+{
+    <div class="admin-form-card">
+        <EditForm Model="CompanyDto" OnValidSubmit="GoToStep2">
+            <div class="admin-form-grid">
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.name") *</label>
+                    <InputText @bind-Value="CompanyDto.Name" class="admin-input" placeholder='@Lang.T("admin.companies.namePlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.legalName")</label>
+                    <InputText @bind-Value="CompanyDto.LegalName" class="admin-input" placeholder='@Lang.T("admin.companies.legalNamePlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.taxId")</label>
+                    <InputText @bind-Value="CompanyDto.TaxId" class="admin-input" placeholder="NIF / CIF / RUC" />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.industry")</label>
+                    <InputText @bind-Value="CompanyDto.Industry" class="admin-input" placeholder='@Lang.T("admin.companies.industryPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.website")</label>
+                    <InputText @bind-Value="CompanyDto.Website" class="admin-input" placeholder="https://..." />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.country")</label>
+                    <InputText @bind-Value="CompanyDto.Country" class="admin-input" placeholder='@Lang.T("admin.companies.countryPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.city")</label>
+                    <InputText @bind-Value="CompanyDto.City" class="admin-input" placeholder='@Lang.T("admin.companies.cityPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.address")</label>
+                    <InputText @bind-Value="CompanyDto.Address" class="admin-input" placeholder='@Lang.T("admin.companies.addressPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.contactName")</label>
+                    <InputText @bind-Value="CompanyDto.ContactName" class="admin-input" placeholder='@Lang.T("admin.companies.contactNamePlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.contactPosition")</label>
+                    <InputText @bind-Value="CompanyDto.ContactPosition" class="admin-input" placeholder='@Lang.T("admin.companies.contactPositionPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.contactEmail")</label>
+                    <InputText @bind-Value="CompanyDto.ContactEmail" class="admin-input" placeholder="email@empresa.com" />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.contactPhone")</label>
+                    <InputText @bind-Value="CompanyDto.ContactPhone" class="admin-input" placeholder="+34 ..." />
+                </div>
+                <div class="admin-form-field admin-form-field--full">
+                    <label>@Lang.T("admin.companies.linkedin")</label>
+                    <InputText @bind-Value="CompanyDto.LinkedInUrl" class="admin-input" placeholder="https://linkedin.com/company/..." />
+                </div>
+                <div class="admin-form-field admin-form-field--full">
+                    <label>@Lang.T("admin.companies.description")</label>
+                    <InputTextArea @bind-Value="CompanyDto.Description" class="admin-input" rows="3" placeholder='@Lang.T("admin.companies.descriptionPlaceholder")' />
+                </div>
+            </div>
+            <div class="admin-form-actions">
+                <button type="submit" class="ot-btn ot-btn--primary">@Lang.T("admin.vacancies.next")</button>
+                <button type="button" class="ot-btn ot-btn--outline" @onclick="Cancel">@Lang.T("admin.common.cancel")</button>
+            </div>
+        </EditForm>
+    </div>
+}
+else if (WizardStep == 2)
+{
+    <div class="admin-form-card">
+        <div style="margin-bottom: 1rem; padding: 0.6rem 1rem; background: #E8F1FF; border-radius: 10px; font-size: 0.85rem; color: #0052CC; font-weight: 600;">
+            @Lang.T("admin.companies.title"): @CompanyDto.Name
+        </div>
+
+        @if (VacancyDtos.Count > 0)
+        {
+            <div style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                @for (var idx = 0; idx < VacancyDtos.Count; idx++)
+                {
+                    var i = idx;
+                    <span style="background: #F1F5F9; border-radius: 20px; padding: 0.3rem 0.75rem; font-size: 0.8rem; color: #0B132B; display: inline-flex; align-items: center; gap: 0.4rem;">
+                        <button type="button" style="background: none; border: none; cursor: pointer; color: #0B132B; font-size: 0.8rem; padding: 0; text-decoration: underline;" @onclick="@(() => EditVacancy(i))">@(i + 1). @VacancyDtos[i].Title</button>
+                        <button type="button" style="background: none; border: none; cursor: pointer; color: #778DA9; font-size: 1rem; line-height: 1; padding: 0;" @onclick="@(() => RemoveVacancy(i))">×</button>
+                    </span>
+                }
+            </div>
+        }
+
+        <div class="admin-form-grid">
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.jobTitle") *</label>
+                <input type="text" @bind="CurrentVacancy.Title" class="admin-input" maxlength="200" placeholder="@Lang.T("admin.vacancies.jobTitlePlaceholder")" />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.category")</label>
+                <input type="text" @bind="CurrentVacancy.Category" class="admin-input" maxlength="100" placeholder="@Lang.T("admin.vacancies.categoryPlaceholder")" />
+            </div>
+            <div class="admin-form-field admin-form-field--full">
+                <label>@Lang.T("admin.vacancies.description")</label>
+                <textarea @bind="CurrentVacancy.Description" class="admin-input" rows="4" placeholder="@Lang.T("admin.vacancies.descriptionPlaceholder")"></textarea>
+            </div>
+            <div class="admin-form-field admin-form-field--full">
+                <label>@Lang.T("admin.vacancies.requirements") *</label>
+                <textarea @bind="CurrentVacancy.Requirements" class="admin-input" rows="5" placeholder="@Lang.T("admin.vacancies.requirementsPlaceholder")"></textarea>
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.salaryMin")</label>
+                <input type="number" step="0.01" min="0" @bind="CurrentVacancy.SalaryMin" class="admin-input" />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.salaryMax")</label>
+                <input type="number" step="0.01" min="0" @bind="CurrentVacancy.SalaryMax" class="admin-input" />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.location")</label>
+                <input type="text" @bind="CurrentVacancy.Location" class="admin-input" maxlength="200" />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.workMode")</label>
+                <select @bind="CurrentVacancy.WorkMode" class="admin-input">
+                    <option value="0">@Lang.T("admin.vacancies.workOnSite")</option>
+                    <option value="1">@Lang.T("admin.vacancies.workHybrid")</option>
+                    <option value="2">@Lang.T("admin.vacancies.workRemote")</option>
+                </select>
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.contractType")</label>
+                <select @bind="CurrentVacancy.ContractType" class="admin-input">
+                    <option value="0">@Lang.T("admin.vacancies.contractFullTime")</option>
+                    <option value="1">@Lang.T("admin.vacancies.contractPartTime")</option>
+                    <option value="2">@Lang.T("admin.vacancies.contractByContract")</option>
+                    <option value="3">@Lang.T("admin.vacancies.contractRemote")</option>
+                </select>
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.experienceLevel")</label>
+                <select @bind="CurrentVacancy.ExperienceLevel" class="admin-input">
+                    <option value="">@Lang.T("admin.common.notSpecified")</option>
+                    <option value="0">@Lang.T("admin.vacancies.expEntry")</option>
+                    <option value="1">@Lang.T("admin.vacancies.expJunior")</option>
+                    <option value="2">@Lang.T("admin.vacancies.expMid")</option>
+                    <option value="3">@Lang.T("admin.vacancies.expSenior")</option>
+                    <option value="4">@Lang.T("admin.vacancies.expLead")</option>
+                </select>
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.yearsExperience")</label>
+                <input type="number" min="0" max="50" step="1" @bind="CurrentVacancy.YearsExperience" class="admin-input" />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.requiredApplicants")</label>
+                <input type="number" min="1" max="999" step="1" @bind="CurrentVacancy.RequiredApplicants" class="admin-input" />
+            </div>
+            <div class="admin-form-field">
+                <label>@Lang.T("admin.vacancies.englishLevel")</label>
+                <select @bind="CurrentVacancy.EnglishLevel" class="admin-input">
+                    <option value="">@Lang.T("admin.common.notSpecified")</option>
+                    <option value="0">@Lang.T("admin.vacancies.engNone")</option>
+                    <option value="1">@Lang.T("admin.vacancies.engBasic")</option>
+                    <option value="2">@Lang.T("admin.vacancies.engIntermediate")</option>
+                    <option value="3">@Lang.T("admin.vacancies.engAdvanced")</option>
+                    <option value="4">@Lang.T("admin.vacancies.engNative")</option>
+                </select>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(WizardError))
+        {
+            <p style="color: var(--danger); font-size: 0.8rem; margin-top: 0.75rem;">@WizardError</p>
+        }
+
+        <div class="admin-form-actions">
+            <button type="button" class="ot-btn ot-btn--primary ot-btn--small" @onclick="AddVacancyAndContinue">@Lang.T("admin.companies.addVacancy")</button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="AddVacancyAndNew">@Lang.T("admin.companies.addAnotherVacancy")</button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="PrevStep">@Lang.T("admin.vacancies.back")</button>
+        </div>
+    </div>
+}
+else if (WizardStep == 3)
+{
+    <div class="admin-form-card">
+        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">@Lang.T("admin.companies.reviewTitle")</h3>
+
+        @* Company summary *@
+        <div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <strong style="font-size: 0.9rem; color: #0B132B;">@Lang.T("admin.companies.title")</strong>
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => GoToStep(1))">@Lang.T("admin.common.edit")</button>
+            </div>
+            <div style="background: #F8FAFC; border-radius: 10px; padding: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.name")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@CompanyDto.Name</span></div>
+                <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.legalName")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.LegalName ?? "-")</span></div>
+                <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.taxId")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.TaxId ?? "-")</span></div>
+                <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.industry")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.Industry ?? "-")</span></div>
+                <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.contactName")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.ContactName ?? "-")</span></div>
+                <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.contactEmail")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.ContactEmail ?? "-")</span></div>
+                <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.contactPhone")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.ContactPhone ?? "-")</span></div>
+                <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.country")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.Country ?? "-") / @(CompanyDto.City ?? "-")</span></div>
+            </div>
+        </div>
+
+        @* Vacancy summary *@
+        <div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                <strong style="font-size: 0.9rem; color: #0B132B;">@Lang.T("admin.vacancies.create") (@VacancyDtos.Count)</strong>
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => GoToStep(2))">@Lang.T("admin.common.edit")</button>
+            </div>
+            @for (var idx = 0; idx < VacancyDtos.Count; idx++)
+            {
+                var v = VacancyDtos[idx];
+                <div style="background: #F8FAFC; border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.jobTitle")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(v.Title ?? "-")</span></div>
+                    <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.category")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(v.Category ?? "-")</span></div>
+                    <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.location")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(v.Location ?? "-")</span></div>
+                    <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.contractType")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@GetContractTypeLabel(v.ContractType)</span></div>
+                    <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.workMode")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@GetWorkModeLabel(v.WorkMode)</span></div>
+                    <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.requiredApplicants")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(v.RequiredApplicants?.ToString() ?? "-")</span></div>
+                    @if (v.SalaryMin.HasValue || v.SalaryMax.HasValue)
+                    {
+                        <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.salaryRange")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(v.SalaryMin?.ToString("N0") ?? "-") - @(v.SalaryMax?.ToString("N0") ?? "-")</span></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(v.Requirements))
+                    {
+                        <div style="grid-column: 1 / -1;"><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.requirements")</span><br /><span style="font-weight: 400; font-size: 0.85rem; white-space: pre-line;">@v.Requirements</span></div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(WizardError))
+        {
+            <p style="color: var(--danger); font-size: 0.8rem; margin-top: 0.75rem;">@WizardError</p>
+        }
+
+        <div class="admin-form-actions">
+            <button type="button" class="ot-btn ot-btn--primary" disabled="@(IsSavingVacancy || IsGeneratingContract)" @onclick="ConfirmAndGenerate">
+                @(IsSavingVacancy || IsGeneratingContract ? Lang.T("admin.common.loading") : Lang.T("admin.companies.confirmAndGenerate"))
+            </button>
+            <button type="button" class="ot-btn ot-btn--outline" @onclick="PrevStep">@Lang.T("admin.vacancies.back")</button>
+        </div>
+    </div>
+}
+else if (WizardStep == 4)
+{
+    <div style="text-align: center; padding: 3rem 1rem;">
+        @if (IsGeneratingContract)
+        {
+            <div class="admin-loading">@Lang.T("admin.contract.generating")</div>
+        }
+        else if (!string.IsNullOrEmpty(WizardError))
+        {
+            <p style="color: var(--danger); font-size: 0.9rem; margin-bottom: 1rem;">@WizardError</p>
+            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="RetryContract">@Lang.T("admin.common.retry")</button>
+        }
+    </div>
+}
+
 @code {
-    private CreateCompanyDto Dto = new();
+    private int WizardStep { get; set; } = 1;
+    private CreateCompanyDto CompanyDto { get; set; } = new();
+    private List<AdminCreateVacancyDto> VacancyDtos { get; set; } = new();
+    private AdminCreateVacancyDto CurrentVacancy { get; set; } = new();
+    private string? WizardError { get; set; }
+    private bool IsSavingCompany { get; set; }
+    private bool IsSavingVacancy { get; set; }
+    private bool IsGeneratingContract { get; set; }
+
+    private Guid CreatedCompanyId { get; set; }
+    private string CreatedCompanyName { get; set; } = "";
+    private Guid CreatedContractId { get; set; }
+    private List<Guid> CreatedVacancyIds { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -93,10 +312,178 @@
             await Lang.InitializeAsync();
     }
 
-    private async Task Save()
+    private string GetStepName(int step) => step switch
     {
-        var result = await AuthApi.CreateCompanyAsync(Dto);
-        if (result != null)
+        1 => Lang.T("admin.companies.create"),
+        2 => Lang.T("admin.vacancies.create"),
+        3 => Lang.T("admin.companies.review"),
+        4 => Lang.T("admin.contract.title"),
+        _ => ""
+    };
+
+    private string GetContractTypeLabel(int type) => type switch
+    {
+        0 => Lang.T("admin.vacancies.contractFullTime"),
+        1 => Lang.T("admin.vacancies.contractPartTime"),
+        2 => Lang.T("admin.vacancies.contractByContract"),
+        3 => Lang.T("admin.vacancies.contractRemote"),
+        _ => "-"
+    };
+
+    private string GetWorkModeLabel(int mode) => mode switch
+    {
+        0 => Lang.T("admin.vacancies.workOnSite"),
+        1 => Lang.T("admin.vacancies.workHybrid"),
+        2 => Lang.T("admin.vacancies.workRemote"),
+        _ => "-"
+    };
+
+    private void Cancel()
+    {
+        if (WizardStep > 1 && CreatedCompanyId != Guid.Empty)
+            Nav.NavigateTo($"/companies/{CreatedCompanyId}");
+        else
             Nav.NavigateTo("/companies");
     }
+
+    private void PrevStep() => WizardStep--;
+
+    private bool ValidateCurrentVacancy()
+    {
+        if (string.IsNullOrWhiteSpace(CurrentVacancy.Title))
+        {
+            WizardError = Lang.T("admin.vacancies.wizardRequired");
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(CurrentVacancy.Requirements))
+        {
+            WizardError = Lang.T("admin.vacancies.wizardRequired");
+            return false;
+        }
+        return true;
+    }
+
+    private void AddVacancyAndNew()
+    {
+        WizardError = null;
+        if (!ValidateCurrentVacancy()) return;
+        VacancyDtos.Add(CurrentVacancy);
+        CurrentVacancy = new AdminCreateVacancyDto();
+    }
+
+    private void AddVacancyAndContinue()
+    {
+        WizardError = null;
+        if (!ValidateCurrentVacancy()) return;
+        VacancyDtos.Add(CurrentVacancy);
+        CurrentVacancy = new AdminCreateVacancyDto();
+        WizardStep = 3;
+    }
+
+    private void RemoveVacancy(int index)
+    {
+        if (index >= 0 && index < VacancyDtos.Count)
+            VacancyDtos.RemoveAt(index);
+    }
+
+    private void EditVacancy(int index)
+    {
+        if (index < 0 || index >= VacancyDtos.Count) return;
+        CurrentVacancy = VacancyDtos[index];
+        VacancyDtos.RemoveAt(index);
+    }
+
+    private void GoToStep(int step)
+    {
+        if (step == 2) CurrentVacancy = new AdminCreateVacancyDto();
+        WizardStep = step;
+    }
+
+    private void GoToStep2()
+    {
+        WizardError = null;
+        WizardStep = 2;
+    }
+
+    private async Task ConfirmAndGenerate()
+    {
+        if (IsSavingVacancy || IsGeneratingContract) return;
+        WizardError = null;
+
+        if (VacancyDtos.Count == 0)
+        {
+            WizardError = Lang.T("admin.vacancies.wizardRequired");
+            return;
+        }
+
+        if (CreatedCompanyId == Guid.Empty)
+        {
+            IsSavingCompany = true;
+            var company = await AuthApi.CreateCompanyAsync(CompanyDto);
+            IsSavingCompany = false;
+            if (company == null)
+            {
+                WizardError = Lang.T("admin.companies.createError");
+                return;
+            }
+            CreatedCompanyId = company.Id;
+            CreatedCompanyName = company.Name;
+        }
+
+        // Create all vacancies and collect their IDs
+        CreatedVacancyIds = new List<Guid>();
+        IsSavingVacancy = true;
+        foreach (var dto in VacancyDtos)
+        {
+            dto.CompanyId = CreatedCompanyId;
+            var vacancy = await AuthApi.CreateVacancyAsync(dto);
+            if (vacancy == null)
+            {
+                IsSavingVacancy = false;
+                WizardError = Lang.T("admin.vacancies.wizardError");
+                return;
+            }
+            CreatedVacancyIds.Add(vacancy.Id);
+        }
+        IsSavingVacancy = false;
+
+        WizardStep = 4;
+        await GenerateContract(CreatedVacancyIds);
+    }
+
+    private async Task GenerateContract(List<Guid> vacancyIds)
+    {
+        IsGeneratingContract = true;
+        WizardError = null;
+
+        var contractDto = new AdminSaveVacancyContractDto
+        {
+            VacancyIds = vacancyIds,
+            ScopeServices = new List<string> { "publicacion", "busqueda", "screening", "entrevista", "evaluacion", "shortlist" },
+            TargetCandidates = VacancyDtos.Sum(v => v.RequiredApplicants ?? 3),
+            JobTypeCategory = (int)ContractJobType.Operational,
+            TargetCoverageDays = 10,
+            WarrantyDays = 90,
+            FeeAmount = 1500 * vacancyIds.Count,
+            Currency = "EUR",
+            FeeApplicationType = (int)FeeApplicationType.PerPosition,
+            PaymentOpeningPct = 30m,
+            PaymentValidationPct = 50m,
+            PaymentConsolidationPct = 20m
+        };
+
+        var contract = await AuthApi.CreateContractAsync(CreatedCompanyId, contractDto);
+        IsGeneratingContract = false;
+
+        if (contract == null)
+        {
+            WizardError = Lang.T("admin.contract.generateError");
+            return;
+        }
+
+        CreatedContractId = contract.Id;
+        Nav.NavigateTo($"/contracts/{CreatedContractId}/document");
+    }
+
+    private async Task RetryContract() => await GenerateContract(CreatedVacancyIds);
 }

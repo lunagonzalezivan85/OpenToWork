@@ -6,7 +6,7 @@ using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
-[Route("api/admin/vacancies/{vacancyId:guid}/contract")]
+[Route("api/admin/contracts")]
 [RequireStaffRole(AdminStaffRole.Comercial)]
 public class VacancyContractController : AdminControllerBase
 {
@@ -17,34 +17,49 @@ public class VacancyContractController : AdminControllerBase
         _contractService = contractService;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetContract(Guid vacancyId)
+    [HttpGet("{contractId:guid}")]
+    public async Task<IActionResult> GetContract(Guid contractId)
     {
-        var contract = await _contractService.GetByVacancyAsync(vacancyId);
+        var contract = await _contractService.GetByIdAsync(contractId);
         return contract == null ? NotFound() : Ok(contract);
     }
 
-    /// <summary>Crea (si no existe) o actualiza el anexo. Solo permitido en estado Draft.</summary>
-    [HttpPut]
-    public async Task<IActionResult> SaveContract(Guid vacancyId, [FromBody] AdminSaveVacancyContractDto dto)
+    [HttpGet("by-company/{companyId:guid}")]
+    public async Task<IActionResult> GetByCompany(Guid companyId)
     {
-        var result = await _contractService.SaveAsync(vacancyId, dto, AdminId, ClientIp);
+        var contract = await _contractService.GetByCompanyAsync(companyId);
+        return contract == null ? NotFound() : Ok(contract);
+    }
+
+    /// <summary>Crea un nuevo contrato para una empresa con N vacantes.</summary>
+    [HttpPost("by-company/{companyId:guid}")]
+    public async Task<IActionResult> CreateContract(Guid companyId, [FromBody] AdminSaveVacancyContractDto dto)
+    {
+        var result = await _contractService.CreateAsync(companyId, dto, AdminId, ClientIp);
         return result == null ? BadRequest() : Ok(result);
     }
 
-    /// <summary>Marca el anexo como enviado a la empresa (Draft -> Sent).</summary>
-    [HttpPost("send")]
-    public async Task<IActionResult> Send(Guid vacancyId)
+    /// <summary>Actualiza un contrato existente. Solo permitido en estado Draft.</summary>
+    [HttpPut("{contractId:guid}")]
+    public async Task<IActionResult> SaveContract(Guid contractId, [FromBody] AdminSaveVacancyContractDto dto)
     {
-        var ok = await _contractService.SendAsync(vacancyId, AdminId, ClientIp);
+        var result = await _contractService.SaveAsync(contractId, dto, AdminId, ClientIp);
+        return result == null ? BadRequest() : Ok(result);
+    }
+
+    /// <summary>Marca el contrato como enviado a la empresa (Draft -> Sent).</summary>
+    [HttpPost("{contractId:guid}/send")]
+    public async Task<IActionResult> Send(Guid contractId)
+    {
+        var ok = await _contractService.SendAsync(contractId, AdminId, ClientIp);
         return ok ? NoContent() : BadRequest();
     }
 
     /// <summary>Registra la respuesta de la empresa: aceptacion o rechazo (con motivo).</summary>
-    [HttpPost("decision")]
-    public async Task<IActionResult> Decide(Guid vacancyId, [FromBody] AdminContractDecisionDto dto)
+    [HttpPost("{contractId:guid}/decision")]
+    public async Task<IActionResult> Decide(Guid contractId, [FromBody] AdminContractDecisionDto dto)
     {
-        var ok = await _contractService.DecideAsync(vacancyId, dto.Accepted, dto.Reason, AdminId, ClientIp);
+        var ok = await _contractService.DecideAsync(contractId, dto.Accepted, dto.Reason, AdminId, ClientIp);
         return ok ? NoContent() : BadRequest();
     }
 }

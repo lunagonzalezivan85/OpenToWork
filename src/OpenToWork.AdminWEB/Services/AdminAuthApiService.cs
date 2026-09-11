@@ -154,33 +154,49 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<AdminVacancyContractDto?> GetVacancyContractAsync(Guid vacancyId)
+    public async Task<AdminVacancyContractDto?> GetContractAsync(Guid contractId)
     {
         await SetAuthHeaderAsync();
-        var response = await _httpClient.GetAsync($"api/admin/vacancies/{vacancyId}/contract");
+        var response = await _httpClient.GetAsync($"api/admin/contracts/{contractId}");
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<AdminVacancyContractDto>();
     }
 
-    public async Task<AdminVacancyContractDto?> SaveVacancyContractAsync(Guid vacancyId, AdminSaveVacancyContractDto dto)
+    public async Task<AdminVacancyContractDto?> GetContractByCompanyAsync(Guid companyId)
     {
         await SetAuthHeaderAsync();
-        var response = await _httpClient.PutAsJsonAsync($"api/admin/vacancies/{vacancyId}/contract", dto);
+        var response = await _httpClient.GetAsync($"api/admin/contracts/by-company/{companyId}");
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<AdminVacancyContractDto>();
     }
 
-    public async Task<bool> SendVacancyContractAsync(Guid vacancyId)
+    public async Task<AdminVacancyContractDto?> CreateContractAsync(Guid companyId, AdminSaveVacancyContractDto dto)
     {
         await SetAuthHeaderAsync();
-        var response = await _httpClient.PostAsync($"api/admin/vacancies/{vacancyId}/contract/send", null);
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/contracts/by-company/{companyId}", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<AdminVacancyContractDto>();
+    }
+
+    public async Task<AdminVacancyContractDto?> SaveContractAsync(Guid contractId, AdminSaveVacancyContractDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/contracts/{contractId}", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<AdminVacancyContractDto>();
+    }
+
+    public async Task<bool> SendContractAsync(Guid contractId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/admin/contracts/{contractId}/send", null);
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> DecideVacancyContractAsync(Guid vacancyId, bool accepted, string? reason = null)
+    public async Task<bool> DecideContractAsync(Guid contractId, bool accepted, string? reason = null)
     {
         await SetAuthHeaderAsync();
-        var response = await _httpClient.PostAsJsonAsync($"api/admin/vacancies/{vacancyId}/contract/decision", new AdminContractDecisionDto { Accepted = accepted, Reason = reason });
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/contracts/{contractId}/decision", new AdminContractDecisionDto { Accepted = accepted, Reason = reason });
         return response.IsSuccessStatusCode;
     }
 

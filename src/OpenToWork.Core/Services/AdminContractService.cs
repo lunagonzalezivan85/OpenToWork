@@ -19,21 +19,38 @@ public class AdminContractService : IAdminContractService
         _auditLog = auditLog;
     }
 
-    public async Task<AdminVacancyContractDto?> GetByVacancyAsync(Guid vacancyId)
+    public async Task<AdminVacancyContractDto?> GetByIdAsync(Guid contractId)
+    {
+        return await ProjectContractAsync(c => c.Id == contractId && !c.IsDeleted);
+    }
+
+    public async Task<AdminVacancyContractDto?> GetByCompanyAsync(Guid companyId)
+    {
+        return await ProjectContractAsync(c => c.PT_CompanyId == companyId && !c.IsDeleted);
+    }
+
+    private async Task<AdminVacancyContractDto?> ProjectContractAsync(System.Linq.Expressions.Expression<Func<PTVacancyContract, bool>> predicate)
     {
         return await _context.PT_VacancyContracts
-            .Where(c => c.PT_VacancyId == vacancyId && !c.IsDeleted)
+            .Where(predicate)
             .Select(c => new AdminVacancyContractDto
             {
                 Id = c.Id,
-                VacancyId = c.PT_VacancyId,
                 CompanyId = c.PT_CompanyId,
                 CompanyName = c.Company.Name,
                 CompanyContactName = c.Company.ContactName,
                 CompanyContactPhone = c.Company.ContactPhone,
-                VacancyTitle = c.Vacancy!.Title,
                 ContractNumber = c.ContractNumber,
                 Status = c.Status,
+                Vacancies = c.ContractVacancies
+                    .Where(cv => !cv.IsDeleted)
+                    .Select(cv => new ContractVacancyItemDto
+                    {
+                        VacancyId = cv.PT_VacancyId,
+                        Title = cv.Vacancy!.Title,
+                        Location = cv.Vacancy.Location,
+                        RequiredApplicants = cv.Vacancy.RequiredApplicants
+                    }).ToList(),
                 ScopeServices = c.ScopeServices == null
                     ? new List<string>()
                     : System.Text.Json.JsonSerializer.Deserialize<List<string>>(c.ScopeServices) ?? new List<string>(),
@@ -56,49 +73,95 @@ public class AdminContractService : IAdminContractService
             .FirstOrDefaultAsync();
     }
 
-    public async Task<AdminVacancyContractDto?> SaveAsync(Guid vacancyId, AdminSaveVacancyContractDto dto, Guid adminId, string? ipAddress)
+    public async Task<AdminVacancyContractDto?> CreateAsync(Guid companyId, AdminSaveVacancyContractDto dto, Guid adminId, string? ipAddress)
     {
-        var vacancy = await _context.PT_Vacancies
-            .Include(v => v.Company)
-            .FirstOrDefaultAsync(v => v.Id == vacancyId && !v.IsDeleted);
-        if (vacancy == null) return null;
+        if (dto.PaymentOpeningPct + dto.PaymentValidationPct + dto.PaymentConsolidationPct != 100m)
+            return null;
 
-        // Validacion de distribucion de pago: debe sumar 100.
+        var company = await _context.PT_Companies.FirstOrDefaultAsync(c => c.Id == companyId && !c.IsDeleted);
+        if (company == null) return null;
+
+        var contract = new PTVacancyContract
+        {
+            PT_CompanyId = companyId,
+            ContractNumber = await GenerateContractNumberAsync(),
+            Status = (int)ContractStatus.Draft,
+            CreatedBy = adminId
+        };
+        ApplyDtoToContract(contract, dto, adminId);
+
+        foreach (var vacancyId in dto.VacancyIds.Distinct())
+        {
+            contract.ContractVacancies.Add(new PTContractVacancy
+            {
+                PT_VacancyId = vacancyId,
+                CreatedBy = adminId
+            });
+        }
+
+        _context.PT_VacancyContracts.Add(contract);
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "CreateContract",
+            "PT_VacancyContracts", contract.Id, $"{{\"contractNumber\":\"{contract.ContractNumber}\"}}", ipAddress);
+
+        return await GetByIdAsync(contract.Id);
+    }
+
+    public async Task<AdminVacancyContractDto?> SaveAsync(Guid contractId, AdminSaveVacancyContractDto dto, Guid adminId, string? ipAddress)
+    {
         if (dto.PaymentOpeningPct + dto.PaymentValidationPct + dto.PaymentConsolidationPct != 100m)
             return null;
 
         var contract = await _context.PT_VacancyContracts
-            .FirstOrDefaultAsync(c => c.PT_VacancyId == vacancyId && !c.IsDeleted);
+            .Include(c => c.ContractVacancies)
+            .FirstOrDefaultAsync(c => c.Id == contractId && !c.IsDeleted);
 
-        // Solo el borrador es editable; un rechazado puede reabrirse como borrador.
-        // Accepted/Cancelled/Sent quedan bloqueados.
-        if (contract != null && contract.Status != (int)ContractStatus.Draft && contract.Status != (int)ContractStatus.Rejected)
+        if (contract == null) return null;
+        if (contract.Status != (int)ContractStatus.Draft && contract.Status != (int)ContractStatus.Rejected)
             return null;
 
-        if (contract != null && contract.Status == (int)ContractStatus.Rejected)
+        if (contract.Status == (int)ContractStatus.Rejected)
         {
             contract.Status = (int)ContractStatus.Draft;
             contract.RejectedAt = null;
             contract.RejectionReason = null;
         }
 
-        if (contract == null)
+        ApplyDtoToContract(contract, dto, adminId);
+
+        // Sync vacancy links: remove deleted, add new
+        var existingVacancyIds = contract.ContractVacancies.Where(cv => !cv.IsDeleted).Select(cv => cv.PT_VacancyId).ToHashSet();
+        var newVacancyIds = dto.VacancyIds.Distinct().ToHashSet();
+
+        foreach (var cv in contract.ContractVacancies.Where(cv => !cv.IsDeleted && !newVacancyIds.Contains(cv.PT_VacancyId)))
         {
-            contract = new PTVacancyContract
-            {
-                PT_VacancyId = vacancyId,
-                PT_CompanyId = vacancy.PT_CompanyId,
-                ContractNumber = await GenerateContractNumberAsync(),
-                Status = (int)ContractStatus.Draft,
-                CreatedBy = adminId
-            };
-            _context.PT_VacancyContracts.Add(contract);
+            cv.IsDeleted = true;
+            cv.DeletedAt = DateTime.UtcNow;
+            cv.DeletedBy = adminId;
         }
 
+        foreach (var vacancyId in newVacancyIds.Except(existingVacancyIds))
+        {
+            contract.ContractVacancies.Add(new PTContractVacancy
+            {
+                PT_VacancyId = vacancyId,
+                CreatedBy = adminId
+            });
+        }
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "UpdateContract",
+            "PT_VacancyContracts", contract.Id, $"{{\"contractNumber\":\"{contract.ContractNumber}\"}}", ipAddress);
+
+        return await GetByIdAsync(contractId);
+    }
+
+    private void ApplyDtoToContract(PTVacancyContract contract, AdminSaveVacancyContractDto dto, Guid adminId)
+    {
         contract.ScopeServices = dto.ScopeServices.Count == 0
             ? null
             : System.Text.Json.JsonSerializer.Serialize(dto.ScopeServices);
-        contract.TargetCandidates = dto.TargetCandidates ?? vacancy.RequiredApplicants;
+        contract.TargetCandidates = dto.TargetCandidates;
         contract.JobTypeCategory = dto.JobTypeCategory;
         contract.TargetCoverageDays = dto.TargetCoverageDays;
         contract.WarrantyDays = dto.WarrantyDays;
@@ -111,19 +174,13 @@ public class AdminContractService : IAdminContractService
         contract.FeeExceptions = dto.FeeExceptions;
         contract.UpdatedAt = DateTime.UtcNow;
         contract.UpdatedBy = adminId;
-
-        await _context.SaveChangesAsync();
-        await _auditLog.LogAsync(adminId, contract.CreatedAt == contract.UpdatedAt ? "CreateContract" : "UpdateContract",
-            "PT_VacancyContracts", contract.Id, $"{{\"contractNumber\":\"{contract.ContractNumber}\"}}", ipAddress);
-
-        return await GetByVacancyAsync(vacancyId);
     }
 
     /// <summary>Marca el anexo como enviado a la empresa (Draft -> Sent). Solo desde borrador.</summary>
-    public async Task<bool> SendAsync(Guid vacancyId, Guid adminId, string? ipAddress)
+    public async Task<bool> SendAsync(Guid contractId, Guid adminId, string? ipAddress)
     {
         var contract = await _context.PT_VacancyContracts
-            .FirstOrDefaultAsync(c => c.PT_VacancyId == vacancyId && !c.IsDeleted);
+            .FirstOrDefaultAsync(c => c.Id == contractId && !c.IsDeleted);
         if (contract == null || contract.Status != (int)ContractStatus.Draft) return false;
 
         contract.Status = (int)ContractStatus.Sent;
@@ -136,13 +193,12 @@ public class AdminContractService : IAdminContractService
         return true;
     }
 
-    public async Task<bool> DecideAsync(Guid vacancyId, bool accepted, string? reason, Guid adminId, string? ipAddress)
+    public async Task<bool> DecideAsync(Guid contractId, bool accepted, string? reason, Guid adminId, string? ipAddress)
     {
         var contract = await _context.PT_VacancyContracts
-            .FirstOrDefaultAsync(c => c.PT_VacancyId == vacancyId && !c.IsDeleted);
+            .FirstOrDefaultAsync(c => c.Id == contractId && !c.IsDeleted);
         if (contract == null) return false;
 
-        // Un anexo en borrador o enviado (pendiente de respuesta) puede aceptarse o rechazarse.
         if (contract.Status != (int)ContractStatus.Sent && contract.Status != (int)ContractStatus.Draft) return false;
 
         if (accepted)
