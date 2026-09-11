@@ -829,8 +829,32 @@ Antes de marcar cualquier fase como completada, se debe validar:
 - **Fase 4 (Portal Administrativo):** COMPLETADA — Dsiezar (roles + deuda tecnica, 29-Ago; verificaciones manuales, 01-Sep) + Pipeline de Reclutamiento completo (Iluna, 21-Ago) + CRM de Captacion de Empresas (Iluna, 06-Sep: pipeline comercial, planes, contratos, mapa interactivo) + RBAC de Personal Administrativo y flujo de Cierre de Negociaciones (Dsiezar, 05-Sep: roles SuperAdmin/Reclutador/Comercial con enforcement real, pantalla "Personal Administrativo", presentar candidatos a la empresa y cerrar negociacion). Todo mergeado a `main` el 07-Sep, con 5 bugs de integracion encontrados y corregidos en QA (ver bitacora 07-Sep)
 - **Fase 5 (Portal Corporativo):** Parcial — estructura base + shortlist/scorecard (Fase 3) + busqueda avanzada por score (Dsiezar) ya funcionan; categorias de vacante migradas al rubro de hosteleria y gate de login/registro en detalle de vacante (Dsiezar, 05-Sep); **Embudo Ciego** operativo (Iluna, 08-Sep: la empresa solo ve conteos, TD entrega personal verificado via `PTCandidateDelivery`); falta suscripciones
 - **Fases 6-8:** Pendientes
-- **`main` esta al dia** con todo lo anterior. Ultimos merges: Embudo Ciego (Iluna, 08-Sep), fix de `RecruitmentService.GetVacancyOptionsAsync` (Dsiezar, 08-Sep), pagina publica de Preguntas Frecuentes (Dsiezar, 09-Sep)
+- **`main` esta al dia** con todo lo anterior. Ultimos merges: Embudo Ciego (Iluna, 08-Sep), fix de `RecruitmentService.GetVacancyOptionsAsync` (Dsiezar, 08-Sep), pagina publica de Preguntas Frecuentes (Dsiezar, 09-Sep), mejoras del documento contractual + ContactDniNie + pagina de edicion de empresa (Iluna, 10-Sep)
 - **Rama pendiente de integrar:** `iluna-embudo-ciego` (`40e2bc5`, Iluna, 09-Sep) — feature de **Contrato de vacantes** (documento corporativo formal, formato EUR, entidad `PTVacancyContract`, 2 migraciones nuevas) + seccion "Flujo de trabajo con Git" en este README. Contiene todo lo de `main` y hace fast-forward limpio; falta decidir el merge
+
+### Nota para Darwin (Dsiezar) — Que falta para empezar a operar
+
+Darwin, el portal administrativo esta funcional con CRM de empresas, pipeline de reclutamiento, embudo ciego y documento contractual. Para que Trato Directo pueda **iniciar operaciones reales de reclutamiento**, falta:
+
+1. **Sistema de suscripciones (Fase 5)** — las empresas necesitan poder contratar un plan (Basic/Premium/Platinum) para acceder al servicio. Hoy los planes existen como seed data pero no hay flujo de pago/seleccion.
+2. **Notificaciones por email (Fase 7)** — el flujo de envio de contratos y notificaciones a empresas requiere SMTP configurado. Hoy los contratos se generan pero no se envian por email.
+3. **Claves i18n de las clausulas del contrato** — las 23 clausulas del Contrato Marco estan hardcoded en espanol en `VacancyContractDocument.razor`. Falta migrar a claves i18n para soportar ingles.
+4. **Integrar rama `iluna-embudo-ciego`** — contiene la entidad `PTVacancyContract` y el flujo de contratos de vacantes. Decidir merge a `main`.
+5. **CRUD de Planes** — admin necesita poder gestionar los planes desde el portal (crear, editar, desactivar).
+
+### Consulta a RH (@rh) — Que falta para empezar a andar
+
+**Soy RH.** Identifico el proceso en curso: **arranque operativo de Trato Directo como agencia de seleccion**.
+
+El portal administrativo tiene el flujo completo: CRM de captacion de empresas, pipeline de reclutamiento (investigacion, evaluacion tecnica, entrevista cultural, referencias), embudo ciego (entrega de personal verificado), y documento contractual formal. Sin embargo, para que Trato Directo pueda **iniciar operaciones reales**, faltan elementos que desde RH identificamos como criticos:
+
+1. **Suscripciones de empresas** — las empresas necesitan un mecanismo formal de contratacion de plan. Hoy no hay pasarela de pago ni flujo de seleccion de plan activo. **Esto bloquea la comercializacion.**
+2. **Notificaciones por email** — el envio de contratos a empresas y la comunicacion con candidatos/referencias requiere SMTP. Hoy todo es manual. **Esto bloquea la operacion a escala.**
+3. **Definicion de scorecards por vacante** — antes de publicar vacantes reales, necesitamos definir las rubricas de competencias (tecnicas y blandas) por cada puesto tipo. Hoy el pipeline de reclutamiento tiene evaluacion pero sin scorecards estandarizadas por rol.
+4. **Sourcing activo** — no hay candidatos cargados en el sistema. Para iniciar, necesitamos cargar un primer lote de perfiles (minimo 20-30) en la base de datos para que el pipeline tenga material con el que trabajar.
+5. **Proceso de onboarding de empresa piloto** — necesitamos seleccionar 1-2 empresas del CRM que esten en etapa "Cerrado Ganado" (o cerca) y ejecutar el flujo end-to-end con ellas: contrato → vacante → pipeline → entrega.
+
+**Recomendacion de RH:** Priorizar (1) suscripciones y (2) email como bloqueantes operativos. Paralelamente, cargar candidatos seed y definir scorecards para los primeros puestos de hosteleria. Con eso, Trato Directo puede iniciar operaciones con 1-2 empresas piloto.
 
 ### Indicaciones para continuar
 
@@ -881,6 +905,7 @@ Antes de marcar cualquier fase como completada, se debe validar:
 | 2026-09-08 | Iluna | Fase 5 | **Embudo Ciego** - entrega de personal verificado a empresas: entidad `PTCandidateDelivery` + `DeliveryStatus`, `DeliveryService.DeliverCandidateAsync` (exige etapa "Listo a Entregar" + Verificado TD + vacante con empresa), `DeliveriesController` en AdminAPI y API publica, migracion `20260908113350_CandidateDeliveries`. `CompanyDashboard`/`VerifiedApplicants` ahora muestran solo conteos, nunca identidades. Videos v01/v02 en bucle en login y home, seed de hosteleria, menu de empresa sin "Busqueda avanzada", validacion del flujo con el agente RH (`docs/rh/`) |
 | 2026-09-08 | Dsiezar | Fix | `RecruitmentService.GetVacancyOptionsAsync` filtraba `Status == 0` (Borrador) en vez de `1` (Activa) - el modal "Vincular vacante" del flujo de entrega siempre decia "No hay vacantes activas", dejando la feature de Embudo Ciego inutilizable. Adoptada la implementacion de Iluna sobre la propia (`git reset` de un commit no pusheado que duplicaba el mismo flujo) |
 | 2026-09-09 | Dsiezar | Fase 2 | Pagina publica de **Preguntas Frecuentes** (`/faq`, `Faq.razor`) - acordeon con 10 Q&A alineadas al modelo (gratis para candidatos, la empresa ve conteos no perfiles, distintivo Verificado TD, evaluacion, datos personales, vigencia de perfil, idiomas). Claves `common.faq.*` en es/en, estilos `.faq-*` en `components.css` (v24→v25). Resuelve el enlace del footer a `/faq` que devolvia 404 |
+| 2026-09-10 | Iluna | Fase 4 | Mejoras del documento contractual: layout limpio (popup sin admin shell), fuente Arial, texto justificado, line-height 1.5, ANEXO I en pagina aparte, fondos grises eliminados, firmas alineadas, datos reales de TRATO DIRECTO hardcodeados, estado oculto, cache-busting CSS. Campo `ContactDniNie` end-to-end (entidad, DTOs, servicios, UI, migracion). Pagina de edicion de empresa (`Edit.razor`). Flujo de aprobacion de contratos confirmado (Send/Accept/Reject). Commit `c0ccb04` |
 
 ---
 
@@ -1477,6 +1502,40 @@ Pruebas totales: 44
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-10 — Mejoras del documento contractual + campo ContactDniNie + página de edición de empresa (Iluna)
+
+**Documento contractual (`VacancyContractDocument.razor`) — refinamiento visual y de contenido:**
+- Nuevo `ContractLayout.razor` (layout limpio sin sidebar/topbar) para que el documento se abra en ventana emergente sin la mancha gris del admin shell.
+- Botón "Ver documento formal" ahora abre con `forceLoad: true` (nueva pestaña).
+- Fuente Arial, texto justificado, line-height 1.5 en todo el documento.
+- Header: reducido tamaño del nombre de marca (1.1rem) y subtítulo (0.72rem) con `white-space: nowrap` para que la fecha sea visible.
+- "Anexo Nº" → "Nº" en es/en.
+- ANEXO I en página aparte (`page-break-after: always` en el divider).
+- Eliminados fondos grises: `cd-id-strip` sin `background`, `cd-anexo-divider` sin línea visible, `cd-footer` sin `border-top`, `cd-anexo-section` sin `border-bottom`.
+- Footer y sello de aceptación movidos al final del Contrato Marco (antes del ANEXO I).
+- Firmas alineadas: fecha centrada arriba de ambos bloques, `padding: 0` en `.cd-signatures`.
+- Datos reales de TRATO DIRECTO HUMAN SERVICES, S.L. hardcodeados (domicilio, CIF, Registro Mercantil, representante Luis Alejandro Velasquez, DNI/NIE).
+- Estado del contrato oculto en el documento.
+- Cache-busting para `admin.css` con `?v=@DateTime.Now.ToString("s")` en `App.razor`.
+
+**Campo `ContactDniNie` end-to-end:**
+- Entidad `PTCompany` + migración `20260911025117_AddContactDniNie`.
+- DTOs: `CompanyDetailDto`, `UpdateCompanyDto`, `CreateCompanyDto`, `CompanyPipelineDetailDto`, `AdminVacancyContractDto`.
+- `CompanyCrmService` mapea `ContactDniNie` en create/update.
+- `AdminContractService` proyecta `CompanyContactDniNie`.
+- UI: inputs en `Create.razor` y `Edit.razor`, display en `VacancyContractDocument.razor`.
+
+**Página de edición de empresa:**
+- Nueva `Edit.razor` en `Components/Pages/Companies/`.
+- Botón "Editar" en `Detail.razor` linking a `/companies/{id}/edit`.
+- Claves i18n `admin.companies.edit` en es/en.
+
+**Flujo de aprobación de contratos:**
+- Confirmado: `SendAsync` (Draft → Sent), `DecideAsync` (Sent → Accepted/Rejected) en `AdminContractService`.
+- UI: botones "Enviar", "Aceptar", "Rechazar" en `VacancyContract.razor` según estado.
+
+- Commit `c0ccb04` en `main`.
 
 ### Sesión 2026-09-09 — Página pública de Preguntas Frecuentes (Dsiezar)
 
