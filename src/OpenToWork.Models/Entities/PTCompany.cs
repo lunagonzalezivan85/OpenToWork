@@ -57,6 +57,9 @@ public class PTCompany : BaseEntity
     [MaxLength(200)]
     public string? ContactPosition { get; set; }
 
+    [MaxLength(20)]
+    public string? ContactDniNie { get; set; }
+
     [MaxLength(500)]
     public string? LinkedInUrl { get; set; }
 

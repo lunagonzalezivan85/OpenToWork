@@ -10,7 +10,15 @@ public class AdminVacancyContractDto
     public Guid Id { get; set; }
     public Guid CompanyId { get; set; }
     public string? CompanyName { get; set; }
+    public string? CompanyLegalName { get; set; }
+    public string? CompanyTaxId { get; set; }
+    public string? CompanyAddress { get; set; }
+    public string? CompanyCountry { get; set; }
+    public string? CompanyCity { get; set; }
     public string? CompanyContactName { get; set; }
+    public string? CompanyContactPosition { get; set; }
+    public string? CompanyContactDniNie { get; set; }
+    public string? CompanyContactEmail { get; set; }
     public string? CompanyContactPhone { get; set; }
     public string ContractNumber { get; set; } = string.Empty;
     public int Status { get; set; }
@@ -72,6 +80,14 @@ public class ContractVacancyItemDto
 {
     public Guid VacancyId { get; set; }
     public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Requirements { get; set; }
     public string? Location { get; set; }
+    public string? Category { get; set; }
+    public int ContractType { get; set; }
+    public int WorkMode { get; set; }
+    public decimal? SalaryMin { get; set; }
+    public decimal? SalaryMax { get; set; }
     public int? RequiredApplicants { get; set; }
+    public int? YearsExperience { get; set; }
 }

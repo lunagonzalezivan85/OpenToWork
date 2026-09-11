@@ -387,7 +387,7 @@ else if (Contract != null)
 
     private void GoBack() => Nav.NavigateTo($"/vacancies/{VacancyId}");
 
-    private void GoToDocument() => Nav.NavigateTo($"/contracts/{Contract!.Id}/document");
+    private void GoToDocument() => Nav.NavigateTo($"/contracts/{Contract!.Id}/document", forceLoad: true);
 
     private string GetScopeText()
     {

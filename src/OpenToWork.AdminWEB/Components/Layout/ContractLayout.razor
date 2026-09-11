@@ -1,0 +1,15 @@
+@inherits LayoutComponentBase
+@using OpenToWork.AdminWEB.Services
+@inject LanguageService Lang
+
+<div class="contract-layout">
+    @Body
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+    }
+}

@@ -30,6 +30,10 @@ else
         </div>
         <div class="admin-page-actions">
             <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Company.Id}/vacancies"))">@Lang.T("admin.companies.viewVacancies")</button>
+            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsLoadingContract" @onclick="ViewContract">
+                @(IsLoadingContract ? Lang.T("admin.common.loading") : Lang.T("admin.contract.viewDocument"))
+            </button>
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Company.Id}/edit"))">@Lang.T("admin.common.edit")</button>
             <button class="ot-btn ot-btn--danger ot-btn--small" disabled="@IsDeleting" @onclick="DeleteCompany">
                 @(IsDeleting ? Lang.T("admin.common.loading") : Lang.T("admin.companies.delete"))
             </button>
@@ -188,6 +192,7 @@ else
     private string SelectedUserId = "";
     private bool IsAssigning = false;
     private bool IsDeleting = false;
+    private bool IsLoadingContract = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -197,6 +202,16 @@ else
             Company = await AuthApi.GetCompanyAsync(id);
         AdminUsers = await AuthApi.GetUsersAsync(role: (int)UserRole.Admin);
         SelectedUserId = AdminUsers.FirstOrDefault()?.Id.ToString() ?? "";
+    }
+
+    private async Task ViewContract()
+    {
+        if (Company == null) return;
+        IsLoadingContract = true;
+        var contract = await AuthApi.GetContractByCompanyAsync(Company.Id);
+        IsLoadingContract = false;
+        if (contract != null)
+            Nav.NavigateTo($"/contracts/{contract.Id}/document");
     }
 
     private async Task AssignToUser()

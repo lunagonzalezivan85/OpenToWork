@@ -1,4 +1,5 @@
 @page "/contracts/{ContractId:guid}/document"
+@layout OpenToWork.AdminWEB.Components.Layout.ContractLayout
 @using OpenToWork.AdminWEB.Services
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.Shared.Enums
@@ -37,8 +38,8 @@ else
                 <div class="cd-logo">TD</div>
             </div>
             <div class="cd-letterhead-center">
-                <div class="cd-brand-name">Trato Directo</div>
-                <div class="cd-brand-sub">@Lang.T("admin.contract.docServiceTitle")</div>
+                <div class="cd-brand-name">TRATO DIRECTO HUMAN SERVICES, S.L.</div>
+                <div class="cd-brand-sub">CONTRATO MARCO DE PRESTACIÓN DE SERVICIOS DE SELECCIÓN E INTERMEDIACIÓN LABORAL</div>
             </div>
             <div class="cd-letterhead-right">
                 <div class="cd-date-label">@Lang.T("admin.contract.docDate")</div>
@@ -52,130 +53,193 @@ else
                 <span class="cd-id-label">@Lang.T("admin.contract.docNumber")</span>
                 <span class="cd-id-value">@Contract.ContractNumber</span>
             </div>
-            <div class="cd-id-item">
-                <span class="cd-id-label">@Lang.T("admin.contract.status")</span>
-                <span class="cd-id-value @GetStatusCss(Contract.Status)">@GetStatusLabel(Contract.Status)</span>
-            </div>
         </div>
 
-        @* === Empresa solicitante === *@
+        @* === REUNIDOS === *@
         <section class="cd-section">
-            <h3 class="cd-section-title">@Lang.T("admin.contract.docRequester")</h3>
-            <div class="cd-info-grid">
-                <div class="cd-info-cell">
-                    <span class="cd-info-label">@Lang.T("admin.vacancies.company")</span>
-                    <span class="cd-info-value">@(Contract.CompanyName ?? "-")</span>
-                </div>
-                <div class="cd-info-cell">
-                    <span class="cd-info-label">@Lang.T("admin.contract.docContact")</span>
-                    <span class="cd-info-value">@(string.IsNullOrWhiteSpace(Contract.CompanyContactName) ? "-" : Contract.CompanyContactName)@(string.IsNullOrWhiteSpace(Contract.CompanyContactPhone) ? "" : " · " + Contract.CompanyContactPhone)</span>
-                </div>
-                <div class="cd-info-cell">
-                    <span class="cd-info-label">@Lang.T("admin.contract.docRequesterVacancy")</span>
-                    <span class="cd-info-value">
-                        @if (Contract.Vacancies.Any())
-                        {
-                            @string.Join(" · ", Contract.Vacancies.Select(v => v.Title))
-                        }
-                        else
-                        {
-                            <span>-</span>
-                        }
-                    </span>
-                </div>
-            </div>
+            <h3 class="cd-section-title">REUNIDOS</h3>
+            <p class="cd-legal-text">De una parte, <strong>TRATO DIRECTO HUMAN SERVICES, S.L.</strong>, con domicilio social en Calle de Lugo 15, Alcobendas, CIF 1235567, inscrita en el Registro Mercantil de Madrid, Tomo 1, Folio 1, Hoja 1, representada en este acto por D./Dña. Luis Alejandro Velasquez, en calidad de Representante Legal, con DNI/NIE 3212312345 (en adelante, «TRATO DIRECTO»).</p>
+            <p class="cd-legal-text">De otra parte, <strong>@(Contract.CompanyLegalName ?? Contract.CompanyName ?? "[●]")</strong>, con domicilio en @(Contract.CompanyAddress ?? "[●]")@(!string.IsNullOrEmpty(Contract.CompanyCity) ? ", " + Contract.CompanyCity : "")@(!string.IsNullOrEmpty(Contract.CompanyCountry) ? ", " + Contract.CompanyCountry : ""), CIF/NIF @(Contract.CompanyTaxId ?? "[●]"), representada en este acto por D./Dña. @(Contract.CompanyContactName ?? "[●]"), en calidad de @(Contract.CompanyContactPosition ?? "[●]"), con DNI/NIE @(Contract.CompanyContactDniNie ?? "[●]") (en adelante, «EL CLIENTE»).</p>
+            <p class="cd-legal-text">Ambas partes, reconociéndose capacidad legal suficiente para contratar y obligarse, acuerdan suscribir el presente Contrato Marco.</p>
         </section>
 
-        @* === Alcance del servicio y plazos === *@
+        @* === EXPONEN === *@
         <section class="cd-section">
-            <h3 class="cd-section-title">@Lang.T("admin.contract.scopeTitle")</h3>
-            <div class="cd-scope-services">
-                @foreach (var svc in GetScopeList())
-                {
-                    <span class="cd-scope-pill">@svc</span>
-                }
-            </div>
-            <div class="cd-info-grid cd-info-grid--metrics">
-                <div class="cd-info-cell">
-                    <span class="cd-info-label">@Lang.T("admin.contract.targetCandidates")</span>
-                    <span class="cd-info-value cd-info-value--big">@(Contract.TargetCandidates?.ToString() ?? "[●]")</span>
-                    <span class="cd-info-hint">@Lang.T("admin.contract.targetCandidatesHint")</span>
-                </div>
-                <div class="cd-info-cell">
-                    <span class="cd-info-label">@Lang.T("admin.contract.targetCoverage")</span>
-                    <span class="cd-info-value cd-info-value--big">@(Contract.TargetCoverageDays?.ToString() ?? "[●]") @Lang.T("admin.contract.businessDays")</span>
-                    <span class="cd-info-hint">@Lang.T("admin.contract.docPerJobType")</span>
-                </div>
-            </div>
-            <p class="cd-ref-note">@Lang.T("admin.contract.docRefTableIntro")</p>
+            <h3 class="cd-section-title">EXPONEN</h3>
+            <p class="cd-legal-text">A. Que TRATO DIRECTO desarrolla servicios profesionales de captación, evaluación, selección e intermediación de personas candidatas para empresas, de acuerdo con la normativa española aplicable y con la habilitación administrativa que resulte exigible a la actividad efectivamente desarrollada.</p>
+            <p class="cd-legal-text">B. Que TRATO DIRECTO no contrata trabajadores para ponerlos a disposición del CLIENTE ni asume la condición de empresa de trabajo temporal. La relación laboral que eventualmente se formalice será exclusivamente entre EL CLIENTE y la persona contratada.</p>
+            <p class="cd-legal-text">C. Que EL CLIENTE desea contratar servicios profesionales de selección/intermediación para cubrir vacantes de su organización.</p>
+            <p class="cd-legal-text">D. Que las partes desean establecer un marco contractual general, de modo que cada necesidad concreta se documente mediante una Solicitud de Vacante que formará parte integrante del presente contrato.</p>
+        </section>
+
+        @* === CLÁUSULAS === *@
+        <section class="cd-section">
+            <h3 class="cd-section-title">CLÁUSULAS</h3>
+
+            <h4 class="cd-clause-title">1. Objeto y alcance</h4>
+            <p class="cd-legal-text">1.1. El presente contrato regula las condiciones generales de los servicios de captación, cribado, evaluación, selección y, cuando legalmente corresponda, intermediación laboral prestados por TRATO DIRECTO al CLIENTE.</p>
+            <p class="cd-legal-text">1.2. Cada vacante deberá formalizarse mediante el Anexo I — Solicitud de Vacante. Ningún proceso se entenderá iniciado hasta que la Solicitud haya sido aceptada por ambas partes.</p>
+            <p class="cd-legal-text">1.3. La Solicitud de Vacante determinará el perfil, centro de trabajo, condiciones comunicadas, número de posiciones, tarifa, hitos de pago, plazo objetivo y garantía aplicables.</p>
+            <p class="cd-legal-text">1.4. En caso de contradicción, prevalecerá la Solicitud de Vacante sobre el presente Contrato Marco únicamente respecto de las condiciones particulares expresamente modificadas.</p>
+
+            <h4 class="cd-clause-title">2. Naturaleza del servicio y ausencia de cesión de trabajadores</h4>
+            <p class="cd-legal-text">2.1. TRATO DIRECTO presta un servicio profesional de selección e intermediación laboral y no un servicio de cesión temporal de trabajadores.</p>
+            <p class="cd-legal-text">2.2. TRATO DIRECTO no dirige, organiza, supervisa ni controla la prestación laboral de las personas contratadas por EL CLIENTE.</p>
+            <p class="cd-legal-text">2.3. La decisión final de contratación corresponde al CLIENTE.</p>
+            <p class="cd-legal-text">2.4. EL CLIENTE será exclusivamente responsable de la contratación, alta y afiliación, retribución, jornada, registro horario, prevención de riesgos laborales, aplicación del convenio colectivo, permisos, vacaciones, obligaciones de Seguridad Social y fiscales, dirección y organización del trabajo, régimen disciplinario y extinción de la relación laboral.</p>
+            <p class="cd-legal-text">2.5. TRATO DIRECTO no garantiza la contratación de una persona candidata concreta ni el resultado empresarial derivado de su posterior desempeño. Su obligación es de medios.</p>
+
+            <h4 class="cd-clause-title">3. Requisitos habilitantes y cumplimiento normativo</h4>
+            <p class="cd-legal-text">3.1. TRATO DIRECTO declara que se encuentra legalmente habilitada para prestar los servicios de selección e intermediación laboral objeto de este contrato.</p>
+            <p class="cd-legal-text">3.2. EL CLIENTE se obliga a no solicitar a TRATO DIRECTO actuaciones contrarias a la legislación laboral, de empleo, igualdad, prevención de riesgos, protección de datos o cualquier otra norma imperativa.</p>
+            <p class="cd-legal-text">3.3. Las partes se comprometen a respetar los principios de igualdad de trato y no discriminación en el acceso al empleo.</p>
+            <p class="cd-legal-text">3.4. Las personas candidatas no abonarán a TRATO DIRECTO cantidad alguna por los servicios de intermediación laboral dirigidos a su colocación.</p>
+
+            <h4 class="cd-clause-title">4. Proceso de selección</h4>
+            <p class="cd-legal-text">4.1. Según la naturaleza de la vacante, TRATO DIRECTO podrá realizar: publicación y difusión; búsqueda en su base de talento y otros canales; cribado (screening); entrevista y evaluación; comprobación de requisitos; verificación de referencias cuando haya sido contratada y resulte lícita; elaboración de shortlist; briefing; y acompañamiento durante la incorporación.</p>
+            <p class="cd-legal-text">4.2. Los controles concretos realizados serán los definidos en la Solicitud de Vacante y/o en la documentación comercial aceptada por el CLIENTE.</p>
+            <p class="cd-legal-text">4.3. La expresión «candidato validado» significa que la persona ha superado los controles expresamente definidos para esa vacante.</p>
+            <p class="cd-legal-text">4.4. TRATO DIRECTO procurará presentar una terna cuando el mercado, las características del perfil y la disponibilidad de candidatos lo permitan.</p>
+            <p class="cd-legal-text">4.5. EL CLIENTE reconoce que la disponibilidad de candidatos depende del mercado laboral.</p>
+
+            <h4 class="cd-clause-title">5. Plazos y suspensión del SLA</h4>
+            <p class="cd-legal-text">5.1. El plazo objetivo de cobertura será el indicado en la Solicitud de Vacante y comenzará a computarse desde la fecha de activación efectiva del proceso.</p>
+            <p class="cd-legal-text">5.2. Los plazos son objetivos de prestación y no garantizan un resultado concreto. Quedarán suspendidos durante cualquier periodo en que la continuación del proceso dependa de una actuación del CLIENTE.</p>
+            <p class="cd-legal-text">5.3. Serán causas de suspensión, entre otras: falta o retraso de información; cambios de perfil o condiciones; demora en entrevistas o decisiones; falta de disponibilidad de interlocutores; paralización solicitada por el CLIENTE.</p>
+            <p class="cd-legal-text">5.4. Si se produce un cambio sustancial del perfil, salario, jornada, ubicación, funciones, requisitos o modalidad contractual, TRATO DIRECTO podrá recalcular el plazo, la tarifa y, cuando corresponda, tratar la solicitud como una nueva vacante.</p>
+
+            <h4 class="cd-clause-title">6. Honorarios</h4>
+            <p class="cd-legal-text">6.1. Las tarifas aplicables a cada vacante serán las expresamente indicadas en la correspondiente Solicitud de Vacante. Los importes se expresan siempre sin IVA.</p>
+            <p class="cd-legal-text">6.2. Para vacantes con varias posiciones, la Solicitud deberá indicar si la tarifa se aplica por cada posición, por el conjunto del proceso, o mediante un precio global. En ausencia de indicación, la tarifa se entenderá aplicable a cada contratación efectiva.</p>
+            <p class="cd-legal-text">6.3. TRATO DIRECTO podrá actualizar sus tarifas generales mediante comunicación previa de treinta (30) días. Las vacantes ya aceptadas conservarán las condiciones económicas pactadas.</p>
+            <p class="cd-legal-text">6.4. Los honorarios remuneran el servicio profesional prestado y los hitos alcanzados, no exclusivamente el hecho de que se produzca una contratación.</p>
+
+            <h4 class="cd-clause-title">7. Devengo y forma de pago</h4>
+            <p class="cd-legal-text">7.1. Salvo que la Solicitud establezca otra distribución, los honorarios se devengarán en los siguientes hitos: Apertura (30%) al 2.º día hábil desde la activación; Validación (50%) al 1.er día hábil tras la confirmación de aceptación de al menos un candidato; Consolidación (20%) a los 30 días naturales de la incorporación efectiva.</p>
+            <p class="cd-legal-text">7.2. El hito de «Validación» se devenga cuando EL CLIENTE confirma la aceptación de al menos un candidato, independientemente de que formalice posteriormente la contratación.</p>
+            <p class="cd-legal-text">7.3. EL CLIENTE dispondrá de cinco (5) días hábiles desde la emisión de cada factura para su pago.</p>
+            <p class="cd-legal-text">7.4. EL CLIENTE no podrá compensar, retener ni suspender unilateralmente el pago de facturas por controversias sobre prestaciones distintas.</p>
+            <p class="cd-legal-text">7.5. En caso de mora, serán aplicables los intereses y costes de cobro previstos en la normativa de morosidad de operaciones comerciales vigente.</p>
+
+            <h4 class="cd-clause-title">8. Cancelación, paralización y retraso del Cliente</h4>
+            <p class="cd-legal-text">8.1. EL CLIENTE podrá cancelar una vacante hasta el final del día hábil siguiente a su aceptación. Transcurrido dicho plazo, la cancelación no liberará al CLIENTE de los importes ya devengados.</p>
+            <p class="cd-legal-text">8.2. El importe correspondiente a Apertura será no reembolsable cuando TRATO DIRECTO haya iniciado efectivamente la actividad.</p>
+            <p class="cd-legal-text">8.3. La confirmación de aceptación de al menos un candidato activa el segundo hito económico aunque EL CLIENTE decida no formalizar la contratación.</p>
+            <p class="cd-legal-text">8.4. Si EL CLIENTE paraliza una vacante durante más de treinta (30) días naturales después de la validación, TRATO DIRECTO podrá cerrar administrativamente el proceso.</p>
+            <p class="cd-legal-text">8.5. Los retrasos imputables al CLIENTE no reducirán los honorarios devengados.</p>
+
+            <h4 class="cd-clause-title">9. Contratación y condiciones de la vacante</h4>
+            <p class="cd-legal-text">9.1. EL CLIENTE deberá proporcionar información completa, veraz y actualizada sobre el puesto.</p>
+            <p class="cd-legal-text">9.2. EL CLIENTE será responsable de que las condiciones laborales comunicadas sean lícitas y coherentes con la normativa aplicable.</p>
+            <p class="cd-legal-text">9.3. Una vez presentada la terna, EL CLIENTE deberá seleccionar y contratar al candidato elegido en un plazo máximo de diez (10) días hábiles.</p>
+            <p class="cd-legal-text">9.4. Si EL CLIENTE modifica sustancialmente las condiciones después de la presentación de candidatos, TRATO DIRECTO podrá considerar afectada la garantía y/o el proceso.</p>
+            <p class="cd-legal-text">9.5. La modalidad contractual y su causa, cuando sea temporal, serán responsabilidad exclusiva del CLIENTE.</p>
+
+            <h4 class="cd-clause-title">10. Garantía de reposición</h4>
+            <p class="cd-legal-text">10.1. Cuando se indique en la Solicitud de Vacante, TRATO DIRECTO ofrecerá una garantía de reposición durante el periodo pactado, contado desde la incorporación efectiva del candidato.</p>
             <table class="cd-table">
-                <thead>
-                    <tr><th>@Lang.T("admin.contract.jobType")</th><th>@Lang.T("admin.contract.docCoverageCol")</th></tr>
-                </thead>
+                <thead><tr><th>Tipo de puesto</th><th>Período de garantía</th><th>1ª reposición</th><th>2ª reposición</th></tr></thead>
                 <tbody>
-                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.Operational ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.Operational)</td><td>10 @Lang.T("admin.contract.businessDays")</td></tr>
-                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.SupervisorsTechnicians ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.SupervisorsTechnicians)</td><td>15 @Lang.T("admin.contract.businessDays")</td></tr>
-                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.BusinessManagers ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.BusinessManagers)</td><td>20 @Lang.T("admin.contract.businessDays")</td></tr>
-                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.QualifiedProfiles ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.QualifiedProfiles)</td><td>30 @Lang.T("admin.contract.businessDays")</td></tr>
+                    <tr><td>Personal Operativo</td><td>30 días naturales</td><td>Gratuita</td><td>50% de la tarifa</td></tr>
+                    <tr><td>Encargados y Técnicos</td><td>45 días naturales</td><td>Gratuita</td><td>50% de la tarifa</td></tr>
+                    <tr><td>Responsables y Cualificados</td><td>60 días naturales</td><td>Gratuita</td><td>50% de la tarifa</td></tr>
                 </tbody>
             </table>
+            <p class="cd-legal-text">10.2. La garantía consiste exclusivamente en la realización de un nuevo proceso de búsqueda y selección, no en la devolución de los honorarios.</p>
+            <p class="cd-legal-text">10.3. La garantía exige: (i) que EL CLIENTE esté al corriente de pago; (ii) comunicación escrita de la baja dentro de cinco (5) días hábiles; (iii) mantenimiento de las condiciones esenciales; y (iv) que la causa de baja no esté excluida.</p>
+            <p class="cd-legal-text">10.4. Tras la segunda reposición, el proceso se considerará cerrado.</p>
+
+            <h4 class="cd-clause-title">11. Exclusiones de la garantía</h4>
+            <p class="cd-legal-text">11.1. La garantía no será aplicable cuando la baja derive de: impago o retraso de salarios; modificación unilateral de condiciones; incumplimiento del convenio o normativa laboral; incumplimientos de prevención de riesgos; acoso o discriminación; cierre o cese del centro; cambio sustancial de puesto, jornada, salario, horario o ubicación; despido improcedente; o cualquier circunstancia esencialmente imputable al CLIENTE.</p>
+            <p class="cd-legal-text">11.2. Tampoco existirá obligación de reposición cuando la baja se produzca por fuerza mayor, incapacidad sobrevenida, decisión personal del candidato por motivos ajenos a las condiciones de la vacante, o circunstancias imprevisibles.</p>
+            <p class="cd-legal-text">11.3. La garantía no constituye seguro de permanencia, rendimiento, productividad, adecuación cultural ni resultado económico.</p>
+
+            <h4 class="cd-clause-title">12. Candidatos presentados y no contratación directa</h4>
+            <p class="cd-legal-text">12.1. Se entenderá por «Candidato Presentado» toda persona cuya candidatura haya sido puesta a disposición del CLIENTE por TRATO DIRECTO.</p>
+            <p class="cd-legal-text">12.2. Si EL CLIENTE contrata a un Candidato Presentado, los honorarios serán exigibles aunque la contratación se formalice directamente.</p>
+            <p class="cd-legal-text">12.3. Si EL CLIENTE contrata a un Candidato Presentado para otra posición dentro de los seis (6) meses siguientes, deberá abonar la tarifa correspondiente.</p>
+            <p class="cd-legal-text">12.4. Esta cláusula no se aplicará cuando EL CLIENTE acredite que el candidato ya se encontraba en su proceso activo antes de la presentación.</p>
+            <p class="cd-legal-text">12.5. EL CLIENTE no podrá ceder a terceros los datos de candidatos presentados ni utilizarlos para fines distintos.</p>
+
+            <h4 class="cd-clause-title">13. Protección de datos</h4>
+            <p class="cd-legal-text">13.1. Cada parte cumplirá el RGPD, la LOPDGDD y demás normativa aplicable.</p>
+            <p class="cd-legal-text">13.2. TRATO DIRECTO será responsable del tratamiento respecto de los datos que gestione para su actividad de captación y gestión de talento.</p>
+            <p class="cd-legal-text">13.3. EL CLIENTE será responsable de los tratamientos que realice para valorar, seleccionar, contratar y gestionar a las personas candidatas.</p>
+            <p class="cd-legal-text">13.4. La comunicación de datos de candidatos se realizará únicamente en la medida necesaria para el proceso de selección.</p>
+            <p class="cd-legal-text">13.5. Si una parte actuara como encargada del tratamiento, ambas partes formalizarán el correspondiente acuerdo conforme al artículo 28 RGPD.</p>
+            <p class="cd-legal-text">13.6. Cada parte aplicará medidas técnicas y organizativas apropiadas y mantendrá la confidencialidad.</p>
+
+            <h4 class="cd-clause-title">14. Confidencialidad</h4>
+            <p class="cd-legal-text">14.1. Toda información no pública intercambiada tendrá carácter confidencial.</p>
+            <p class="cd-legal-text">14.2. La obligación no alcanzará a información pública, previamente conocida legítimamente, o cuya revelación sea exigida por ley.</p>
+            <p class="cd-legal-text">14.3. La confidencialidad permanecerá vigente durante la relación contractual y durante cinco (5) años después de su terminación.</p>
+
+            <h4 class="cd-clause-title">15. Propiedad intelectual, metodología y datos</h4>
+            <p class="cd-legal-text">15.1. La metodología, modelos de evaluación, formularios, índices, criterios, contenidos, software y materiales preexistentes de TRATO DIRECTO seguirán siendo propiedad de TRATO DIRECTO.</p>
+            <p class="cd-legal-text">15.2. EL CLIENTE recibe únicamente un derecho limitado de uso de los informes y materiales entregados.</p>
+            <p class="cd-legal-text">15.3. La base de candidatos y metodología de matching constituyen activos propios de TRATO DIRECTO.</p>
+            <p class="cd-legal-text">15.4. Nada de lo dispuesto implica cesión de derechos de propiedad intelectual o industrial.</p>
+
+            <h4 class="cd-clause-title">16. Portal y medios electrónicos</h4>
+            <p class="cd-legal-text">16.1. TRATO DIRECTO podrá facilitar un Portal de Cliente u otros medios digitales para gestionar solicitudes, candidatos, comunicaciones e informes.</p>
+            <p class="cd-legal-text">16.2. El Portal es un medio operativo y podrá ser sustituido, actualizado o suspendido por razones técnicas.</p>
+            <p class="cd-legal-text">16.3. Las actuaciones realizadas mediante sistemas que permitan identificar al usuario podrán utilizarse como evidencia.</p>
+            <p class="cd-legal-text">16.4. Las credenciales son personales y el CLIENTE deberá protegerlas.</p>
+
+            <h4 class="cd-clause-title">17. Comunicaciones y firma electrónica</h4>
+            <p class="cd-legal-text">17.1. Las partes designarán un correo electrónico contractual. Las comunicaciones enviadas a dicho canal serán válidas salvo notificación de cambio.</p>
+            <p class="cd-legal-text">17.2. Las partes podrán contratar y modificar las Solicitudes mediante firma electrónica.</p>
+            <p class="cd-legal-text">17.3. El hecho de que una comunicación operativa se realice por correo, portal u otro canal no altera las obligaciones contractuales.</p>
+
+            <h4 class="cd-clause-title">18. Responsabilidad</h4>
+            <p class="cd-legal-text">18.1. TRATO DIRECTO responderá por los daños directos que le sean legalmente imputables, con las limitaciones de esta cláusula.</p>
+            <p class="cd-legal-text">18.2. La responsabilidad contractual total acumulada no excederá del importe de los honorarios efectivamente pagados por la vacante durante los doce meses anteriores.</p>
+            <p class="cd-legal-text">18.3. En la medida permitida por la ley, TRATO DIRECTO no responderá por lucro cesante, pérdida de negocio, daños indirectos o consecuencias derivadas del desempeño de la persona contratada.</p>
+            <p class="cd-legal-text">18.4. Las limitaciones anteriores no se aplicarán cuando legalmente no puedan limitarse.</p>
+
+            <h4 class="cd-clause-title">19. Fuerza mayor</h4>
+            <p class="cd-legal-text">19.1. Ninguna parte será responsable por incumplimientos causados por acontecimientos imprevisibles o inevitables fuera de su control razonable.</p>
+            <p class="cd-legal-text">19.2. La fuerza mayor podrá suspender los plazos afectados, pero no extinguirá obligaciones de pago ya devengadas.</p>
+
+            <h4 class="cd-clause-title">20. Protocolo de operación y trazabilidad</h4>
+            <p class="cd-legal-text">20.1. Cada proceso de selección seguirá las siguientes etapas: 1) Activación, 2) Screening, 3) Evaluación, 4) Shortlist, 5) Briefing, 6) Decisión, 7) Incorporación, 8) Consolidación.</p>
+            <p class="cd-legal-text">20.2. TRATO DIRECTO documentará las actuaciones realizadas en cada etapa y conservará la trazabilidad del proceso.</p>
+            <p class="cd-legal-text">20.3. Este protocolo no sustituye la normativa de protección de datos ni las políticas de privacidad aplicables.</p>
+
+            <h4 class="cd-clause-title">21. Duración y resolución</h4>
+            <p class="cd-legal-text">21.1. El contrato tendrá una duración inicial de doce (12) meses y se prorrogará por periodos iguales salvo denuncia con treinta (30) días de antelación.</p>
+            <p class="cd-legal-text">21.2. Cualquiera de las partes podrá resolverlo anticipadamente con treinta (30) días de preaviso. Las Solicitudes activas continuarán sujetas a sus condiciones hasta su cierre.</p>
+            <p class="cd-legal-text">21.3. Podrá resolverse inmediatamente por incumplimiento grave, insolvencia, impago reiterado, o pérdida de habilitación legal.</p>
+            <p class="cd-legal-text">21.4. La terminación no extinguirá los derechos de cobro ya devengados ni las obligaciones que deban sobrevivir.</p>
+
+            <h4 class="cd-clause-title">22. Legislación y jurisdicción</h4>
+            <p class="cd-legal-text">22.1. El contrato se regirá por la legislación española.</p>
+            <p class="cd-legal-text">22.2. Las partes se someten a los Juzgados y Tribunales de Madrid, con renuncia a cualquier otro fuero.</p>
+            <p class="cd-legal-text">22.3. Si una norma imperativa atribuye una competencia distinta, se aplicará dicha norma.</p>
+
+            <h4 class="cd-clause-title">23. Integridad, nulidad parcial y prevalencia</h4>
+            <p class="cd-legal-text">23.1. El Contrato Marco y sus Anexos constituyen el acuerdo íntegro entre las partes.</p>
+            <p class="cd-legal-text">23.2. La nulidad de una estipulación no afectará al resto.</p>
+            <p class="cd-legal-text">23.3. Ninguna modificación será válida salvo que conste por escrito o mediante sistema electrónico.</p>
+            <p class="cd-legal-text">23.4. La falta de ejercicio de un derecho no constituirá renuncia al mismo.</p>
         </section>
 
-        @* === Garantia === *@
-        <section class="cd-section">
-            <h3 class="cd-section-title">@Lang.T("admin.contract.warrantyTitle")</h3>
-            <div class="cd-info-grid cd-info-grid--metrics">
-                <div class="cd-info-cell">
-                    <span class="cd-info-label">@Lang.T("admin.contract.warrantyDays")</span>
-                    <span class="cd-info-value cd-info-value--big">@(Contract.WarrantyDays?.ToString() ?? "[●]")</span>
-                    <span class="cd-info-hint">@Lang.T("admin.contract.docWarrantyRef")</span>
+        @* === Firmas Contrato Marco === *@
+        <section class="cd-section cd-section--signatures">
+            <p class="cd-signature-date">Firmado en Madrid, a @Contract.CreatedAt.ToString("dd") de @Contract.CreatedAt.ToString("MMMM") de @Contract.CreatedAt.ToString("yyyy")</p>
+            <div class="cd-signatures">
+                <div class="cd-signature-block">
+                    <div class="cd-signature-line"></div>
+                    <p class="cd-signature-name"><strong>TRATO DIRECTO HUMAN SERVICES, S.L.</strong></p>
+                    <p class="cd-signature-name">D./Dña.: Luis Alejandro Velasquez — Cargo: Representante Legal</p>
+                </div>
+                <div class="cd-signature-block">
+                    <div class="cd-signature-line"></div>
+                    <p class="cd-signature-name"><strong>@(Contract.CompanyLegalName ?? Contract.CompanyName ?? "EL CLIENTE")</strong></p>
+                    <p class="cd-signature-name">D./Dña.: @(Contract.CompanyContactName ?? "[●]") — Cargo: @(Contract.CompanyContactPosition ?? "[●]")</p>
                 </div>
             </div>
         </section>
-
-        @* === Condiciones economicas === *@
-        <section class="cd-section">
-            <h3 class="cd-section-title">@Lang.T("admin.contract.economicsTitle")</h3>
-            <div class="cd-fee-highlight">
-                <span class="cd-fee-label">@Lang.T("admin.contract.feeAmount")</span>
-                <span class="cd-fee-amount">@FormatEur(Contract.FeeAmount)</span>
-                <span class="cd-fee-application">@GetFeeApplicationLabel(Contract.FeeApplicationType)</span>
-            </div>
-            <div class="cd-payment-grid">
-                <div class="cd-payment-card">
-                    <div class="cd-payment-pct">@FormatPct(Contract.PaymentOpeningPct)</div>
-                    <div class="cd-payment-label">@Lang.T("admin.contract.paymentOpening")</div>
-                </div>
-                <div class="cd-payment-card">
-                    <div class="cd-payment-pct">@FormatPct(Contract.PaymentValidationPct)</div>
-                    <div class="cd-payment-label">@Lang.T("admin.contract.paymentValidation")</div>
-                </div>
-                <div class="cd-payment-card">
-                    <div class="cd-payment-pct">@FormatPct(Contract.PaymentConsolidationPct)</div>
-                    <div class="cd-payment-label">@Lang.T("admin.contract.paymentConsolidation")</div>
-                </div>
-            </div>
-            @if (!string.IsNullOrWhiteSpace(Contract.FeeExceptions))
-            {
-                <div class="cd-exceptions">
-                    <span class="cd-info-label">@Lang.T("admin.contract.feeExceptions")</span>
-                    <p class="cd-exceptions-text">@Contract.FeeExceptions</p>
-                </div>
-            }
-        </section>
-
-        @* === Firmas === *@
-        <div class="cd-signatures">
-            <div class="cd-signature-block">
-                <div class="cd-signature-line"></div>
-                <p class="cd-signature-name">@Lang.T("admin.contract.docTdSignature")</p>
-            </div>
-            <div class="cd-signature-block">
-                <div class="cd-signature-line"></div>
-                <p class="cd-signature-name">@Lang.T("admin.contract.docCompanySignature")</p>
-                <p class="cd-signature-company"><strong>@(Contract.CompanyName)</strong></p>
-            </div>
-        </div>
 
         @if (Contract.Status == (int)ContractStatus.Accepted)
         {
@@ -187,6 +251,139 @@ else
         <footer class="cd-footer">
             <span>Trato Directo · @Lang.T("admin.contract.docServiceTitle")</span>
         </footer>
+
+        @* === ANEXO I === *@
+        <div class="cd-anexo-divider"></div>
+        <section class="cd-section cd-anexo-section">
+            <h3 class="cd-section-title cd-anexo-title">ANEXO I — SOLICITUD DE VACANTE</h3>
+
+            @* === 1. Datos del Cliente === *@
+            <h4 class="cd-clause-title">1. Datos del Cliente</h4>
+            <table class="cd-table cd-table--anexo">
+                <tbody>
+                    <tr><td class="cd-table-label">Razón social / Nombre comercial</td><td>@(Contract.CompanyLegalName ?? Contract.CompanyName ?? "[●]")</td></tr>
+                    <tr><td class="cd-table-label">CIF/NIF</td><td>@(Contract.CompanyTaxId ?? "[●]")</td></tr>
+                    <tr><td class="cd-table-label">Establecimiento / Centro de trabajo</td><td>@(Contract.CompanyAddress ?? "[●]")</td></tr>
+                    <tr><td class="cd-table-label">Representante legal — Nombre completo</td><td>@(Contract.CompanyContactName ?? "[●]")</td></tr>
+                    <tr><td class="cd-table-label">Representante legal — Cargo</td><td>@(Contract.CompanyContactPosition ?? "[●]")</td></tr>
+                    <tr><td class="cd-table-label">Representante legal — DNI/NIE</td><td>@(Contract.CompanyContactDniNie ?? "[●]")</td></tr>
+                    <tr><td class="cd-table-label">Email contractual</td><td>@(Contract.CompanyContactEmail ?? "[●]")</td></tr>
+                    <tr><td class="cd-table-label">Teléfono</td><td>@(Contract.CompanyContactPhone ?? "[●]")</td></tr>
+                </tbody>
+            </table>
+
+            @* === 2. Datos de la vacante === *@
+            <h4 class="cd-clause-title">2. Datos de la vacante</h4>
+            @foreach (var vacancy in Contract.Vacancies)
+            {
+                <table class="cd-table cd-table--anexo">
+                    <tbody>
+                        <tr><td class="cd-table-label">Puesto</td><td>@vacancy.Title</td></tr>
+                        <tr><td class="cd-table-label">Número de posiciones</td><td>@(vacancy.RequiredApplicants?.ToString() ?? "[●]")</td></tr>
+                        <tr><td class="cd-table-label">Tipo de puesto</td><td>@GetJobTypeLabel(Contract.JobTypeCategory)</td></tr>
+                        <tr><td class="cd-table-label">Ubicación / Sede</td><td>@(vacancy.Location ?? "[●]")</td></tr>
+                        <tr><td class="cd-table-label">Categoría</td><td>@(vacancy.Category ?? "[●]")</td></tr>
+                    </tbody>
+                </table>
+            }
+
+            @* === 3. Condiciones laborales === *@
+            <h4 class="cd-clause-title">3. Condiciones laborales</h4>
+            @foreach (var vacancy in Contract.Vacancies)
+            {
+                <table class="cd-table cd-table--anexo">
+                    <tbody>
+                        <tr><td class="cd-table-label">Puesto</td><td>@vacancy.Title</td></tr>
+                        <tr><td class="cd-table-label">Modalidad contractual</td><td>@GetContractTypeLabel(vacancy.ContractType)</td></tr>
+                        <tr><td class="cd-table-label">Salario bruto mínimo</td><td>@FormatEur(vacancy.SalaryMin)</td></tr>
+                        <tr><td class="cd-table-label">Salario bruto máximo</td><td>@FormatEur(vacancy.SalaryMax)</td></tr>
+                        <tr><td class="cd-table-label">Ubicación</td><td>@(vacancy.Location ?? "[●]")</td></tr>
+                        <tr><td class="cd-table-label">Funciones principales</td><td>@(vacancy.Description ?? "[●]")</td></tr>
+                    </tbody>
+                </table>
+            }
+
+            @* === 4. Perfil y criterios === *@
+            <h4 class="cd-clause-title">4. Perfil y criterios</h4>
+            @foreach (var vacancy in Contract.Vacancies)
+            {
+                <table class="cd-table cd-table--anexo">
+                    <tbody>
+                        <tr><td class="cd-table-label">Puesto</td><td>@vacancy.Title</td></tr>
+                        <tr><td class="cd-table-label">Experiencia mínima (años)</td><td>@(vacancy.YearsExperience?.ToString() ?? "[●]")</td></tr>
+                        <tr><td class="cd-table-label">Requisitos</td><td>@(vacancy.Requirements ?? "[●]")</td></tr>
+                    </tbody>
+                </table>
+            }
+
+            @* === 5. Alcance del servicio y plazos === *@
+            <h4 class="cd-clause-title">5. Alcance del servicio y plazos</h4>
+            <table class="cd-table cd-table--anexo">
+                <tbody>
+                    <tr>
+                        <td class="cd-table-label">Actuaciones contratadas</td>
+                        <td>
+                            <div class="cd-scope-services">
+                                @foreach (var svc in GetScopeList())
+                                {
+                                    <span class="cd-scope-pill">@svc</span>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                    <tr><td class="cd-table-label">N.º objetivo de candidatos</td><td>@(Contract.TargetCandidates?.ToString() ?? "[●]")</td></tr>
+                    <tr><td class="cd-table-label">Plazo objetivo de cobertura</td><td>@(Contract.TargetCoverageDays?.ToString() ?? "[●]") días hábiles</td></tr>
+                </tbody>
+            </table>
+            <p class="cd-ref-note">Plazos de referencia según tipo de puesto:</p>
+            <table class="cd-table">
+                <thead><tr><th>Tipo de puesto</th><th>Plazo de cobertura</th></tr></thead>
+                <tbody>
+                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.Operational ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.Operational)</td><td>10 días hábiles</td></tr>
+                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.SupervisorsTechnicians ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.SupervisorsTechnicians)</td><td>15 días hábiles</td></tr>
+                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.BusinessManagers ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.BusinessManagers)</td><td>20 días hábiles</td></tr>
+                    <tr class="@(Contract.JobTypeCategory == (int)ContractJobType.QualifiedProfiles ? "cd-row-active" : "")"><td>@GetJobTypeLabel((int)ContractJobType.QualifiedProfiles)</td><td>30 días hábiles</td></tr>
+                </tbody>
+            </table>
+
+            @* === 6. Garantía === *@
+            <h4 class="cd-clause-title">6. Garantía</h4>
+            <table class="cd-table cd-table--anexo">
+                <tbody>
+                    <tr><td class="cd-table-label">Período de garantía</td><td>@(Contract.WarrantyDays?.ToString() ?? "[●]") días naturales</td></tr>
+                </tbody>
+            </table>
+
+            @* === 7. Condiciones económicas === *@
+            <h4 class="cd-clause-title">7. Condiciones económicas</h4>
+            <table class="cd-table cd-table--anexo">
+                <tbody>
+                    <tr><td class="cd-table-label">Tarifa sin IVA</td><td>@FormatEur(Contract.FeeAmount)</td></tr>
+                    <tr><td class="cd-table-label">Aplicación de tarifa</td><td>@GetFeeApplicationLabel(Contract.FeeApplicationType)</td></tr>
+                    <tr><td class="cd-table-label">Distribución de pago</td><td>@FormatPct(Contract.PaymentOpeningPct) Apertura / @FormatPct(Contract.PaymentValidationPct) Validación / @FormatPct(Contract.PaymentConsolidationPct) Consolidación</td></tr>
+                    @if (!string.IsNullOrWhiteSpace(Contract.FeeExceptions))
+                    {
+                        <tr><td class="cd-table-label">Excepciones pactadas</td><td>@Contract.FeeExceptions</td></tr>
+                    }
+                </tbody>
+            </table>
+
+            @* === 8. Aceptación === *@
+            <h4 class="cd-clause-title">8. Aceptación</h4>
+            <p class="cd-legal-text">EL CLIENTE declara que la información suministrada es completa y veraz y que las condiciones comunicadas son las que deberán trasladarse a las personas candidatas. Cualquier modificación sustancial deberá comunicarse por escrito.</p>
+            <div class="cd-signatures">
+                <div class="cd-signature-block">
+                    <div class="cd-signature-line"></div>
+                    <p class="cd-signature-name"><strong>TRATO DIRECTO HUMAN SERVICES, S.L.</strong></p>
+                    <p class="cd-signature-name">D./Dña.: Luis Alejandro Velasquez — Cargo: Representante Legal</p>
+                </div>
+                <div class="cd-signature-block">
+                    <div class="cd-signature-line"></div>
+                    <p class="cd-signature-name"><strong>@(Contract.CompanyLegalName ?? Contract.CompanyName ?? "EL CLIENTE")</strong></p>
+                    <p class="cd-signature-name">D./Dña.: @(Contract.CompanyContactName ?? "[●]") — Cargo: @(Contract.CompanyContactPosition ?? "[●]")</p>
+                </div>
+            </div>
+        </section>
     </div>
 }
 
@@ -252,6 +449,15 @@ else
         _ => "-"
     };
 
+    private string GetContractTypeLabel(int type) => type switch
+    {
+        0 => "Indefinido",
+        1 => "Fijo-discontinuo",
+        2 => "Temporal",
+        3 => "Otra",
+        _ => "-"
+    };
+
     private string GetScopeText()
     {
         var list = GetScopeList();
@@ -271,7 +477,6 @@ else
     private static string GetStatusCss(int status) => ((ContractStatus)status) switch
     {
         ContractStatus.Draft => "cd-status--draft",
-        ContractStatus.Sent => "cd-status--sent",
         ContractStatus.Accepted => "cd-status--accepted",
         ContractStatus.Rejected => "cd-status--rejected",
         ContractStatus.Cancelled => "cd-status--cancelled",

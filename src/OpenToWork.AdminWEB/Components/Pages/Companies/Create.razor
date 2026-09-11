@@ -78,6 +78,10 @@
                     <InputText @bind-Value="CompanyDto.ContactPosition" class="admin-input" placeholder='@Lang.T("admin.companies.contactPositionPlaceholder")' />
                 </div>
                 <div class="admin-form-field">
+                    <label>DNI/NIE</label>
+                    <InputText @bind-Value="CompanyDto.ContactDniNie" class="admin-input" placeholder="DNI / NIE" />
+                </div>
+                <div class="admin-form-field">
                     <label>@Lang.T("admin.companies.contactEmail")</label>
                     <InputText @bind-Value="CompanyDto.ContactEmail" class="admin-input" placeholder="email@empresa.com" />
                 </div>

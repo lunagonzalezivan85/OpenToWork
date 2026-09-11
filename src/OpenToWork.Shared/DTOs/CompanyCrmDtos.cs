@@ -42,6 +42,7 @@ public class CompanyDetailDto
     public string? ContactEmail { get; set; }
     public string? ContactPhone { get; set; }
     public string? ContactPosition { get; set; }
+    public string? ContactDniNie { get; set; }
     public string? LinkedInUrl { get; set; }
     public int Status { get; set; }
     public bool IsVerified { get; set; }
@@ -96,6 +97,7 @@ public class CreateCompanyDto
     public string? ContactEmail { get; set; }
     public string? ContactPhone { get; set; }
     public string? ContactPosition { get; set; }
+    public string? ContactDniNie { get; set; }
     public string? LinkedInUrl { get; set; }
 }
 
@@ -115,6 +117,7 @@ public class UpdateCompanyDto
     public string? ContactEmail { get; set; }
     public string? ContactPhone { get; set; }
     public string? ContactPosition { get; set; }
+    public string? ContactDniNie { get; set; }
     public string? LinkedInUrl { get; set; }
     public int Status { get; set; }
 }
@@ -154,11 +157,12 @@ public class CompanyPipelineDetailDto
     public string? Country { get; set; }
     public string? City { get; set; }
     public string? Address { get; set; }
-    public int? CompanySize { get; set; }
+    public int CompanySize { get; set; }
     public string? ContactName { get; set; }
     public string? ContactEmail { get; set; }
     public string? ContactPhone { get; set; }
     public string? ContactPosition { get; set; }
+    public string? ContactDniNie { get; set; }
     public string? LinkedInUrl { get; set; }
     public int Status { get; set; }
     public int CurrentStage { get; set; }

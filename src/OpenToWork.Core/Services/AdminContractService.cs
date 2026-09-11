@@ -38,7 +38,15 @@ public class AdminContractService : IAdminContractService
                 Id = c.Id,
                 CompanyId = c.PT_CompanyId,
                 CompanyName = c.Company.Name,
+                CompanyLegalName = c.Company.LegalName,
+                CompanyTaxId = c.Company.TaxId,
+                CompanyAddress = c.Company.Address,
+                CompanyCountry = c.Company.Country,
+                CompanyCity = c.Company.City,
                 CompanyContactName = c.Company.ContactName,
+                CompanyContactPosition = c.Company.ContactPosition,
+                CompanyContactDniNie = c.Company.ContactDniNie,
+                CompanyContactEmail = c.Company.ContactEmail,
                 CompanyContactPhone = c.Company.ContactPhone,
                 ContractNumber = c.ContractNumber,
                 Status = c.Status,
@@ -48,8 +56,16 @@ public class AdminContractService : IAdminContractService
                     {
                         VacancyId = cv.PT_VacancyId,
                         Title = cv.Vacancy!.Title,
+                        Description = cv.Vacancy.Description,
+                        Requirements = cv.Vacancy.Requirements,
                         Location = cv.Vacancy.Location,
-                        RequiredApplicants = cv.Vacancy.RequiredApplicants
+                        Category = cv.Vacancy.Category,
+                        ContractType = cv.Vacancy.ContractType,
+                        WorkMode = cv.Vacancy.WorkMode,
+                        SalaryMin = cv.Vacancy.SalaryMin,
+                        SalaryMax = cv.Vacancy.SalaryMax,
+                        RequiredApplicants = cv.Vacancy.RequiredApplicants,
+                        YearsExperience = cv.Vacancy.YearsExperience
                     }).ToList(),
                 ScopeServices = c.ScopeServices == null
                     ? new List<string>()

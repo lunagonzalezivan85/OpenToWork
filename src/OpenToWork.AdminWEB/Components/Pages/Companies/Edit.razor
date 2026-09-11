@@ -1,0 +1,148 @@
+@page "/companies/{CompanyId}/edit"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject AdminAuthApiService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<div class="admin-page-header">
+    <div>
+        <h2>@Lang.T("admin.companies.edit")</h2>
+        <p style="margin: 0; color: #778DA9; font-size: 0.85rem;">@(Company?.Name ?? "")</p>
+    </div>
+    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{CompanyId}"))">@Lang.T("admin.common.back")</button>
+</div>
+
+@if (Company == null && IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Company != null)
+{
+    <div class="admin-form-card">
+        <EditForm Model="EditDto" OnValidSubmit="Save">
+            <div class="admin-form-grid">
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.name") *</label>
+                    <InputText @bind-Value="EditDto.Name" class="admin-input" placeholder='@Lang.T("admin.companies.namePlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.legalName")</label>
+                    <InputText @bind-Value="EditDto.LegalName" class="admin-input" placeholder='@Lang.T("admin.companies.legalNamePlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.taxId")</label>
+                    <InputText @bind-Value="EditDto.TaxId" class="admin-input" placeholder="NIF / CIF / RUC" />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.industry")</label>
+                    <InputText @bind-Value="EditDto.Industry" class="admin-input" placeholder='@Lang.T("admin.companies.industryPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.website")</label>
+                    <InputText @bind-Value="EditDto.Website" class="admin-input" placeholder="https://..." />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.country")</label>
+                    <InputText @bind-Value="EditDto.Country" class="admin-input" placeholder='@Lang.T("admin.companies.countryPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.city")</label>
+                    <InputText @bind-Value="EditDto.City" class="admin-input" placeholder='@Lang.T("admin.companies.cityPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.address")</label>
+                    <InputText @bind-Value="EditDto.Address" class="admin-input" placeholder='@Lang.T("admin.companies.addressPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.contactName")</label>
+                    <InputText @bind-Value="EditDto.ContactName" class="admin-input" placeholder='@Lang.T("admin.companies.contactNamePlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.contactPosition")</label>
+                    <InputText @bind-Value="EditDto.ContactPosition" class="admin-input" placeholder='@Lang.T("admin.companies.contactPositionPlaceholder")' />
+                </div>
+                <div class="admin-form-field">
+                    <label>DNI/NIE</label>
+                    <InputText @bind-Value="EditDto.ContactDniNie" class="admin-input" placeholder="DNI / NIE" />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.contactEmail")</label>
+                    <InputText @bind-Value="EditDto.ContactEmail" class="admin-input" placeholder="email@empresa.com" />
+                </div>
+                <div class="admin-form-field">
+                    <label>@Lang.T("admin.companies.contactPhone")</label>
+                    <InputText @bind-Value="EditDto.ContactPhone" class="admin-input" placeholder="+34 ..." />
+                </div>
+                <div class="admin-form-field admin-form-field--full">
+                    <label>@Lang.T("admin.companies.linkedin")</label>
+                    <InputText @bind-Value="EditDto.LinkedInUrl" class="admin-input" placeholder="https://linkedin.com/company/..." />
+                </div>
+                <div class="admin-form-field admin-form-field--full">
+                    <label>@Lang.T("admin.companies.description")</label>
+                    <InputTextArea @bind-Value="EditDto.Description" class="admin-input" rows="3" placeholder='@Lang.T("admin.companies.descriptionPlaceholder")' />
+                </div>
+            </div>
+            <div class="admin-form-actions">
+                <button type="submit" class="ot-btn ot-btn--primary" disabled="@IsSaving">
+                    @(IsSaving ? Lang.T("admin.common.loading") : Lang.T("admin.common.save"))
+                </button>
+                <button type="button" class="ot-btn ot-btn--outline" @onclick="@(() => Nav.NavigateTo($"/companies/{CompanyId}"))">@Lang.T("admin.common.cancel")</button>
+            </div>
+        </EditForm>
+    </div>
+}
+
+@code {
+    [Parameter] public string CompanyId { get; set; } = "";
+    private CompanyDetailDto? Company;
+    private UpdateCompanyDto EditDto { get; set; } = new();
+    private bool IsLoading = true;
+    private bool IsSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        if (Guid.TryParse(CompanyId, out var id))
+        {
+            Company = await AuthApi.GetCompanyAsync(id);
+            if (Company != null)
+            {
+                EditDto = new UpdateCompanyDto
+                {
+                    Name = Company.Name,
+                    LegalName = Company.LegalName,
+                    TaxId = Company.TaxId,
+                    Industry = Company.Industry,
+                    Website = Company.Website,
+                    Description = Company.Description,
+                    Country = Company.Country,
+                    City = Company.City,
+                    Address = Company.Address,
+                    ContactName = Company.ContactName,
+                    ContactPosition = Company.ContactPosition,
+                    ContactDniNie = Company.ContactDniNie,
+                    ContactEmail = Company.ContactEmail,
+                    ContactPhone = Company.ContactPhone,
+                    LinkedInUrl = Company.LinkedInUrl,
+                    Status = Company.Status
+                };
+            }
+        }
+        IsLoading = false;
+    }
+
+    private async Task Save()
+    {
+        if (Company == null || !Guid.TryParse(CompanyId, out var id)) return;
+        IsSaving = true;
+        var updated = await AuthApi.UpdateCompanyAsync(id, EditDto);
+        IsSaving = false;
+        if (updated != null)
+        {
+            Nav.NavigateTo($"/companies/{CompanyId}");
+        }
+    }
+}

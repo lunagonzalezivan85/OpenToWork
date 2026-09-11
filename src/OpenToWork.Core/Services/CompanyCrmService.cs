@@ -100,6 +100,7 @@ public class CompanyCrmService : ICompanyCrmService
             ContactEmail = company.ContactEmail,
             ContactPhone = company.ContactPhone,
             ContactPosition = company.ContactPosition,
+            ContactDniNie = company.ContactDniNie,
             LinkedInUrl = company.LinkedInUrl,
             Status = company.Status,
             IsVerified = company.IsVerified,
@@ -145,6 +146,7 @@ public class CompanyCrmService : ICompanyCrmService
             ContactEmail = dto.ContactEmail,
             ContactPhone = dto.ContactPhone,
             ContactPosition = dto.ContactPosition,
+            ContactDniNie = dto.ContactDniNie,
             LinkedInUrl = dto.LinkedInUrl,
             Status = (int)CompanyStatus.Prospecto,
             SCUserId = null, // prospecto del CRM: sin cuenta de usuario asociada
@@ -190,6 +192,7 @@ public class CompanyCrmService : ICompanyCrmService
         company.ContactEmail = dto.ContactEmail;
         company.ContactPhone = dto.ContactPhone;
         company.ContactPosition = dto.ContactPosition;
+        company.ContactDniNie = dto.ContactDniNie;
         company.LinkedInUrl = dto.LinkedInUrl;
         company.Status = dto.Status;
         company.UpdatedAt = DateTime.UtcNow;
@@ -356,11 +359,12 @@ public class CompanyCrmService : ICompanyCrmService
             Country = pipeline.Company.Country,
             City = pipeline.Company.City,
             Address = pipeline.Company.Address,
-            CompanySize = pipeline.Company.CompanySize,
+            CompanySize = pipeline.Company.CompanySize ?? 0,
             ContactName = pipeline.Company.ContactName,
             ContactEmail = pipeline.Company.ContactEmail,
             ContactPhone = pipeline.Company.ContactPhone,
             ContactPosition = pipeline.Company.ContactPosition,
+            ContactDniNie = pipeline.Company.ContactDniNie,
             LinkedInUrl = pipeline.Company.LinkedInUrl,
             Status = pipeline.Company.Status,
             CurrentStage = pipeline.CurrentStage,
