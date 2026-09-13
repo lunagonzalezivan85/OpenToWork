@@ -2549,13 +2549,13 @@ textarea.admin-input {
 .admin-view-toggle-btn {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    justify-content: center;
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 600;
-    padding: 0.4rem 0.75rem;
+    width: 34px;
+    height: 34px;
+    padding: 0;
     border-radius: calc(var(--radius-md) - 2px);
     cursor: pointer;
     transition: all var(--transition);
