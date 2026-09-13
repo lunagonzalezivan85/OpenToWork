@@ -44,7 +44,7 @@ public class ExportService : IExportService
 
         var sb = new StringBuilder();
         sb.AppendLine("Id,Title,CompanyName,Location,ContractType,WorkMode,Status,IsTemporary,PublishedAt,ClosedAt,ExpiresAt,ViewsCount");
-        foreach (var v in vacancies)
+        foreach (var v in vacancies.Items)
         {
             sb.AppendLine(string.Join(",",
                 v.Id,

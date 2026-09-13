@@ -187,7 +187,7 @@ else
     {
         var vacancies = await AuthApi.GetVacanciesAsync(pageSize: 1000);
 
-        Results = vacancies.Select(v => new ResultItem
+        Results = vacancies.Items.Select(v => new ResultItem
         {
             AvatarText = v.Title.Length >= 2 ? v.Title.Substring(0, 2).ToUpper() : v.Title.ToUpper(),
             DisplayName = v.Title,

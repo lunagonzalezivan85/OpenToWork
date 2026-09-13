@@ -110,7 +110,7 @@ public class AdminAuthApiService
         return await response.Content.ReadFromJsonAsync<AdminUserProfileDto>();
     }
 
-    public async Task<List<AdminVacancyDto>> GetVacanciesAsync(int page = 1, int pageSize = 20, int? status = null, Guid? companyId = null)
+    public async Task<AdminVacancyResultDto> GetVacanciesAsync(int page = 1, int pageSize = 20, int? status = null, Guid? companyId = null)
     {
         await SetAuthHeaderAsync();
         var query = $"api/admin/vacancies?page={page}&pageSize={pageSize}";
@@ -118,7 +118,7 @@ public class AdminAuthApiService
         if (companyId.HasValue) query += $"&companyId={companyId}";
         var response = await _httpClient.GetAsync(query);
         if (!response.IsSuccessStatusCode) return new();
-        return await response.Content.ReadFromJsonAsync<List<AdminVacancyDto>>() ?? new();
+        return await response.Content.ReadFromJsonAsync<AdminVacancyResultDto>() ?? new();
     }
 
     public async Task<List<AdminApplicationDto>> GetApplicationsAsync(int page = 1, int pageSize = 20, int? status = null)

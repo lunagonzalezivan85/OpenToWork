@@ -206,6 +206,19 @@ else
             }
         </tbody>
     </table>
+
+    @if (TotalPages > 1)
+    {
+        <div class="admin-pagination">
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage <= 1)" @onclick="PrevPage">
+                @Lang.T("admin.candidates.prev")
+            </button>
+            <span>@Lang.T("admin.candidates.page") @CurrentPage @Lang.T("admin.candidates.of") @TotalPages</span>
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage >= TotalPages)" @onclick="NextPage">
+                @Lang.T("admin.candidates.next")
+            </button>
+        </div>
+    }
 }
 
 @* === Wizard: nueva vacante === *@
@@ -401,6 +414,9 @@ else
 
 @code {
     private List<AdminVacancyDto>? VacanciesList;
+    private int CurrentPage { get; set; } = 1;
+    private int PageSize { get; set; } = 20;
+    private int TotalPages { get; set; }
     [Parameter] public Guid? CompanyId { get; set; }
     private string? CompanyFilterName { get; set; }
 
@@ -644,7 +660,23 @@ else
 
     private async Task LoadVacancies()
     {
-        VacanciesList = await AuthApi.GetVacanciesAsync(companyId: CompanyId);
+        var result = await AuthApi.GetVacanciesAsync(page: CurrentPage, pageSize: PageSize, companyId: CompanyId);
+        VacanciesList = result.Items;
+        TotalPages = result.TotalPages;
+    }
+
+    private async Task PrevPage()
+    {
+        if (CurrentPage <= 1) return;
+        CurrentPage--;
+        await LoadVacancies();
+    }
+
+    private async Task NextPage()
+    {
+        if (CurrentPage >= TotalPages) return;
+        CurrentPage++;
+        await LoadVacancies();
     }
 
     private async Task Moderate(Guid id, int status)

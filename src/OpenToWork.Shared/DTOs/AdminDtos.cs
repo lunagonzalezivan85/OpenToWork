@@ -33,6 +33,15 @@ public class AdminVacancyDto
     public int ViewsCount { get; set; }
 }
 
+public class AdminVacancyResultDto
+{
+    public List<AdminVacancyDto> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
+}
+
 public class ModerateVacancyDto
 {
     public int Status { get; set; }

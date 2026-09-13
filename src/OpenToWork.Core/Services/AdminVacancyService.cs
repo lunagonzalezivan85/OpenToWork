@@ -18,7 +18,7 @@ public class AdminVacancyService : IAdminVacancyService
         _auditLog = auditLog;
     }
 
-    public async Task<List<AdminVacancyDto>> GetVacanciesAsync(int page, int pageSize, int? status, Guid? companyId = null)
+    public async Task<AdminVacancyResultDto> GetVacanciesAsync(int page, int pageSize, int? status, Guid? companyId = null)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 1_000_000);
@@ -67,11 +67,21 @@ public class AdminVacancyService : IAdminVacancyService
 
         if (status.HasValue) combined = combined.Where(v => v.Status == status.Value);
 
-        return await combined
+        var totalCount = await combined.CountAsync();
+
+        var items = await combined
             .OrderByDescending(v => v.PublishedAt ?? v.ExpiresAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
+
+        return new AdminVacancyResultDto
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     /// <summary>Codigo de PT_Vacancy.Category (texto libre historico) -> nombre del PTJobType
