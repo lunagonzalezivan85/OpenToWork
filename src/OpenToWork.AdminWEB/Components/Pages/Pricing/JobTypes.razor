@@ -226,7 +226,7 @@ else
     private async Task OpenPriceModal(JobTypeDto type)
     {
         PriceTarget = type;
-        PriceForm = new SetJobTypePriceDto { BasePrice = type.CurrentPrice ?? 0, Currency = type.Currency };
+        PriceForm = new SetJobTypePriceDto { BasePrice = Math.Round(type.CurrentPrice ?? 0, 2), Currency = type.Currency };
         PriceHistory = await AuthApi.GetPriceHistoryAsync(type.Id);
         ModalError = null;
         ShowPriceModal = true;

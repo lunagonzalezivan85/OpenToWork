@@ -62,7 +62,7 @@ public class PromoCodeService : IPromoCodeService
             Code = code,
             Description = dto.Description?.Trim(),
             DiscountType = dto.DiscountType,
-            DiscountValue = dto.DiscountValue,
+            DiscountValue = Math.Round(dto.DiscountValue, 2),
             PT_JobLevelId = dto.PT_JobLevelId,
             PT_JobTypeId = dto.PT_JobTypeId,
             ValidFrom = dto.ValidFrom ?? DateTime.UtcNow,
@@ -96,7 +96,7 @@ public class PromoCodeService : IPromoCodeService
         promo.Code = code;
         promo.Description = dto.Description?.Trim();
         promo.DiscountType = dto.DiscountType;
-        promo.DiscountValue = dto.DiscountValue;
+        promo.DiscountValue = Math.Round(dto.DiscountValue, 2);
         promo.PT_JobLevelId = dto.PT_JobLevelId;
         promo.PT_JobTypeId = dto.PT_JobTypeId;
         promo.ValidFrom = dto.ValidFrom ?? promo.ValidFrom;

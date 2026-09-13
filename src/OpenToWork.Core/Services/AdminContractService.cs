@@ -104,6 +104,7 @@ public class AdminContractService : IAdminContractService
 
     public async Task<AdminVacancyContractDto?> CreateAsync(Guid companyId, AdminSaveVacancyContractDto dto, Guid adminId, string? ipAddress)
     {
+        NormalizePaymentPercentages(dto);
         if (dto.PaymentOpeningPct + dto.PaymentValidationPct + dto.PaymentConsolidationPct != 100m)
             throw new InvalidOperationException("La distribucion de pago (Apertura + Validacion + Consolidacion) debe sumar 100%.");
         if (dto.VacancyLines.Count == 0)
@@ -141,6 +142,7 @@ public class AdminContractService : IAdminContractService
 
     public async Task<AdminVacancyContractDto?> SaveAsync(Guid contractId, AdminSaveVacancyContractDto dto, Guid adminId, string? ipAddress)
     {
+        NormalizePaymentPercentages(dto);
         if (dto.PaymentOpeningPct + dto.PaymentValidationPct + dto.PaymentConsolidationPct != 100m)
             throw new InvalidOperationException("La distribucion de pago (Apertura + Validacion + Consolidacion) debe sumar 100%.");
         if (dto.VacancyLines.Count == 0)
@@ -202,6 +204,16 @@ public class AdminContractService : IAdminContractService
     private static IEnumerable<ContractVacancyLineDto> DistinctLines(List<ContractVacancyLineDto> lines) =>
         lines.GroupBy(l => l.VacancyId).Select(g => g.First());
 
+    /// <summary>Redondea a 2 decimales antes de validar que sumen 100% y de guardar, para que
+    /// un valor con mas precision del lado del cliente (ej. pegado o de un stepper distinto)
+    /// no rompa la suma exacta ni quede guardado con decimales de mas.</summary>
+    private static void NormalizePaymentPercentages(AdminSaveVacancyContractDto dto)
+    {
+        dto.PaymentOpeningPct = Math.Round(dto.PaymentOpeningPct, 2);
+        dto.PaymentValidationPct = Math.Round(dto.PaymentValidationPct, 2);
+        dto.PaymentConsolidationPct = Math.Round(dto.PaymentConsolidationPct, 2);
+    }
+
     /// <summary>Resuelve el precio de una linea del contrato: manual (con motivo) o automatico
     /// (precio de lista del tipo de puesto de la vacante + codigo promocional opcional).</summary>
     private async Task ApplyPricingAsync(PTContractVacancy cv, ContractVacancyLineDto line, List<(Guid PromoCodeId, PTContractVacancy Line)> appliedPromos)
@@ -219,11 +231,12 @@ public class AdminContractService : IAdminContractService
             if (line.ManualPrice.Value < 0)
                 throw new InvalidOperationException($"\"{vacancy.Title}\": el precio manual no puede ser negativo.");
 
-            cv.BasePrice = line.ManualPrice.Value;
+            var manualPrice = Math.Round(line.ManualPrice.Value, 2);
+            cv.BasePrice = manualPrice;
             cv.PT_PromoCodeId = null;
             cv.PromoCodeText = null;
             cv.DiscountAmount = 0;
-            cv.FinalPrice = line.ManualPrice.Value;
+            cv.FinalPrice = manualPrice;
             cv.IsManualOverride = true;
             cv.OverrideReason = line.OverrideReason!.Trim();
             return;

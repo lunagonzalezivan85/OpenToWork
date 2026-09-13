@@ -55,7 +55,7 @@ else
             {
                 <tr>
                     <td><strong>@promo.Code</strong>@(string.IsNullOrEmpty(promo.Description) ? "" : $" - {promo.Description}")</td>
-                    <td>@(promo.DiscountType == (int)PromoDiscountType.Percentage ? $"{promo.DiscountValue:0.##}%" : FormatEur(promo.DiscountValue))</td>
+                    <td>@(promo.DiscountType == (int)PromoDiscountType.Percentage ? $"{promo.DiscountValue:0.00}%" : FormatEur(promo.DiscountValue))</td>
                     <td>@(promo.JobTypeName ?? promo.JobLevelName ?? Lang.T("admin.pricing.appliesToAll"))</td>
                     <td>
                         @promo.ValidFrom.ToString("yyyy-MM-dd")
@@ -172,7 +172,7 @@ else
             Code = promo.Code,
             Description = promo.Description,
             DiscountType = promo.DiscountType,
-            DiscountValue = promo.DiscountValue,
+            DiscountValue = Math.Round(promo.DiscountValue, 2),
             PT_JobLevelId = promo.PT_JobLevelId,
             PT_JobTypeId = promo.PT_JobTypeId,
             ValidFrom = promo.ValidFrom,

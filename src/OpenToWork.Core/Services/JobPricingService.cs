@@ -259,7 +259,7 @@ public class JobPricingService : IJobPricingService
         var newPrice = new PTJobTypePrice
         {
             PT_JobTypeId = jobTypeId,
-            BasePrice = dto.BasePrice,
+            BasePrice = Math.Round(dto.BasePrice, 2),
             Currency = string.IsNullOrWhiteSpace(dto.Currency) ? "EUR" : dto.Currency.Trim().ToUpperInvariant(),
             EffectiveFrom = effectiveFrom,
             EffectiveTo = null,

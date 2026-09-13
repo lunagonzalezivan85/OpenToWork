@@ -148,15 +148,15 @@ else if (IsEditing)
         <div class="admin-recruitment-grid" style="margin-top: 0.5rem;">
             <div class="ot-input-group">
                 <label class="ot-input-label">@Lang.T("admin.contract.paymentOpening") (%)</label>
-                <input type="number" min="0" max="100" step="1" @bind="FormOpeningPct" class="admin-modal-input" />
+                <input type="number" min="0" max="100" step="0.01" @bind="FormOpeningPct" class="admin-modal-input" />
             </div>
             <div class="ot-input-group">
                 <label class="ot-input-label">@Lang.T("admin.contract.paymentValidation") (%)</label>
-                <input type="number" min="0" max="100" step="1" @bind="FormValidationPct" class="admin-modal-input" />
+                <input type="number" min="0" max="100" step="0.01" @bind="FormValidationPct" class="admin-modal-input" />
             </div>
             <div class="ot-input-group">
                 <label class="ot-input-label">@Lang.T("admin.contract.paymentConsolidation") (%)</label>
-                <input type="number" min="0" step="1" @bind="FormConsolidationPct" class="admin-modal-input" />
+                <input type="number" min="0" step="0.01" @bind="FormConsolidationPct" class="admin-modal-input" />
             </div>
         </div>
         @if (FormPaymentSumError)
@@ -360,16 +360,16 @@ else if (Contract != null)
         FormCoverageDays = Contract.TargetCoverageDays;
         FormWarrantyDays = Contract.WarrantyDays;
         FormFeeApplicationType = Contract.FeeApplicationType;
-        FormOpeningPct = Contract.PaymentOpeningPct;
-        FormValidationPct = Contract.PaymentValidationPct;
-        FormConsolidationPct = Contract.PaymentConsolidationPct;
+        FormOpeningPct = Math.Round(Contract.PaymentOpeningPct, 2);
+        FormValidationPct = Math.Round(Contract.PaymentValidationPct, 2);
+        FormConsolidationPct = Math.Round(Contract.PaymentConsolidationPct, 2);
         FormFeeExceptions = Contract.FeeExceptions;
 
         var line = Contract.Vacancies.FirstOrDefault();
         if (line != null)
         {
             ManualOverride = line.IsManualOverride;
-            FormManualPrice = line.IsManualOverride ? line.FinalPrice : null;
+            FormManualPrice = line.IsManualOverride && line.FinalPrice.HasValue ? Math.Round(line.FinalPrice.Value, 2) : null;
             FormOverrideReason = line.OverrideReason;
             if (!line.IsManualOverride && !string.IsNullOrEmpty(line.PromoCode))
             {
