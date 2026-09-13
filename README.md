@@ -38,6 +38,61 @@ El proyecto se compone de **3 portales independientes**:
 ## Diagramas y Documentacion Visual
 
 - **[Del Lead al Contrato](https://claude.ai/code/artifact/ccf43c05-56ad-4df3-a6f7-dff549eb7f96)** (Dsiezar, 13-Sep) — infografia del ciclo administrativo completo: pipeline comercial de empresas (Lead → Cerrado Ganado), pipeline de reclutamiento y verificacion de candidatos ("Verificado TD"), y como convergen ambos flujos al entregar un candidato y cerrar la negociacion de una vacante. Util para Iluna como referencia visual de como su CRM de Empresas y su Pipeline de Reclutamiento se conectan con el flujo de Negociaciones.
+- **[Puntos Ciegos de Trato Directo](https://claude.ai/code/artifact/8ca52a52-4ea4-41f3-9102-4fac81b54d93)** (Dsiezar, 13-Sep) — version visual del gap-analysis de la seccion de abajo ("Auditoria del Ciclo Comercial Completo"): compara el flujo de negocio oficial del dueno (22 pasos, de la captacion del cliente a la garantia de reposicion) contra lo que el sistema realmente rastrea hoy.
+
+---
+
+## Auditoria del Ciclo Comercial Completo (Gap Analysis)
+
+> **Contexto:** Darwin comparto el flujo de negocio OFICIAL de Trato Directo (22 pasos, 4 fases: Captacion del Cliente → Reclutamiento → Contratacion y Pago → Seguimiento y Garantia) para auditar que tanto de eso ya construyo el sistema vs. que sigue siendo 100% manual. Version visual con notas: **[Puntos Ciegos de Trato Directo](https://claude.ai/code/artifact/8ca52a52-4ea4-41f3-9102-4fac81b54d93)**.
+>
+> **Como usar esto:** cada item marcado `[ ]` es una pieza real de negocio que hoy NO tiene ningun soporte en el codigo (no es una tarea tecnica generica, es un paso que el dueno del negocio necesita que el sistema sepa que paso). A medida que se construya cada uno, marcarlo `[x]` aqui y actualizar/republicar el artifact de arriba para que Iluna y Darwin vean el avance real.
+>
+> **Estado al 13-Sep-2026:** 12 construidos / 1 parcial / 12 faltantes (de los 22 pasos + 3 sub-pasos de reposicion).
+
+### A. Captacion y Contratacion del Cliente
+
+- [x] 1. Inicio: Gestion Comercial — pipeline comercial (`Lead → Contactado → Reunion → Propuesta → Negociacion → Cerrado Ganado`) con historial de etapas
+- [x] 2. Presentacion y Diagnostico — etapa "Contactado" + notas de la empresa
+- [x] 3. Propuesta de Servicio y Condiciones — etapa "Propuesta Enviada"; split 30/50/20 ya modelado en `PTVacancyContract`
+- [x] 4. Firma Contrato de Servicio — estados Draft/Sent/Accepted/Rejected
+- [ ] 5. Cliente paga primer 30% (gate "¿pago activado?") — **falta total**: no existe NINGUN campo de pago/factura en todo el sistema (`Payment`/`Invoice`/`IsPaid`/`PaidAt`); cualquier etapa se puede avanzar sin validar cobro
+- [x] 6. Briefing y Perfil — cubierto por los campos de la vacante (requisitos, horario, salario)
+
+### B. Reclutamiento y Seleccion
+
+- [ ] 7. Consulta Base de Datos Prevalidada (filtrada por la vacante) — *parcial*: existe `CandidateSearchService`, pero solo filtra por score/skills genericos, no por los requisitos de una vacante puntual, y vive en la API publica no en el admin
+- [x] 8. Busqueda Activa y Atraccion — vacantes publicas en el portal + postulacion directa del candidato
+- [x] 9. Preseleccion y Filtro Inicial — etapa "Postulacion" del pipeline de reclutamiento
+- [x] 10. Entrevistas y Evaluaciones — Evaluacion Tecnica + Entrevista Cultural con score y recomendacion
+- [x] 11. Verificacion de Referencias y Documentacion — checklist de investigacion (LinkedIn, portafolio, certificados, referencias laborales)
+- [x] 12. Shortlist Final — modulo de Negociaciones arma el shortlist por vacante (`PTNegotiation`)
+- [x] 13. Presentacion al Cliente — estado "Presentada" de la negociacion
+
+### C. Contratacion y Pago
+
+- [x] 14. Seleccion del Candidato por el Cliente — `NegotiationService.CloseAsync` acepta al ganador, rechaza al resto, cierra la vacante
+- [ ] 15. Cliente paga segundo 50% — el 50% existe como numero fijo en el contrato (`PaymentValidationPct`), sin evento ni estado de pago
+- [ ] 16. Contratacion Laboral candidato-empresa (formal desde el Dia 1) — no existe ninguna entidad que represente el contrato laboral entre el candidato y el cliente
+- [ ] 17. Incorporacion del Candidato — no hay fecha de incorporacion registrada en ningun lugar del sistema
+- [ ] 18. Cliente paga ultimo 20% (30 dias post-incorporacion) — mismo problema que el paso 15 (`PaymentConsolidationPct` es solo un numero)
+
+### D. Seguimiento y Garantia
+
+- [ ] 19. Seguimiento Durante el Periodo de Garantia (gate "¿el candidato continua?") — no hay bitacora de contacto post-colocacion
+- [ ] 20. Activacion de Garantia de Reposicion — `WarrantyDays` existe en el contrato y en `PTJobLevel`, pero es solo un numero impreso en el PDF; no hay ningun job/proceso que lo vigile (no existe ni un solo `BackgroundService` en la solucion)
+- [ ] 20.1 Analisis de Causa Raiz — no existe
+- [ ] 20.2 Nueva Busqueda Sin Costo (1a reposicion) — no hay vinculo entre una reposicion y el proceso de reclutamiento original
+- [ ] 20.3 Segunda Reposicion (50% del valor) — no existe
+- [ ] 21. Cierre del Proceso (post-garantia) — no hay un estado que distinga "cerrado exitoso post-garantia" de simplemente "vacante cerrada"
+- [ ] 22. Feedback y Mejora Continua — no existe ninguna encuesta o registro de feedback del cliente
+
+### Politicas del documento oficial (paneles laterales)
+
+- [ ] Garantia por tipo de perfil (Operativo=30d / Encargados-Tecnicos=45d / Responsables-Cualificados=60d) — *parcial*: el campo `WarrantyDays` es configurable por nivel de puesto en `/pricing/job-levels`, pero esos 3 valores especificos no estan sembrados — confirmar que existan en el catalogo real
+- [ ] Exclusiones de Garantia (impago de nomina, cambio sustancial de condiciones, cierre del negocio, incumplimiento normativo) — solo hay un campo de texto libre ("Excepciones pactadas") en el contrato, no las 4 causales estructuradas
+- [ ] "¿Y si el candidato...?" (roba/falta grave, baja medica, renuncia voluntaria) — no existe ningun registro de conducta o motivo de salida posterior a la colocacion
+- [ ] 30/50/20 ligado a eventos reales del sistema — los 3 porcentajes existen como campos, pero ningun evento (ganar el pipeline, cerrar la negociacion, o una fecha +30 dias) los dispara
 
 ---
 
