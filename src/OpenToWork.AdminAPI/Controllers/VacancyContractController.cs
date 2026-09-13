@@ -12,11 +12,13 @@ public class VacancyContractController : AdminControllerBase
 {
     private readonly IAdminContractService _contractService;
     private readonly IPromoCodeService _promoCodeService;
+    private readonly IContractPaymentService _paymentService;
 
-    public VacancyContractController(IAdminContractService contractService, IPromoCodeService promoCodeService)
+    public VacancyContractController(IAdminContractService contractService, IPromoCodeService promoCodeService, IContractPaymentService paymentService)
     {
         _contractService = contractService;
         _promoCodeService = promoCodeService;
+        _paymentService = paymentService;
     }
 
     [HttpGet("{contractId:guid}")]
@@ -85,5 +87,22 @@ public class VacancyContractController : AdminControllerBase
     {
         var ok = await _contractService.DecideAsync(contractId, dto.Accepted, dto.Reason, AdminId, ClientIp);
         return ok ? NoContent() : BadRequest();
+    }
+
+    /// <summary>Tramos de pago (Apertura/Validacion/Consolidacion) del contrato. Se generan
+    /// automaticamente al aceptar el contrato (ver Decide).</summary>
+    [HttpGet("{contractId:guid}/payments")]
+    public async Task<IActionResult> GetPayments(Guid contractId)
+    {
+        var result = await _paymentService.GetByContractAsync(contractId);
+        return Ok(result);
+    }
+
+    /// <summary>Marca un tramo de pago como pagado. Sin pasarela integrada: lo confirma un admin.</summary>
+    [HttpPost("payments/{trancheId:guid}/mark-paid")]
+    public async Task<IActionResult> MarkTranchePaid(Guid trancheId, [FromBody] MarkTranchePaidDto dto)
+    {
+        var result = await _paymentService.MarkAsPaidAsync(trancheId, dto, AdminId);
+        return result == null ? NotFound() : Ok(result);
     }
 }

@@ -264,8 +264,18 @@
 
     private async Task PublishVacancy(Guid id)
     {
-        await AuthApi.PublishVacancyAsync(id);
+        var result = await AuthApi.PublishVacancyAsync(id);
         await LoadVacancies();
+
+        if (!result.Success)
+        {
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                icon = "error",
+                title = Lang.T("vacancies.errors.publishBlocked"),
+                text = result.Error ?? Lang.T("vacancies.errors.publishGeneric")
+            });
+        }
     }
 
     private async Task CloseVacancy(Guid id)

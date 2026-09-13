@@ -353,6 +353,21 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<List<ContractPaymentDto>> GetContractPaymentsAsync(Guid contractId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/contracts/{contractId}/payments");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<ContractPaymentDto>>() ?? new();
+    }
+
+    public async Task<bool> MarkTranchePaidAsync(Guid trancheId, string? notes)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/contracts/payments/{trancheId}/mark-paid", new MarkTranchePaidDto { Notes = notes });
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<AdminVacancyDto?> CreateVacancyAsync(AdminCreateVacancyDto dto)
     {
         await SetAuthHeaderAsync();

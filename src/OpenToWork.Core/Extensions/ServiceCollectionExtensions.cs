@@ -31,6 +31,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICandidateSearchService, CandidateSearchService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IDeliveryService, DeliveryService>();
+        services.AddScoped<IContractPaymentService, ContractPaymentService>();
 
         return services;
     }
@@ -67,6 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReferenceService, ReferenceService>();
         services.AddScoped<ICompanyCrmService, CompanyCrmService>();
         services.AddScoped<IDeliveryService, DeliveryService>();
+        services.AddScoped<IContractPaymentService, ContractPaymentService>();
 
         return services;
     }

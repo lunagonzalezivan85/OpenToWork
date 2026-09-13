@@ -48,6 +48,7 @@ public class AppDbContext : DbContext
     public DbSet<PTCandidateDelivery> PT_CandidateDeliveries => Set<PTCandidateDelivery>();
     public DbSet<PTVacancyContract> PT_VacancyContracts => Set<PTVacancyContract>();
     public DbSet<PTContractVacancy> PT_ContractVacancies => Set<PTContractVacancy>();
+    public DbSet<PTContractPayment> PT_ContractPayments => Set<PTContractPayment>();
     public DbSet<PTJobLevel> PT_JobLevels => Set<PTJobLevel>();
     public DbSet<PTJobType> PT_JobTypes => Set<PTJobType>();
     public DbSet<PTJobTypePrice> PT_JobTypePrices => Set<PTJobTypePrice>();
@@ -212,6 +213,21 @@ public class AppDbContext : DbContext
             e.HasOne(cv => cv.PromoCode)
                 .WithMany()
                 .HasForeignKey(cv => cv.PT_PromoCodeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PTContractPayment>(e =>
+        {
+            e.ToTable("PT_ContractPayments");
+            e.HasIndex(p => new { p.PT_VacancyContractId, p.TrancheType, p.IsDeleted });
+            e.Property(p => p.Status).HasDefaultValue(0);
+            e.HasOne(p => p.Contract)
+                .WithMany()
+                .HasForeignKey(p => p.PT_VacancyContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(p => p.PaidByUser)
+                .WithMany()
+                .HasForeignKey(p => p.PaidByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 

@@ -54,7 +54,9 @@
     },
     "errors": {
         "titleRequired": "El título de la vacante es obligatorio",
-        "createFailed": "No se pudo crear la vacante. Verifica que tienes permisos de empresa."
+        "createFailed": "No se pudo crear la vacante. Verifica que tienes permisos de empresa.",
+        "publishBlocked": "No se pudo publicar la vacante",
+        "publishGeneric": "Ocurrió un error al publicar la vacante. Intenta de nuevo."
     },
     "success": {
         "created": "Vacante creada correctamente",

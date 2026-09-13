@@ -54,7 +54,9 @@
     },
     "errors": {
         "titleRequired": "Vacancy title is required",
-        "createFailed": "Could not create the vacancy. Make sure you have company permissions."
+        "createFailed": "Could not create the vacancy. Make sure you have company permissions.",
+        "publishBlocked": "Couldn't publish the vacancy",
+        "publishGeneric": "Something went wrong publishing the vacancy. Please try again."
     },
     "success": {
         "created": "Vacancy created successfully",

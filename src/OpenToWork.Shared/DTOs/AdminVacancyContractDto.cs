@@ -116,3 +116,27 @@ public class ContractVacancyItemDto
     public bool IsManualOverride { get; set; }
     public string? OverrideReason { get; set; }
 }
+
+/// <summary>Tramo de pago del anexo (Apertura/Validacion/Consolidacion). Se generan los 3 al
+/// aceptar el contrato; un admin los marca pagado/pendiente a mano (sin pasarela integrada).</summary>
+public class ContractPaymentDto
+{
+    public Guid Id { get; set; }
+    public Guid ContractId { get; set; }
+
+    /// <summary>PaymentTrancheType: Apertura=0 / Validacion=1 / Consolidacion=2.</summary>
+    public int TrancheType { get; set; }
+    public decimal Percentage { get; set; }
+    public decimal Amount { get; set; }
+
+    /// <summary>PaymentTrancheStatus: Pendiente=0 / Pagado=1.</summary>
+    public int Status { get; set; }
+    public DateTime? PaidAt { get; set; }
+    public string? PaidByName { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class MarkTranchePaidDto
+{
+    public string? Notes { get; set; }
+}

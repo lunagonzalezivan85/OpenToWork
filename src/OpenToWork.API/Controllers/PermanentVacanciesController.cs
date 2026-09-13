@@ -105,8 +105,15 @@ public class PermanentVacanciesController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var published = await _vacancyService.PublishVacancyAsync(id, userId.Value);
-        return published ? Ok() : NotFound();
+        try
+        {
+            var published = await _vacancyService.PublishVacancyAsync(id, userId.Value);
+            return published ? Ok() : NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     [HttpPost("{id}/close")]

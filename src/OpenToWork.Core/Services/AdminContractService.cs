@@ -14,13 +14,15 @@ public class AdminContractService : IAdminContractService
     private readonly IAuditLogService _auditLog;
     private readonly IJobPricingService _pricing;
     private readonly IPromoCodeService _promoCodes;
+    private readonly IContractPaymentService _payments;
 
-    public AdminContractService(AppDbContext context, IAuditLogService auditLog, IJobPricingService pricing, IPromoCodeService promoCodes)
+    public AdminContractService(AppDbContext context, IAuditLogService auditLog, IJobPricingService pricing, IPromoCodeService promoCodes, IContractPaymentService payments)
     {
         _context = context;
         _auditLog = auditLog;
         _pricing = pricing;
         _promoCodes = promoCodes;
+        _payments = payments;
     }
 
     public async Task<AdminVacancyContractDto?> GetByIdAsync(Guid contractId)
@@ -354,6 +356,10 @@ public class AdminContractService : IAdminContractService
         await _auditLog.LogAsync(adminId, accepted ? "AcceptContract" : "RejectContract",
             "PT_VacancyContracts", contract.Id,
             $"{{\"contractNumber\":\"{contract.ContractNumber}\",\"accepted\":{accepted.ToString().ToLower()}}}", ipAddress);
+
+        if (accepted)
+            await _payments.CreateTranchesForContractAsync(contract.Id);
+
         return true;
     }
 

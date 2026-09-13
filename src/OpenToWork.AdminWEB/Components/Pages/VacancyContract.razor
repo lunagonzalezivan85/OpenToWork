@@ -245,6 +245,58 @@ else if (Contract != null)
         }
     </div>
 
+    @if (Contract.Status == (int)ContractStatus.Accepted)
+    {
+        <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+            <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.tranchesTitle")</h3>
+            @if (Tranches.Count == 0)
+            {
+                <p style="color: var(--text-muted); font-size: 0.85rem;">@Lang.T("admin.contract.tranchesEmpty")</p>
+            }
+            else
+            {
+                @foreach (var tranche in Tranches)
+                {
+                    <div class="admin-recruitment-info-row" style="align-items: flex-start;">
+                        <div>
+                            <span>@GetTrancheLabel(tranche.TrancheType) (@FormatPct(tranche.Percentage))</span>
+                            @if (tranche.Status == (int)PaymentTrancheStatus.Pagado)
+                            {
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                    @Lang.T("admin.contract.paidOn") @tranche.PaidAt?.ToString("yyyy-MM-dd") @Lang.T("admin.contract.paidByPrefix") @tranche.PaidByName
+                                    @if (!string.IsNullOrWhiteSpace(tranche.Notes))
+                                    {
+                                        <div style="font-style: italic;">"@tranche.Notes"</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem;">
+                            <strong>@FormatEur(tranche.Amount)</strong>
+                            @if (tranche.Status == (int)PaymentTrancheStatus.Pagado)
+                            {
+                                <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.contract.tranchePaid")</span>
+                            }
+                            else if (MarkingPaidTrancheId == tranche.Id)
+                            {
+                                <div style="display: flex; gap: 0.3rem; align-items: center;">
+                                    <input type="text" @bind="MarkPaidNotes" placeholder="@Lang.T("admin.contract.trancheNotesPlaceholder")" class="ot-input-field" style="font-size: 0.75rem; padding: 0.3rem 0.5rem; width: 160px;" />
+                                    <button class="ot-btn ot-btn--primary ot-btn--small" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;" @onclick="() => ConfirmMarkPaidAsync(tranche.Id)">@Lang.T("admin.common.confirm")</button>
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;" @onclick='() => MarkingPaidTrancheId = null'>@Lang.T("admin.common.cancel")</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="admin-result-badge admin-result-badge--warning">@Lang.T("admin.contract.tranchePending")</span>
+                                <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;" @onclick='() => { MarkingPaidTrancheId = tranche.Id; MarkPaidNotes = null; }'>@Lang.T("admin.contract.markAsPaid")</button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
+
         @if (Contract.Status == (int)ContractStatus.Sent)
         {
             <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
@@ -311,6 +363,11 @@ else if (Contract != null)
     private string? RejectReasonInput { get; set; }
     private bool RejectError { get; set; }
 
+    // Tramos de pago
+    private List<ContractPaymentDto> Tranches { get; set; } = new();
+    private Guid? MarkingPaidTrancheId { get; set; }
+    private string? MarkPaidNotes { get; set; }
+
     private static readonly (string Code, string Key)[] ScopeCatalog =
     {
         ("publicacion", "admin.contract.scopePublicacion"),
@@ -342,7 +399,34 @@ else if (Contract != null)
             }
         }
         LoadForm();
+        await LoadTranchesAsync();
         IsLoading = false;
+    }
+
+    private async Task LoadTranchesAsync()
+    {
+        if (Contract != null && Contract.Status == (int)ContractStatus.Accepted)
+            Tranches = await AuthApi.GetContractPaymentsAsync(Contract.Id);
+        else
+            Tranches = new();
+    }
+
+    private string GetTrancheLabel(int trancheType) => (PaymentTrancheType)trancheType switch
+    {
+        PaymentTrancheType.Apertura => Lang.T("admin.contract.paymentOpening"),
+        PaymentTrancheType.Validacion => Lang.T("admin.contract.paymentValidation"),
+        PaymentTrancheType.Consolidacion => Lang.T("admin.contract.paymentConsolidation"),
+        _ => "-"
+    };
+
+    private async Task ConfirmMarkPaidAsync(Guid trancheId)
+    {
+        if (await AuthApi.MarkTranchePaidAsync(trancheId, MarkPaidNotes))
+        {
+            MarkingPaidTrancheId = null;
+            MarkPaidNotes = null;
+            await LoadTranchesAsync();
+        }
     }
 
     private void LoadForm()
@@ -503,7 +587,10 @@ else if (Contract != null)
     private async Task DecideAsync(bool accepted)
     {
         if (await AuthApi.DecideContractAsync(Contract!.Id, accepted))
+        {
             Contract = await AuthApi.GetContractAsync(Contract.Id);
+            await LoadTranchesAsync();
+        }
     }
 
     private void GoBack() => Nav.NavigateTo($"/vacancies/{VacancyId}");

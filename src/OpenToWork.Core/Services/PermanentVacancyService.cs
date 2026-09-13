@@ -9,10 +9,12 @@ namespace OpenToWork.Core.Services;
 public class PermanentVacancyService : IPermanentVacancyService
 {
     private readonly AppDbContext _context;
+    private readonly IContractPaymentService _payments;
 
-    public PermanentVacancyService(AppDbContext context)
+    public PermanentVacancyService(AppDbContext context, IContractPaymentService payments)
     {
         _context = context;
+        _payments = payments;
     }
 
     public async Task<VacancyDto> CreateVacancyAsync(Guid companyId, CreateVacancyDto dto, Guid userId)
@@ -163,6 +165,9 @@ public class PermanentVacancyService : IPermanentVacancyService
             .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
 
         if (vacancy == null || vacancy.Status != 0) return false;
+
+        if (!await _payments.IsOpeningPaidForVacancyAsync(id))
+            throw new InvalidOperationException("Esta vacante pertenece a un contrato cuyo pago de apertura (30%) todavia no fue confirmado. El proceso no se activa hasta que Trato Directo confirme el cobro.");
 
         vacancy.Status = 1;
         vacancy.PublishedAt = DateTime.UtcNow;

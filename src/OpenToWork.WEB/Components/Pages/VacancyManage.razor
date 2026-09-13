@@ -291,16 +291,29 @@ else
 
     private async Task PublishVacancy()
     {
-        await AuthApi.PublishVacancyAsync(Id);
+        var result = await AuthApi.PublishVacancyAsync(Id);
         await LoadData();
-        await JS.InvokeVoidAsync("Swal.fire", new
+
+        if (result.Success)
         {
-            icon = "success",
-            title = Lang.T("vacancies.success.published"),
-            showConfirmButton = false,
-            timer = 2000,
-            timerProgressBar = true
-        });
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                icon = "success",
+                title = Lang.T("vacancies.success.published"),
+                showConfirmButton = false,
+                timer = 2000,
+                timerProgressBar = true
+            });
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                icon = "error",
+                title = Lang.T("vacancies.errors.publishBlocked"),
+                text = result.Error ?? Lang.T("vacancies.errors.publishGeneric")
+            });
+        }
     }
 
     private async Task CloseVacancy()

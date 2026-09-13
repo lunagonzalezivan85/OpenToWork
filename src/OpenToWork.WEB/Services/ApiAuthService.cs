@@ -12,6 +12,14 @@ public class RegisterResult
     public bool EmailAlreadyRegistered { get; set; }
 }
 
+public record PublishVacancyResult(bool Success, string? Error);
+
+/// <summary>Forma del cuerpo de error que devuelven los controllers: BadRequest(new { error = "..." }).</summary>
+public class ApiErrorResponse
+{
+    public string? Error { get; set; }
+}
+
 public class ApiAuthService
 {
     private readonly HttpClient _httpClient;
@@ -228,11 +236,21 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<VacancyDto>();
     }
 
-    public async Task<bool> PublishVacancyAsync(Guid id)
+    public async Task<PublishVacancyResult> PublishVacancyAsync(Guid id)
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.PostAsync($"api/permanentvacancies/{id}/publish", null);
-        return response.IsSuccessStatusCode;
+        if (response.IsSuccessStatusCode) return new PublishVacancyResult(true, null);
+
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            return new PublishVacancyResult(false, error?.Error);
+        }
+        catch
+        {
+            return new PublishVacancyResult(false, null);
+        }
     }
 
     public async Task<bool> CloseVacancyAsync(Guid id)

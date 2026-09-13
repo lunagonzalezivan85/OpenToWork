@@ -39,3 +39,20 @@ public enum PromoDiscountType
     Percentage = 0,
     FixedAmount = 1
 }
+
+/// <summary>Tramo de pago del anexo (30/50/20): Apertura al firmar, Validacion al elegir
+/// candidato del shortlist, Consolidacion 30 dias tras la incorporacion.</summary>
+public enum PaymentTrancheType
+{
+    Apertura = 0,
+    Validacion = 1,
+    Consolidacion = 2
+}
+
+/// <summary>Estado de un tramo de pago (PTContractPayment). Simple pagado/pendiente por ahora,
+/// sin pasarela de pago integrada - lo marca un admin a mano.</summary>
+public enum PaymentTrancheStatus
+{
+    Pendiente = 0,
+    Pagado = 1
+}

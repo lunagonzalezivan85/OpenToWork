@@ -48,7 +48,7 @@ El proyecto se compone de **3 portales independientes**:
 >
 > **Como usar esto:** cada item marcado `[ ]` es una pieza real de negocio que hoy NO tiene ningun soporte en el codigo (no es una tarea tecnica generica, es un paso que el dueno del negocio necesita que el sistema sepa que paso). A medida que se construya cada uno, marcarlo `[x]` aqui y actualizar/republicar el artifact de arriba para que Iluna y Darwin vean el avance real.
 >
-> **Estado al 13-Sep-2026:** 12 construidos / 1 parcial / 12 faltantes (de los 22 pasos + 3 sub-pasos de reposicion).
+> **Estado al 13-Sep-2026:** 15 construidos / 1 parcial / 9 faltantes (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: tramos de pago (Apertura/Validacion/Consolidacion) con gate real en la Apertura.
 
 ### A. Captacion y Contratacion del Cliente
 
@@ -56,7 +56,7 @@ El proyecto se compone de **3 portales independientes**:
 - [x] 2. Presentacion y Diagnostico — etapa "Contactado" + notas de la empresa
 - [x] 3. Propuesta de Servicio y Condiciones — etapa "Propuesta Enviada"; split 30/50/20 ya modelado en `PTVacancyContract`
 - [x] 4. Firma Contrato de Servicio — estados Draft/Sent/Accepted/Rejected
-- [ ] 5. Cliente paga primer 30% (gate "¿pago activado?") — **falta total**: no existe NINGUN campo de pago/factura en todo el sistema (`Payment`/`Invoice`/`IsPaid`/`PaidAt`); cualquier etapa se puede avanzar sin validar cobro
+- [x] 5. Cliente paga primer 30% (gate "¿pago activado?") — **construido 13-Sep**: entidad `PTContractPayment` (tramos Apertura/Validacion/Consolidacion, auto-generados al aceptar el contrato); `PermanentVacancyService.PublishVacancyAsync` bloquea la publicacion de la vacante (con `InvalidOperationException` mostrado al cliente) hasta que un admin marca la Apertura como pagada en `/vacancies/{id}/contract`
 - [x] 6. Briefing y Perfil — cubierto por los campos de la vacante (requisitos, horario, salario)
 
 ### B. Reclutamiento y Seleccion
@@ -72,10 +72,10 @@ El proyecto se compone de **3 portales independientes**:
 ### C. Contratacion y Pago
 
 - [x] 14. Seleccion del Candidato por el Cliente — `NegotiationService.CloseAsync` acepta al ganador, rechaza al resto, cierra la vacante
-- [ ] 15. Cliente paga segundo 50% — el 50% existe como numero fijo en el contrato (`PaymentValidationPct`), sin evento ni estado de pago
+- [x] 15. Cliente paga segundo 50% — **construido 13-Sep**: tramo "Validacion" trackeado (pagado/pendiente, con nota y quien lo marco) en el mismo panel del contrato. No bloquea nada (a diferencia del 30%, tu diagrama no tiene un gate aqui) — es un admin quien lo marca a mano
 - [ ] 16. Contratacion Laboral candidato-empresa (formal desde el Dia 1) — no existe ninguna entidad que represente el contrato laboral entre el candidato y el cliente
 - [ ] 17. Incorporacion del Candidato — no hay fecha de incorporacion registrada en ningun lugar del sistema
-- [ ] 18. Cliente paga ultimo 20% (30 dias post-incorporacion) — mismo problema que el paso 15 (`PaymentConsolidationPct` es solo un numero)
+- [x] 18. Cliente paga ultimo 20% (30 dias post-incorporacion) — **construido 13-Sep**: tramo "Consolidacion" trackeado igual que el 15. Sigue faltando el disparo automatico a los 30 dias (depende del paso 17, fecha de incorporacion, que todavia no existe) — por ahora un admin lo marca pagado cuando corresponda
 
 ### D. Seguimiento y Garantia
 
@@ -92,7 +92,7 @@ El proyecto se compone de **3 portales independientes**:
 - [ ] Garantia por tipo de perfil (Operativo=30d / Encargados-Tecnicos=45d / Responsables-Cualificados=60d) — *parcial*: el campo `WarrantyDays` es configurable por nivel de puesto en `/pricing/job-levels`, pero esos 3 valores especificos no estan sembrados — confirmar que existan en el catalogo real
 - [ ] Exclusiones de Garantia (impago de nomina, cambio sustancial de condiciones, cierre del negocio, incumplimiento normativo) — solo hay un campo de texto libre ("Excepciones pactadas") en el contrato, no las 4 causales estructuradas
 - [ ] "¿Y si el candidato...?" (roba/falta grave, baja medica, renuncia voluntaria) — no existe ningun registro de conducta o motivo de salida posterior a la colocacion
-- [ ] 30/50/20 ligado a eventos reales del sistema — los 3 porcentajes existen como campos, pero ningun evento (ganar el pipeline, cerrar la negociacion, o una fecha +30 dias) los dispara
+- [ ] 30/50/20 ligado a eventos reales del sistema — **parcial, mejorado 13-Sep**: la Apertura (30%) ya esta ligada a un evento real (bloquea publicar la vacante) y los 3 tramos son registros reales pagado/pendiente, no solo porcentajes. Sigue faltando el disparo automatico de Validacion al cerrar la negociacion y de Consolidacion a los +30 dias de incorporacion — hoy ambos los marca un admin a mano
 
 ---
 
@@ -972,6 +972,7 @@ El portal administrativo tiene el flujo completo: CRM de captacion de empresas, 
 | 2026-09-12 | Dsiezar | Feature | **Precios B2B por tipo de puesto + codigos promocionales.** Catalogo configurable `PTJobLevel`/`PTJobType` (reemplaza el enum fijo `ContractJobType` para este fin), lista de precios versionada `PTJobTypePrice` (nunca se sobreescribe, se cierra el vigente y se abre uno nuevo), `PTPromoCode`/`PTPromoCodeRedemption` (% o monto fijo, restringible a nivel y/o tipo, vigencia, limite de usos, auditoria de canjes). El precio ahora es por vacante dentro del contrato (`PT_ContractVacancies` gana BasePrice/PromoCode/DiscountAmount/FinalPrice/IsManualOverride), no un monto unico por contrato. 3 pantallas nuevas en `/pricing`. Reemplaza el precio ficticio de 1500 EUR/vacante del wizard de captacion de empresa. Seed: 3 niveles, 9 tipos mapeados desde las categorias existentes, codigo `ALEJO26` de ejemplo (10% en Operativo). Verificado end-to-end: 900 EUR → 810 EUR con el codigo aplicado, contador de usos incrementado, documento formal reflejando el precio final |
 | 2026-09-13 | Dsiezar | Docs | Rediseno del Pipeline de Empresas (metricas, filtros por responsable/sector/fecha en una sola linea, vista Tablero/Lista) + badge "Verificado TD" en la ficha de candidato del admin. Infografia **"Del Lead al Contrato"** publicada (ver seccion "Diagramas y Documentacion Visual" arriba) con el ciclo completo: CRM de Iluna → Pipeline de Reclutamiento de Iluna → Negociaciones de Dsiezar, para que quede clara la conexion entre ambos flujos |
 | 2026-09-13 | Dsiezar | Fix | Mismo rediseno (metricas, filtros en una linea, vista Tablero/Lista) aplicado al Pipeline de Candidatos, con `City` agregado a `RecruitmentPipelineDto`. Fix de fondo: las secciones de Investigacion, Evaluacion Tecnica, Entrevista Cultural y Preferencias del candidato en `PipelineDetail.razor` solo se mostraban en su etapa exacta (`CurrentStage == N`) y desaparecian por completo al avanzar de etapa, impidiendo corregir datos ya cargados - cambiado a `CurrentStage >= N` para que queden editables en cualquier etapa posterior (mientras no este descartado). Tambien: `.admin-content-inner` (max-width 1200px en todo el admin) dejaba un hueco enorme a los lados del kanban en monitores anchos - se quita solo para paginas con `.admin-pipeline-kanban` (via `:has()`) y las columnas pasan de ancho fijo a flex-grow. Botones Tablero/Lista con iconos en vez de texto |
+| 2026-09-13 | Dsiezar | Feature | **Tramos de pago del contrato (30/50/20).** Primer item resuelto del gap-analysis "Auditoria del Ciclo Comercial" (ver seccion arriba). Entidad nueva `PTContractPayment` (migracion `ContractPaymentTranches`): 3 tramos (Apertura/Validacion/Consolidacion) generados automaticamente al aceptar el contrato (`AdminContractService.DecideAsync`), con monto congelado segun `FeeAmount` y el % vigente. Panel "Tramos de Pago" en `/vacancies/{id}/contract` para que un admin los marque pagado/pendiente (con nota) - sin pasarela de pago integrada. Gate real: `PermanentVacancyService.PublishVacancyAsync` bloquea la publicacion de la vacante con un error explicito si el tramo de Apertura de su contrato no esta pagado (coincide con el unico rombo de decision del diagrama oficial - Validacion y Consolidacion se trackean pero no bloquean nada, por decision explicita de Darwin). Verificado end-to-end: contrato aceptado -> 3 tramos generados (243/405/162 EUR sobre un contrato de 810 EUR) -> intento de publicar bloqueado -> Apertura marcada pagada -> publicacion exitosa |
 
 ---
 
