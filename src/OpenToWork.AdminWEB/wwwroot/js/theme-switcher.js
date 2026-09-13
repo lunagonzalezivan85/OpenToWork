@@ -2,7 +2,10 @@ window.themeSwitcher = {
     set: function (theme) {
         const link = document.getElementById('theme-stylesheet');
         if (link) {
-            link.href = '/themes/' + theme + '/theme.css';
+            // Cache-bust: sin esto el navegador puede servir un theme.css viejo
+            // en cache indefinidamente (el link no tenia query string), asi que
+            // ediciones a las variables de tema no se veian sin hard-refresh.
+            link.href = '/themes/' + theme + '/theme.css?v=' + Date.now();
         }
         localStorage.setItem('opentowork-theme', theme);
     },

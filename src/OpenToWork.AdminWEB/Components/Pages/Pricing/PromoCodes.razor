@@ -8,15 +8,15 @@
 
 <PageTitle>@Lang.T("admin.pricing.promoTitle")</PageTitle>
 
-<div class="admin-page-header">
+<div class="neu-page-header">
     <div>
         <h1>@Lang.T("admin.pricing.promoTitle")</h1>
-        <p class="admin-page-header-subtitle">@Lang.T("admin.pricing.promoSubtitle")</p>
+        <p class="neu-page-header-subtitle">@Lang.T("admin.pricing.promoSubtitle")</p>
     </div>
-    <div class="admin-page-actions">
-        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/pricing/job-levels")'>@Lang.T("admin.pricing.viewJobLevels")</button>
-        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/pricing/job-types")'>@Lang.T("admin.pricing.viewJobTypes")</button>
-        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenCreateModal">@Lang.T("admin.pricing.newPromoCode")</button>
+    <div class="neu-page-actions">
+        <button class="neu-btn neu-btn--sm" @onclick='() => Nav.NavigateTo("/pricing/job-levels")'>@Lang.T("admin.pricing.viewJobLevels")</button>
+        <button class="neu-btn neu-btn--sm" @onclick='() => Nav.NavigateTo("/pricing/job-types")'>@Lang.T("admin.pricing.viewJobTypes")</button>
+        <button class="neu-btn neu-btn--sm neu-btn--primary" @onclick="OpenCreateModal">@Lang.T("admin.pricing.newPromoCode")</button>
     </div>
 </div>
 
@@ -27,106 +27,106 @@
 
 @if (Codes == null)
 {
-    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+    <div class="neu-surface neu-empty">@Lang.T("admin.common.loading")</div>
 }
 else if (Codes.Count == 0)
 {
-    <div class="admin-empty">
-        <div class="admin-empty-icon">&#9632;</div>
-        <div class="admin-empty-text">@Lang.T("admin.pricing.promoEmpty")</div>
+    <div class="neu-surface neu-empty">
+        <div class="neu-empty-icon">&#9632;</div>
+        @Lang.T("admin.pricing.promoEmpty")
     </div>
 }
 else
 {
-    <table class="ot-table">
-        <thead>
-            <tr>
-                <th>@Lang.T("admin.pricing.code")</th>
-                <th>@Lang.T("admin.pricing.discount")</th>
-                <th>@Lang.T("admin.pricing.appliesTo")</th>
-                <th>@Lang.T("admin.pricing.validity")</th>
-                <th>@Lang.T("admin.pricing.uses")</th>
-                <th>@Lang.T("admin.common.status")</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var promo in Codes)
-            {
-                <tr>
-                    <td><strong>@promo.Code</strong>@(string.IsNullOrEmpty(promo.Description) ? "" : $" - {promo.Description}")</td>
-                    <td>@(promo.DiscountType == (int)PromoDiscountType.Percentage ? $"{promo.DiscountValue:0.##}%" : FormatEur(promo.DiscountValue))</td>
-                    <td>@(promo.JobTypeName ?? promo.JobLevelName ?? Lang.T("admin.pricing.appliesToAll"))</td>
-                    <td>
-                        @promo.ValidFrom.ToString("yyyy-MM-dd")
-                        @(promo.ValidUntil.HasValue ? " - " + promo.ValidUntil.Value.ToString("yyyy-MM-dd") : "")
-                    </td>
-                    <td>@promo.UsesCount@(promo.MaxUses.HasValue ? $" / {promo.MaxUses}" : "")</td>
-                    <td>
-                        <span class="admin-result-badge @(promo.IsActive ? "admin-result-badge--success" : "admin-result-badge--warning")">
+    <div class="neu-list">
+        @foreach (var promo in Codes)
+        {
+            <div class="neu-row">
+                <div class="neu-row-main">
+                    <span class="neu-row-title">@promo.Code@(string.IsNullOrEmpty(promo.Description) ? "" : $" — {promo.Description}")</span>
+                    <div class="neu-row-meta">
+                        <span class="neu-badge @(promo.DiscountType == (int)PromoDiscountType.Percentage ? "neu-badge--success" : "neu-badge--muted")">
+                            @(promo.DiscountType == (int)PromoDiscountType.Percentage ? $"-{promo.DiscountValue:0.##}%" : $"-{FormatEur(promo.DiscountValue)}")
+                        </span>
+                        <span>@Lang.T("admin.pricing.appliesTo"): <strong>@(promo.JobTypeName ?? promo.JobLevelName ?? Lang.T("admin.pricing.appliesToAll"))</strong></span>
+                        <span>@Lang.T("admin.pricing.validity"): <strong>@promo.ValidFrom.ToString("yyyy-MM-dd")@(promo.ValidUntil.HasValue ? " → " + promo.ValidUntil.Value.ToString("yyyy-MM-dd") : "")</strong></span>
+                        <span>@Lang.T("admin.pricing.uses"): <strong>@promo.UsesCount@(promo.MaxUses.HasValue ? $" / {promo.MaxUses}" : "")</strong></span>
+                        <span class="neu-badge @(promo.IsActive ? "neu-badge--success" : "neu-badge--warning")">
                             @(promo.IsActive ? Lang.T("admin.common.active") : Lang.T("admin.common.inactive"))
                         </span>
-                    </td>
-                    <td>
-                        <div class="admin-table-actions">
-                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => OpenEditModal(promo)">@Lang.T("admin.common.edit")</button>
-                            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Delete(promo.Id)">@Lang.T("admin.common.delete")</button>
-                        </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                    </div>
+                </div>
+                <div class="neu-row-actions">
+                    <button class="neu-btn neu-btn--sm" @onclick="() => OpenEditModal(promo)">@Lang.T("admin.common.edit")</button>
+                    <button class="neu-btn neu-btn--sm neu-btn--danger" @onclick="() => Delete(promo.Id)">@Lang.T("admin.common.delete")</button>
+                </div>
+            </div>
+        }
+    </div>
 }
 
 @if (ShowModal)
 {
-    <div class="admin-modal-overlay" @onclick="CloseModal">
-        <div class="admin-modal" @onclick:stopPropagation="true">
-            <h3 class="admin-modal-title">@(EditingId == null ? Lang.T("admin.pricing.newPromoCode") : Lang.T("admin.common.edit"))</h3>
-            <div class="admin-modal-body">
-                @if (ModalError != null)
-                {
-                    <div class="alert alert-error">@ModalError</div>
-                }
+    <div class="neu-modal-overlay" @onclick="CloseModal">
+        <div class="neu-modal" @onclick:stopPropagation="true">
+            <h3 class="neu-modal-title">@(EditingId == null ? Lang.T("admin.pricing.newPromoCode") : Lang.T("admin.common.edit"))</h3>
+            @if (ModalError != null)
+            {
+                <p style="color: var(--danger); font-size: 0.8rem;">@ModalError</p>
+            }
+            <div class="neu-field">
                 <label>@Lang.T("admin.pricing.code")</label>
-                <input class="admin-modal-input" type="text" @bind="Form.Code" placeholder="ALEJO26" style="text-transform: uppercase;" />
+                <input class="neu-input" type="text" @bind="Form.Code" placeholder="ALEJO26" style="text-transform: uppercase;" />
+            </div>
+            <div class="neu-field">
                 <label>@Lang.T("admin.pricing.description")</label>
-                <input class="admin-modal-input" type="text" @bind="Form.Description" />
+                <input class="neu-input" type="text" @bind="Form.Description" />
+            </div>
+            <div class="neu-field">
                 <label>@Lang.T("admin.pricing.discountType")</label>
-                <select class="admin-modal-select" @bind="Form.DiscountType">
+                <select class="neu-select" @bind="Form.DiscountType">
                     <option value="0">@Lang.T("admin.pricing.discountPercentage")</option>
                     <option value="1">@Lang.T("admin.pricing.discountFixed")</option>
                 </select>
+            </div>
+            <div class="neu-field">
                 <label>@Lang.T("admin.pricing.discountValue")</label>
-                <input class="admin-modal-input" type="number" min="0" step="0.01" @bind="Form.DiscountValue" />
+                <input class="neu-input" type="number" min="0" step="0.01" @bind="Form.DiscountValue" />
+            </div>
+            <div class="neu-field">
                 <label>@Lang.T("admin.pricing.restrictLevel")</label>
-                <select class="admin-modal-select" @bind="Form.PT_JobLevelId">
+                <select class="neu-select" @bind="Form.PT_JobLevelId">
                     <option value="">@Lang.T("admin.pricing.appliesToAll")</option>
                     @foreach (var level in Levels)
                     {
                         <option value="@level.Id">@level.Name</option>
                     }
                 </select>
+            </div>
+            <div class="neu-field">
                 <label>@Lang.T("admin.pricing.restrictType")</label>
-                <select class="admin-modal-select" @bind="Form.PT_JobTypeId">
+                <select class="neu-select" @bind="Form.PT_JobTypeId">
                     <option value="">@Lang.T("admin.pricing.appliesToAll")</option>
                     @foreach (var type in Types.Where(t => Form.PT_JobLevelId == null || t.PT_JobLevelId == Form.PT_JobLevelId))
                     {
                         <option value="@type.Id">@type.Name</option>
                     }
                 </select>
-                <label>@Lang.T("admin.pricing.validUntil")</label>
-                <input class="admin-modal-input" type="date" value="@(Form.ValidUntil?.ToString("yyyy-MM-dd"))" @onchange="e => Form.ValidUntil = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
-                <label>@Lang.T("admin.pricing.maxUses")</label>
-                <input class="admin-modal-input" type="number" min="1" step="1" @bind="Form.MaxUses" placeholder="@Lang.T("admin.pricing.maxUsesPlaceholder")" />
-                <label style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem;">
-                    <input type="checkbox" @bind="Form.IsActive" /> @Lang.T("admin.common.active")
-                </label>
             </div>
-            <div class="admin-modal-actions">
-                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseModal">@Lang.T("admin.common.cancel")</button>
-                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="Save">@Lang.T("admin.common.save")</button>
+            <div class="neu-field">
+                <label>@Lang.T("admin.pricing.validUntil")</label>
+                <input class="neu-input" type="date" value="@(Form.ValidUntil?.ToString("yyyy-MM-dd"))" @onchange="e => Form.ValidUntil = DateTime.TryParse(e.Value?.ToString(), out var d) ? d : null" />
+            </div>
+            <div class="neu-field">
+                <label>@Lang.T("admin.pricing.maxUses")</label>
+                <input class="neu-input" type="number" min="1" step="1" @bind="Form.MaxUses" placeholder="@Lang.T("admin.pricing.maxUsesPlaceholder")" />
+            </div>
+            <label class="neu-checkbox">
+                <input type="checkbox" @bind="Form.IsActive" /> @Lang.T("admin.common.active")
+            </label>
+            <div class="neu-modal-actions">
+                <button class="neu-btn" @onclick="CloseModal">@Lang.T("admin.common.cancel")</button>
+                <button class="neu-btn neu-btn--primary" @onclick="Save">@Lang.T("admin.common.save")</button>
             </div>
         </div>
     </div>
