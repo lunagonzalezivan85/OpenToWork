@@ -18,6 +18,7 @@ public class CandidatesController : AdminControllerBase
     private readonly IWebHostEnvironment _env;
     private readonly IScoringService _scoringService;
     private readonly IValidationService _validationService;
+    private readonly IVerificationStatusService _verificationStatusService;
 
     public CandidatesController(
         IAdminCandidateService candidateService,
@@ -25,7 +26,8 @@ public class CandidatesController : AdminControllerBase
         ILinkedinSearchService linkedinSearchService,
         IWebHostEnvironment env,
         IScoringService scoringService,
-        IValidationService validationService)
+        IValidationService validationService,
+        IVerificationStatusService verificationStatusService)
     {
         _candidateService = candidateService;
         _registrationService = registrationService;
@@ -33,6 +35,7 @@ public class CandidatesController : AdminControllerBase
         _env = env;
         _scoringService = scoringService;
         _validationService = validationService;
+        _verificationStatusService = verificationStatusService;
     }
 
     [HttpGet]
@@ -164,6 +167,22 @@ public class CandidatesController : AdminControllerBase
     {
         var result = await _validationService.GetVerificationsAsync(candidateId);
         return Ok(result);
+    }
+
+    /// <summary>Estado compuesto "Verificado TD" (mismo calculo que usan el dashboard del
+    /// candidato y el portal de empresa) - antes solo se veia fuera del admin.</summary>
+    [HttpGet("{candidateId}/verification-status")]
+    public async Task<IActionResult> GetVerificationStatus(Guid candidateId)
+    {
+        try
+        {
+            var result = await _verificationStatusService.GetVerificationStatusAsync(candidateId);
+            return Ok(result);
+        }
+        catch (InvalidOperationException)
+        {
+            return NotFound();
+        }
     }
 
     /// <summary>Aprobar/rechazar una verificacion manualmente ("verificaciones manuales" - item de Fase 4 desbloqueado desde fase-3-sub1.md).</summary>

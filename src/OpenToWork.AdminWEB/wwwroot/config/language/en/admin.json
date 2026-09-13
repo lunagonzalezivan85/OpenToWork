@@ -526,7 +526,17 @@
     "statusPending": "Pending",
     "statusInProgress": "In progress",
     "statusVerified": "Verified",
-    "statusFailed": "Failed"
+    "statusFailed": "Failed",
+    "verifiedTdStatusProfileRegistered": "Profile registered",
+    "verifiedTdStatusProfileComplete": "Profile complete",
+    "verifiedTdStatusEvaluated": "Evaluated",
+    "verifiedTdStatusInProgress": "Verification in progress",
+    "verifiedTdStatusVerifiedTD": "Verified TD",
+    "verifiedTdRequirements": "Pending requirements",
+    "verifiedTdChecks": "Checks",
+    "verifiedTdScore": "Score",
+    "verifiedTdReferenceYes": "Verified reference",
+    "verifiedTdReferenceNo": "No verified reference"
   },
   "skillTests": {
     "title": "Skill Test Bank",

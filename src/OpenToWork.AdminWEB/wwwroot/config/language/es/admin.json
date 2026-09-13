@@ -526,7 +526,17 @@
     "statusPending": "Pendiente",
     "statusInProgress": "En progreso",
     "statusVerified": "Verificada",
-    "statusFailed": "Fallida"
+    "statusFailed": "Fallida",
+    "verifiedTdStatusProfileRegistered": "Perfil registrado",
+    "verifiedTdStatusProfileComplete": "Perfil completo",
+    "verifiedTdStatusEvaluated": "Evaluado",
+    "verifiedTdStatusInProgress": "Verificación en proceso",
+    "verifiedTdStatusVerifiedTD": "Verificado TD",
+    "verifiedTdRequirements": "Requisitos pendientes",
+    "verifiedTdChecks": "Verificaciones",
+    "verifiedTdScore": "Score",
+    "verifiedTdReferenceYes": "Referencia verificada",
+    "verifiedTdReferenceNo": "Sin referencia verificada"
   },
   "skillTests": {
     "title": "Banco de Retos",

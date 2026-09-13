@@ -796,6 +796,14 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<VerificationStatusDto?> GetVerificationStatusAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/candidates/{candidateId}/verification-status");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<VerificationStatusDto>();
+    }
+
     public async Task<List<SkillTestAdminDto>> GetSkillTestsAsync()
     {
         await SetAuthHeaderAsync();
