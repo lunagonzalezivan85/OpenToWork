@@ -35,6 +35,12 @@ El proyecto se compone de **3 portales independientes**:
 
 ---
 
+## Diagramas y Documentacion Visual
+
+- **[Del Lead al Contrato](https://claude.ai/code/artifact/ccf43c05-56ad-4df3-a6f7-dff549eb7f96)** (Dsiezar, 13-Sep) — infografia del ciclo administrativo completo: pipeline comercial de empresas (Lead → Cerrado Ganado), pipeline de reclutamiento y verificacion de candidatos ("Verificado TD"), y como convergen ambos flujos al entregar un candidato y cerrar la negociacion de una vacante. Util para Iluna como referencia visual de como su CRM de Empresas y su Pipeline de Reclutamiento se conectan con el flujo de Negociaciones.
+
+---
+
 ## Estructura del Proyecto
 
 ```
@@ -909,6 +915,7 @@ El portal administrativo tiene el flujo completo: CRM de captacion de empresas, 
 | 2026-09-11 | Iluna | Fase 4 | Wizard de contrato multi-vacante (1 contrato : N vacantes vía `PT_ContractVacancies`), borrado en cascada de empresa, filtro de vacantes por empresa desde el detalle |
 | 2026-09-11 | Dsiezar | Fix | "Generar contrato" fallaba siempre con el mensaje generico "Verifica que la distribucion de pago sume 100%" (que ni siquiera era la causa real). La migracion que paso el contrato a multi-vacante nunca elimino la columna huerfana `PT_VacancyContracts.PT_VacancyId` (NOT NULL + FK), asi que EF insertaba sin ella y MySQL rechazaba la fila. Migracion `FixOrphanContractVacancyColumn`; de paso corregido que el snapshot de EF nunca habia registrado `ContactDniNie` (hubiera roto el siguiente `migrations add`) |
 | 2026-09-12 | Dsiezar | Feature | **Precios B2B por tipo de puesto + codigos promocionales.** Catalogo configurable `PTJobLevel`/`PTJobType` (reemplaza el enum fijo `ContractJobType` para este fin), lista de precios versionada `PTJobTypePrice` (nunca se sobreescribe, se cierra el vigente y se abre uno nuevo), `PTPromoCode`/`PTPromoCodeRedemption` (% o monto fijo, restringible a nivel y/o tipo, vigencia, limite de usos, auditoria de canjes). El precio ahora es por vacante dentro del contrato (`PT_ContractVacancies` gana BasePrice/PromoCode/DiscountAmount/FinalPrice/IsManualOverride), no un monto unico por contrato. 3 pantallas nuevas en `/pricing`. Reemplaza el precio ficticio de 1500 EUR/vacante del wizard de captacion de empresa. Seed: 3 niveles, 9 tipos mapeados desde las categorias existentes, codigo `ALEJO26` de ejemplo (10% en Operativo). Verificado end-to-end: 900 EUR → 810 EUR con el codigo aplicado, contador de usos incrementado, documento formal reflejando el precio final |
+| 2026-09-13 | Dsiezar | Docs | Rediseno del Pipeline de Empresas (metricas, filtros por responsable/sector/fecha en una sola linea, vista Tablero/Lista) + badge "Verificado TD" en la ficha de candidato del admin. Infografia **"Del Lead al Contrato"** publicada (ver seccion "Diagramas y Documentacion Visual" arriba) con el ciclo completo: CRM de Iluna → Pipeline de Reclutamiento de Iluna → Negociaciones de Dsiezar, para que quede clara la conexion entre ambos flujos |
 
 ---
 
