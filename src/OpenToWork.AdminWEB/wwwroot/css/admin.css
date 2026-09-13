@@ -329,6 +329,13 @@ textarea.admin-input {
     padding: var(--space-xl) var(--space-lg);
 }
 
+/* Las pantallas de pipeline (kanban) aprovechan todo el ancho disponible en vez de
+   quedar centradas en 1200px - con 6 columnas, ese limite dejaba huecos enormes a
+   los lados en monitores anchos. */
+.admin-content-inner:has(.admin-pipeline-kanban) {
+    max-width: none;
+}
+
 /* Sidebar overlay (mobile) */
 .admin-sidebar-overlay {
     display: none;
@@ -2303,7 +2310,9 @@ textarea.admin-input {
 }
 
 .admin-kanban-column {
-    flex: 0 0 280px;
+    flex: 1 1 260px;
+    min-width: 260px;
+    max-width: 340px;
     background: var(--bg-tertiary);
     border-radius: var(--radius-lg);
     border-top: 3px solid var(--border-color);
