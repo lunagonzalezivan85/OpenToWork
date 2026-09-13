@@ -2364,7 +2364,7 @@ textarea.admin-input {
 }
 
 .admin-kanban-card {
-    background: #FFFFFF;
+    background: var(--card-bg);
     border-radius: var(--radius-md);
     padding: 0.75rem;
     cursor: pointer;
@@ -2489,6 +2489,77 @@ textarea.admin-input {
     font-size: 0.72rem;
     color: var(--text-muted);
     font-style: italic;
+}
+
+.admin-kanban-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-kanban-card-meta svg {
+    flex: none;
+    opacity: 0.7;
+}
+
+.admin-pipeline-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.admin-pipeline-filters select {
+    min-width: 160px;
+}
+
+.admin-pipeline-filter-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-right: -0.15rem;
+}
+
+.admin-view-toggle {
+    display: inline-flex;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: 3px;
+    gap: 2px;
+    margin-left: auto;
+}
+
+.admin-view-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.4rem 0.75rem;
+    border-radius: calc(var(--radius-md) - 2px);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.admin-view-toggle-btn:hover {
+    color: var(--text-primary);
+}
+
+.admin-view-toggle-btn--active {
+    background: var(--accent-primary);
+    color: #FFFFFF;
 }
 
 /* ============================================

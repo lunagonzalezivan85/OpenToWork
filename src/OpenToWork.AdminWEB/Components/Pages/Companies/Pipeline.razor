@@ -15,15 +15,7 @@
         <p class="admin-page-header-subtitle">@Lang.T("admin.companies.pipelineSubtitle")</p>
     </div>
     <div class="admin-page-actions">
-        <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder='@Lang.T("admin.companies.searchPlaceholder")' class="admin-pipeline-search" />
-        @if (IsMyTray)
-        {
-            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ToggleMyTray">@Lang.T("admin.companies.allTrays")</button>
-        }
-        else
-        {
-            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="ToggleMyTray">@Lang.T("admin.companies.myTray")</button>
-        }
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo("/companies/new"))">+ @Lang.T("admin.companies.add")</button>
     </div>
 </div>
 
@@ -31,65 +23,175 @@
 {
     <div class="admin-loading">@Lang.T("admin.common.loading")</div>
 }
-else if (PipelineData == null || PipelineData.Items.Count == 0)
-{
-    <div class="admin-empty">
-        <div class="admin-empty-text">@Lang.T("admin.companies.pipelineEmpty")</div>
-    </div>
-}
 else
 {
-    <div class="admin-pipeline-kanban">
-        @foreach (var stage in ActiveStages)
-        {
-            var stageItems = PipelineData.Items.Where(i => i.CurrentStage == stage.Key && !i.IsDismissed).ToList();
-            var stageCount = PipelineData.CountByStage.GetValueOrDefault(stage.Key, 0);
-            <div class="admin-kanban-column @StageAccentClass(stage.Key)">
-                <div class="admin-kanban-column-header">
-                    <span class="admin-kanban-column-title">@stage.Value</span>
-                    <span class="admin-kanban-column-count">@stageCount</span>
-                </div>
-                <div class="admin-kanban-column-body">
-                    @if (stageItems.Count == 0)
-                    {
-                        <div class="admin-kanban-empty">@Lang.T("admin.companies.noCompanies")</div>
-                    }
-                    @foreach (var item in stageItems)
-                    {
-                        <div class="admin-kanban-card" @onclick="() => ViewDetail(item.Id)">
-                            <div class="admin-kanban-card-header">
-                                <div class="admin-result-avatar">@(item.CompanyName.Length >= 2 ? item.CompanyName.Substring(0, 2).ToUpper() : item.CompanyName.ToUpper())</div>
-                                <div class="admin-kanban-card-info">
-                                    <div class="admin-kanban-card-name">@item.CompanyName</div>
-                                    <div class="admin-kanban-card-email">@(item.ContactEmail ?? item.Industry ?? "-")</div>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(item.Industry))
-                            {
-                                <div class="admin-kanban-card-tags">
-                                    <span class="admin-result-badge admin-result-badge--info">@item.Industry</span>
-                                </div>
-                            }
-                            <div class="admin-kanban-card-footer">
-                                <span class="admin-kanban-card-date">@item.CreatedAt.ToLocalTime().ToString("dd MMM")</span>
-                                @if (!string.IsNullOrEmpty(item.AssignedToName))
-                                {
-                                    <span class="admin-kanban-card-assignee">@item.AssignedToName</span>
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
-            </div>
-        }
+    <div class="admin-stat-grid" style="margin-bottom: var(--space-md);">
+        <div class="admin-stat-card admin-stat-card--info">
+            <span class="admin-stat-label">@Lang.T("admin.companies.statActiveCompanies")</span>
+            <span class="admin-stat-value">@ActiveCompaniesCount</span>
+        </div>
+        <div class="admin-stat-card">
+            <span class="admin-stat-label">@Lang.T("admin.companies.statMeetingsWeek")</span>
+            <span class="admin-stat-value">@MeetingsThisWeekCount</span>
+        </div>
+        <div class="admin-stat-card admin-stat-card--warning">
+            <span class="admin-stat-label">@Lang.T("admin.companies.statProposalsSent")</span>
+            <span class="admin-stat-value">@ProposalsSentCount</span>
+        </div>
+        <div class="admin-stat-card admin-stat-card--success">
+            <span class="admin-stat-label">@Lang.T("admin.companies.statClosedMonth")</span>
+            <span class="admin-stat-value">@ClosedThisMonthCount</span>
+        </div>
     </div>
+
+    <div class="admin-pipeline-filters">
+        <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder='@Lang.T("admin.companies.searchPlaceholder")' class="admin-pipeline-search" />
+
+        <span class="admin-pipeline-filter-label">@Lang.T("admin.companies.filterResponsible")</span>
+        <select class="ot-input-field" @bind="SelectedAssignedToRaw" @bind:after="OnResponsibleChanged">
+            <option value="">@Lang.T("admin.companies.filterAllResponsibles")</option>
+            @foreach (var u in AssignableUsers)
+            {
+                <option value="@u.Id">@u.Email</option>
+            }
+        </select>
+
+        <span class="admin-pipeline-filter-label">@Lang.T("admin.companies.filterSector")</span>
+        <select class="ot-input-field" @bind="SelectedIndustry">
+            <option value="">@Lang.T("admin.companies.filterAllSectors")</option>
+            @foreach (var sector in AvailableSectors)
+            {
+                <option value="@sector">@sector</option>
+            }
+        </select>
+
+        <span class="admin-pipeline-filter-label">@Lang.T("admin.companies.filterDateRange")</span>
+        <select class="ot-input-field" @bind="SelectedDateRange">
+            <option value="all">@Lang.T("admin.companies.filterDateAll")</option>
+            <option value="7">@Lang.T("admin.companies.filterDateLast7")</option>
+            <option value="30">@Lang.T("admin.companies.filterDateLast30")</option>
+            <option value="90">@Lang.T("admin.companies.filterDateLast90")</option>
+        </select>
+
+        <div class="admin-view-toggle">
+            <button class="admin-view-toggle-btn @(!IsListView ? "admin-view-toggle-btn--active" : "")" @onclick='() => IsListView = false'>
+                @Lang.T("admin.companies.viewBoard")
+            </button>
+            <button class="admin-view-toggle-btn @(IsListView ? "admin-view-toggle-btn--active" : "")" @onclick='() => IsListView = true'>
+                @Lang.T("admin.companies.viewList")
+            </button>
+        </div>
+    </div>
+
+    @if (PipelineData == null || PipelineData.Items.Count == 0)
+    {
+        <div class="admin-empty">
+            <div class="admin-empty-text">@Lang.T("admin.companies.pipelineEmpty")</div>
+        </div>
+    }
+    else if (IsListView)
+    {
+        <table class="ot-table">
+            <thead>
+                <tr>
+                    <th>@Lang.T("admin.companies.columnCompany")</th>
+                    <th>@Lang.T("admin.companies.filterSector")</th>
+                    <th>@Lang.T("admin.companies.city")</th>
+                    <th>@Lang.T("admin.companies.contactName")</th>
+                    <th>@Lang.T("admin.companies.columnStage")</th>
+                    <th>@Lang.T("admin.companies.assignedTo")</th>
+                    <th>@Lang.T("admin.companies.columnDate")</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in FilteredItems.OrderByDescending(i => i.StageEnteredAt ?? i.CreatedAt))
+                {
+                    <tr class="admin-clickable" @onclick="() => ViewDetail(item.Id)">
+                        <td>@item.CompanyName</td>
+                        <td>@(item.Industry ?? "-")</td>
+                        <td>@(item.City ?? "-")</td>
+                        <td>@(item.ContactName ?? "-")</td>
+                        <td>@ActiveStages.GetValueOrDefault(item.CurrentStage, "-")</td>
+                        <td>@(item.AssignedToName ?? "-")</td>
+                        <td>@item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="admin-pipeline-kanban">
+            @foreach (var stage in ActiveStages)
+            {
+                var stageItems = FilteredItems.Where(i => i.CurrentStage == stage.Key).ToList();
+                <div class="admin-kanban-column @StageAccentClass(stage.Key)">
+                    <div class="admin-kanban-column-header">
+                        <span class="admin-kanban-column-title">@stage.Value</span>
+                        <span class="admin-kanban-column-count">@stageItems.Count</span>
+                    </div>
+                    <div class="admin-kanban-column-body">
+                        @if (stageItems.Count == 0)
+                        {
+                            <div class="admin-kanban-empty">@Lang.T("admin.companies.noCompanies")</div>
+                        }
+                        @foreach (var item in stageItems)
+                        {
+                            <div class="admin-kanban-card" @onclick="() => ViewDetail(item.Id)">
+                                <div class="admin-kanban-card-header">
+                                    <div class="admin-result-avatar">@(item.CompanyName.Length >= 2 ? item.CompanyName.Substring(0, 2).ToUpper() : item.CompanyName.ToUpper())</div>
+                                    <div class="admin-kanban-card-info">
+                                        <div class="admin-kanban-card-name">@item.CompanyName</div>
+                                        <div class="admin-kanban-card-email">@(item.ContactEmail ?? "-")</div>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(item.City))
+                                {
+                                    <div class="admin-kanban-card-meta">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                        <span>@item.City</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Industry))
+                                {
+                                    <div class="admin-kanban-card-meta">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 21h18" /><path d="M5 21V7l7-4 7 4v14" /><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1" /></svg>
+                                        <span>@item.Industry</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.ContactName))
+                                {
+                                    <div class="admin-kanban-card-meta">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                                        <span>@item.ContactName</span>
+                                    </div>
+                                }
+                                <div class="admin-kanban-card-footer">
+                                    <span class="admin-kanban-card-date">@((item.StageEnteredAt ?? item.CreatedAt).ToLocalTime().ToString("dd MMM"))</span>
+                                    @if (!string.IsNullOrEmpty(item.AssignedToName))
+                                    {
+                                        <span class="admin-kanban-card-assignee">@item.AssignedToName</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
 }
 
 @code {
     private CompanyPipelineResultDto? PipelineData;
+    private List<AdminUserDto> AssignableUsers = new();
     private bool IsLoading = true;
+    private bool IsListView = false;
     private string SearchTerm = "";
-    private bool IsMyTray = false;
+    private string SelectedAssignedToRaw = "";
+    private Guid? SelectedAssignedTo;
+    private string SelectedIndustry = "";
+    private string SelectedDateRange = "all";
     private Guid? CurrentUserId;
     private System.Threading.Timer? _debounceTimer;
 
@@ -102,6 +204,62 @@ else
         { (int)CompanyPipelineStage.Negociacion, Lang.T("admin.companies.stageNegotiation") },
         { (int)CompanyPipelineStage.CerradoGanado, Lang.T("admin.companies.stageWon") },
     };
+
+    private IEnumerable<string> AvailableSectors => (PipelineData?.Items ?? new())
+        .Select(i => i.Industry)
+        .Where(i => !string.IsNullOrWhiteSpace(i))
+        .Select(i => i!)
+        .Distinct()
+        .OrderBy(i => i);
+
+    private List<CompanyPipelineDto> FilteredItems
+    {
+        get
+        {
+            var items = (PipelineData?.Items ?? new()).Where(i => !i.IsDismissed);
+
+            if (!string.IsNullOrEmpty(SelectedIndustry))
+                items = items.Where(i => i.Industry == SelectedIndustry);
+
+            if (SelectedDateRange != "all" && int.TryParse(SelectedDateRange, out var days))
+            {
+                var cutoff = DateTime.UtcNow.AddDays(-days);
+                items = items.Where(i => i.CreatedAt >= cutoff);
+            }
+
+            return items.ToList();
+        }
+    }
+
+    private int ActiveCompaniesCount => (PipelineData?.Items ?? new()).Count(i => !i.IsDismissed);
+
+    private int MeetingsThisWeekCount
+    {
+        get
+        {
+            var now = DateTime.UtcNow;
+            var startOfWeek = now.Date.AddDays(-(int)now.DayOfWeek + (now.DayOfWeek == DayOfWeek.Sunday ? -6 : 1));
+            return (PipelineData?.Items ?? new()).Count(i =>
+                !i.IsDismissed &&
+                i.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada &&
+                (i.StageEnteredAt ?? i.CreatedAt) >= startOfWeek);
+        }
+    }
+
+    private int ProposalsSentCount => PipelineData?.CountByStage.GetValueOrDefault((int)CompanyPipelineStage.PropuestaEnviada, 0) ?? 0;
+
+    private int ClosedThisMonthCount
+    {
+        get
+        {
+            var now = DateTime.UtcNow;
+            return (PipelineData?.Items ?? new()).Count(i =>
+                !i.IsDismissed &&
+                i.CurrentStage == (int)CompanyPipelineStage.CerradoGanado &&
+                (i.StageEnteredAt ?? i.CreatedAt).ToLocalTime().Month == now.ToLocalTime().Month &&
+                (i.StageEnteredAt ?? i.CreatedAt).ToLocalTime().Year == now.ToLocalTime().Year);
+        }
+    }
 
     // Progresion neutro -> frio -> marca -> calido -> ganado, para que el estado de cada
     // columna se lea de un vistazo sin tener que abrir cada tarjeta (encontrado en QA: las 6
@@ -127,6 +285,8 @@ else
         if (Guid.TryParse(userIdRaw, out var parsedId))
             CurrentUserId = parsedId;
 
+        AssignableUsers = await AuthApi.GetUsersAsync(1, 100, (int)UserRole.Admin);
+
         await LoadPipeline();
     }
 
@@ -134,15 +294,16 @@ else
     {
         IsLoading = true;
         PipelineData = await AuthApi.GetCompanyPipelineAsync(
+            pageSize: 200,
             search: string.IsNullOrWhiteSpace(SearchTerm) ? null : SearchTerm,
-            assignedTo: IsMyTray && CurrentUserId.HasValue ? CurrentUserId : null);
+            assignedTo: SelectedAssignedTo);
         IsLoading = false;
     }
 
-    private void ToggleMyTray()
+    private async Task OnResponsibleChanged()
     {
-        IsMyTray = !IsMyTray;
-        _ = LoadPipeline();
+        SelectedAssignedTo = Guid.TryParse(SelectedAssignedToRaw, out var id) ? id : null;
+        await LoadPipeline();
     }
 
     private void OnSearchKeyUp(KeyboardEventArgs e)

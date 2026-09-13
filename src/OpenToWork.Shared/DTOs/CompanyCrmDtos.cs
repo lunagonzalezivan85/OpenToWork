@@ -57,6 +57,7 @@ public class CompanyPipelineDto
     public Guid CompanyId { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     public string? Industry { get; set; }
+    public string? City { get; set; }
     public string? ContactName { get; set; }
     public string? ContactEmail { get; set; }
     public string? ContactPhone { get; set; }
