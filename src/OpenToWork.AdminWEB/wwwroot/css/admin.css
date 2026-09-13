@@ -169,6 +169,7 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    transition: margin-left var(--transition);
 }
 
 /* Topbar */
@@ -186,7 +187,7 @@
 }
 
 .admin-sidebar-toggle {
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 40px;
@@ -345,6 +346,19 @@ textarea.admin-input {
 .admin-sidebar-overlay.active {
     display: block;
     opacity: 1;
+}
+
+/* Colapsar el panel izquierdo en escritorio (boton hamburguesa en el topbar).
+   Distinto de .open (usado solo en movil para el off-canvas) para que ambos
+   mecanismos no se pisen entre si. */
+@media (min-width: 769px) {
+    .admin-sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+
+    .admin-main.sidebar-collapsed {
+        margin-left: 0;
+    }
 }
 
 /* ============================================
