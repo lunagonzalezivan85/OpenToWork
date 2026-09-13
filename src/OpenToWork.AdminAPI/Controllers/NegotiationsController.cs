@@ -48,4 +48,20 @@ public class NegotiationsController : AdminControllerBase
         var result = await _negotiationService.GetByVacancyAsync(vacancyId);
         return Ok(result);
     }
+
+    /// <summary>Registra la fecha de incorporacion del candidato ganador (paso 17). Solo permitido
+    /// en una negociacion cerrada; habilita el calculo de garantia (paso 19).</summary>
+    [HttpPut("{id}/incorporation")]
+    public async Task<IActionResult> SetIncorporationDate(Guid id, [FromBody] SetIncorporationDateDto dto)
+    {
+        try
+        {
+            var result = await _negotiationService.SetIncorporationDateAsync(id, dto.IncorporationDate, AdminId);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

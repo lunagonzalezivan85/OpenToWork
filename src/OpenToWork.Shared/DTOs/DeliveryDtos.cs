@@ -26,6 +26,15 @@ public class DeliveryDto
     public int OverallScore { get; set; }
     public int ProfileCompletionPercentage { get; set; }
     public bool IsVerifiedTD { get; set; }
+
+    public DateTime? IncorporationDate { get; set; }
+
+    /// <summary>IncorporationDate + WarrantyDays del contrato de la vacante. Null si falta la
+    /// fecha de incorporacion o el contrato no define garantia.</summary>
+    public DateTime? WarrantyEndsAt { get; set; }
+
+    /// <summary>WarrantyStatus (Activa/PorVencer/Vencida), o null si WarrantyEndsAt es null.</summary>
+    public int? WarrantyStatus { get; set; }
 }
 
 public class VacancyApplicantSummaryDto

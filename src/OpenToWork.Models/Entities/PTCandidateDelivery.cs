@@ -48,4 +48,9 @@ public class PTCandidateDelivery : BaseEntity
     public DateTime? ViewedAt { get; set; }
 
     public DateTime? RespondedAt { get; set; }
+
+    /// <summary>Fecha en que el candidato inicio funciones en la empresa (paso 17 del flujo
+    /// comercial). Solo tiene sentido cuando Status = Hired. La usa el calculo de garantia
+    /// (WarrantyDays del contrato de la vacante + esta fecha).</summary>
+    public DateTime? IncorporationDate { get; set; }
 }

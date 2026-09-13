@@ -594,7 +594,15 @@
     "appPending": "Pendiente",
     "appInReview": "En revisión",
     "appAccepted": "Aceptado",
-    "appRejected": "Rechazado"
+    "appRejected": "Rechazado",
+    "incorporationDate": "Fecha de incorporación",
+    "registerIncorporation": "Registrar incorporación",
+    "incorporatedOn": "Incorporado el",
+    "warrantyActive": "Garantía activa",
+    "warrantyExpiring": "Garantía por vencer",
+    "warrantyExpired": "Garantía vencida",
+    "warrantyUntil": "hasta",
+    "warrantyNoData": "Sin garantía definida en el contrato"
   },
   "companies": {
     "title": "Empresas",

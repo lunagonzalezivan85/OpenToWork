@@ -9,4 +9,5 @@ public interface IDeliveryService
     Task<List<DeliveryDto>> GetMyDeliveriesAsync(Guid companyUserId, Guid? vacancyId);
     Task<VacancyApplicantSummaryDto?> GetVacancySummaryAsync(Guid vacancyId, Guid companyUserId);
     Task<DeliveryDto?> RespondToDeliveryAsync(Guid deliveryId, int status, string? feedback, Guid companyUserId);
+    Task<DeliveryDto?> SetIncorporationDateAsync(Guid deliveryId, DateTime incorporationDate, Guid adminId);
 }

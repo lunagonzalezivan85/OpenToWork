@@ -594,7 +594,15 @@
     "appPending": "Pending",
     "appInReview": "In review",
     "appAccepted": "Accepted",
-    "appRejected": "Rejected"
+    "appRejected": "Rejected",
+    "incorporationDate": "Incorporation date",
+    "registerIncorporation": "Register incorporation",
+    "incorporatedOn": "Incorporated on",
+    "warrantyActive": "Warranty active",
+    "warrantyExpiring": "Warranty expiring soon",
+    "warrantyExpired": "Warranty expired",
+    "warrantyUntil": "until",
+    "warrantyNoData": "No warranty defined on the contract"
   },
   "companies": {
     "title": "Companies",

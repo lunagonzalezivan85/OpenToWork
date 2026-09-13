@@ -12,12 +12,14 @@ public class DeliveryService : IDeliveryService
     private readonly AppDbContext _context;
     private readonly IVerificationStatusService _verificationStatus;
     private readonly IAuditLogService _auditLog;
+    private readonly IWarrantyLookupService _warranty;
 
-    public DeliveryService(AppDbContext context, IVerificationStatusService verificationStatus, IAuditLogService auditLog)
+    public DeliveryService(AppDbContext context, IVerificationStatusService verificationStatus, IAuditLogService auditLog, IWarrantyLookupService warranty)
     {
         _context = context;
         _verificationStatus = verificationStatus;
         _auditLog = auditLog;
+        _warranty = warranty;
     }
 
     public async Task<DeliveryDto?> DeliverCandidateAsync(DeliverCandidateDto dto, Guid adminId, string? ipAddress)
@@ -160,9 +162,40 @@ public class DeliveryService : IDeliveryService
         return await MapToDtoAsync(delivery);
     }
 
+    public async Task<DeliveryDto?> SetIncorporationDateAsync(Guid deliveryId, DateTime incorporationDate, Guid adminId)
+    {
+        var delivery = await _context.PT_CandidateDeliveries
+            .FirstOrDefaultAsync(d => d.Id == deliveryId && !d.IsDeleted);
+        if (delivery == null) return null;
+        if (delivery.Status != (int)DeliveryStatus.Hired)
+            throw new InvalidOperationException("Solo se puede registrar la incorporacion de una entrega en estado Contratado.");
+
+        delivery.IncorporationDate = incorporationDate;
+        delivery.UpdatedAt = DateTime.UtcNow;
+        delivery.UpdatedBy = adminId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(adminId, "SetDeliveryIncorporationDate", "PTCandidateDelivery", delivery.Id,
+            $"{{\"incorporationDate\":\"{incorporationDate:yyyy-MM-dd}\"}}", null);
+
+        return await GetDeliveryDtoAsync(deliveryId);
+    }
+
+    private async Task<DeliveryDto?> GetDeliveryDtoAsync(Guid deliveryId)
+    {
+        var delivery = await _context.PT_CandidateDeliveries
+            .Include(d => d.Candidate)
+            .Include(d => d.Vacancy)
+            .Include(d => d.Company)
+            .FirstOrDefaultAsync(d => d.Id == deliveryId && !d.IsDeleted);
+        return delivery == null ? null : await MapToDtoAsync(delivery);
+    }
+
     private async Task<DeliveryDto> MapToDtoAsync(PTCandidateDelivery d)
     {
         var verification = await _verificationStatus.GetVerificationStatusAsync(d.PT_CandidateId);
+        var warrantyDays = await _warranty.GetWarrantyDaysForVacancyAsync(d.PT_VacancyId);
+        var (warrantyEndsAt, warrantyStatus) = WarrantyCalculator.Calculate(d.IncorporationDate, warrantyDays);
 
         return new DeliveryDto
         {
@@ -182,7 +215,10 @@ public class DeliveryService : IDeliveryService
             RespondedAt = d.RespondedAt,
             OverallScore = verification.OverallScore,
             ProfileCompletionPercentage = verification.ProfileCompletionPercentage,
-            IsVerifiedTD = verification.IsVerifiedTD
+            IsVerifiedTD = verification.IsVerifiedTD,
+            IncorporationDate = d.IncorporationDate,
+            WarrantyEndsAt = warrantyEndsAt,
+            WarrantyStatus = (int?)warrantyStatus
         };
     }
 }

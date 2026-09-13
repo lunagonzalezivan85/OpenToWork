@@ -1114,12 +1114,42 @@ else
                 <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
                     @foreach (var d in Deliveries)
                     {
-                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; background: var(--bg-soft, #F1F5F9); border-radius: 10px;">
-                            <div>
-                                <div style="font-size: 0.85rem; font-weight: 600;">@d.VacancyTitle</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted);">@d.CompanyName · @d.DeliveredAt.ToString("yyyy-MM-dd HH:mm")</div>
+                        <div style="padding: 0.6rem 0.75rem; background: var(--bg-soft, #F1F5F9); border-radius: 10px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <div style="font-size: 0.85rem; font-weight: 600;">@d.VacancyTitle</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">@d.CompanyName · @d.DeliveredAt.ToString("yyyy-MM-dd HH:mm")</div>
+                                </div>
+                                <span class="admin-result-badge @GetDeliveryBadgeClass(d.Status)">@GetDeliveryStatusLabel(d.Status)</span>
                             </div>
-                            <span class="admin-result-badge @GetDeliveryBadgeClass(d.Status)">@GetDeliveryStatusLabel(d.Status)</span>
+                            @if (d.Status == (int)DeliveryStatus.Hired)
+                            {
+                                @if (d.IncorporationDate == null)
+                                {
+                                    <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+                                        <input type="date" class="admin-select" @bind="IncorporationDateByDelivery[d.Id]" />
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@IsDeliveryBusy" @onclick="() => SetDeliveryIncorporationAsync(d.Id)">
+                                            @Lang.T("admin.negotiation.registerIncorporation")
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem; font-size:0.8rem;">
+                                        <span>@Lang.T("admin.negotiation.incorporatedOn") @d.IncorporationDate.Value.ToString("dd/MM/yyyy")</span>
+                                        @if (d.WarrantyStatus.HasValue && d.WarrantyEndsAt.HasValue)
+                                        {
+                                            <span class="admin-result-badge @WarrantyBadgeClass(d.WarrantyStatus.Value)">
+                                                @WarrantyStatusLabel(d.WarrantyStatus.Value) (@Lang.T("admin.negotiation.warrantyUntil") @d.WarrantyEndsAt.Value.ToString("dd/MM/yyyy"))
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.negotiation.warrantyNoData")</span>
+                                        }
+                                    </div>
+                                }
+                            }
                         </div>
                     }
                 </div>
@@ -1336,6 +1366,8 @@ else
     private bool ShowSmartMatches { get; set; } = true;
     private bool ShowDeliverModal { get; set; }
     private List<DeliveryDto> Deliveries { get; set; } = new();
+    private Dictionary<Guid, DateTime> IncorporationDateByDelivery { get; set; } = new();
+    private bool IsDeliveryBusy { get; set; }
     private string DeliverVacancyId { get; set; } = "";
     private string DeliverAdminNote { get; set; } = "";
     private string? DeliverError { get; set; }
@@ -1392,6 +1424,9 @@ else
             DocumentTypes = await AuthApi.GetDocumentTypesAsync();
             VacancyOptions = await AuthApi.GetVacancyOptionsAsync();
             Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail.Id);
+            foreach (var d in Deliveries)
+                if (!IncorporationDateByDelivery.ContainsKey(d.Id))
+                    IncorporationDateByDelivery[d.Id] = DateTime.Today;
             SelectedVacancyId = Detail.VacancyId;
             if (Preferences != null)
             {
@@ -1709,6 +1744,33 @@ else
         ShowDeliverModal = false;
         await LoadDetail();
     }
+
+    private async Task SetDeliveryIncorporationAsync(Guid deliveryId)
+    {
+        if (IsDeliveryBusy) return;
+        if (!IncorporationDateByDelivery.TryGetValue(deliveryId, out var date)) return;
+
+        IsDeliveryBusy = true;
+        await AuthApi.SetDeliveryIncorporationDateAsync(deliveryId, date);
+        Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail!.Id);
+        IsDeliveryBusy = false;
+    }
+
+    private string WarrantyStatusLabel(int status) => (WarrantyStatus)status switch
+    {
+        WarrantyStatus.Activa => Lang.T("admin.negotiation.warrantyActive"),
+        WarrantyStatus.PorVencer => Lang.T("admin.negotiation.warrantyExpiring"),
+        WarrantyStatus.Vencida => Lang.T("admin.negotiation.warrantyExpired"),
+        _ => status.ToString()
+    };
+
+    private string WarrantyBadgeClass(int status) => (WarrantyStatus)status switch
+    {
+        WarrantyStatus.Activa => "admin-result-badge--success",
+        WarrantyStatus.PorVencer => "admin-result-badge--warning",
+        WarrantyStatus.Vencida => "admin-result-badge--danger",
+        _ => "admin-result-badge--muted"
+    };
 
     private static string GetDeliveryStatusLabel(int status) => status switch
     {

@@ -20,6 +20,15 @@ public class NegotiationDto
     public Guid? WinningApplicationId { get; set; }
     public string? Notes { get; set; }
     public List<NegotiationCandidateDto> Candidates { get; set; } = new();
+
+    public DateTime? IncorporationDate { get; set; }
+
+    /// <summary>IncorporationDate + WarrantyDays del contrato de la vacante. Null si falta la
+    /// fecha de incorporacion o el contrato no define garantia.</summary>
+    public DateTime? WarrantyEndsAt { get; set; }
+
+    /// <summary>WarrantyStatus (Activa/PorVencer/Vencida), o null si WarrantyEndsAt es null.</summary>
+    public int? WarrantyStatus { get; set; }
 }
 
 public class CreateNegotiationDto
@@ -42,4 +51,9 @@ public class UpdateNegotiationStatusDto
 public class CloseNegotiationDto
 {
     public Guid WinningApplicationId { get; set; }
+}
+
+public class SetIncorporationDateDto
+{
+    public DateTime IncorporationDate { get; set; }
 }

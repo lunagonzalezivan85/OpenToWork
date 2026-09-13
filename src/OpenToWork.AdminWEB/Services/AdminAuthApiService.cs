@@ -758,6 +758,14 @@ public class AdminAuthApiService
         return await _httpClient.GetFromJsonAsync<List<DeliveryDto>>($"api/admin/recruitment-deliveries/recruitment/{recruitmentId}") ?? new();
     }
 
+    public async Task<DeliveryDto?> SetDeliveryIncorporationDateAsync(Guid deliveryId, DateTime incorporationDate)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment-deliveries/{deliveryId}/incorporation", new SetIncorporationDateDto { IncorporationDate = incorporationDate });
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<DeliveryDto>();
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");
@@ -946,6 +954,14 @@ public class AdminAuthApiService
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.PutAsJsonAsync($"api/admin/negotiations/{id}/status", new UpdateNegotiationStatusDto { Status = status });
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<NegotiationDto>();
+    }
+
+    public async Task<NegotiationDto?> SetNegotiationIncorporationDateAsync(Guid negotiationId, DateTime incorporationDate)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/negotiations/{negotiationId}/incorporation", new SetIncorporationDateDto { IncorporationDate = incorporationDate });
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<NegotiationDto>();
     }

@@ -34,5 +34,10 @@ public class PTNegotiation : BaseEntity
 
     public string? Notes { get; set; }
 
+    /// <summary>Fecha en que el candidato ganador inicio funciones en la empresa (paso 17 del
+    /// flujo comercial). Solo tiene sentido cuando Status = Cerrada. La usa el calculo de
+    /// garantia (WarrantyDays del contrato + esta fecha).</summary>
+    public DateTime? IncorporationDate { get; set; }
+
     public virtual ICollection<PTNegotiationCandidate> Candidates { get; set; } = new List<PTNegotiationCandidate>();
 }

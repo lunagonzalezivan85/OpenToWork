@@ -11,11 +11,13 @@ public class NegotiationService : INegotiationService
 {
     private readonly AppDbContext _context;
     private readonly IAuditLogService _auditLog;
+    private readonly IWarrantyLookupService _warranty;
 
-    public NegotiationService(AppDbContext context, IAuditLogService auditLog)
+    public NegotiationService(AppDbContext context, IAuditLogService auditLog, IWarrantyLookupService warranty)
     {
         _context = context;
         _auditLog = auditLog;
+        _warranty = warranty;
     }
 
     public async Task<NegotiationDto?> CreateAsync(CreateNegotiationDto dto, Guid staffId)
@@ -144,6 +146,24 @@ public class NegotiationService : INegotiationService
         return await ToDtoAsync(id);
     }
 
+    public async Task<NegotiationDto?> SetIncorporationDateAsync(Guid id, DateTime incorporationDate, Guid staffId)
+    {
+        var negotiation = await _context.PT_Negotiations.FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
+        if (negotiation == null) return null;
+        if (negotiation.Status != (int)NegotiationStatus.Cerrada)
+            throw new InvalidOperationException("Solo se puede registrar la incorporacion de una negociacion cerrada.");
+
+        negotiation.IncorporationDate = incorporationDate;
+        negotiation.UpdatedAt = DateTime.UtcNow;
+        negotiation.UpdatedBy = staffId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(staffId, "SetNegotiationIncorporationDate", "PT_Negotiations", negotiation.Id,
+            $"{{\"incorporationDate\":\"{incorporationDate:yyyy-MM-dd}\"}}", null);
+
+        return await ToDtoAsync(id);
+    }
+
     public async Task<List<NegotiationDto>> GetByVacancyAsync(Guid vacancyId)
     {
         var ids = await _context.PT_Negotiations
@@ -169,6 +189,9 @@ public class NegotiationService : INegotiationService
             .FirstOrDefaultAsync(n => n.Id == negotiationId);
         if (negotiation == null) return null;
 
+        var warrantyDays = await _warranty.GetWarrantyDaysForVacancyAsync(negotiation.PT_VacancyId);
+        var (warrantyEndsAt, warrantyStatus) = WarrantyCalculator.Calculate(negotiation.IncorporationDate, warrantyDays);
+
         return new NegotiationDto
         {
             Id = negotiation.Id,
@@ -180,6 +203,9 @@ public class NegotiationService : INegotiationService
             ClosedAt = negotiation.ClosedAt,
             WinningApplicationId = negotiation.WinningApplicationId,
             Notes = negotiation.Notes,
+            IncorporationDate = negotiation.IncorporationDate,
+            WarrantyEndsAt = warrantyEndsAt,
+            WarrantyStatus = (int?)warrantyStatus,
             Candidates = negotiation.Candidates
                 .Where(c => !c.IsDeleted)
                 .Select(c => new NegotiationCandidateDto
