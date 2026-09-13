@@ -47,26 +47,23 @@ else
     <div class="admin-pipeline-filters">
         <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder='@Lang.T("admin.companies.searchPlaceholder")' class="admin-pipeline-search" />
 
-        <span class="admin-pipeline-filter-label">@Lang.T("admin.companies.filterResponsible")</span>
-        <select class="ot-input-field" @bind="SelectedAssignedToRaw" @bind:after="OnResponsibleChanged">
-            <option value="">@Lang.T("admin.companies.filterAllResponsibles")</option>
+        <select class="ot-input-field" @bind="SelectedAssignedToRaw" @bind:after="OnResponsibleChanged" title="@Lang.T("admin.companies.filterResponsible")">
+            <option value="">@Lang.T("admin.companies.filterResponsible")</option>
             @foreach (var u in AssignableUsers)
             {
                 <option value="@u.Id">@u.Email</option>
             }
         </select>
 
-        <span class="admin-pipeline-filter-label">@Lang.T("admin.companies.filterSector")</span>
-        <select class="ot-input-field" @bind="SelectedIndustry">
-            <option value="">@Lang.T("admin.companies.filterAllSectors")</option>
+        <select class="ot-input-field" @bind="SelectedIndustry" title="@Lang.T("admin.companies.filterSector")">
+            <option value="">@Lang.T("admin.companies.filterSector")</option>
             @foreach (var sector in AvailableSectors)
             {
                 <option value="@sector">@sector</option>
             }
         </select>
 
-        <span class="admin-pipeline-filter-label">@Lang.T("admin.companies.filterDateRange")</span>
-        <select class="ot-input-field" @bind="SelectedDateRange">
+        <select class="ot-input-field" @bind="SelectedDateRange" title="@Lang.T("admin.companies.filterDateRange")">
             <option value="all">@Lang.T("admin.companies.filterDateAll")</option>
             <option value="7">@Lang.T("admin.companies.filterDateLast7")</option>
             <option value="30">@Lang.T("admin.companies.filterDateLast30")</option>
