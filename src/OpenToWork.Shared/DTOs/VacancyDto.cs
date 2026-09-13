@@ -23,6 +23,11 @@ public class VacancyDto
     public int Status { get; set; }
     public DateTime? PublishedAt { get; set; }
     public int ViewsCount { get; set; }
+
+    // Tipo de puesto (catalogo de precios B2B) - null si la vacante no fue mapeada todavia.
+    public Guid? JobTypeId { get; set; }
+    public string? JobTypeName { get; set; }
+    public string? JobLevelName { get; set; }
 }
 
 public class CreateVacancyDto

@@ -35,7 +35,7 @@ public class AdminVacancyContractDto
     // 6. Garantia
     public int? WarrantyDays { get; set; }
 
-    // 7. Condiciones economicas
+    // 7. Condiciones economicas. FeeAmount es la suma de FinalPrice de cada linea (Vacancies) - no se edita directo.
     public decimal? FeeAmount { get; set; }
     public string Currency { get; set; } = "EUR";
     public int FeeApplicationType { get; set; }
@@ -52,19 +52,33 @@ public class AdminVacancyContractDto
 
 public class AdminSaveVacancyContractDto
 {
-    public List<Guid> VacancyIds { get; set; } = new();
+    /// <summary>Una linea por vacante, cada una con su propio precio/promo (ver ContractVacancyLineDto).</summary>
+    public List<ContractVacancyLineDto> VacancyLines { get; set; } = new();
     public List<string> ScopeServices { get; set; } = new();
     public int? TargetCandidates { get; set; }
     public int JobTypeCategory { get; set; }
     public int? TargetCoverageDays { get; set; }
     public int? WarrantyDays { get; set; }
-    public decimal? FeeAmount { get; set; }
     public string? Currency { get; set; }
     public int FeeApplicationType { get; set; }
     public decimal PaymentOpeningPct { get; set; } = 30m;
     public decimal PaymentValidationPct { get; set; } = 50m;
     public decimal PaymentConsolidationPct { get; set; } = 20m;
     public string? FeeExceptions { get; set; }
+}
+
+/// <summary>Una vacante dentro del contrato, con su precio (automatico por lista + promo, o manual).</summary>
+public class ContractVacancyLineDto
+{
+    public Guid VacancyId { get; set; }
+
+    /// <summary>Codigo promocional a aplicar sobre el precio de lista. Ignorado si ManualPrice tiene valor.</summary>
+    public string? PromoCode { get; set; }
+
+    /// <summary>Si se informa, reemplaza el precio de lista por completo (negociacion puntual). Requiere OverrideReason.</summary>
+    public decimal? ManualPrice { get; set; }
+
+    public string? OverrideReason { get; set; }
 }
 
 public class AdminContractDecisionDto
@@ -75,7 +89,7 @@ public class AdminContractDecisionDto
     public string? Reason { get; set; }
 }
 
-/// <summary>Vacante incluida en un contrato.</summary>
+/// <summary>Vacante incluida en un contrato, con el desglose de precio de esa linea.</summary>
 public class ContractVacancyItemDto
 {
     public Guid VacancyId { get; set; }
@@ -90,4 +104,15 @@ public class ContractVacancyItemDto
     public decimal? SalaryMax { get; set; }
     public int? RequiredApplicants { get; set; }
     public int? YearsExperience { get; set; }
+
+    // Desglose de precio de esta linea (snapshot al generar el contrato)
+    public Guid? JobTypeId { get; set; }
+    public string? JobTypeName { get; set; }
+    public string? JobLevelName { get; set; }
+    public decimal? BasePrice { get; set; }
+    public string? PromoCode { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal? FinalPrice { get; set; }
+    public bool IsManualOverride { get; set; }
+    public string? OverrideReason { get; set; }
 }

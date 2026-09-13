@@ -219,7 +219,18 @@ else
                     </div>
                     <div class="ot-input-group">
                         <label class="ot-input-label">@Lang.T("admin.vacancies.category")</label>
-                        <input type="text" @bind="WizardModel.Category" class="admin-modal-input" maxlength="100" placeholder="@Lang.T("admin.vacancies.categoryPlaceholder")" />
+                        <select @bind="WizardModel.JobTypeId" class="admin-modal-input">
+                            <option value="">@Lang.T("admin.contract.jobTypeUnmapped")</option>
+                            @foreach (var level in JobTypes.GroupBy(t => t.JobLevelName))
+                            {
+                                <optgroup label="@level.Key">
+                                    @foreach (var t in level)
+                                    {
+                                        <option value="@t.Id">@t.Name</option>
+                                    }
+                                </optgroup>
+                            }
+                        </select>
                     </div>
                 }
                 else if (WizardStep == 2)
@@ -304,9 +315,9 @@ else
                     <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem;">@Lang.T("admin.vacancies.reviewHint")</p>
                     <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.company")</span><strong>@(WizardCompanies.FirstOrDefault(c => c.Id == WizardModel.CompanyId)?.Name ?? "-")</strong></div>
                     <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.jobTitle")</span><strong>@WizardModel.Title</strong></div>
-                    @if (!string.IsNullOrEmpty(WizardModel.Category))
+                    @if (WizardModel.JobTypeId.HasValue)
                     {
-                        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.category")</span><strong>@WizardModel.Category</strong></div>
+                        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.vacancies.category")</span><strong>@(JobTypes.FirstOrDefault(t => t.Id == WizardModel.JobTypeId)?.Name ?? "-")</strong></div>
                     }
                     @if (!string.IsNullOrEmpty(WizardModel.Location))
                     {
@@ -554,6 +565,8 @@ else
         IsShortlistBusy = false;
     }
 
+    private List<JobTypeDto> JobTypes { get; set; } = new();
+
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
@@ -565,6 +578,7 @@ else
             CompanyFilterName = company?.Name;
         }
 
+        JobTypes = await AuthApi.GetJobTypesAsync();
         await LoadVacancies();
     }
 

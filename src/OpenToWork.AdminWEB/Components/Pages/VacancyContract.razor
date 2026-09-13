@@ -85,11 +85,57 @@ else if (IsEditing)
 
     <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
         <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.economicsTitle")</h3>
-        <div class="admin-recruitment-grid">
-            <div class="ot-input-group">
-                <label class="ot-input-label">@Lang.T("admin.contract.feeAmount")</label>
-                <input type="number" min="0" step="0.01" @bind="FormFeeAmount" class="admin-modal-input" />
+
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.jobTypeVacancy")</span>
+            <strong>@(Vacancy?.JobTypeName ?? Lang.T("admin.contract.jobTypeUnmapped")) @(Vacancy?.JobLevelName != null ? $"({Vacancy.JobLevelName})" : "")</strong>
+        </div>
+
+        @if (!ManualOverride)
+        {
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.listPrice")</span>
+                <strong>@(ListPrice.HasValue ? FormatEur(ListPrice) : Lang.T("admin.contract.noListPrice"))</strong>
             </div>
+
+            <div class="admin-recruitment-grid" style="margin-top: 0.5rem; align-items: end;">
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.contract.promoCode")</label>
+                    <input type="text" @bind="PromoCodeInput" class="admin-modal-input" placeholder="ALEJO26" />
+                </div>
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ApplyPromoCodeAsync" disabled="@IsValidatingPromo">@Lang.T("admin.contract.applyPromo")</button>
+            </div>
+            @if (PromoError != null)
+            {
+                <p style="color: var(--danger); font-size: 0.8rem;">@PromoError</p>
+            }
+            @if (AppliedPromo != null)
+            {
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.discount")</span>
+                    <strong style="color: var(--success);">-@FormatEur(AppliedPromo.DiscountAmount) (@AppliedPromo.Code)</strong>
+                </div>
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.finalPrice")</span>
+                    <strong>@FormatEur(AppliedPromo.FinalAmount)</strong>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="admin-recruitment-grid">
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.contract.manualPrice")</label>
+                    <input type="number" min="0" step="0.01" @bind="FormManualPrice" class="admin-modal-input" />
+                </div>
+            </div>
+            <div class="ot-input-group" style="margin-top: 0.5rem;">
+                <label class="ot-input-label">@Lang.T("admin.contract.overrideReason")</label>
+                <input type="text" @bind="FormOverrideReason" class="admin-modal-input" placeholder="@Lang.T("admin.contract.overrideReasonPlaceholder")" />
+            </div>
+        }
+        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; margin-top: 0.75rem; cursor: pointer;">
+            <input type="checkbox" checked="@ManualOverride" @onchange="e => OnManualOverrideChanged((bool)(e.Value ?? false))" />
+            @Lang.T("admin.contract.manualOverrideToggle")
+        </label>
+
+        <div class="admin-recruitment-grid" style="margin-top: 1rem;">
             <div class="ot-input-group">
                 <label class="ot-input-label">@Lang.T("admin.contract.feeApplication")</label>
                 <select @bind="FormFeeApplicationType" class="admin-modal-input">
@@ -165,6 +211,20 @@ else if (Contract != null)
 
     <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
         <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.economicsTitle")</h3>
+        @{ var line = Contract.Vacancies.FirstOrDefault(); }
+        @if (line != null && !line.IsManualOverride)
+        {
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.listPrice")</span><strong>@FormatEur(line.BasePrice)</strong></div>
+            @if (!string.IsNullOrEmpty(line.PromoCode))
+            {
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.discount")</span><strong style="color: var(--success);">-@FormatEur(line.DiscountAmount) (@line.PromoCode)</strong></div>
+            }
+        }
+        else if (line is { IsManualOverride: true })
+        {
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.manualPrice")</span><strong>@FormatEur(line.BasePrice)</strong></div>
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.overrideReason")</span><strong>@line.OverrideReason</strong></div>
+        }
         <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.feeAmount")</span><strong>@FormatEur(Contract.FeeAmount)</strong></div>
         <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.feeApplication")</span><strong>@GetFeeApplicationLabel(Contract.FeeApplicationType)</strong></div>
         <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.paymentDistribution")</span><strong>@FormatPct(Contract.PaymentOpeningPct) @Lang.T("admin.contract.paymentOpening") / @FormatPct(Contract.PaymentValidationPct) @Lang.T("admin.contract.paymentValidation") / @FormatPct(Contract.PaymentConsolidationPct) @Lang.T("admin.contract.paymentConsolidation")</strong></div>
@@ -227,7 +287,6 @@ else if (Contract != null)
     private int FormJobType { get; set; }
     private int? FormCoverageDays { get; set; }
     private int? FormWarrantyDays { get; set; }
-    private decimal? FormFeeAmount { get; set; }
     private int FormFeeApplicationType { get; set; }
     private decimal FormOpeningPct { get; set; } = 30m;
     private decimal FormValidationPct { get; set; } = 50m;
@@ -236,6 +295,16 @@ else if (Contract != null)
     private string? FormError { get; set; }
     private bool FormPaymentSumError { get; set; }
     private bool IsSaving { get; set; }
+
+    // Precio: lista + promo, o manual
+    private decimal? ListPrice { get; set; }
+    private string PromoCodeInput { get; set; } = string.Empty;
+    private string? PromoError { get; set; }
+    private PromoValidationResultDto? AppliedPromo { get; set; }
+    private bool IsValidatingPromo { get; set; }
+    private bool ManualOverride { get; set; }
+    private decimal? FormManualPrice { get; set; }
+    private string? FormOverrideReason { get; set; }
 
     // Decision
     private bool ShowRejectReason { get; set; }
@@ -264,7 +333,14 @@ else if (Contract != null)
 
         Vacancy = await AuthApi.GetVacancyDetailAsync(VacancyId);
         if (Vacancy != null)
+        {
             Contract = await AuthApi.GetContractByCompanyAsync(Vacancy.CompanyId);
+            if (Vacancy.JobTypeId.HasValue)
+            {
+                var jobTypes = await AuthApi.GetJobTypesAsync();
+                ListPrice = jobTypes.FirstOrDefault(t => t.Id == Vacancy.JobTypeId.Value)?.CurrentPrice;
+            }
+        }
         LoadForm();
         IsLoading = false;
     }
@@ -283,12 +359,52 @@ else if (Contract != null)
         FormJobType = Contract.JobTypeCategory;
         FormCoverageDays = Contract.TargetCoverageDays;
         FormWarrantyDays = Contract.WarrantyDays;
-        FormFeeAmount = Contract.FeeAmount;
         FormFeeApplicationType = Contract.FeeApplicationType;
         FormOpeningPct = Contract.PaymentOpeningPct;
         FormValidationPct = Contract.PaymentValidationPct;
         FormConsolidationPct = Contract.PaymentConsolidationPct;
         FormFeeExceptions = Contract.FeeExceptions;
+
+        var line = Contract.Vacancies.FirstOrDefault();
+        if (line != null)
+        {
+            ManualOverride = line.IsManualOverride;
+            FormManualPrice = line.IsManualOverride ? line.FinalPrice : null;
+            FormOverrideReason = line.OverrideReason;
+            if (!line.IsManualOverride && !string.IsNullOrEmpty(line.PromoCode))
+            {
+                AppliedPromo = new PromoValidationResultDto
+                {
+                    IsValid = true,
+                    Code = line.PromoCode,
+                    DiscountAmount = line.DiscountAmount,
+                    FinalAmount = line.FinalPrice ?? 0
+                };
+                PromoCodeInput = line.PromoCode;
+            }
+        }
+    }
+
+    private void OnManualOverrideChanged(bool value)
+    {
+        ManualOverride = value;
+        if (value) FormManualPrice ??= ListPrice ?? AppliedPromo?.FinalAmount;
+    }
+
+    private async Task ApplyPromoCodeAsync()
+    {
+        PromoError = null;
+        AppliedPromo = null;
+        if (string.IsNullOrWhiteSpace(PromoCodeInput)) return;
+
+        IsValidatingPromo = true;
+        var result = await AuthApi.ValidatePromoCodeAsync(PromoCodeInput.Trim(), VacancyId);
+        IsValidatingPromo = false;
+
+        if (result == null || !result.IsValid)
+            PromoError = result?.ErrorMessage ?? Lang.T("admin.contract.promoValidateError");
+        else
+            AppliedPromo = result;
     }
 
     private void ToggleScope(string code, bool selected)
@@ -327,13 +443,21 @@ else if (Contract != null)
         IsSaving = true;
         var dto = new AdminSaveVacancyContractDto
         {
-            VacancyIds = new List<Guid> { VacancyId },
+            VacancyLines = new List<ContractVacancyLineDto>
+            {
+                new()
+                {
+                    VacancyId = VacancyId,
+                    PromoCode = !ManualOverride && AppliedPromo is { IsValid: true } ? AppliedPromo.Code : null,
+                    ManualPrice = ManualOverride ? FormManualPrice : null,
+                    OverrideReason = ManualOverride ? FormOverrideReason : null
+                }
+            },
             ScopeServices = FormScope.ToList(),
             TargetCandidates = FormTargetCandidates,
             JobTypeCategory = FormJobType,
             TargetCoverageDays = FormCoverageDays,
             WarrantyDays = FormWarrantyDays,
-            FeeAmount = FormFeeAmount,
             Currency = "EUR",
             FeeApplicationType = FormFeeApplicationType,
             PaymentOpeningPct = FormOpeningPct,
@@ -341,20 +465,17 @@ else if (Contract != null)
             PaymentConsolidationPct = FormConsolidationPct,
             FeeExceptions = FormFeeExceptions
         };
-        AdminVacancyContractDto? result;
-        if (Contract != null)
-            result = await AuthApi.SaveContractAsync(Contract.Id, dto);
-        else if (Vacancy != null)
-            result = await AuthApi.CreateContractAsync(Vacancy.CompanyId, dto);
-        else
-            result = null;
-        if (result == null)
+        var result = Contract != null
+            ? await AuthApi.SaveContractAsync(Contract.Id, dto)
+            : await AuthApi.CreateContractAsync(Vacancy!.CompanyId, dto);
+
+        if (result.Contract == null)
         {
-            FormError = Lang.T("admin.contract.saveError");
+            FormError = result.Error ?? Lang.T("admin.contract.saveError");
         }
         else
         {
-            Contract = result;
+            Contract = result.Contract;
             LoadForm();
         }
         IsSaving = false;

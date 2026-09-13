@@ -54,6 +54,10 @@ public class AdminCreateVacancyDto
     public int ContractType { get; set; }
     public int WorkMode { get; set; }
     public string? Category { get; set; }
+
+    /// <summary>Tipo de puesto (catalogo de precios). Si se informa, define tambien Category
+    /// (nombre del tipo) del lado del servidor para mantenerlos consistentes.</summary>
+    public Guid? JobTypeId { get; set; }
     public int? ExperienceLevel { get; set; }
     public int? EnglishLevel { get; set; }
     public int? RequiredApplicants { get; set; }

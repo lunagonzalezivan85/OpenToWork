@@ -74,10 +74,48 @@ public class AdminVacancyService : IAdminVacancyService
             .ToListAsync();
     }
 
+    /// <summary>Codigo de PT_Vacancy.Category (texto libre historico) -> nombre del PTJobType
+    /// sembrado (docs/seed-job-pricing.sql). Puente temporal mientras el formulario de
+    /// vacante no seleccione el tipo de puesto directamente por Id.</summary>
+    private static readonly Dictionary<string, string> CategoryToJobTypeName = new()
+    {
+        ["Camarero"] = "Camarero/a",
+        ["AyudanteCamarero"] = "Ayudante de camarero/a",
+        ["AyudanteCocina"] = "Ayudante de cocina",
+        ["AyudanteBarra"] = "Ayudante de barra",
+        ["Cocinero"] = "Cocinero/a",
+        ["Barman"] = "Barman / Bartender",
+        ["RecepcionistaHotel"] = "Recepcionista de hotel",
+        ["JefeSala"] = "Jefe/a de sala",
+        ["ResponsableLocal"] = "Responsable de local"
+    };
+
+    private async Task<Guid?> ResolveJobTypeIdAsync(string? category)
+    {
+        if (string.IsNullOrEmpty(category) || !CategoryToJobTypeName.TryGetValue(category, out var name))
+            return null;
+        return await _context.PT_JobTypes
+            .Where(t => t.Name == name && !t.IsDeleted)
+            .Select(t => (Guid?)t.Id)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<AdminVacancyDto?> CreateAsync(AdminCreateVacancyDto dto, Guid adminId, string? ipAddress)
     {
         var companyExists = await _context.PT_Companies.AnyAsync(c => c.Id == dto.CompanyId && !c.IsDeleted);
         if (!companyExists) return null;
+
+        var category = dto.Category;
+        var jobTypeId = dto.JobTypeId;
+        if (jobTypeId.HasValue)
+        {
+            var jobType = await _context.PT_JobTypes.FirstOrDefaultAsync(t => t.Id == jobTypeId.Value && !t.IsDeleted);
+            if (jobType != null) category = jobType.Name;
+        }
+        else
+        {
+            jobTypeId = await ResolveJobTypeIdAsync(dto.Category);
+        }
 
         var vacancy = new PTVacancy
         {
@@ -91,7 +129,8 @@ public class AdminVacancyService : IAdminVacancyService
             Location = dto.Location,
             ContractType = dto.ContractType,
             WorkMode = dto.WorkMode,
-            Category = dto.Category,
+            Category = category,
+            PT_JobTypeId = jobTypeId,
             ExperienceLevel = dto.ExperienceLevel,
             EnglishLevel = dto.EnglishLevel,
             RequiredApplicants = dto.RequiredApplicants,
@@ -144,7 +183,10 @@ public class AdminVacancyService : IAdminVacancyService
                 YearsExperience = v.YearsExperience,
                 Status = v.Status,
                 PublishedAt = v.PublishedAt,
-                ViewsCount = v.ViewsCount
+                ViewsCount = v.ViewsCount,
+                JobTypeId = v.PT_JobTypeId,
+                JobTypeName = v.JobType != null ? v.JobType.Name : null,
+                JobLevelName = v.JobType != null ? v.JobType.JobLevel.Name : null
             })
             .FirstOrDefaultAsync();
     }

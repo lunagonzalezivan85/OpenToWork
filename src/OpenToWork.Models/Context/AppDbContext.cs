@@ -48,6 +48,11 @@ public class AppDbContext : DbContext
     public DbSet<PTCandidateDelivery> PT_CandidateDeliveries => Set<PTCandidateDelivery>();
     public DbSet<PTVacancyContract> PT_VacancyContracts => Set<PTVacancyContract>();
     public DbSet<PTContractVacancy> PT_ContractVacancies => Set<PTContractVacancy>();
+    public DbSet<PTJobLevel> PT_JobLevels => Set<PTJobLevel>();
+    public DbSet<PTJobType> PT_JobTypes => Set<PTJobType>();
+    public DbSet<PTJobTypePrice> PT_JobTypePrices => Set<PTJobTypePrice>();
+    public DbSet<PTPromoCode> PT_PromoCodes => Set<PTPromoCode>();
+    public DbSet<PTPromoCodeRedemption> PT_PromoCodeRedemptions => Set<PTPromoCodeRedemption>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -167,6 +172,10 @@ public class AppDbContext : DbContext
             e.Property(v => v.Status).HasDefaultValue(0);
             e.Property(v => v.WorkMode).HasDefaultValue(0);
             e.Property(v => v.ViewsCount).HasDefaultValue(0);
+            e.HasOne(v => v.JobType)
+                .WithMany()
+                .HasForeignKey(v => v.PT_JobTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<PTApplication>(e =>
@@ -196,6 +205,74 @@ public class AppDbContext : DbContext
             e.ToTable("PT_ContractVacancies");
             e.HasIndex(cv => new { cv.PT_ContractId, cv.IsDeleted });
             e.HasIndex(cv => new { cv.PT_VacancyId, cv.IsDeleted }).IsUnique();
+            e.HasOne(cv => cv.JobType)
+                .WithMany()
+                .HasForeignKey(cv => cv.PT_JobTypeId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(cv => cv.PromoCode)
+                .WithMany()
+                .HasForeignKey(cv => cv.PT_PromoCodeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PTJobLevel>(e =>
+        {
+            e.ToTable("PT_JobLevels");
+            e.HasIndex(l => new { l.Name, l.IsDeleted });
+            e.Property(l => l.IsActive).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<PTJobType>(e =>
+        {
+            e.ToTable("PT_JobTypes");
+            e.HasIndex(t => new { t.PT_JobLevelId, t.IsDeleted });
+            e.HasIndex(t => new { t.Name, t.IsDeleted });
+            e.Property(t => t.IsActive).HasDefaultValue(true);
+            e.HasOne(t => t.JobLevel)
+                .WithMany(l => l.JobTypes)
+                .HasForeignKey(t => t.PT_JobLevelId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PTJobTypePrice>(e =>
+        {
+            e.ToTable("PT_JobTypePrices");
+            e.HasIndex(p => new { p.PT_JobTypeId, p.EffectiveTo, p.IsDeleted });
+            e.Property(p => p.Currency).HasDefaultValue("EUR");
+            e.HasOne(p => p.JobType)
+                .WithMany(t => t.Prices)
+                .HasForeignKey(p => p.PT_JobTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PTPromoCode>(e =>
+        {
+            e.ToTable("PT_PromoCodes");
+            e.HasIndex(p => new { p.Code, p.IsDeleted }).IsUnique();
+            e.Property(p => p.IsActive).HasDefaultValue(true);
+            e.Property(p => p.UsesCount).HasDefaultValue(0);
+            e.HasOne(p => p.JobLevel)
+                .WithMany()
+                .HasForeignKey(p => p.PT_JobLevelId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(p => p.JobType)
+                .WithMany()
+                .HasForeignKey(p => p.PT_JobTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PTPromoCodeRedemption>(e =>
+        {
+            e.ToTable("PT_PromoCodeRedemptions");
+            e.HasIndex(r => new { r.PT_PromoCodeId, r.IsDeleted });
+            e.HasOne(r => r.PromoCode)
+                .WithMany(p => p.Redemptions)
+                .HasForeignKey(r => r.PT_PromoCodeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(r => r.ContractVacancy)
+                .WithMany()
+                .HasForeignKey(r => r.PT_ContractVacancyId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<PTCandidateExperience>(e =>

@@ -1,0 +1,260 @@
+@page "/pricing/job-types"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.pricing.typesTitle")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.pricing.typesTitle")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.pricing.typesSubtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/pricing/job-levels")'>@Lang.T("admin.pricing.viewJobLevels")</button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/pricing/promo-codes")'>@Lang.T("admin.pricing.viewPromoCodes")</button>
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenCreateModal">@Lang.T("admin.pricing.newJobType")</button>
+    </div>
+</div>
+
+@if (Error != null)
+{
+    <p style="color: var(--danger); font-size: 0.85rem;">@Error</p>
+}
+
+@if (Types == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Types.Count == 0)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-icon">&#9632;</div>
+        <div class="admin-empty-text">@Lang.T("admin.pricing.typesEmpty")</div>
+    </div>
+}
+else
+{
+    <table class="ot-table">
+        <thead>
+            <tr>
+                <th>@Lang.T("admin.pricing.name")</th>
+                <th>@Lang.T("admin.pricing.level")</th>
+                <th>@Lang.T("admin.pricing.currentPrice")</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var type in Types)
+            {
+                <tr>
+                    <td>@type.Name</td>
+                    <td>@type.JobLevelName</td>
+                    <td>
+                        @if (type.CurrentPrice.HasValue)
+                        {
+                            <span>@FormatEur(type.CurrentPrice, type.Currency)</span>
+                        }
+                        else
+                        {
+                            <span style="color: var(--text-muted);">@Lang.T("admin.pricing.noPrice")</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="admin-table-actions">
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => OpenPriceModal(type)">@Lang.T("admin.pricing.setPrice")</button>
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => OpenEditModal(type)">@Lang.T("admin.common.edit")</button>
+                            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Delete(type.Id)">@Lang.T("admin.common.delete")</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (ShowEditModal)
+{
+    <div class="admin-modal-overlay" @onclick="CloseEditModal">
+        <div class="admin-modal" @onclick:stopPropagation="true">
+            <h3 class="admin-modal-title">@(EditingId == null ? Lang.T("admin.pricing.newJobType") : Lang.T("admin.common.edit"))</h3>
+            <div class="admin-modal-body">
+                @if (ModalError != null)
+                {
+                    <div class="alert alert-error">@ModalError</div>
+                }
+                <label>@Lang.T("admin.pricing.name")</label>
+                <input class="admin-modal-input" type="text" @bind="Form.Name" placeholder="@Lang.T("admin.pricing.typeNamePlaceholder")" />
+                <label>@Lang.T("admin.pricing.level")</label>
+                <select class="admin-modal-select" @bind="Form.PT_JobLevelId">
+                    <option value="">-</option>
+                    @foreach (var level in Levels)
+                    {
+                        <option value="@level.Id">@level.Name</option>
+                    }
+                </select>
+                <label>@Lang.T("admin.pricing.sortOrder")</label>
+                <input class="admin-modal-input" type="number" @bind="Form.SortOrder" />
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseEditModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SaveJobType">@Lang.T("admin.common.save")</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowPriceModal && PriceTarget != null)
+{
+    <div class="admin-modal-overlay" @onclick="ClosePriceModal">
+        <div class="admin-modal" @onclick:stopPropagation="true">
+            <h3 class="admin-modal-title">@Lang.T("admin.pricing.setPrice") - @PriceTarget.Name</h3>
+            <div class="admin-modal-body">
+                @if (ModalError != null)
+                {
+                    <div class="alert alert-error">@ModalError</div>
+                }
+                <label>@Lang.T("admin.pricing.basePrice")</label>
+                <input class="admin-modal-input" type="number" min="0" step="0.01" @bind="PriceForm.BasePrice" />
+                <label>@Lang.T("admin.pricing.notes")</label>
+                <input class="admin-modal-input" type="text" @bind="PriceForm.Notes" placeholder="@Lang.T("admin.pricing.notesPlaceholder")" />
+
+                @if (PriceHistory.Count > 0)
+                {
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem;">@Lang.T("admin.pricing.history")</p>
+                    <table class="ot-table">
+                        <thead><tr><th>@Lang.T("admin.pricing.basePrice")</th><th>@Lang.T("admin.pricing.effectiveFrom")</th><th>@Lang.T("admin.pricing.effectiveTo")</th></tr></thead>
+                        <tbody>
+                            @foreach (var p in PriceHistory)
+                            {
+                                <tr>
+                                    <td>@FormatEur(p.BasePrice, p.Currency)</td>
+                                    <td>@p.EffectiveFrom.ToString("yyyy-MM-dd")</td>
+                                    <td>@(p.EffectiveTo?.ToString("yyyy-MM-dd") ?? Lang.T("admin.pricing.current"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ClosePriceModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SavePrice">@Lang.T("admin.common.save")</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<JobTypeDto>? Types;
+    private List<JobLevelDto> Levels { get; set; } = new();
+    private string? Error;
+    private string? ModalError;
+
+    private bool ShowEditModal;
+    private Guid? EditingId;
+    private SaveJobTypeDto Form { get; set; } = new();
+
+    private bool ShowPriceModal;
+    private JobTypeDto? PriceTarget;
+    private SetJobTypePriceDto PriceForm { get; set; } = new();
+    private List<JobTypePriceDto> PriceHistory { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        Levels = await AuthApi.GetJobLevelsAsync();
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        Types = await AuthApi.GetJobTypesAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        EditingId = null;
+        Form = new SaveJobTypeDto();
+        ModalError = null;
+        ShowEditModal = true;
+    }
+
+    private void OpenEditModal(JobTypeDto type)
+    {
+        EditingId = type.Id;
+        Form = new SaveJobTypeDto { Name = type.Name, PT_JobLevelId = type.PT_JobLevelId, SortOrder = type.SortOrder, IsActive = type.IsActive };
+        ModalError = null;
+        ShowEditModal = true;
+    }
+
+    private void CloseEditModal() => ShowEditModal = false;
+
+    private async Task SaveJobType()
+    {
+        ModalError = null;
+        if (string.IsNullOrWhiteSpace(Form.Name) || Form.PT_JobLevelId == Guid.Empty)
+        {
+            ModalError = Lang.T("admin.pricing.jobTypeRequired");
+            return;
+        }
+
+        var (result, error) = EditingId == null
+            ? await AuthApi.CreateJobTypeAsync(Form)
+            : await AuthApi.UpdateJobTypeAsync(EditingId.Value, Form);
+
+        if (result == null)
+        {
+            ModalError = error ?? Lang.T("admin.pricing.saveError");
+            return;
+        }
+        ShowEditModal = false;
+        await Load();
+    }
+
+    private async Task Delete(Guid id)
+    {
+        Error = null;
+        var ok = await AuthApi.DeleteJobTypeAsync(id);
+        if (!ok) Error = Lang.T("admin.pricing.saveError");
+        else await Load();
+    }
+
+    private async Task OpenPriceModal(JobTypeDto type)
+    {
+        PriceTarget = type;
+        PriceForm = new SetJobTypePriceDto { BasePrice = type.CurrentPrice ?? 0, Currency = type.Currency };
+        PriceHistory = await AuthApi.GetPriceHistoryAsync(type.Id);
+        ModalError = null;
+        ShowPriceModal = true;
+    }
+
+    private void ClosePriceModal() => ShowPriceModal = false;
+
+    private async Task SavePrice()
+    {
+        ModalError = null;
+        if (PriceTarget == null) return;
+        if (PriceForm.BasePrice < 0)
+        {
+            ModalError = Lang.T("admin.pricing.priceInvalid");
+            return;
+        }
+
+        var (result, error) = await AuthApi.SetJobTypePriceAsync(PriceTarget.Id, PriceForm);
+        if (result == null)
+        {
+            ModalError = error ?? Lang.T("admin.pricing.saveError");
+            return;
+        }
+        ShowPriceModal = false;
+        await Load();
+    }
+
+    private static string FormatEur(decimal? amount, string currency) => amount.HasValue
+        ? amount.Value.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("es-ES")) + " " + currency
+        : "-";
+}

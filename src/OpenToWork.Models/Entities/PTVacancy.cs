@@ -33,6 +33,14 @@ public class PTVacancy : BaseEntity
     [MaxLength(100)]
     public string? Category { get; set; }
 
+    /// <summary>Tipo de puesto (catalogo de precios). Nullable: vacantes antiguas o de
+    /// categorias sin mapear todavia no tienen tipo asignado y requieren precio manual
+    /// al generar el contrato.</summary>
+    public Guid? PT_JobTypeId { get; set; }
+
+    [ForeignKey("PT_JobTypeId")]
+    public virtual PTJobType? JobType { get; set; }
+
     public int? ExperienceLevel { get; set; }
 
     public int? EnglishLevel { get; set; }

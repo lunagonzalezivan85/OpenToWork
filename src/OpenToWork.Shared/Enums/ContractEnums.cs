@@ -32,3 +32,10 @@ public enum FeeApplicationType
     PerProcess = 1,
     GlobalPrice = 2
 }
+
+/// <summary>Tipo de descuento de un codigo promocional (PTPromoCode).</summary>
+public enum PromoDiscountType
+{
+    Percentage = 0,
+    FixedAmount = 1
+}

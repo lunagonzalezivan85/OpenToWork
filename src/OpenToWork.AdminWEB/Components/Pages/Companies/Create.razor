@@ -133,7 +133,18 @@ else if (WizardStep == 2)
             </div>
             <div class="admin-form-field">
                 <label>@Lang.T("admin.vacancies.category")</label>
-                <input type="text" @bind="CurrentVacancy.Category" class="admin-input" maxlength="100" placeholder="@Lang.T("admin.vacancies.categoryPlaceholder")" />
+                <select @bind="CurrentVacancy.JobTypeId" class="admin-input">
+                    <option value="">@Lang.T("admin.contract.jobTypeUnmapped")</option>
+                    @foreach (var level in JobTypes.GroupBy(t => t.JobLevelName))
+                    {
+                        <optgroup label="@level.Key">
+                            @foreach (var t in level)
+                            {
+                                <option value="@t.Id">@t.Name</option>
+                            }
+                        </optgroup>
+                    }
+                </select>
             </div>
             <div class="admin-form-field admin-form-field--full">
                 <label>@Lang.T("admin.vacancies.description")</label>
@@ -250,7 +261,7 @@ else if (WizardStep == 3)
                 var v = VacancyDtos[idx];
                 <div style="background: #F8FAFC; border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                     <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.jobTitle")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(v.Title ?? "-")</span></div>
-                    <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.category")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(v.Category ?? "-")</span></div>
+                    <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.category")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(JobTypes.FirstOrDefault(t => t.Id == v.JobTypeId)?.Name ?? "-")</span></div>
                     <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.location")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(v.Location ?? "-")</span></div>
                     <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.contractType")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@GetContractTypeLabel(v.ContractType)</span></div>
                     <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.vacancies.workMode")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@GetWorkModeLabel(v.WorkMode)</span></div>
@@ -309,11 +320,13 @@ else if (WizardStep == 4)
     private string CreatedCompanyName { get; set; } = "";
     private Guid CreatedContractId { get; set; }
     private List<Guid> CreatedVacancyIds { get; set; } = new();
+    private List<JobTypeDto> JobTypes { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
+        JobTypes = await AuthApi.GetJobTypesAsync();
     }
 
     private string GetStepName(int step) => step switch
@@ -462,13 +475,15 @@ else if (WizardStep == 4)
 
         var contractDto = new AdminSaveVacancyContractDto
         {
-            VacancyIds = vacancyIds,
+            // Precio de cada vacante: automatico por su tipo de puesto (lista de precios).
+            // Si alguna no tiene tipo asignado, el servidor rechaza el guardado con el motivo
+            // exacto (ver AdminContractService.ApplyPricingAsync) en vez de usar un monto ficticio.
+            VacancyLines = vacancyIds.Select(id => new ContractVacancyLineDto { VacancyId = id }).ToList(),
             ScopeServices = new List<string> { "publicacion", "busqueda", "screening", "entrevista", "evaluacion", "shortlist" },
             TargetCandidates = VacancyDtos.Sum(v => v.RequiredApplicants ?? 3),
             JobTypeCategory = (int)ContractJobType.Operational,
             TargetCoverageDays = 10,
             WarrantyDays = 90,
-            FeeAmount = 1500 * vacancyIds.Count,
             Currency = "EUR",
             FeeApplicationType = (int)FeeApplicationType.PerPosition,
             PaymentOpeningPct = 30m,
@@ -476,16 +491,16 @@ else if (WizardStep == 4)
             PaymentConsolidationPct = 20m
         };
 
-        var contract = await AuthApi.CreateContractAsync(CreatedCompanyId, contractDto);
+        var result = await AuthApi.CreateContractAsync(CreatedCompanyId, contractDto);
         IsGeneratingContract = false;
 
-        if (contract == null)
+        if (result.Contract == null)
         {
-            WizardError = Lang.T("admin.contract.generateError");
+            WizardError = result.Error ?? Lang.T("admin.contract.generateError");
             return;
         }
 
-        CreatedContractId = contract.Id;
+        CreatedContractId = result.Contract.Id;
         Nav.NavigateTo($"/contracts/{CreatedContractId}/document");
     }
 

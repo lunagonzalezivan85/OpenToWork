@@ -12,6 +12,16 @@ public class AdminLoginResult
     public bool PasswordExpired { get; set; }
 }
 
+/// <summary>Resultado de crear/guardar un contrato: si falla, trae el mensaje real del servidor
+/// (precio de lista faltante, codigo promocional invalido, etc.) en vez de un error generico.</summary>
+public record ContractSaveResult(AdminVacancyContractDto? Contract, string? Error);
+
+/// <summary>Forma del cuerpo de error que devuelven los controllers admin: BadRequest(new { error = "..." }).</summary>
+public class ApiErrorResponse
+{
+    public string? Error { get; set; }
+}
+
 public class AdminAuthApiService
 {
     private readonly HttpClient _httpClient;
@@ -170,20 +180,163 @@ public class AdminAuthApiService
         return await response.Content.ReadFromJsonAsync<AdminVacancyContractDto>();
     }
 
-    public async Task<AdminVacancyContractDto?> CreateContractAsync(Guid companyId, AdminSaveVacancyContractDto dto)
+    public async Task<ContractSaveResult> CreateContractAsync(Guid companyId, AdminSaveVacancyContractDto dto)
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.PostAsJsonAsync($"api/admin/contracts/by-company/{companyId}", dto);
-        if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<AdminVacancyContractDto>();
+        return await ReadContractSaveResultAsync(response);
     }
 
-    public async Task<AdminVacancyContractDto?> SaveContractAsync(Guid contractId, AdminSaveVacancyContractDto dto)
+    public async Task<ContractSaveResult> SaveContractAsync(Guid contractId, AdminSaveVacancyContractDto dto)
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.PutAsJsonAsync($"api/admin/contracts/{contractId}", dto);
+        return await ReadContractSaveResultAsync(response);
+    }
+
+    private static async Task<ContractSaveResult> ReadContractSaveResultAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
+            return new ContractSaveResult(await response.Content.ReadFromJsonAsync<AdminVacancyContractDto>(), null);
+
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            return new ContractSaveResult(null, error?.Error);
+        }
+        catch
+        {
+            return new ContractSaveResult(null, null);
+        }
+    }
+
+    public async Task<PromoValidationResultDto?> ValidatePromoCodeAsync(string code, Guid vacancyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/contracts/validate-promo", new ValidatePromoCodeDto { Code = code, VacancyId = vacancyId });
         if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<AdminVacancyContractDto>();
+        return await response.Content.ReadFromJsonAsync<PromoValidationResultDto>();
+    }
+
+    // ===== Pricing: niveles/tipos de puesto, lista de precios =====
+
+    public async Task<List<JobLevelDto>> GetJobLevelsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/pricing/job-levels");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<JobLevelDto>>() ?? new();
+    }
+
+    public async Task<(JobLevelDto? Result, string? Error)> CreateJobLevelAsync(SaveJobLevelDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/pricing/job-levels", dto);
+        return await ReadResultAsync<JobLevelDto>(response);
+    }
+
+    public async Task<(JobLevelDto? Result, string? Error)> UpdateJobLevelAsync(Guid id, SaveJobLevelDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/pricing/job-levels/{id}", dto);
+        return await ReadResultAsync<JobLevelDto>(response);
+    }
+
+    public async Task<bool> DeleteJobLevelAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/pricing/job-levels/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<JobTypeDto>> GetJobTypesAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/pricing/job-types");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<JobTypeDto>>() ?? new();
+    }
+
+    public async Task<(JobTypeDto? Result, string? Error)> CreateJobTypeAsync(SaveJobTypeDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/pricing/job-types", dto);
+        return await ReadResultAsync<JobTypeDto>(response);
+    }
+
+    public async Task<(JobTypeDto? Result, string? Error)> UpdateJobTypeAsync(Guid id, SaveJobTypeDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/pricing/job-types/{id}", dto);
+        return await ReadResultAsync<JobTypeDto>(response);
+    }
+
+    public async Task<bool> DeleteJobTypeAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/pricing/job-types/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<JobTypePriceDto>> GetPriceHistoryAsync(Guid jobTypeId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/pricing/job-types/{jobTypeId}/price-history");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<JobTypePriceDto>>() ?? new();
+    }
+
+    public async Task<(JobTypePriceDto? Result, string? Error)> SetJobTypePriceAsync(Guid jobTypeId, SetJobTypePriceDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/pricing/job-types/{jobTypeId}/price", dto);
+        return await ReadResultAsync<JobTypePriceDto>(response);
+    }
+
+    // ===== Codigos promocionales =====
+
+    public async Task<List<PromoCodeDto>> GetPromoCodesAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/promo-codes");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<PromoCodeDto>>() ?? new();
+    }
+
+    public async Task<(PromoCodeDto? Result, string? Error)> CreatePromoCodeAsync(SavePromoCodeDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/promo-codes", dto);
+        return await ReadResultAsync<PromoCodeDto>(response);
+    }
+
+    public async Task<(PromoCodeDto? Result, string? Error)> UpdatePromoCodeAsync(Guid id, SavePromoCodeDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/promo-codes/{id}", dto);
+        return await ReadResultAsync<PromoCodeDto>(response);
+    }
+
+    public async Task<bool> DeletePromoCodeAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/promo-codes/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
+    private static async Task<(T? Result, string? Error)> ReadResultAsync<T>(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
+            return (await response.Content.ReadFromJsonAsync<T>(), null);
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            return (default, error?.Error);
+        }
+        catch
+        {
+            return (default, null);
+        }
     }
 
     public async Task<bool> SendContractAsync(Guid contractId)
