@@ -742,27 +742,25 @@ else
     }
 
     // --- Contract / Active ---
+    // Antes esto abria un popup con un contrato de ejemplo generado en JS
+    // (contract-generator.js), un documento distinto al "Documento formal"
+    // de PTVacancyContract que se genera desde la vacante / la ficha de
+    // empresa. Ahora usa el mismo contrato: si ya existe uno para esta
+    // empresa lo abre, si no, lleva a crear la primera vacante (el
+    // Contrato Marco + Anexo I se generan desde ahi, requieren al menos
+    // una vacante con tipo de puesto asignado).
     private async Task GenerateContract()
     {
         if (Detail == null) return;
-        var selectedPlan = Plans.FirstOrDefault(p => p.Id == SelectedPlanId);
-        var contractData = new
+        var contract = await AuthApi.GetContractByCompanyAsync(Detail.CompanyId);
+        if (contract != null)
         {
-            CompanyName = Detail.CompanyName,
-            LegalName = Detail.LegalName,
-            TaxId = Detail.TaxId,
-            Address = Detail.Address,
-            City = Detail.City,
-            Country = Detail.Country,
-            ContactName = Detail.ContactName,
-            ContactPosition = Detail.ContactPosition,
-            ContactEmail = Detail.ContactEmail,
-            SelectedPlanName = selectedPlan?.Name,
-            SelectedPlanPrice = selectedPlan?.Price.ToString("0"),
-            SelectedPlanCurrency = selectedPlan?.Currency,
-            ContractRef = Detail.CompanyId.ToString().Substring(0, 8).ToUpper()
-        };
-        await JS.InvokeVoidAsync("contractGenerator.generate", contractData);
+            Nav.NavigateTo($"/contracts/{contract.Id}/document", forceLoad: true);
+            return;
+        }
+
+        await JS.InvokeVoidAsync("notify.error", Lang.T("admin.companies.noContractYet"));
+        Nav.NavigateTo($"/companies/{Detail.CompanyId}/vacancies");
     }
 
     private async Task MarkAsActive()

@@ -672,6 +672,7 @@
     "wonTitle": "¡Empresa cerrada!",
     "wonHint": "Genera el contrato y marca la empresa como activa",
     "generateContract": "Generar contrato",
+    "noContractYet": "Esta empresa todavia no tiene vacantes. Agrega una para generar su contrato.",
     "markAsActive": "Marcar como activa",
     "contractGenerated": "Contrato generado correctamente",
     "searchOnMap": "Buscar en mapa",
