@@ -60,6 +60,7 @@ public class RecruitmentService : IRecruitmentService
                 FullName = x.u.Candidate != null ? (x.u.Candidate.FirstName + " " + x.u.Candidate.LastName) : x.u.Email,
                 Email = x.u.Email,
                 Title = x.u.Candidate != null ? x.u.Candidate.Title : null,
+                City = x.u.Candidate != null ? x.u.Candidate.City : null,
                 CurrentStage = x.r.CurrentStage,
                 AssignedToName = x.r.AssignedToUser != null ? x.r.AssignedToUser.Email : null,
                 AssignedToUserId = x.r.AssignedToUserId,

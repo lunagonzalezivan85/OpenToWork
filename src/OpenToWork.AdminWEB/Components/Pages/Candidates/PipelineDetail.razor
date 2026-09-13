@@ -187,8 +187,8 @@ else
         </div>
     }
 
-    @* === Preferences Form (Stage 0) === *@
-    @if (Detail.Dismissal == null && Detail.CurrentStage == 0)
+    @* === Preferences Form (visible from Stage 0 onward) === *@
+    @if (Detail.Dismissal == null)
     {
         <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
             <h3 class="admin-recruitment-card-title">
@@ -482,7 +482,7 @@ else
     }
 
     @* === Investigation checklist === *@
-    @if (Detail.CurrentStage == 1 && Detail.Dismissal == null)
+    @if (Detail.CurrentStage >= 1 && Detail.Dismissal == null)
     {
         <h2 class="admin-section-title">
             @Lang.T("admin.recruitment.investigationChecklist")
@@ -506,7 +506,7 @@ else
                 {
                     <div class="admin-investigation-item @(item.IsCompleted ? "admin-investigation-item--done" : "") @(item.StartedAt.HasValue && !item.IsCompleted ? "admin-investigation-item--active" : "")">
                         <div class="admin-investigation-check">
-                            <input type="checkbox" checked="@item.IsCompleted" disabled="@(Detail.CurrentStage != 1)" @onchange="() => ToggleStep(item)" />
+                            <input type="checkbox" checked="@item.IsCompleted" disabled="@(Detail.Dismissal != null)" @onchange="() => ToggleStep(item)" />
                         </div>
                         <div class="admin-investigation-content">
                             <div class="admin-investigation-step-name">@(item.Label ?? GetInvestigationStepName(item.Step))</div>
@@ -544,7 +544,7 @@ else
                             {
                                 <div class="admin-investigation-notes">
                                     @item.Notes
-                                    @if (Detail.CurrentStage == 1)
+                                    @if (Detail.CurrentStage >= 1)
                                     {
                                         <button class="admin-notes-edit-btn" @onclick='() => { NotesEditValue = item.Notes ?? ""; EditingNotesId = item.Id; }'>✎</button>
                                     }
@@ -560,13 +560,13 @@ else
                                     </div>
                                 </div>
                             }
-                            else if (Detail.CurrentStage == 1 && string.IsNullOrEmpty(item.Notes))
+                            else if (Detail.CurrentStage >= 1 && string.IsNullOrEmpty(item.Notes))
                             {
                                 <button class="admin-notes-add-btn" @onclick='() => { NotesEditValue = ""; EditingNotesId = item.Id; }'>+ @Lang.T("admin.recruitment.addNote")</button>
                             }
 
                             @* Step 2: Validate LinkedIn - show link + notes *@
-                            @if (item.Step == 2 && Detail.CurrentStage == 1)
+                            @if (item.Step == 2 && Detail.CurrentStage >= 1)
                             {
                                 <div class="admin-step-context-panel">
                                     @if (!string.IsNullOrEmpty(Detail.Title))
@@ -588,7 +588,7 @@ else
                             }
 
                             @* Step 3: Validate portfolio - show link + notes *@
-                            @if (item.Step == 3 && Detail.CurrentStage == 1)
+                            @if (item.Step == 3 && Detail.CurrentStage >= 1)
                             {
                                 <div class="admin-step-context-panel">
                                     <div class="admin-step-context-row">
@@ -606,7 +606,7 @@ else
                             }
 
                             @* Step 4: Validate certifications - show all certs and education *@
-                            @if (item.Step == 4 && Detail.CurrentStage == 1)
+                            @if (item.Step == 4 && Detail.CurrentStage >= 1)
                             {
                                 <div class="admin-step-context-panel">
                                     @if (Detail.Certifications.Count > 0)
@@ -667,7 +667,7 @@ else
                             }
 
                             @* Step 0: Call candidate - show phone with edit *@
-                            @if (item.Step == 0 && Detail.CurrentStage == 1)
+                            @if (item.Step == 0 && Detail.CurrentStage >= 1)
                             {
                                 <div class="admin-candidate-contact-info">
                                     <div class="admin-candidate-contact-row">
@@ -707,7 +707,7 @@ else
                             }
 
                             @* References sub-panel for step 1 (Call references) *@
-                            @if (item.Step == 1 && Detail.CurrentStage == 1)
+                            @if (item.Step == 1 && Detail.CurrentStage >= 1)
                             {
                                 <div class="admin-references-panel">
                                     <div class="admin-references-header">
@@ -837,7 +837,7 @@ else
     }
 
     @* === Technical Evaluations (stage 2) === *@
-    @if (Detail.CurrentStage == 2 && Detail.Dismissal == null)
+    @if (Detail.CurrentStage >= 2 && Detail.Dismissal == null)
     {
         <h2 class="admin-section-title">
             @Lang.T("admin.recruitment.technicalEvaluations")
@@ -906,7 +906,7 @@ else
     }
 
     @* === Cultural Interview (stage 3) === *@
-    @if (Detail.CurrentStage == 3 && Detail.Dismissal == null)
+    @if (Detail.CurrentStage >= 3 && Detail.Dismissal == null)
     {
         <h2 class="admin-section-title">
             @Lang.T("admin.recruitment.culturalInterview")
@@ -978,7 +978,7 @@ else
     }
 
     @* === Delivery summary (stage 4) === *@
-    @if (Detail.CurrentStage == 4 && Detail.Dismissal == null)
+    @if (Detail.CurrentStage >= 4 && Detail.Dismissal == null)
     {
         <h2 class="admin-section-title">@Lang.T("admin.recruitment.deliverySummary")</h2>
 
