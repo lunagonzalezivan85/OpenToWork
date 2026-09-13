@@ -7,14 +7,14 @@
 
 <PageTitle>@Lang.T("admin.pricing.levelsTitle")</PageTitle>
 
-<div class="neu-page-header">
+<div class="admin-page-header">
     <div>
         <h1>@Lang.T("admin.pricing.levelsTitle")</h1>
-        <p class="neu-page-header-subtitle">@Lang.T("admin.pricing.levelsSubtitle")</p>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.pricing.levelsSubtitle")</p>
     </div>
-    <div class="neu-page-actions">
-        <button class="neu-btn neu-btn--sm" @onclick='() => Nav.NavigateTo("/pricing/job-types")'>@Lang.T("admin.pricing.viewJobTypes")</button>
-        <button class="neu-btn neu-btn--sm" @onclick='() => Nav.NavigateTo("/pricing/promo-codes")'>@Lang.T("admin.pricing.viewPromoCodes")</button>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/pricing/job-types")'>@Lang.T("admin.pricing.viewJobTypes")</button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/pricing/promo-codes")'>@Lang.T("admin.pricing.viewPromoCodes")</button>
     </div>
 </div>
 
@@ -23,64 +23,73 @@
     <p style="color: var(--danger); font-size: 0.85rem;">@Error</p>
 }
 
-<EditForm Model="Form" OnValidSubmit="Save" class="neu-surface neu-form">
-    <div class="neu-field">
-        <label>@Lang.T("admin.pricing.name")</label>
-        <InputText class="neu-input" @bind-Value="Form.Name" placeholder="@Lang.T("admin.pricing.levelNamePlaceholder")" />
+<EditForm Model="Form" OnValidSubmit="Save" class="admin-inline-form">
+    <div class="ot-input-group">
+        <label class="ot-input-label">@Lang.T("admin.pricing.name")</label>
+        <InputText class="ot-input-field" @bind-Value="Form.Name" placeholder="@Lang.T("admin.pricing.levelNamePlaceholder")" />
     </div>
-    <div class="neu-field" style="flex: 0 0 180px;">
-        <label>@Lang.T("admin.pricing.coverageDays")</label>
-        <InputNumber class="neu-input" @bind-Value="Form.ReferenceCoverageDays" />
+    <div class="ot-input-group">
+        <label class="ot-input-label">@Lang.T("admin.pricing.coverageDays")</label>
+        <InputNumber class="ot-input-field" @bind-Value="Form.ReferenceCoverageDays" />
     </div>
-    <div class="neu-field" style="flex: 0 0 180px;">
-        <label>@Lang.T("admin.pricing.warrantyDays")</label>
-        <InputNumber class="neu-input" @bind-Value="Form.WarrantyDays" />
+    <div class="ot-input-group">
+        <label class="ot-input-label">@Lang.T("admin.pricing.warrantyDays")</label>
+        <InputNumber class="ot-input-field" @bind-Value="Form.WarrantyDays" />
     </div>
-    <div class="neu-field" style="flex: 0 0 110px;">
-        <label>@Lang.T("admin.pricing.sortOrder")</label>
-        <InputNumber class="neu-input" @bind-Value="Form.SortOrder" />
+    <div class="ot-input-group">
+        <label class="ot-input-label">@Lang.T("admin.pricing.sortOrder")</label>
+        <InputNumber class="ot-input-field" @bind-Value="Form.SortOrder" />
     </div>
-    <button type="submit" class="neu-btn neu-btn--primary">
+    <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium">
         @(EditingId == null ? Lang.T("admin.pricing.add") : Lang.T("admin.common.save"))
     </button>
     @if (EditingId != null)
     {
-        <button type="button" class="neu-btn" @onclick="CancelEdit">@Lang.T("admin.common.cancel")</button>
+        <button type="button" class="ot-btn ot-btn--outline ot-btn--medium" @onclick="CancelEdit">@Lang.T("admin.common.cancel")</button>
     }
 </EditForm>
 
 @if (Levels == null)
 {
-    <div class="neu-surface neu-empty">@Lang.T("admin.common.loading")</div>
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
 }
 else if (Levels.Count == 0)
 {
-    <div class="neu-surface neu-empty">
-        <div class="neu-empty-icon">&#9632;</div>
-        @Lang.T("admin.pricing.levelsEmpty")
+    <div class="admin-empty">
+        <div class="admin-empty-icon">&#9632;</div>
+        <div class="admin-empty-text">@Lang.T("admin.pricing.levelsEmpty")</div>
     </div>
 }
 else
 {
-    <div class="neu-list">
-        @foreach (var level in Levels)
-        {
-            <div class="neu-row">
-                <div class="neu-row-main">
-                    <span class="neu-row-title">@level.Name</span>
-                    <div class="neu-row-meta">
-                        <span>@Lang.T("admin.pricing.coverageDays"): <strong>@(level.ReferenceCoverageDays?.ToString() ?? "-")</strong></span>
-                        <span>@Lang.T("admin.pricing.warrantyDays"): <strong>@(level.WarrantyDays?.ToString() ?? "-")</strong></span>
-                        <span>@Lang.T("admin.pricing.jobTypeCount"): <strong>@level.JobTypeCount</strong></span>
-                    </div>
-                </div>
-                <div class="neu-row-actions">
-                    <button class="neu-btn neu-btn--sm" @onclick="() => Edit(level)">@Lang.T("admin.common.edit")</button>
-                    <button class="neu-btn neu-btn--sm neu-btn--danger" @onclick="() => Delete(level.Id)">@Lang.T("admin.common.delete")</button>
-                </div>
-            </div>
-        }
-    </div>
+    <table class="ot-table">
+        <thead>
+            <tr>
+                <th>@Lang.T("admin.pricing.name")</th>
+                <th>@Lang.T("admin.pricing.coverageDays")</th>
+                <th>@Lang.T("admin.pricing.warrantyDays")</th>
+                <th>@Lang.T("admin.pricing.jobTypeCount")</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var level in Levels)
+            {
+                <tr>
+                    <td>@level.Name</td>
+                    <td>@(level.ReferenceCoverageDays?.ToString() ?? "-")</td>
+                    <td>@(level.WarrantyDays?.ToString() ?? "-")</td>
+                    <td>@level.JobTypeCount</td>
+                    <td>
+                        <div class="admin-table-actions">
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Edit(level)">@Lang.T("admin.common.edit")</button>
+                            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Delete(level.Id)">@Lang.T("admin.common.delete")</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 @code {

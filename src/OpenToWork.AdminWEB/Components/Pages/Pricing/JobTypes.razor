@@ -7,15 +7,15 @@
 
 <PageTitle>@Lang.T("admin.pricing.typesTitle")</PageTitle>
 
-<div class="neu-page-header">
+<div class="admin-page-header">
     <div>
         <h1>@Lang.T("admin.pricing.typesTitle")</h1>
-        <p class="neu-page-header-subtitle">@Lang.T("admin.pricing.typesSubtitle")</p>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.pricing.typesSubtitle")</p>
     </div>
-    <div class="neu-page-actions">
-        <button class="neu-btn neu-btn--sm" @onclick='() => Nav.NavigateTo("/pricing/job-levels")'>@Lang.T("admin.pricing.viewJobLevels")</button>
-        <button class="neu-btn neu-btn--sm" @onclick='() => Nav.NavigateTo("/pricing/promo-codes")'>@Lang.T("admin.pricing.viewPromoCodes")</button>
-        <button class="neu-btn neu-btn--sm neu-btn--primary" @onclick="OpenCreateModal">@Lang.T("admin.pricing.newJobType")</button>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/pricing/job-levels")'>@Lang.T("admin.pricing.viewJobLevels")</button>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/pricing/promo-codes")'>@Lang.T("admin.pricing.viewPromoCodes")</button>
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenCreateModal">@Lang.T("admin.pricing.newJobType")</button>
     </div>
 </div>
 
@@ -26,75 +26,81 @@
 
 @if (Types == null)
 {
-    <div class="neu-surface neu-empty">@Lang.T("admin.common.loading")</div>
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
 }
 else if (Types.Count == 0)
 {
-    <div class="neu-surface neu-empty">
-        <div class="neu-empty-icon">&#9632;</div>
-        @Lang.T("admin.pricing.typesEmpty")
+    <div class="admin-empty">
+        <div class="admin-empty-icon">&#9632;</div>
+        <div class="admin-empty-text">@Lang.T("admin.pricing.typesEmpty")</div>
     </div>
 }
 else
 {
-    <div class="neu-list">
-        @foreach (var type in Types)
-        {
-            <div class="neu-row">
-                <div class="neu-row-main">
-                    <span class="neu-row-title">@type.Name</span>
-                    <div class="neu-row-meta">
-                        <span class="neu-badge neu-badge--muted">@type.JobLevelName</span>
+    <table class="ot-table">
+        <thead>
+            <tr>
+                <th>@Lang.T("admin.pricing.name")</th>
+                <th>@Lang.T("admin.pricing.level")</th>
+                <th>@Lang.T("admin.pricing.currentPrice")</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var type in Types)
+            {
+                <tr>
+                    <td>@type.Name</td>
+                    <td>@type.JobLevelName</td>
+                    <td>
                         @if (type.CurrentPrice.HasValue)
                         {
-                            <span>@Lang.T("admin.pricing.currentPrice"): <strong>@FormatEur(type.CurrentPrice, type.Currency)</strong></span>
+                            <span>@FormatEur(type.CurrentPrice, type.Currency)</span>
                         }
                         else
                         {
-                            <span class="neu-badge neu-badge--warning">@Lang.T("admin.pricing.noPrice")</span>
+                            <span style="color: var(--text-muted);">@Lang.T("admin.pricing.noPrice")</span>
                         }
-                    </div>
-                </div>
-                <div class="neu-row-actions">
-                    <button class="neu-btn neu-btn--sm neu-btn--primary" @onclick="() => OpenPriceModal(type)">@Lang.T("admin.pricing.setPrice")</button>
-                    <button class="neu-btn neu-btn--sm" @onclick="() => OpenEditModal(type)">@Lang.T("admin.common.edit")</button>
-                    <button class="neu-btn neu-btn--sm neu-btn--danger" @onclick="() => Delete(type.Id)">@Lang.T("admin.common.delete")</button>
-                </div>
-            </div>
-        }
-    </div>
+                    </td>
+                    <td>
+                        <div class="admin-table-actions">
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => OpenPriceModal(type)">@Lang.T("admin.pricing.setPrice")</button>
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => OpenEditModal(type)">@Lang.T("admin.common.edit")</button>
+                            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Delete(type.Id)">@Lang.T("admin.common.delete")</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 @if (ShowEditModal)
 {
-    <div class="neu-modal-overlay" @onclick="CloseEditModal">
-        <div class="neu-modal" @onclick:stopPropagation="true">
-            <h3 class="neu-modal-title">@(EditingId == null ? Lang.T("admin.pricing.newJobType") : Lang.T("admin.common.edit"))</h3>
-            @if (ModalError != null)
-            {
-                <p style="color: var(--danger); font-size: 0.8rem;">@ModalError</p>
-            }
-            <div class="neu-field">
+    <div class="admin-modal-overlay" @onclick="CloseEditModal">
+        <div class="admin-modal" @onclick:stopPropagation="true">
+            <h3 class="admin-modal-title">@(EditingId == null ? Lang.T("admin.pricing.newJobType") : Lang.T("admin.common.edit"))</h3>
+            <div class="admin-modal-body">
+                @if (ModalError != null)
+                {
+                    <div class="alert alert-error">@ModalError</div>
+                }
                 <label>@Lang.T("admin.pricing.name")</label>
-                <input class="neu-input" type="text" @bind="Form.Name" placeholder="@Lang.T("admin.pricing.typeNamePlaceholder")" />
-            </div>
-            <div class="neu-field">
+                <input class="admin-modal-input" type="text" @bind="Form.Name" placeholder="@Lang.T("admin.pricing.typeNamePlaceholder")" />
                 <label>@Lang.T("admin.pricing.level")</label>
-                <select class="neu-select" @bind="Form.PT_JobLevelId">
+                <select class="admin-modal-select" @bind="Form.PT_JobLevelId">
                     <option value="">-</option>
                     @foreach (var level in Levels)
                     {
                         <option value="@level.Id">@level.Name</option>
                     }
                 </select>
-            </div>
-            <div class="neu-field">
                 <label>@Lang.T("admin.pricing.sortOrder")</label>
-                <input class="neu-input" type="number" @bind="Form.SortOrder" />
+                <input class="admin-modal-input" type="number" @bind="Form.SortOrder" />
             </div>
-            <div class="neu-modal-actions">
-                <button class="neu-btn" @onclick="CloseEditModal">@Lang.T("admin.common.cancel")</button>
-                <button class="neu-btn neu-btn--primary" @onclick="SaveJobType">@Lang.T("admin.common.save")</button>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseEditModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SaveJobType">@Lang.T("admin.common.save")</button>
             </div>
         </div>
     </div>
@@ -102,38 +108,40 @@ else
 
 @if (ShowPriceModal && PriceTarget != null)
 {
-    <div class="neu-modal-overlay" @onclick="ClosePriceModal">
-        <div class="neu-modal" @onclick:stopPropagation="true">
-            <h3 class="neu-modal-title">@Lang.T("admin.pricing.setPrice") — @PriceTarget.Name</h3>
-            @if (ModalError != null)
-            {
-                <p style="color: var(--danger); font-size: 0.8rem;">@ModalError</p>
-            }
-            <div class="neu-field">
+    <div class="admin-modal-overlay" @onclick="ClosePriceModal">
+        <div class="admin-modal" @onclick:stopPropagation="true">
+            <h3 class="admin-modal-title">@Lang.T("admin.pricing.setPrice") - @PriceTarget.Name</h3>
+            <div class="admin-modal-body">
+                @if (ModalError != null)
+                {
+                    <div class="alert alert-error">@ModalError</div>
+                }
                 <label>@Lang.T("admin.pricing.basePrice")</label>
-                <input class="neu-input" type="number" min="0" step="0.01" @bind="PriceForm.BasePrice" />
-            </div>
-            <div class="neu-field">
+                <input class="admin-modal-input" type="number" min="0" step="0.01" @bind="PriceForm.BasePrice" />
                 <label>@Lang.T("admin.pricing.notes")</label>
-                <input class="neu-input" type="text" @bind="PriceForm.Notes" placeholder="@Lang.T("admin.pricing.notesPlaceholder")" />
-            </div>
+                <input class="admin-modal-input" type="text" @bind="PriceForm.Notes" placeholder="@Lang.T("admin.pricing.notesPlaceholder")" />
 
-            @if (PriceHistory.Count > 0)
-            {
-                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 1rem 0 0.5rem;">@Lang.T("admin.pricing.history")</p>
-                <div class="neu-price-card" style="gap: 0.5rem;">
-                    @foreach (var p in PriceHistory)
-                    {
-                        <div class="neu-price-row">
-                            <span>@p.EffectiveFrom.ToString("yyyy-MM-dd") @(p.EffectiveTo.HasValue ? "→ " + p.EffectiveTo.Value.ToString("yyyy-MM-dd") : $"({Lang.T("admin.pricing.current")})")</span>
-                            <strong>@FormatEur(p.BasePrice, p.Currency)</strong>
-                        </div>
-                    }
-                </div>
-            }
-            <div class="neu-modal-actions">
-                <button class="neu-btn" @onclick="ClosePriceModal">@Lang.T("admin.common.cancel")</button>
-                <button class="neu-btn neu-btn--primary" @onclick="SavePrice">@Lang.T("admin.common.save")</button>
+                @if (PriceHistory.Count > 0)
+                {
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem;">@Lang.T("admin.pricing.history")</p>
+                    <table class="ot-table">
+                        <thead><tr><th>@Lang.T("admin.pricing.basePrice")</th><th>@Lang.T("admin.pricing.effectiveFrom")</th><th>@Lang.T("admin.pricing.effectiveTo")</th></tr></thead>
+                        <tbody>
+                            @foreach (var p in PriceHistory)
+                            {
+                                <tr>
+                                    <td>@FormatEur(p.BasePrice, p.Currency)</td>
+                                    <td>@p.EffectiveFrom.ToString("yyyy-MM-dd")</td>
+                                    <td>@(p.EffectiveTo?.ToString("yyyy-MM-dd") ?? Lang.T("admin.pricing.current"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ClosePriceModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SavePrice">@Lang.T("admin.common.save")</button>
             </div>
         </div>
     </div>

@@ -86,52 +86,51 @@ else if (IsEditing)
     <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
         <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.economicsTitle")</h3>
 
-        <div class="neu-price-card" style="margin-bottom: 1rem;">
-            <div class="neu-price-row">
-                <span>@Lang.T("admin.contract.jobTypeVacancy")</span>
-                <strong>@(Vacancy?.JobTypeName ?? Lang.T("admin.contract.jobTypeUnmapped")) @(Vacancy?.JobLevelName != null ? $"({Vacancy.JobLevelName})" : "")</strong>
+        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.jobTypeVacancy")</span>
+            <strong>@(Vacancy?.JobTypeName ?? Lang.T("admin.contract.jobTypeUnmapped")) @(Vacancy?.JobLevelName != null ? $"({Vacancy.JobLevelName})" : "")</strong>
+        </div>
+
+        @if (!ManualOverride)
+        {
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.listPrice")</span>
+                <strong>@(ListPrice.HasValue ? FormatEur(ListPrice) : Lang.T("admin.contract.noListPrice"))</strong>
             </div>
 
-            @if (!ManualOverride)
+            <div class="admin-recruitment-grid" style="margin-top: 0.5rem; align-items: end;">
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.contract.promoCode")</label>
+                    <input type="text" @bind="PromoCodeInput" class="admin-modal-input" placeholder="ALEJO26" />
+                </div>
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ApplyPromoCodeAsync" disabled="@IsValidatingPromo">@Lang.T("admin.contract.applyPromo")</button>
+            </div>
+            @if (PromoError != null)
             {
-                <div class="neu-price-row">
-                    <span>@Lang.T("admin.contract.listPrice")</span>
-                    <strong>@(ListPrice.HasValue ? FormatEur(ListPrice) : Lang.T("admin.contract.noListPrice"))</strong>
-                </div>
-
-                <div style="display: flex; gap: 0.6rem; align-items: center; margin-top: 0.3rem;">
-                    <input type="text" @bind="PromoCodeInput" class="neu-input" style="flex: 1;" placeholder="@Lang.T("admin.contract.promoCode") (ALEJO26)" />
-                    <button class="neu-btn neu-btn--sm neu-btn--primary" @onclick="ApplyPromoCodeAsync" disabled="@IsValidatingPromo">@Lang.T("admin.contract.applyPromo")</button>
-                </div>
-                @if (PromoError != null)
-                {
-                    <p style="color: var(--danger); font-size: 0.78rem; margin: 0.2rem 0 0;">@PromoError</p>
-                }
-                @if (AppliedPromo != null)
-                {
-                    <div class="neu-price-row neu-price-row--discount">
-                        <span>@Lang.T("admin.contract.discount") (@AppliedPromo.Code)</span>
-                        <strong>-@FormatEur(AppliedPromo.DiscountAmount)</strong>
-                    </div>
-                    <div class="neu-price-row neu-price-row--final">
-                        <span>@Lang.T("admin.contract.finalPrice")</span>
-                        <strong>@FormatEur(AppliedPromo.FinalAmount)</strong>
-                    </div>
-                }
+                <p style="color: var(--danger); font-size: 0.8rem;">@PromoError</p>
             }
-            else
+            @if (AppliedPromo != null)
             {
-                <div class="neu-field" style="margin-bottom: 0.5rem;">
-                    <label>@Lang.T("admin.contract.manualPrice")</label>
-                    <input type="number" min="0" step="0.01" @bind="FormManualPrice" class="neu-input" />
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.discount")</span>
+                    <strong style="color: var(--success);">-@FormatEur(AppliedPromo.DiscountAmount) (@AppliedPromo.Code)</strong>
                 </div>
-                <div class="neu-field" style="margin-bottom: 0;">
-                    <label>@Lang.T("admin.contract.overrideReason")</label>
-                    <input type="text" @bind="FormOverrideReason" class="neu-input" placeholder="@Lang.T("admin.contract.overrideReasonPlaceholder")" />
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.finalPrice")</span>
+                    <strong>@FormatEur(AppliedPromo.FinalAmount)</strong>
                 </div>
             }
-        </div>
-        <label class="neu-checkbox" style="margin-bottom: 1rem;">
+        }
+        else
+        {
+            <div class="admin-recruitment-grid">
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.contract.manualPrice")</label>
+                    <input type="number" min="0" step="0.01" @bind="FormManualPrice" class="admin-modal-input" />
+                </div>
+            </div>
+            <div class="ot-input-group" style="margin-top: 0.5rem;">
+                <label class="ot-input-label">@Lang.T("admin.contract.overrideReason")</label>
+                <input type="text" @bind="FormOverrideReason" class="admin-modal-input" placeholder="@Lang.T("admin.contract.overrideReasonPlaceholder")" />
+            </div>
+        }
+        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; margin-top: 0.75rem; cursor: pointer;">
             <input type="checkbox" checked="@ManualOverride" @onchange="e => OnManualOverrideChanged((bool)(e.Value ?? false))" />
             @Lang.T("admin.contract.manualOverrideToggle")
         </label>
