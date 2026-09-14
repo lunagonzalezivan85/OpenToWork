@@ -111,3 +111,60 @@
 2. `20260904021619_AddMigrationInfoAndDocuments`
 3. `20260904031255_AddHasTransport`
 4. `20260904042446_AddWorkAuthorizations`
+
+---
+
+## Sesión: 13 Septiembre 2026
+
+### Refinamiento UI - Admin Pipeline (Kanban)
+
+#### Problema
+El pipeline de empresas y candidatos (`/companies/pipeline`, `/candidates/pipeline`) tenia scroll global en toda la pagina en lugar de solo en el kanban. Las stat cards eran muy anchas y no responsivas, y el kanban se desbordaba horizontalmente.
+
+#### Cambios Realizados
+
+**1. Scroll controlado (solo kanban scrollea)**
+- `.admin-main:has(.admin-pipeline-kanban-wrapper)` → `height: 100vh`, `overflow: hidden` (antes `min-height: 100vh` permitia crecer sin limite)
+- `.admin-content:has(.admin-pipeline-kanban-wrapper)` → `overflow: hidden`, `flex: 1`, `min-height: 0`, `display: flex`
+- `.admin-content-inner:has(.admin-pipeline-kanban-wrapper)` → `max-width: 1400px`, `flex: 1`, `min-height: 0`, `display: flex`, `overflow: hidden`
+- Header, stat-grid, filters → `flex-shrink: 0` (no se encojen)
+- `.admin-pipeline-kanban-wrapper` → `flex: 1`, `min-height: 0`, `overflow: auto` (unico contenedor con scroll X e Y)
+
+**2. Kanban wrapper introducido**
+- Envuelto `.admin-pipeline-kanban` en nuevo `div.admin-pipeline-kanban-wrapper` en ambos `Companies/Pipeline.razor` y `Candidates/Pipeline.razor`
+
+**3. Stat cards compactas (bento grid)**
+- `padding: var(--space-sm) var(--space-md)` (antes `var(--space-lg)`)
+- `gap: 2px` (antes `var(--space-xs)`)
+- `border-radius: var(--radius-md)` (antes `var(--radius-lg)`)
+- `font-size: 0.68rem` label, `1.5rem` value (antes `0.78rem` / `2rem`)
+- Sin `min-height` (se adaptan al contenido)
+
+**4. Stat grid responsivo**
+- Desktop: `repeat(4, 1fr)` — 4 columnas
+- Tablet (≤1024px): `repeat(2, 1fr)` — 2 columnas
+- Movil (≤768px): `repeat(12, 1fr)` con `grid-column: span 12` — 1 card por fila, apiladas
+
+**5. Kanban columnas**
+- `min-width: 220px`, `max-width: 300px` (antes 140px/280px)
+- `min-height: 900px` desktop, `500px` movil
+- `flex: 1 1 220px` (se adaptan al espacio disponible)
+- Movil: `flex: 0 0 180px`
+
+**6. Cache-busting dinamico en CSS**
+- Agregado `?v=@DateTime.Now.ToString("s")` a todos los `<link rel="stylesheet">` en `App.razor` de AdminWEB y WEB
+
+**7. Responsive movil (≤768px)**
+- `.admin-main` → `height: auto`, `overflow: visible` (no altura fija)
+- `.admin-content` → `overflow-y: auto` (scroll normal de pagina)
+- `.admin-content-inner` → `overflow: visible`
+
+### Archivos Modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `admin.css` | Scroll control, stat cards bento, kanban responsive, media queries |
+| `Companies/Pipeline.razor` | Wrapper div alrededor del kanban |
+| `Candidates/Pipeline.razor` | Wrapper div alrededor del kanban |
+| `App.razor` (AdminWEB) | Cache-busting dinamico en CSS links |
+| `App.razor` (WEB) | Cache-busting dinamico en CSS links |
