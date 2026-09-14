@@ -848,22 +848,37 @@ Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-f
 
 ---
 
-## Tareas Pendientes Resumidas
+## Tareas Pendientes
 
-> **Actualizado 01-Sep-2026 (Dsiezar):** Fase 3 completa desbloqueo a Fase 4 (100%) y 3 de 11 tareas de Fase 5. **Total: ~26 tareas pendientes** | Prioridad: **Fase 5** (suscripciones y busqueda por score) o **Fase 8** (testing/despliegue, sigue sin cobertura automatizada)
+> **Tracker vigente:** el checklist operativo del ciclo comercial (que falta del negocio real, pieza por pieza) vive en la seccion "Auditoria del Ciclo Comercial Completo (Gap Analysis)" al inicio de este documento, y se actualiza a medida que se construye cada pieza. Esta seccion es el resumen por fase tecnica del plan original.
 
 | Fase | Tareas pendientes | Bloquea a |
 |------|-------------------|-----------|
-| **Fase 3** | 0 tareas — COMPLETADA (Dsiezar, 01-Sep) | — |
-| **Fase 4** | 0 tareas — COMPLETADA | — |
+| **Fase 1-4** | 0 tareas — COMPLETADAS | — |
 | **Fase 5** | 8 tareas (suscripciones, entidades CO, busqueda por score, checkmarks, reportes) — estructura base + shortlist/scorecard ya existen | Fase 6 |
 | **Fase 6** | 4 tareas (servicios premium) | — |
 | **Fase 7** | 4 tareas (integraciones externas) | — |
-| **Fase 8** | 4 tareas (pruebas, despliegue) | — |
+| **Fase 8** | 4 tareas (pruebas, despliegue) — sigue sin cobertura automatizada mas alla de `OpenToWork.Tests` (Fase 1) | — |
 
-**Bugs resueltos en main (fixes de Dsiezar mergeados):**
+**Bugs resueltos en main:**
 - [x] `#blazor-error-ui` siempre visible en `OpenToWork.WEB` — corregido con `display: none`
 - [x] Google OAuth config en `OpenToWork.API` — corregido: lee `GoogleOAuth:ClientId` y solo registra si hay credenciales
+
+**Portal Administrativo — items marcados "bloqueados por Fase 3" que ya se resolvieron (sub-fase 3.8, 01-Sep):**
+- [x] Verificaciones manuales — aprobar/rechazar `PTVerification` desde el perfil del candidato en el admin (`CandidateProfile.razor`)
+- [x] Revision de validaciones automaticas — LinkedIn, portafolio y coherencia cronologica visibles en el mismo panel
+- [x] Gestion de scores de candidatos — los 4 indices + `OverallScore` se muestran y recalculan desde el perfil del candidato
+
+**Deuda tecnica resuelta (29-Ago, Dsiezar):**
+- [x] Gestion de roles de usuario — cambio de `PrimaryRole` desde `/users` con guardia de auto-bloqueo
+- [x] Unificar `AdminAuthService`/`AuthService` — crypto extraida a `ITokenCryptoService`
+- [x] Optimizar `AdminVacancyService` — `Concat` a nivel `IQueryable`, traducido a `UNION ALL` con paginacion en servidor
+- [x] Mover `LocalStorageService`/`LanguageService` a `SharedUI`
+- [x] Centralizar guard de autenticacion en `AdminLayout`
+
+**Pendiente real (no bloqueada, sin priorizar todavia):**
+- [ ] Pruebas unitarias para AdminAPI (`OpenToWork.AdminTests` — login, dashboard, CRUD, moderacion, export)
+- [ ] Pruebas de seguridad admin (acceso cruzado candidato→admin, auto-bloqueo, paginacion con valores negativos)
 
 ---
 
@@ -1361,204 +1376,6 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 
 ---
 
-## Bitacora de Cambios
-
-### Sesión 14-Ago-2026 — Rediseño de Dashboard, About, VacancyDetail, Navbar y Messages
-
-> **Nota:** Este Ivan se esmero. Dale el premio.
-
-#### Dashboard (`Dashboard.razor`)
-- Reemplazado el saludo suelto por **Bento Welcome Banner Card** con avatar de iniciales, rol del usuario, saludo y boton de acceso directo al perfil.
-- Agregado **grafico circular de completion de perfil** que ocupa 2 columnas del grid.
-- Agregado **card de indicadores** con 3 metricas: Solicitudes, Postulaciones, Publicaciones.
-- Agregadas **acciones rapidas** como cards con iconos y texto centrado: Subir CV, Grabar Video, Buscar Empleo, Completar Perfil.
-- Agregada seccion de **vacantes recomendadas**.
-- Corregido truncamiento de texto en "Completar perfil" (layout flex column, sin nowrap).
-
-#### About Page (`About.razor` — nuevo)
-- Creada pagina `/about` con hero header centrado.
-- **Fila 1**: Card izquierda con SVG transparente (personas conectadas) + Card derecha con texto "Nosotros".
-- **Fila 2**: Card izquierda con texto "Que hacemos" + Card derecha con SVG transparente (maletin, lupa, documento, video).
-- **Fila 3**: Dos cards de texto lado a lado — "Mision" (icono target) y "Valores" (icono capas).
-- Cards de imagen **sin fondo, sin borde, sin sombra**. SVGs con strokes transparentes/accent.
-- Layout responsive: a 768px las filas se apilan en una columna.
-- Traducciones agregadas en `common.json` (es + en) bajo seccion `about`.
-
-#### Vacancy Detail (`VacancyDetail.razor`)
-- **Eliminado el card dentro de card** (ot-card anidado).
-- Rediseño a layout plano con:
-  - Header con titulo grande + empresa + badge de verificacion (pill verde).
-  - Badges con iconos SVG: ubicacion, tipo de contrato, modalidad, salario (accent), categoria, nivel de experiencia, nivel de ingles.
-  - Secciones de descripcion y requisitos con separadores `border-top` sutiles.
-  - Formulario de postulacion separado con `border-top` accent (2px), sin card envolvente.
-- Corregido el uso de `ot-input` → `ot-input-field` (clase CSS correcta con estilos definidos).
-
-#### Navbar (`MainLayout.razor`)
-- Reorganizado en **3 bloques equilibrados con Flexbox**:
-  - **Izquierda**: Logo OTW + OpenToWork.
-  - **Centro**: 4 pestañas de navegacion con iconos SVG e indicador de estado activo:
-    - Panel (dashboard), Mis Postulaciones, Buscar Empleos, Mensajes.
-  - **Derecha**: Settings pill (boton compacto con engranaje + idioma, dropdown con tema e idioma agrupados) + User cluster (campana + avatar, separados por `border-left`).
-- Agregada deteccion de pagina activa (`CurrentPage`) basada en `NavigationManager.Uri`.
-- Eliminados los enlaces centrales anteriores (Inicio, Vacantes, Sobre Nosotros).
-
-#### Messages Page (`Messages.razor` — nuevo)
-- Creada pagina `/messages` con layout de 2 columnas (340px sidebar + 1fr chat).
-- **Sidebar**: Bandeja de conversaciones con:
-  - Filtros tipo pestaña: Todos | No leidos (con badge) | Leidos.
-  - Buscador de conversaciones por nombre.
-  - Lista con avatar, nombre, vacante asociada, preview, tiempo relativo, badge de no leidos.
-- **Panel de chat**: Header con avatar, nombre, vacante, indicador "En linea". Burbujas alternadas (mias accent derecha, suyas gris izquierda). Input redondo + boton circular de enviar. Enter para enviar.
-- Al seleccionar conversacion no leida, se marca como leida automaticamente.
-- Responsive: a 768px se apila en una columna.
-
-#### Backend — Messages
-- **`MessageDto.cs`** (Shared): DTOs `ConversationDto`, `MessageDto`, `SendMessageDto`.
-- **`MessagesController.cs`** (API): Endpoints `GET conversations`, `GET messages/{id}`, `POST send`, `PUT read`. Datos mock por ahora.
-- **`ApiAuthService.cs`** (WEB): Metodos `GetConversationsAsync`, `GetMessagesAsync`, `SendMessageAsync`, `MarkConversationReadAsync`.
-
-#### Traducciones (`common.json` es + en)
-- Seccion `about`: titulos, descripciones, mision, valores.
-- Seccion `nav`: `messages`, `searchJobs`, `panel`.
-- Seccion `messages`: title, all, unread, read, noConversations, noMessages, typeMessage, send, vacancy, online, offline, search.
-
-#### CSS (`components.css`)
-- Estilos `.dash-banner-card` y relacionados del dashboard.
-- Estilos `.about-*` para About page.
-- Estilos `.vacancy-detail-*` para VacancyDetail.
-- Estilos `.nav-settings-pill`, `.nav-settings-btn`, `.nav-settings-dropdown`, `.nav-user-cluster`, `.nav-link` con iconos.
-- Estilos `.messages-*` y `.chat-*` para Messages page.
-- Cache-buster actualizado a `v=11`.
-
-#### Archivos nuevos
-- `src/OpenToWork.WEB/Components/Pages/About.razor`
-- `src/OpenToWork.WEB/Components/Pages/Messages.razor`
-- `src/OpenToWork.Shared/DTOs/MessageDto.cs`
-- `src/OpenToWork.API/Controllers/MessagesController.cs`
-
-#### Archivos modificados
-- `src/OpenToWork.WEB/Components/Pages/Dashboard.razor`
-- `src/OpenToWork.WEB/Components/Pages/VacancyDetail.razor`
-- `src/OpenToWork.WEB/Components/Layout/MainLayout.razor`
-- `src/OpenToWork.WEB/Components/App.razor`
-- `src/OpenToWork.WEB/Services/ApiAuthService.cs`
-- `src/OpenToWork.WEB/wwwroot/css/components.css`
-- `src/OpenToWork.WEB/wwwroot/config/language/es/common.json`
-- `src/OpenToWork.WEB/wwwroot/config/language/en/common.json`
-
----
-
-### Sesión 14-Ago-2026 — Suite de Pruebas de Integración (OpenToWork.Tests)
-
-> **QA (Sr. Smith):** Pruebas automatizadas de integración contra la API real (localhost:5000) con xUnit.
-
-#### Proyecto creado
-- `src/OpenToWork.Tests/OpenToWork.Tests.csproj` — xUnit, .NET 10, referencia a `OpenToWork.Shared`.
-
-#### Arquitectura de pruebas
-- **`BaseTest.cs`** — Clase base abstracta que crea un `HttpClient` propio por test, hace login automático con `juan.perez@gmail.com` y setea el Bearer token. Cada test es independiente.
-- Cada clase de test hereda de `BaseTest` y tiene su propio `HttpClient` aislado.
-
-#### Pruebas de Auth (`AuthTests.cs`) — 10 pruebas
-| Test | Descripción | Resultado |
-|------|-------------|-----------|
-| `Login_ConCredencialesValidas_RetornaTokenYUsuario` | Login con juan.perez@gmail.com valida token, refresh y email | ✅ |
-| `Login_ConPasswordIncorrecta_RetornaUnauthorized` | Password incorrecta retorna 401 | ✅ |
-| `Login_ConEmailInexistente_RetornaUnauthorized` | Email inexistente retorna 401 | ✅ |
-| `Login_ConEmailVacio_RetornaUnauthorized` | Email vacío retorna 401 (ver bug #4) | ✅ |
-| `Login_ConPasswordVacia_RetornaUnauthorized` | Password vacía retorna 401 (ver bug #4) | ✅ |
-| `Refresh_ConTokenValido_RetornaNuevoToken` | Refresh token genera nuevo JWT | ✅ |
-| `CheckDevice_SinAutenticar_RetornaUnauthorized` | Endpoint protegido sin token retorna 401 | ✅ |
-| `Login_ConMariaGonzalez_RetornaTokenValido` | Login con segundo usuario de prueba | ✅ |
-| `Login_ConCarlosRodriguez_RetornaTokenValido` | Login con tercer usuario de prueba | ✅ |
-
-#### Pruebas de Profile (`ProfileTests.cs`) — 8 pruebas
-| Test | Descripción | Resultado |
-|------|-------------|-----------|
-| `GetProfile_ConTokenValido_RetornaPerfil` | GET /api/profile retorna datos del candidato | ✅ |
-| `GetProfile_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
-| `UpdateProfile_ConDatosValidos_RetornaPerfilActualizado` | PUT /api/profile actualiza título | ✅ |
-| `AddExperience_ConDatosValidos_RetornaExperienciaCreada` | POST experience crea y retorna | ✅ |
-| `AddExperience_ConCompanyNameVacio_LoCreaSinValidar` | CompanyName vacío aceptado (ver bug #2) | ✅ |
-| `AddEducation_ConDatosValidos_RetornaEducacionCreada` | POST education crea y retorna | ✅ |
-| `AddCertification_ConDatosValidos_RetornaCertificacionCreada` | POST certification crea y retorna | ✅ |
-| `DeleteExperience_ConIdInexistente_RetornaNotFound` | Delete con GUID inexistente retorna 404 | ✅ |
-| `DeleteEducation_ConIdInexistente_RetornaNotFound` | Delete con GUID inexistente retorna 404 | ✅ |
-
-#### Pruebas de Vacancies (`VacancyTests.cs`) — 9 pruebas
-| Test | Descripción | Resultado |
-|------|-------------|-----------|
-| `Search_Vacantes_RetornaListaYTotal` | GET /search retorna items y total | ✅ |
-| `Search_ConFiltroTexto_RetornaResultadosFiltrados` | Filtro por query=desarrollador | ✅ |
-| `Search_ConPaginaGrande_RetornaResultados` | PageSize=100 funciona | ✅ |
-| `GetById_ConIdInexistente_RetornaNotFound` | GUID inexistente retorna 404 | ✅ |
-| `GetById_ConIdValido_RetornaVacante` | Búsqueda + GET por ID real | ✅ |
-| `GetMyCompanyVacancies_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
-| `Create_SinToken_RetornaUnauthorized` | POST sin token retorna 401 | ✅ |
-| `Create_ConTokenValido_RetornaCreatedOBadRequest` | POST con token (Created si es empresa, BadRequest si candidato) | ✅ |
-| `Create_ConTituloVacio_RetornaBadRequest` | Título vacío retorna 400 | ✅ |
-
-#### Pruebas de Applications (`ApplicationTests.cs`) — 6 pruebas
-| Test | Descripción | Resultado |
-|------|-------------|-----------|
-| `GetMyApplications_ConTokenValido_RetornaLista` | GET /my retorna lista de postulaciones | ✅ |
-| `GetMyApplications_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
-| `Apply_ConVacancyIdInexistente_RetornaError` | Vacancy inexistente retorna 500 (ver bug #1) | ✅ |
-| `Apply_SinToken_RetornaUnauthorized` | POST sin token retorna 401 | ✅ |
-| `Apply_ConDatosValidos_RetornaCreatedOConflict` | Postulación real (Created o Conflict si ya aplicó) | ✅ |
-| `Apply_DosVecesALaMismaVacante_RetornaConflict` | Doble postulación retorna 409 | ✅ |
-| `UpdateStatus_ConIdInexistente_RetornaNotFound` | Update status con GUID inexistente retorna 404 | ✅ |
-
-#### Pruebas de Messages (`MessagesTests.cs`) — 11 pruebas
-| Test | Descripción | Resultado |
-|------|-------------|-----------|
-| `GetConversations_ConTokenValido_RetornaLista` | GET conversations retorna lista no vacía | ✅ |
-| `GetConversations_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
-| `GetConversations_RetornaDatosConEstructuraCorrecta` | Valida ParticipantName, Avatar, LastMessage | ✅ |
-| `GetMessages_ConConversationIdValido_RetornaMensajes` | GET messages por conversación retorna mensajes | ✅ |
-| `GetMessages_ConIdInexistente_RetornaListaVacia` | ID inexistente retorna lista vacía | ✅ |
-| `SendMessage_ConDatosValidos_RetornaMensajeCreado` | POST send crea mensaje con IsMine=true | ✅ |
-| `SendMessage_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
-| `SendMessage_ConContenidoVacio_LoAceptaSinValidar` | Content vacío aceptado (ver bug #3) | ✅ |
-| `MarkAsRead_ConConversationIdValido_RetornaOk` | PUT read marca conversación como leída | ✅ |
-| `MarkAsRead_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
-
-#### Bugs encontrados por QA (4 items)
-
-1. **`POST /api/applications` con VacancyId inexistente** — Retorna `500 InternalServerError` en lugar de `404 NotFound`. El `ApplicationService` no valida que la vacante exista antes de crear la postulación.
-   - **Fix:** Agregar validación `if (vacancy == null) return NotFound()` en `ApplicationsController.Apply` o en `ApplicationService.ApplyAsync`.
-
-2. **`POST /api/profile/experience` con CompanyName vacío** — La API no valida campos requeridos. Acepta experiencia sin empresa.
-   - **Fix:** Agregar `[Required]` en `CreateExperienceDto.CompanyName` y `JobTitle`, o validación manual en `ProfileService`.
-
-3. **`POST /api/messages/send` con Content vacío** — El controller mock no valida contenido vacío.
-   - **Fix:** Agregar validación `if (string.IsNullOrWhiteSpace(dto.Content)) return BadRequest()` en `MessagesController.Send`.
-
-4. **`POST /api/auth/login` con email/password vacío** — Retorna `401 Unauthorized` en lugar de `400 BadRequest`. No hay validación de modelo.
-   - **Fix:** Agregar `[Required]` en `LoginDto.Email` y `LoginDto.Password`, o validación manual en `AuthController.Login`.
-
-#### Cómo ejecutar las pruebas
-
-```bash
-# 1. Asegurar que la API esté corriendo en localhost:5000
-dotnet run --project src/OpenToWork.API
-
-# 2. Ejecutar todas las pruebas
-dotnet test src/OpenToWork.Tests/OpenToWork.Tests.csproj --verbosity normal
-
-# 3. Ejecutar solo una clase de tests
-dotnet test src/OpenToWork.Tests/OpenToWork.Tests.csproj --filter "FullyQualifiedName~AuthTests"
-```
-
-#### Resultado final
-```
-Pruebas totales: 44
-     Correcto: 44
- Tiempo total: ~5s
-```
-
----
-
 ## RH — Análisis: Portafolio de Candidatos de Calidad
 
 > **Soy RH.** Análisis del proyecto desde Reclutamiento y Selección.
@@ -1630,31 +1447,6 @@ Pruebas totales: 44
 ### Recomendación de RH
 
 > **OpenToWork tiene una base sólida de datos del candidato, pero le falta la capa de evaluación y confianza que justifica su propuesta de valor.** Sin scoring, sin verificaciones reales y sin evaluación práctica, la plataforma es una bolsa de empleo más. La Fase 3 (Motor de Evaluación) es el bloque crítico que convierte los datos en decisiones de contratación confiables.
-
----
-
-## Tareas Pendientes — Portal Administrativo
-
-> **Contexto:** El portal administrativo está al 90%. Lo que falta está bloqueado por la Fase 3 (Motor de Evaluación); todo lo que no dependía de Fase 3 se completó el 29-Ago (Dsiezar).
-
-### Pendientes bloqueados por Fase 3 (Motor de Scoring)
-
-- [ ] **Verificaciones manuales** — Aprobar/rechazar `PTVerification` desde el panel admin. Requiere que existan entidades de verificación (Fase 3).
-- [ ] **Revisión de validaciones automáticas** — Ver el resultado de validaciones automáticas (LinkedIn, portafolio, coherencia cronológica) desde el admin. Requiere `ValidationService` (Fase 3).
-- [ ] **Gestión de scores de candidatos** — Ver y gestionar los índices de Estabilidad, Confiabilidad y Evidencia de cada candidato desde el admin.
-
-### Completados 29-Ago (Dsiezar)
-
-- [x] **Gestión de roles de usuario** — El admin ahora puede cambiar el `PrimaryRole` (Candidato/Empresa/Admin) de cualquier usuario desde `/users`, con guardia de auto-bloqueo y validación de valor de rol. Verificado end-to-end contra MySQL real.
-- [ ] **Pruebas unitarias para AdminAPI** — Crear `OpenToWork.AdminTests` con pruebas de integración contra `localhost:5001` (login admin, dashboard metrics, users CRUD, vacancies moderation, skills CRUD, audit log, export CSV). *(sigue pendiente, no formaba parte de la deuda técnica original)*
-- [ ] **Pruebas de seguridad admin** — Verificar que un candidato no puede acceder a endpoints admin, que el auto-bloqueo funciona, que la paginación no acepta valores negativos. *(sigue pendiente)*
-
-### Deuda técnica documentada (4 items) — resueltos 29-Ago (Dsiezar)
-
-- [x] Unificar `AdminAuthService` con `AuthService` (lógica duplicada) — crypto de tokens extraída a `ITokenCryptoService` en Core
-- [x] Optimizar `AdminVacancyService` (carga tablas completas en memoria antes de paginar) — ahora usa `Concat` a nivel de `IQueryable` para traducir a `UNION ALL` con paginación en el servidor
-- [x] Mover `LocalStorageService`/`LanguageService` de AdminWEB a SharedUI — `LanguageService` unificado recibiendo el arreglo de secciones por constructor
-- [x] Centralizar guard de autenticación en `AdminLayout` (antes copiado en 9 páginas) — como efecto colateral, protege por primera vez las 4 páginas del Pipeline de Reclutamiento que no tenían guard
 
 ---
 
@@ -1984,6 +1776,202 @@ Metodología exacta de "Verificado TD" · pesos del Candidate Score · variables
 #### Archivos modificados/creados
 - **Modificados**: `MainLayout.razor`, `App.razor`, `Program.cs`, `ApiAuthService.cs`, `Messages.razor`, `VacancyDetail.razor`, `Profile.razor`, `Dashboard.razor`, `Home.razor`, `MyApplications.razor`, `MyVacancies.razor`, `Vacancies.razor`, `_Imports.razor`, `components.css`, `portal-nav.css`, `wizard-profile.css`, traducciones ES/EN
 - **Creados**: `DESIGN-SYSTEM.md`, `VacancyManage.razor`, `VacancyCard.razor`, `icon.svg`, `manifest.json`, `sw.js`
+
+---
+
+### Sesión 14-Ago-2026 — Rediseño de Dashboard, About, VacancyDetail, Navbar y Messages
+
+> **Nota:** Este Ivan se esmero. Dale el premio.
+
+#### Dashboard (`Dashboard.razor`)
+- Reemplazado el saludo suelto por **Bento Welcome Banner Card** con avatar de iniciales, rol del usuario, saludo y boton de acceso directo al perfil.
+- Agregado **grafico circular de completion de perfil** que ocupa 2 columnas del grid.
+- Agregado **card de indicadores** con 3 metricas: Solicitudes, Postulaciones, Publicaciones.
+- Agregadas **acciones rapidas** como cards con iconos y texto centrado: Subir CV, Grabar Video, Buscar Empleo, Completar Perfil.
+- Agregada seccion de **vacantes recomendadas**.
+- Corregido truncamiento de texto en "Completar perfil" (layout flex column, sin nowrap).
+
+#### About Page (`About.razor` — nuevo)
+- Creada pagina `/about` con hero header centrado.
+- **Fila 1**: Card izquierda con SVG transparente (personas conectadas) + Card derecha con texto "Nosotros".
+- **Fila 2**: Card izquierda con texto "Que hacemos" + Card derecha con SVG transparente (maletin, lupa, documento, video).
+- **Fila 3**: Dos cards de texto lado a lado — "Mision" (icono target) y "Valores" (icono capas).
+- Cards de imagen **sin fondo, sin borde, sin sombra**. SVGs con strokes transparentes/accent.
+- Layout responsive: a 768px las filas se apilan en una columna.
+- Traducciones agregadas en `common.json` (es + en) bajo seccion `about`.
+
+#### Vacancy Detail (`VacancyDetail.razor`)
+- **Eliminado el card dentro de card** (ot-card anidado).
+- Rediseño a layout plano con:
+  - Header con titulo grande + empresa + badge de verificacion (pill verde).
+  - Badges con iconos SVG: ubicacion, tipo de contrato, modalidad, salario (accent), categoria, nivel de experiencia, nivel de ingles.
+  - Secciones de descripcion y requisitos con separadores `border-top` sutiles.
+  - Formulario de postulacion separado con `border-top` accent (2px), sin card envolvente.
+- Corregido el uso de `ot-input` → `ot-input-field` (clase CSS correcta con estilos definidos).
+
+#### Navbar (`MainLayout.razor`)
+- Reorganizado en **3 bloques equilibrados con Flexbox**:
+  - **Izquierda**: Logo OTW + OpenToWork.
+  - **Centro**: 4 pestañas de navegacion con iconos SVG e indicador de estado activo:
+    - Panel (dashboard), Mis Postulaciones, Buscar Empleos, Mensajes.
+  - **Derecha**: Settings pill (boton compacto con engranaje + idioma, dropdown con tema e idioma agrupados) + User cluster (campana + avatar, separados por `border-left`).
+- Agregada deteccion de pagina activa (`CurrentPage`) basada en `NavigationManager.Uri`.
+- Eliminados los enlaces centrales anteriores (Inicio, Vacantes, Sobre Nosotros).
+
+#### Messages Page (`Messages.razor` — nuevo)
+- Creada pagina `/messages` con layout de 2 columnas (340px sidebar + 1fr chat).
+- **Sidebar**: Bandeja de conversaciones con:
+  - Filtros tipo pestaña: Todos | No leidos (con badge) | Leidos.
+  - Buscador de conversaciones por nombre.
+  - Lista con avatar, nombre, vacante asociada, preview, tiempo relativo, badge de no leidos.
+- **Panel de chat**: Header con avatar, nombre, vacante, indicador "En linea". Burbujas alternadas (mias accent derecha, suyas gris izquierda). Input redondo + boton circular de enviar. Enter para enviar.
+- Al seleccionar conversacion no leida, se marca como leida automaticamente.
+- Responsive: a 768px se apila en una columna.
+
+#### Backend — Messages
+- **`MessageDto.cs`** (Shared): DTOs `ConversationDto`, `MessageDto`, `SendMessageDto`.
+- **`MessagesController.cs`** (API): Endpoints `GET conversations`, `GET messages/{id}`, `POST send`, `PUT read`. Datos mock por ahora.
+- **`ApiAuthService.cs`** (WEB): Metodos `GetConversationsAsync`, `GetMessagesAsync`, `SendMessageAsync`, `MarkConversationReadAsync`.
+
+#### Traducciones (`common.json` es + en)
+- Seccion `about`: titulos, descripciones, mision, valores.
+- Seccion `nav`: `messages`, `searchJobs`, `panel`.
+- Seccion `messages`: title, all, unread, read, noConversations, noMessages, typeMessage, send, vacancy, online, offline, search.
+
+#### CSS (`components.css`)
+- Estilos `.dash-banner-card` y relacionados del dashboard.
+- Estilos `.about-*` para About page.
+- Estilos `.vacancy-detail-*` para VacancyDetail.
+- Estilos `.nav-settings-pill`, `.nav-settings-btn`, `.nav-settings-dropdown`, `.nav-user-cluster`, `.nav-link` con iconos.
+- Estilos `.messages-*` y `.chat-*` para Messages page.
+- Cache-buster actualizado a `v=11`.
+
+#### Archivos nuevos
+- `src/OpenToWork.WEB/Components/Pages/About.razor`
+- `src/OpenToWork.WEB/Components/Pages/Messages.razor`
+- `src/OpenToWork.Shared/DTOs/MessageDto.cs`
+- `src/OpenToWork.API/Controllers/MessagesController.cs`
+
+#### Archivos modificados
+- `src/OpenToWork.WEB/Components/Pages/Dashboard.razor`
+- `src/OpenToWork.WEB/Components/Pages/VacancyDetail.razor`
+- `src/OpenToWork.WEB/Components/Layout/MainLayout.razor`
+- `src/OpenToWork.WEB/Components/App.razor`
+- `src/OpenToWork.WEB/Services/ApiAuthService.cs`
+- `src/OpenToWork.WEB/wwwroot/css/components.css`
+- `src/OpenToWork.WEB/wwwroot/config/language/es/common.json`
+- `src/OpenToWork.WEB/wwwroot/config/language/en/common.json`
+
+---
+
+### Sesión 14-Ago-2026 — Suite de Pruebas de Integración (OpenToWork.Tests)
+
+> **QA (Sr. Smith):** Pruebas automatizadas de integración contra la API real (localhost:5000) con xUnit.
+
+#### Proyecto creado
+- `src/OpenToWork.Tests/OpenToWork.Tests.csproj` — xUnit, .NET 10, referencia a `OpenToWork.Shared`.
+
+#### Arquitectura de pruebas
+- **`BaseTest.cs`** — Clase base abstracta que crea un `HttpClient` propio por test, hace login automático con `juan.perez@gmail.com` y setea el Bearer token. Cada test es independiente.
+- Cada clase de test hereda de `BaseTest` y tiene su propio `HttpClient` aislado.
+
+#### Pruebas de Auth (`AuthTests.cs`) — 10 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `Login_ConCredencialesValidas_RetornaTokenYUsuario` | Login con juan.perez@gmail.com valida token, refresh y email | ✅ |
+| `Login_ConPasswordIncorrecta_RetornaUnauthorized` | Password incorrecta retorna 401 | ✅ |
+| `Login_ConEmailInexistente_RetornaUnauthorized` | Email inexistente retorna 401 | ✅ |
+| `Login_ConEmailVacio_RetornaUnauthorized` | Email vacío retorna 401 (ver bug #4) | ✅ |
+| `Login_ConPasswordVacia_RetornaUnauthorized` | Password vacía retorna 401 (ver bug #4) | ✅ |
+| `Refresh_ConTokenValido_RetornaNuevoToken` | Refresh token genera nuevo JWT | ✅ |
+| `CheckDevice_SinAutenticar_RetornaUnauthorized` | Endpoint protegido sin token retorna 401 | ✅ |
+| `Login_ConMariaGonzalez_RetornaTokenValido` | Login con segundo usuario de prueba | ✅ |
+| `Login_ConCarlosRodriguez_RetornaTokenValido` | Login con tercer usuario de prueba | ✅ |
+
+#### Pruebas de Profile (`ProfileTests.cs`) — 8 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `GetProfile_ConTokenValido_RetornaPerfil` | GET /api/profile retorna datos del candidato | ✅ |
+| `GetProfile_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `UpdateProfile_ConDatosValidos_RetornaPerfilActualizado` | PUT /api/profile actualiza título | ✅ |
+| `AddExperience_ConDatosValidos_RetornaExperienciaCreada` | POST experience crea y retorna | ✅ |
+| `AddExperience_ConCompanyNameVacio_LoCreaSinValidar` | CompanyName vacío aceptado (ver bug #2) | ✅ |
+| `AddEducation_ConDatosValidos_RetornaEducacionCreada` | POST education crea y retorna | ✅ |
+| `AddCertification_ConDatosValidos_RetornaCertificacionCreada` | POST certification crea y retorna | ✅ |
+| `DeleteExperience_ConIdInexistente_RetornaNotFound` | Delete con GUID inexistente retorna 404 | ✅ |
+| `DeleteEducation_ConIdInexistente_RetornaNotFound` | Delete con GUID inexistente retorna 404 | ✅ |
+
+#### Pruebas de Vacancies (`VacancyTests.cs`) — 9 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `Search_Vacantes_RetornaListaYTotal` | GET /search retorna items y total | ✅ |
+| `Search_ConFiltroTexto_RetornaResultadosFiltrados` | Filtro por query=desarrollador | ✅ |
+| `Search_ConPaginaGrande_RetornaResultados` | PageSize=100 funciona | ✅ |
+| `GetById_ConIdInexistente_RetornaNotFound` | GUID inexistente retorna 404 | ✅ |
+| `GetById_ConIdValido_RetornaVacante` | Búsqueda + GET por ID real | ✅ |
+| `GetMyCompanyVacancies_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `Create_SinToken_RetornaUnauthorized` | POST sin token retorna 401 | ✅ |
+| `Create_ConTokenValido_RetornaCreatedOBadRequest` | POST con token (Created si es empresa, BadRequest si candidato) | ✅ |
+| `Create_ConTituloVacio_RetornaBadRequest` | Título vacío retorna 400 | ✅ |
+
+#### Pruebas de Applications (`ApplicationTests.cs`) — 6 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `GetMyApplications_ConTokenValido_RetornaLista` | GET /my retorna lista de postulaciones | ✅ |
+| `GetMyApplications_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `Apply_ConVacancyIdInexistente_RetornaError` | Vacancy inexistente retorna 500 (ver bug #1) | ✅ |
+| `Apply_SinToken_RetornaUnauthorized` | POST sin token retorna 401 | ✅ |
+| `Apply_ConDatosValidos_RetornaCreatedOConflict` | Postulación real (Created o Conflict si ya aplicó) | ✅ |
+| `Apply_DosVecesALaMismaVacante_RetornaConflict` | Doble postulación retorna 409 | ✅ |
+| `UpdateStatus_ConIdInexistente_RetornaNotFound` | Update status con GUID inexistente retorna 404 | ✅ |
+
+#### Pruebas de Messages (`MessagesTests.cs`) — 11 pruebas
+| Test | Descripción | Resultado |
+|------|-------------|-----------|
+| `GetConversations_ConTokenValido_RetornaLista` | GET conversations retorna lista no vacía | ✅ |
+| `GetConversations_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `GetConversations_RetornaDatosConEstructuraCorrecta` | Valida ParticipantName, Avatar, LastMessage | ✅ |
+| `GetMessages_ConConversationIdValido_RetornaMensajes` | GET messages por conversación retorna mensajes | ✅ |
+| `GetMessages_ConIdInexistente_RetornaListaVacia` | ID inexistente retorna lista vacía | ✅ |
+| `SendMessage_ConDatosValidos_RetornaMensajeCreado` | POST send crea mensaje con IsMine=true | ✅ |
+| `SendMessage_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+| `SendMessage_ConContenidoVacio_LoAceptaSinValidar` | Content vacío aceptado (ver bug #3) | ✅ |
+| `MarkAsRead_ConConversationIdValido_RetornaOk` | PUT read marca conversación como leída | ✅ |
+| `MarkAsRead_SinToken_RetornaUnauthorized` | Sin token retorna 401 | ✅ |
+
+#### Bugs encontrados por QA (4 items)
+
+1. **`POST /api/applications` con VacancyId inexistente** — Retorna `500 InternalServerError` en lugar de `404 NotFound`. El `ApplicationService` no valida que la vacante exista antes de crear la postulación.
+   - **Fix:** Agregar validación `if (vacancy == null) return NotFound()` en `ApplicationsController.Apply` o en `ApplicationService.ApplyAsync`.
+
+2. **`POST /api/profile/experience` con CompanyName vacío** — La API no valida campos requeridos. Acepta experiencia sin empresa.
+   - **Fix:** Agregar `[Required]` en `CreateExperienceDto.CompanyName` y `JobTitle`, o validación manual en `ProfileService`.
+
+3. **`POST /api/messages/send` con Content vacío** — El controller mock no valida contenido vacío.
+   - **Fix:** Agregar validación `if (string.IsNullOrWhiteSpace(dto.Content)) return BadRequest()` en `MessagesController.Send`.
+
+4. **`POST /api/auth/login` con email/password vacío** — Retorna `401 Unauthorized` en lugar de `400 BadRequest`. No hay validación de modelo.
+   - **Fix:** Agregar `[Required]` en `LoginDto.Email` y `LoginDto.Password`, o validación manual en `AuthController.Login`.
+
+#### Cómo ejecutar las pruebas
+
+```bash
+# 1. Asegurar que la API esté corriendo en localhost:5000
+dotnet run --project src/OpenToWork.API
+
+# 2. Ejecutar todas las pruebas
+dotnet test src/OpenToWork.Tests/OpenToWork.Tests.csproj --verbosity normal
+
+# 3. Ejecutar solo una clase de tests
+dotnet test src/OpenToWork.Tests/OpenToWork.Tests.csproj --filter "FullyQualifiedName~AuthTests"
+```
+
+#### Resultado final
+```
+Pruebas totales: 44
+     Correcto: 44
+ Tiempo total: ~5s
+```
 
 ---
 
