@@ -955,6 +955,17 @@ Antes de marcar cualquier fase como completada, se debe validar:
 
 ---
 
+## NOTAS
+
+### Creditos de analisis IA por plan (Idea)
+
+- En un **plan basico** se le daran **5 creditos de analisis IA** a la empresa.
+- La empresa podra subir los CV que quieran.
+- Una **IA especializada en RRHH** generara un **analisis FODA** del CV, indicando si el candidato es apto para X vacante.
+- **Flujo del CV:** la empresa sube el CV → nosotros lo guardamos para contactar al posible postulante → obtenemos los permisos para verificarlo → lo proponemos a la empresa con sus habilidades.
+
+---
+
 ## Notas de Actualizacion
 
 > **Regla obligatoria:** Todo desarrollador debe agregar sus notas de cambios en esta seccion cada vez que haga un commit en `main`. El formato es: fecha, nombre del desarrollador, fase, resumen de cambios. Esto mantiene a ambos enterados del progreso sin necesidad de revisar commits uno por uno.
