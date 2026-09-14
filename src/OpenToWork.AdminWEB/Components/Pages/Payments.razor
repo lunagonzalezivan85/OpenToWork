@@ -1,0 +1,165 @@
+@page "/payments"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject AdminAuthApiService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.payments.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.payments.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.payments.subtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <select @bind="StatusFilter" class="admin-select" style="min-width: 150px;">
+            <option value="">@Lang.T("admin.payments.allStatuses")</option>
+            <option value="0">@Lang.T("admin.payments.pending")</option>
+            <option value="1">@Lang.T("admin.payments.paid")</option>
+        </select>
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="LoadAsync">@Lang.T("admin.common.filter")</button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Result == null || Result.Items.Count == 0)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.payments.empty")</div></div>
+}
+else
+{
+    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="admin-recruitment-card" style="flex: 1; margin: 0;">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.payments.totalAmount")</div>
+            <div style="font-size: 1.5rem; font-weight: 700;">@FormatEur(Result.TotalAmount)</div>
+        </div>
+        <div class="admin-recruitment-card" style="flex: 1; margin: 0;">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.payments.totalPaid")</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">@FormatEur(Result.TotalPaid)</div>
+        </div>
+        <div class="admin-recruitment-card" style="flex: 1; margin: 0;">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.payments.totalPending")</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">@FormatEur(Result.TotalPending)</div>
+        </div>
+    </div>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>@Lang.T("admin.payments.contract")</th>
+                    <th>@Lang.T("admin.payments.company")</th>
+                    <th>@Lang.T("admin.payments.tranche")</th>
+                    <th>@Lang.T("admin.payments.percentage")</th>
+                    <th>@Lang.T("admin.payments.amount")</th>
+                    <th>@Lang.T("admin.payments.status")</th>
+                    <th>@Lang.T("admin.payments.paidDate")</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Result.Items)
+                {
+                    <tr>
+                        <td><a href="/companies/@item.CompanyId" style="color: var(--primary); text-decoration: none;">@item.ContractNumber</a></td>
+                        <td>@item.CompanyName</td>
+                        <td>@GetTrancheLabel(item.TrancheType)</td>
+                        <td>@FormatPct(item.Percentage)</td>
+                        <td><strong>@FormatEur(item.Amount)</strong></td>
+                        <td>
+                            @if (item.Status == (int)PaymentTrancheStatus.Pagado)
+                            {
+                                <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.payments.paid")</span>
+                            }
+                            else
+                            {
+                                <span class="admin-result-badge admin-result-badge--warning">@Lang.T("admin.payments.pending")</span>
+                            }
+                        </td>
+                        <td>@(item.PaidAt?.ToString("yyyy-MM-dd") ?? "-")</td>
+                        <td>
+                            @if (item.Status == (int)PaymentTrancheStatus.Pendiente)
+                            {
+                                @if (MarkingPaidId == item.Id)
+                                {
+                                    <div style="display: flex; gap: 0.3rem; align-items: center;">
+                                        <input type="text" @bind="MarkPaidNotes" placeholder="@Lang.T("admin.payments.notesPlaceholder")" class="ot-input-field" style="font-size: 0.75rem; padding: 0.3rem 0.5rem; width: 140px;" />
+                                        <button class="ot-btn ot-btn--primary ot-btn--small" style="font-size: 0.7rem;" @onclick="() => ConfirmMarkPaidAsync(item.Id)">@Lang.T("admin.common.confirm")</button>
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.7rem;" @onclick='() => MarkingPaidId = null'>@Lang.T("admin.common.cancel")</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" style="font-size: 0.7rem;" @onclick='() => { MarkingPaidId = item.Id; MarkPaidNotes = null; }'>@Lang.T("admin.payments.markAsPaid")</button>
+                                }
+                            }
+                            else if (!string.IsNullOrWhiteSpace(item.Notes))
+                            {
+                                <span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;" title="@item.Notes">@item.Notes</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Result.TotalPages > 1)
+    {
+        <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem;">
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage <= 1)" @onclick="() => { CurrentPage--; LoadAsync(); }">@Lang.T("admin.common.previous")</button>
+            <span style="display: flex; align-items: center; font-size: 0.85rem;">@CurrentPage / @Result.TotalPages</span>
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(CurrentPage >= Result.TotalPages)" @onclick="() => { CurrentPage++; LoadAsync(); }">@Lang.T("admin.common.next")</button>
+        </div>
+    }
+}
+
+@code {
+    private bool IsLoading = true;
+    private PaymentListResultDto? Result;
+    private string? StatusFilter;
+    private int CurrentPage = 1;
+    private Guid? MarkingPaidId;
+    private string? MarkPaidNotes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            int? statusFilter = string.IsNullOrEmpty(StatusFilter) ? null : int.Parse(StatusFilter);
+            Result = await AuthApi.GetPaymentsAsync(statusFilter, CurrentPage, 20);
+        }
+        catch { }
+        IsLoading = false;
+    }
+
+    private async Task ConfirmMarkPaidAsync(Guid trancheId)
+    {
+        await AuthApi.MarkPaymentPaidAsync(trancheId, MarkPaidNotes);
+        MarkingPaidId = null;
+        MarkPaidNotes = null;
+        await LoadAsync();
+    }
+
+    private string FormatEur(decimal amount) => $"{amount:N2} EUR";
+    private string FormatPct(decimal pct) => $"{pct:F0}%";
+
+    private string GetTrancheLabel(int type) => type switch
+    {
+        0 => Lang.T("admin.payments.apertura"),
+        1 => Lang.T("admin.payments.validacion"),
+        2 => Lang.T("admin.payments.consolidacion"),
+        _ => "-"
+    };
+}

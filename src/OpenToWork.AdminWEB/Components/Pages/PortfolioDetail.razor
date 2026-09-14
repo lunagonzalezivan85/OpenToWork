@@ -1,0 +1,560 @@
+@page "/portfolio/{UserId}"
+@using System
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject AdminAuthApiService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.portfolio.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <div class="admin-portfolio-back">
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="display: inline; vertical-align: middle; margin-right: 0.3rem;">
+                    <path d="M15 18l-6-6 6-6" />
+                </svg>
+                @Lang.T("admin.portfolio.back")
+            </button>
+        </div>
+        <h1>@Portfolio?.UserName</h1>
+        <p class="admin-page-header-subtitle">@GetStaffRoleLabel(Portfolio?.StaffRole ?? 0)</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenAssignModal">@Lang.T("admin.portfolio.assign")</button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Portfolio == null)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.portfolio.empty")</div></div>
+}
+else
+{
+    <div class="admin-portfolio-summary-bar">
+        <div class="admin-portfolio-summary-item">
+            <span class="admin-portfolio-summary-value">@Portfolio.TotalCompanies</span>
+            <span class="admin-portfolio-summary-label">@Lang.T("admin.portfolio.companies")</span>
+        </div>
+        <div class="admin-portfolio-summary-divider"></div>
+        <div class="admin-portfolio-summary-item">
+            <span class="admin-portfolio-summary-value">@Portfolio.WonCompanies</span>
+            <span class="admin-portfolio-summary-label">@Lang.T("admin.portfolio.won")</span>
+        </div>
+        <div class="admin-portfolio-summary-divider"></div>
+        <div class="admin-portfolio-summary-item">
+            <span class="admin-portfolio-summary-value">@FormatEur(Portfolio.TotalBilled)</span>
+            <span class="admin-portfolio-summary-label">@Lang.T("admin.portfolio.billed")</span>
+        </div>
+        <div class="admin-portfolio-summary-divider"></div>
+        <div class="admin-portfolio-summary-item admin-portfolio-summary--warning">
+            <span class="admin-portfolio-summary-value">@FormatEur(Portfolio.TotalPending)</span>
+            <span class="admin-portfolio-summary-label">@Lang.T("admin.portfolio.pending")</span>
+        </div>
+    </div>
+
+    <div class="admin-portfolio-detail-list">
+        @foreach (var company in Portfolio.Companies)
+        {
+            <div class="admin-portfolio-company-item admin-clickable" @onclick="() => OpenCompanyModal(company)">
+                <div class="admin-portfolio-company-main">
+                    <div class="admin-portfolio-company-name">@company.CompanyName</div>
+                    <span class="admin-status @GetStageBadgeClass(company.CurrentStage)">@GetStageLabel(company.CurrentStage)</span>
+                </div>
+                <div class="admin-portfolio-company-meta">
+                    <div class="admin-portfolio-company-stat">
+                        <span class="admin-portfolio-company-stat-label">@Lang.T("admin.portfolio.vacancies")</span>
+                        <span class="admin-portfolio-company-stat-value">@company.VacancyCount</span>
+                    </div>
+                    <div class="admin-portfolio-company-stat">
+                        <span class="admin-portfolio-company-stat-label">@Lang.T("admin.portfolio.contracts")</span>
+                        <span class="admin-portfolio-company-stat-value">@company.ContractCount</span>
+                    </div>
+                    <div class="admin-portfolio-company-stat">
+                        <span class="admin-portfolio-company-stat-label">@Lang.T("admin.portfolio.contractTotal")</span>
+                        <span class="admin-portfolio-company-stat-value">@FormatEur(company.ContractTotal ?? 0)</span>
+                    </div>
+                    <div class="admin-portfolio-company-stat admin-portfolio-company-stat--warning">
+                        <span class="admin-portfolio-company-stat-label">@Lang.T("admin.portfolio.pendingTotal")</span>
+                        <span class="admin-portfolio-company-stat-value">@FormatEur(company.PendingTotal ?? 0)</span>
+                    </div>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" class="admin-portfolio-chevron">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (ShowCompanyModal)
+{
+    <div class="admin-modal-overlay" @onclick="CloseCompanyModal">
+        <div class="admin-modal admin-portfolio-company-modal" @onclick:stopPropagation="true">
+            <div class="admin-portfolio-modal-header">
+                <h3 class="admin-modal-title" style="margin: 0;">@SelectedCompany?.CompanyName</h3>
+                <button class="ot-btn ot-btn--outline ot-btn--small" style="padding: 0.2rem 0.5rem; font-size: 1rem;" @onclick="CloseCompanyModal">&times;</button>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="admin-tab @(ActiveTab == 0 ? "admin-tab--active" : "")" @onclick="() => SwitchTab(0)">@Lang.T("admin.portfolio.tabInfo")</button>
+                <button class="admin-tab @(ActiveTab == 1 ? "admin-tab--active" : "")" @onclick="() => SwitchTab(1)">@Lang.T("admin.portfolio.tabPaid")</button>
+                <button class="admin-tab @(ActiveTab == 2 ? "admin-tab--active" : "")" @onclick="() => SwitchTab(2)">@Lang.T("admin.portfolio.tabPending")</button>
+                <button class="admin-tab @(ActiveTab == 3 ? "admin-tab--active" : "")" @onclick="() => SwitchTab(3)">@Lang.T("admin.portfolio.tabActions")</button>
+            </div>
+
+            <div class="admin-modal-body">
+                @if (IsLoadingModal)
+                {
+                    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+                }
+                else
+                {
+                    @if (ActiveTab == 0)
+                    {
+                        <div class="admin-portfolio-info-grid">
+                            @if (CompanyDetail != null)
+                            {
+                                <div class="admin-portfolio-info-row">
+                                    <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoName")</span>
+                                    <span class="admin-portfolio-info-value">@CompanyDetail.Name</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(CompanyDetail.LegalName))
+                                {
+                                    <div class="admin-portfolio-info-row">
+                                        <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoLegalName")</span>
+                                        <span class="admin-portfolio-info-value">@CompanyDetail.LegalName</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(CompanyDetail.TaxId))
+                                {
+                                    <div class="admin-portfolio-info-row">
+                                        <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoTaxId")</span>
+                                        <span class="admin-portfolio-info-value">@CompanyDetail.TaxId</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(CompanyDetail.Industry))
+                                {
+                                    <div class="admin-portfolio-info-row">
+                                        <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoIndustry")</span>
+                                        <span class="admin-portfolio-info-value">@CompanyDetail.Industry</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(CompanyDetail.City))
+                                {
+                                    <div class="admin-portfolio-info-row">
+                                        <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoCity")</span>
+                                        <span class="admin-portfolio-info-value">@CompanyDetail.City</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(CompanyDetail.Address))
+                                {
+                                    <div class="admin-portfolio-info-row">
+                                        <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoAddress")</span>
+                                        <span class="admin-portfolio-info-value">@CompanyDetail.Address</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(CompanyDetail.ContactName))
+                                {
+                                    <div class="admin-portfolio-info-row">
+                                        <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoContact")</span>
+                                        <span class="admin-portfolio-info-value">@CompanyDetail.ContactName</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(CompanyDetail.ContactEmail))
+                                {
+                                    <div class="admin-portfolio-info-row">
+                                        <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoEmail")</span>
+                                        <span class="admin-portfolio-info-value">@CompanyDetail.ContactEmail</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(CompanyDetail.ContactPhone))
+                                {
+                                    <div class="admin-portfolio-info-row">
+                                        <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoPhone")</span>
+                                        <span class="admin-portfolio-info-value">@CompanyDetail.ContactPhone</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(CompanyDetail.Website))
+                                {
+                                    <div class="admin-portfolio-info-row">
+                                        <span class="admin-portfolio-info-label">@Lang.T("admin.portfolio.infoWebsite")</span>
+                                        <span class="admin-portfolio-info-value"><a href="@CompanyDetail.Website" target="_blank" class="admin-portfolio-company-link">@CompanyDetail.Website</a></span>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p style="color: #778DA9; font-size: 0.85rem;">@Lang.T("admin.portfolio.noInfoAvailable")</p>
+                            }
+                        </div>
+                    }
+                    else if (ActiveTab == 1)
+                    {
+                        @if (PaidPayments.Count > 0)
+                        {
+                            <div class="admin-portfolio-payments-list">
+                                @foreach (var payment in PaidPayments)
+                                {
+                                    <div class="admin-portfolio-payment-item admin-portfolio-payment-item--paid">
+                                        <div class="admin-portfolio-payment-info">
+                                            <span class="admin-portfolio-payment-type">@GetTrancheLabel(payment.TrancheType)</span>
+                                            <span class="admin-portfolio-payment-amount">@FormatEur(payment.Amount)</span>
+                                        </div>
+                                        <div class="admin-portfolio-payment-meta">
+                                            <span class="admin-portfolio-payment-pct">@payment.Percentage%</span>
+                                            <span class="admin-status admin-status--success">@Lang.T("admin.portfolio.paid")</span>
+                                            <span class="admin-portfolio-payment-date">@(payment.PaidAt?.ToString("dd/MM/yyyy") ?? "-")</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p style="color: #778DA9; font-size: 0.85rem;">@Lang.T("admin.portfolio.noPaidPayments")</p>
+                        }
+                    }
+                    else if (ActiveTab == 2)
+                    {
+                        @if (PendingPayments.Count > 0)
+                        {
+                            <div class="admin-portfolio-payments-list">
+                                @foreach (var payment in PendingPayments)
+                                {
+                                    <div class="admin-portfolio-payment-item admin-portfolio-payment-item--pending">
+                                        <div class="admin-portfolio-payment-info">
+                                            <span class="admin-portfolio-payment-type">@GetTrancheLabel(payment.TrancheType)</span>
+                                            <span class="admin-portfolio-payment-amount">@FormatEur(payment.Amount)</span>
+                                        </div>
+                                        <div class="admin-portfolio-payment-meta">
+                                            <span class="admin-portfolio-payment-pct">@payment.Percentage%</span>
+                                            <span class="admin-status admin-status--neutral">@Lang.T("admin.portfolio.pending")</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p style="color: #778DA9; font-size: 0.85rem;">@Lang.T("admin.portfolio.noPendingPayments")</p>
+                        }
+                    }
+                    else if (ActiveTab == 3)
+                    {
+                        <div class="admin-portfolio-actions">
+                            @if (PendingPayments.Count > 0)
+                            {
+                                <div class="admin-portfolio-action-section">
+                                    <h4 class="admin-portfolio-action-title">@Lang.T("admin.portfolio.registerPayment")</h4>
+                                    <div class="admin-portfolio-payment-select">
+                                        <label>@Lang.T("admin.portfolio.selectTranche")</label>
+                                        <select @bind="SelectedTrancheId" class="admin-modal-select" style="width: 100%;">
+                                            <option value="">-- @Lang.T("admin.portfolio.selectTranchePlaceholder") --</option>
+                                            @foreach (var payment in PendingPayments)
+                                            {
+                                                <option value="@payment.Id">@GetTrancheLabel(payment.TrancheType) - @FormatEur(payment.Amount)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="admin-portfolio-payment-select">
+                                        <label>@Lang.T("admin.portfolio.notes")</label>
+                                        <textarea @bind="PaymentNotes" class="admin-modal-textarea" style="width: 100%; min-height: 50px;" placeholder="@Lang.T("admin.portfolio.notesPlaceholder")"></textarea>
+                                    </div>
+                                    @if (PaymentError != null)
+                                    {
+                                        <p style="color: var(--danger); font-size: 0.85rem;">@PaymentError</p>
+                                    }
+                                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsMarkingPaid" @onclick="RegisterPaymentAsync" style="margin-top: 0.5rem;">
+                                        @(IsMarkingPaid ? Lang.T("admin.common.loading") : Lang.T("admin.portfolio.markPaid"))
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <p style="color: #778DA9; font-size: 0.85rem; margin-bottom: 1rem;">@Lang.T("admin.portfolio.noPendingPayments")</p>
+                            }
+
+                            <div class="admin-portfolio-action-section">
+                                <h4 class="admin-portfolio-action-title">@Lang.T("admin.portfolio.otherActions")</h4>
+                                <a href="/companies/@SelectedCompany?.CompanyId" class="ot-btn ot-btn--outline ot-btn--small" style="margin-right: 0.5rem; margin-bottom: 0.5rem;">@Lang.T("admin.portfolio.viewCompany")</a>
+                                @if (Contract != null)
+                                {
+                                    <a href="/companies/@SelectedCompany?.CompanyId/contract" class="ot-btn ot-btn--outline ot-btn--small" style="margin-right: 0.5rem; margin-bottom: 0.5rem;">@Lang.T("admin.portfolio.viewContract")</a>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowAssignModal)
+{
+    <div class="admin-modal-overlay" @onclick="CloseAssignModal">
+        <div class="admin-modal" @onclick:stopPropagation="true" style="min-width: 420px; max-width: 90vw;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 class="admin-modal-title" style="margin: 0;">@Lang.T("admin.portfolio.assignTitle")</h3>
+                <button class="ot-btn ot-btn--outline ot-btn--small" style="padding: 0.2rem 0.5rem; font-size: 1rem;" @onclick="CloseAssignModal">&times;</button>
+            </div>
+            <div class="admin-modal-body">
+                @if (AssignError != null)
+                {
+                    <p style="color: var(--danger); font-size: 0.85rem;">@AssignError</p>
+                }
+                <div>
+                    <label>@Lang.T("admin.portfolio.selectCompany")</label>
+                    <select @bind="SelectedCompanyId" class="admin-modal-select" style="width: 100%;">
+                        <option value="">-- @Lang.T("admin.portfolio.selectCompanyPlaceholder") --</option>
+                        @foreach (var company in AvailableCompanies)
+                        {
+                            <option value="@company.Id">@company.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label>@Lang.T("admin.portfolio.selectUser")</label>
+                    <select @bind="SelectedUserId" class="admin-modal-select" style="width: 100%;" disabled>
+                        <option value="@Portfolio?.UserId">@(Portfolio?.UserName)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>@Lang.T("admin.portfolio.notes")</label>
+                    <textarea @bind="AssignNotes" class="admin-modal-textarea" style="width: 100%; min-height: 60px;" placeholder="@Lang.T("admin.portfolio.notesPlaceholder")"></textarea>
+                </div>
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseAssignModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsAssigning" @onclick="SubmitAssignAsync">
+                    @(IsAssigning ? Lang.T("admin.common.loading") : Lang.T("admin.common.confirm"))
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? UserId { get; set; }
+
+    private bool IsLoading = true;
+    private PortfolioSummaryDto? Portfolio;
+    private List<PortfolioSummaryDto> AllPortfolios = new();
+
+    private bool ShowAssignModal;
+    private bool IsAssigning;
+    private string? AssignError;
+    private Guid? SelectedCompanyId;
+    private Guid? SelectedUserId;
+    private string? AssignNotes;
+    private List<CompanyListDto> AvailableCompanies = new();
+
+    private bool ShowCompanyModal;
+    private bool IsLoadingModal;
+    private int ActiveTab = 0;
+    private PortfolioCompanyDto? SelectedCompany;
+    private CompanyDetailDto? CompanyDetail;
+    private AdminVacancyContractDto? Contract;
+    private List<ContractPaymentDto> AllPayments = new();
+    private List<ContractPaymentDto> PaidPayments = new();
+    private List<ContractPaymentDto> PendingPayments = new();
+
+    private Guid? SelectedTrancheId;
+    private string? PaymentNotes;
+    private string? PaymentError;
+    private bool IsMarkingPaid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            AllPortfolios = await AuthApi.GetPortfolioAsync();
+            if (Guid.TryParse(UserId, out var uid))
+                Portfolio = AllPortfolios.FirstOrDefault(p => p.UserId == uid);
+        }
+        catch { }
+        IsLoading = false;
+    }
+
+    private void GoBack() => Nav.NavigateTo("/portfolio");
+
+    private async Task OpenCompanyModal(PortfolioCompanyDto company)
+    {
+        SelectedCompany = company;
+        ShowCompanyModal = true;
+        ActiveTab = 0;
+        IsLoadingModal = true;
+        CompanyDetail = null;
+        Contract = null;
+        AllPayments = new();
+        PaidPayments = new();
+        PendingPayments = new();
+
+        try
+        {
+            CompanyDetail = await AuthApi.GetCompanyAsync(company.CompanyId);
+            Contract = await AuthApi.GetContractByCompanyAsync(company.CompanyId);
+            if (Contract != null)
+            {
+                AllPayments = await AuthApi.GetContractPaymentsAsync(Contract.Id);
+                PaidPayments = AllPayments.Where(p => p.Status == (int)PaymentTrancheStatus.Pagado).ToList();
+                PendingPayments = AllPayments.Where(p => p.Status == (int)PaymentTrancheStatus.Pendiente).ToList();
+            }
+        }
+        catch { }
+        IsLoadingModal = false;
+    }
+
+    private void CloseCompanyModal()
+    {
+        ShowCompanyModal = false;
+        SelectedTrancheId = null;
+        PaymentNotes = null;
+        PaymentError = null;
+    }
+
+    private void SwitchTab(int tab) => ActiveTab = tab;
+
+    private async Task RegisterPaymentAsync()
+    {
+        if (!SelectedTrancheId.HasValue)
+        {
+            PaymentError = Lang.T("admin.portfolio.selectTrancheError");
+            return;
+        }
+
+        IsMarkingPaid = true;
+        PaymentError = null;
+        try
+        {
+            var result = await AuthApi.MarkPaymentPaidAsync(SelectedTrancheId.Value, PaymentNotes);
+            if (result == null)
+            {
+                PaymentError = Lang.T("admin.portfolio.markPaidError");
+            }
+            else
+            {
+                if (Contract != null)
+                {
+                    AllPayments = await AuthApi.GetContractPaymentsAsync(Contract.Id);
+                    PaidPayments = AllPayments.Where(p => p.Status == (int)PaymentTrancheStatus.Pagado).ToList();
+                    PendingPayments = AllPayments.Where(p => p.Status == (int)PaymentTrancheStatus.Pendiente).ToList();
+                }
+                SelectedTrancheId = null;
+                PaymentNotes = null;
+                await LoadAsync();
+            }
+        }
+        catch
+        {
+            PaymentError = Lang.T("admin.portfolio.markPaidError");
+        }
+        IsMarkingPaid = false;
+    }
+
+    private async Task OpenAssignModal()
+    {
+        ShowAssignModal = true;
+        AssignError = null;
+        SelectedCompanyId = null;
+        SelectedUserId = Portfolio?.UserId;
+        AssignNotes = null;
+
+        try
+        {
+            var allCompanies = await AuthApi.GetCompaniesAsync(page: 1, pageSize: 1000);
+            var assignedIds = AllPortfolios.SelectMany(p => p.Companies.Select(c => c.CompanyId)).ToHashSet();
+            AvailableCompanies = allCompanies.Where(c => !assignedIds.Contains(c.Id)).ToList();
+        }
+        catch { }
+    }
+
+    private void CloseAssignModal() => ShowAssignModal = false;
+
+    private async Task SubmitAssignAsync()
+    {
+        if (!SelectedCompanyId.HasValue || !SelectedUserId.HasValue)
+        {
+            AssignError = Lang.T("admin.portfolio.selectBoth");
+            return;
+        }
+
+        IsAssigning = true;
+        AssignError = null;
+        try
+        {
+            var dto = new AssignCompanyDto
+            {
+                CompanyId = SelectedCompanyId.Value,
+                AssignedToUserId = SelectedUserId.Value,
+                Notes = AssignNotes
+            };
+            var result = await AuthApi.AssignCompanyAsync(dto);
+            if (result == null)
+            {
+                AssignError = Lang.T("admin.portfolio.assignError");
+            }
+            else
+            {
+                ShowAssignModal = false;
+                await LoadAsync();
+            }
+        }
+        catch
+        {
+            AssignError = Lang.T("admin.portfolio.assignError");
+        }
+        IsAssigning = false;
+    }
+
+    private string FormatEur(decimal amount) => $"{amount:N2} EUR";
+
+    private string GetStaffRoleLabel(int staffRole) => staffRole switch
+    {
+        0 => "SuperAdmin",
+        1 => Lang.T("admin.users.staffRecruiter"),
+        2 => Lang.T("admin.users.staffComercial"),
+        _ => "-"
+    };
+
+    private string GetStageLabel(int stage) => stage switch
+    {
+        0 => "Lead",
+        1 => "Contactado",
+        2 => "Reunión",
+        3 => "Propuesta",
+        4 => "Negociación",
+        5 => "Cerrado Ganado",
+        6 => "Cerrado Perdido",
+        _ => "-"
+    };
+
+    private string GetStageBadgeClass(int stage) => stage switch
+    {
+        5 => "admin-status--success",
+        6 => "admin-status--danger",
+        >= 3 => "admin-status--info",
+        _ => "admin-status--neutral"
+    };
+
+    private string GetTrancheLabel(int trancheType) => trancheType switch
+    {
+        0 => Lang.T("admin.portfolio.trancheOpening"),
+        1 => Lang.T("admin.portfolio.trancheValidation"),
+        2 => Lang.T("admin.portfolio.trancheConsolidation"),
+        _ => "-"
+    };
+}

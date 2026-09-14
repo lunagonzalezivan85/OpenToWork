@@ -168,3 +168,41 @@ El pipeline de empresas y candidatos (`/companies/pipeline`, `/candidates/pipeli
 | `Candidates/Pipeline.razor` | Wrapper div alrededor del kanban |
 | `App.razor` (AdminWEB) | Cache-busting dinamico en CSS links |
 | `App.razor` (WEB) | Cache-busting dinamico en CSS links |
+
+---
+
+## Sesión: 13 Septiembre 2026 (Cartera de Clientes y Pagos)
+
+### Cartera de Clientes + Opciones de Pago para Recuperacion
+
+#### Funcionalidad
+Nueva seccion de cartera comercial (`/portfolio`) que muestra las empresas asignadas a cada comercial, con facturacion total, tramos pendientes y estado del pipeline. Vista centralizada de pagos (`/payments`) con filtro por estado y accion de marcar tramos como pagados.
+
+#### Cambios Realizados
+
+**1. API - PortfolioPaymentController**
+- `GET /api/admin/portfolio` — agrupa empresas por comercial asignado, calcula facturacion y pendientes
+- `GET /api/admin/payments` — lista paginada de tramos de pago con filtro por estado
+- `POST /api/admin/payments/{trancheId}/mark-paid` — marca tramo como pagado
+- Autorizacion: `RequireStaffRole(AdminStaffRole.Comercial)`
+
+**2. DTOs (PortfolioPaymentDtos.cs)**
+- `PortfolioSummaryDto` — resumen por comercial (empresas, facturacion, pendientes)
+- `PortfolioCompanyDto` — empresa individual con vacantes, contratos y montos
+- `PaymentListItemDto` — tramo de pago con contexto de contrato y empresa
+- `PaymentListResultDto` — resultado paginado con totales
+
+**3. UI AdminWEB**
+- `Portfolio.razor` (`/portfolio`) — grid de cards por comercial con stats, modal de asignacion
+- `PortfolioDetail.razor` (`/portfolio/{userId}`) — detalle de cartera por comercial
+- `Payments.razor` (`/payments`) — tabla centralizada de tramos con filtro y accion de pago
+
+### Archivos Nuevos
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `PortfolioPaymentController.cs` | API endpoints: portfolio, payments, mark-paid |
+| `PortfolioPaymentDtos.cs` | DTOs de cartera y pagos |
+| `Portfolio.razor` | Vista de cartera comercial con grid y modal asignacion |
+| `PortfolioDetail.razor` | Detalle de cartera por comercial |
+| `Payments.razor` | Vista centralizada de tramos de pago |

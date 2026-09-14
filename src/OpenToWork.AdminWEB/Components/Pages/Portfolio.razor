@@ -1,0 +1,225 @@
+@page "/portfolio"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject AdminAuthApiService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("admin.portfolio.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.portfolio.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.portfolio.subtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenAssignModal">@Lang.T("admin.portfolio.assign")</button>
+    </div>
+</div>
+
+@if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (Portfolios.Count == 0)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.portfolio.empty")</div></div>
+}
+else
+{
+    <div class="admin-portfolio-grid">
+        @foreach (var portfolio in Portfolios)
+        {
+            <div class="admin-portfolio-user-card admin-clickable" @onclick="() => GoToDetail(portfolio.UserId)">
+                <div class="admin-portfolio-user-header">
+                    <div class="admin-portfolio-avatar">@(GetInitials(portfolio.UserName))</div>
+                    <div class="admin-portfolio-user-info">
+                        <h3 class="admin-portfolio-user-name">@portfolio.UserName</h3>
+                        <span class="admin-portfolio-user-role">@GetStaffRoleLabel(portfolio.StaffRole)</span>
+                    </div>
+                    <svg class="admin-portfolio-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </div>
+                <div class="admin-portfolio-user-stats">
+                    <div class="admin-portfolio-stat">
+                        <span class="admin-portfolio-stat-value">@portfolio.TotalCompanies</span>
+                        <span class="admin-portfolio-stat-label">@Lang.T("admin.portfolio.companies")</span>
+                    </div>
+                    <div class="admin-portfolio-stat">
+                        <span class="admin-portfolio-stat-value">@portfolio.WonCompanies</span>
+                        <span class="admin-portfolio-stat-label">@Lang.T("admin.portfolio.won")</span>
+                    </div>
+                    <div class="admin-portfolio-stat">
+                        <span class="admin-portfolio-stat-value">@FormatEur(portfolio.TotalBilled)</span>
+                        <span class="admin-portfolio-stat-label">@Lang.T("admin.portfolio.billed")</span>
+                    </div>
+                    <div class="admin-portfolio-stat admin-portfolio-stat--warning">
+                        <span class="admin-portfolio-stat-value">@FormatEur(portfolio.TotalPending)</span>
+                        <span class="admin-portfolio-stat-label">@Lang.T("admin.portfolio.pending")</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (ShowAssignModal)
+{
+    <div class="admin-modal-overlay" @onclick="CloseAssignModal">
+        <div class="admin-modal" @onclick:stopPropagation="true" style="min-width: 420px; max-width: 90vw;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 class="admin-modal-title" style="margin: 0;">@Lang.T("admin.portfolio.assignTitle")</h3>
+                <button class="ot-btn ot-btn--outline ot-btn--small" style="padding: 0.2rem 0.5rem; font-size: 1rem;" @onclick="CloseAssignModal">&times;</button>
+            </div>
+            <div class="admin-modal-body">
+                @if (AssignError != null)
+                {
+                    <p style="color: var(--danger); font-size: 0.85rem;">@AssignError</p>
+                }
+                <div>
+                    <label>@Lang.T("admin.portfolio.selectCompany")</label>
+                    <select @bind="SelectedCompanyId" class="admin-modal-select" style="width: 100%;">
+                        <option value="">-- @Lang.T("admin.portfolio.selectCompanyPlaceholder") --</option>
+                        @foreach (var company in AvailableCompanies)
+                        {
+                            <option value="@company.Id">@company.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label>@Lang.T("admin.portfolio.selectUser")</label>
+                    <select @bind="SelectedUserId" class="admin-modal-select" style="width: 100%;">
+                        <option value="">-- @Lang.T("admin.portfolio.selectUserPlaceholder") --</option>
+                        @foreach (var staff in CommercialStaff)
+                        {
+                            <option value="@staff.Id">@(staff.FullName ?? staff.Email) (@GetStaffRoleLabel(staff.StaffRole))</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label>@Lang.T("admin.portfolio.notes")</label>
+                    <textarea @bind="AssignNotes" class="admin-modal-textarea" style="width: 100%; min-height: 60px;" placeholder="@Lang.T("admin.portfolio.notesPlaceholder")"></textarea>
+                </div>
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseAssignModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsAssigning" @onclick="SubmitAssignAsync">
+                    @(IsAssigning ? Lang.T("admin.common.loading") : Lang.T("admin.common.confirm"))
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool IsLoading = true;
+    private List<PortfolioSummaryDto> Portfolios = new();
+
+    private bool ShowAssignModal;
+    private bool IsAssigning;
+    private string? AssignError;
+    private Guid? SelectedCompanyId;
+    private Guid? SelectedUserId;
+    private string? AssignNotes;
+    private List<CompanyListDto> AvailableCompanies = new();
+    private List<StaffUserDto> CommercialStaff = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            Portfolios = await AuthApi.GetPortfolioAsync();
+        }
+        catch { }
+        IsLoading = false;
+    }
+
+    private async Task OpenAssignModal()
+    {
+        ShowAssignModal = true;
+        AssignError = null;
+        SelectedCompanyId = null;
+        SelectedUserId = null;
+        AssignNotes = null;
+
+        try
+        {
+            var allCompanies = await AuthApi.GetCompaniesAsync(page: 1, pageSize: 1000);
+            var assignedIds = Portfolios.SelectMany(p => p.Companies.Select(c => c.CompanyId)).ToHashSet();
+            AvailableCompanies = allCompanies.Where(c => !assignedIds.Contains(c.Id)).ToList();
+
+            var allStaff = await AuthApi.GetStaffAsync();
+            CommercialStaff = allStaff.Where(s => s.IsActive).ToList();
+        }
+        catch { }
+    }
+
+    private void CloseAssignModal()
+    {
+        ShowAssignModal = false;
+    }
+
+    private async Task SubmitAssignAsync()
+    {
+        if (!SelectedCompanyId.HasValue || !SelectedUserId.HasValue)
+        {
+            AssignError = Lang.T("admin.portfolio.selectBoth");
+            return;
+        }
+
+        IsAssigning = true;
+        AssignError = null;
+        try
+        {
+            var dto = new AssignCompanyDto
+            {
+                CompanyId = SelectedCompanyId.Value,
+                AssignedToUserId = SelectedUserId.Value,
+                Notes = AssignNotes
+            };
+            var result = await AuthApi.AssignCompanyAsync(dto);
+            if (result == null)
+            {
+                AssignError = Lang.T("admin.portfolio.assignError");
+            }
+            else
+            {
+                ShowAssignModal = false;
+                await LoadAsync();
+            }
+        }
+        catch
+        {
+            AssignError = Lang.T("admin.portfolio.assignError");
+        }
+        IsAssigning = false;
+    }
+
+    private string FormatEur(decimal amount) => $"{amount:N2} EUR";
+
+    private void GoToDetail(Guid userId) => Nav.NavigateTo($"/portfolio/{userId}");
+
+    private string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2) return (parts[0][0].ToString() + parts[1][0].ToString()).ToUpper();
+        return name.Length >= 2 ? name.Substring(0, 2).ToUpper() : name.ToUpper();
+    }
+
+    private string GetStaffRoleLabel(int staffRole) => staffRole switch
+    {
+        0 => "SuperAdmin",
+        1 => Lang.T("admin.users.staffRecruiter"),
+        2 => Lang.T("admin.users.staffComercial"),
+        _ => "-"
+    };
+}
