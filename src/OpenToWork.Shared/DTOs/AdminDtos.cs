@@ -87,6 +87,18 @@ public class ChangeRoleDto
     public int Role { get; set; }
 }
 
+/// <summary>
+/// Creacion de usuario desde el portal admin. Soporta los 3 roles: Candidate, Company, Admin.
+/// Para Admin, StaffRole es obligatorio (Reclutador/Comercial); para los demas se ignora.
+/// </summary>
+public class CreateUserDto
+{
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public int PrimaryRole { get; set; }
+    public int? StaffRole { get; set; }
+}
+
 public class AdminSkillDto
 {
     public Guid Id { get; set; }

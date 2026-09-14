@@ -1,4 +1,4 @@
-# CONEX
+# OPENTOWORK
 
 Plataforma de **evaluacion, validacion y scoring de talento** que funciona como la capa de confianza para decisiones de contratacion. Construida con **.NET 10, Blazor y MySQL**.
 
@@ -294,6 +294,83 @@ dotnet run --project src/OpenToWork.AdminWEB
 > ```sql
 > UPDATE SC_Users SET PrimaryRole = 2 WHERE Email = 'admin@opentowork.com';
 > ```
+
+### 5.1. Datos de prueba (Seed Data - Hosteleria)
+
+El script [`docs/seed-data.sql`](docs/seed-data.sql) puebla la base de datos con datos de ejemplo del ramo de **hosteleria** (hoteles, restaurantes, catering). Ejecutar despues de aplicar todas las migraciones:
+
+```bash
+mysql -u root -p OpenToWorkDb < docs/seed-data.sql
+```
+
+**Password para TODOS los usuarios de prueba: `Empresa123!`**
+
+#### Empresas (3)
+
+| Email | Empresa | Pais | Ciudad | Tamano | Verificada |
+|-------|---------|------|--------|--------|-----------|
+| `rrhh@hotelsolcaribe.com` | Hotel Sol Caribe | Colombia | Cartagena | 220 | Si |
+| `rrhh@grupolapaella.es` | Grupo La Paella | Espana | Madrid | 160 | Si |
+| `rrhh@cateringdelmar.es` | Catering Del Mar | Espana | Barcelona | 90 | No |
+
+#### Candidatos (8)
+
+| Email | Nombre | Titulo | Pais | Ciudad | Exp. (anos) |
+|-------|--------|--------|------|--------|-------------|
+| `ana.martinez@gmail.com` | Ana Martinez | Chef de Parte - Cocina Internacional | Espana | Madrid | 5 |
+| `luis.fernandez@hotmail.com` | Luis Fernandez | Recepcionista Hotelero Bilingue | Colombia | Cartagena | 4 |
+| `sofia.torres@outlook.com` | Sofia Torres | Camarera Profesional y Sumiller | Espana | Barcelona | 6 |
+| `javier.morales@outlook.com` | Javier Morales | Cocinero - Cocina Mediterranea | Colombia | Cartagena | 3 |
+| `elena.ruiz@gmail.com` | Elena Ruiz | Gobernanta de Hotel | Espana | Madrid | 7 |
+| `pablo.garcia@hotmail.com` | Pablo Garcia | Barista y Camarero de Cafeteria | Espana | Barcelona | 4 |
+| `carmen.vega@outlook.com` | Carmen Vega | Pastelera - Reposteria de Autor | Espana | Barcelona | 5 |
+| `diego.hernandez@gmail.com` | Diego Hernandez | Maitre de Sala - Restauracion | Colombia | Cartagena | 8 |
+
+#### Vacantes permanentes (8)
+
+| Empresa | Vacante | Estado | Categoria |
+|---------|---------|--------|-----------|
+| Hotel Sol Caribe | Chef de Parte - Cocina Internacional | Activa | Cocina |
+| Hotel Sol Caribe | Recepcionista de Hotel Bilingue | Activa | Recepcion |
+| Hotel Sol Caribe | Gobernante/a de Hotel (Housekeeping) | Activa | Housekeeping |
+| Grupo La Paella | Camarero/a de Sala - Restaurante Gourmet | Activa | Sala |
+| Grupo La Paella | Segundo/a de Cocina (Sous Chef) | Activa | Cocina |
+| Catering Del Mar | Camarero/a de Eventos y Banquetes | Activa | Banquetes |
+| Catering Del Mar | Pastelero/a - Produccion de Reposteria | Borrador | Pasteleria |
+| Grupo La Paella | Jefe/a de Sala | Cerrada | Sala |
+
+#### Vacantes temporales (2)
+
+| Empresa | Vacante | Tipo | Ubicacion |
+|---------|---------|------|-----------|
+| Hotel Sol Caribe | Extra de Sala - Temporada Alta | Contrato | Cartagena |
+| Grupo La Paella | Cocinero/a de Refuerzo - Eventos | Contrato | Madrid |
+
+#### Skills (20)
+
+Cocina: Cocina Internacional, Cocina Mediterranea, Reposteria y Pasteleria, HACCP / Seguridad Alimentaria, Cocina Creativa / Autor
+Sala: Servicio de Sala, Maridaje de Vinos, Banquetes y Eventos, Sommellerie, Maitre d Hotel
+Barra: Cocteleria, Cafe y Barista, Barista / Cafeteria
+Recepcion: Gestion de PMS (Opera/Sihot)
+Housekeeping: Housekeeping / Limpieza
+Idiomas: Ingles B2, Ingles C1
+Gestion: Gestion de Equipos, Control de Costes
+Transversal: Atencion al Cliente
+
+#### Postulaciones (10)
+
+| Candidato | Vacante | Estado |
+|-----------|---------|--------|
+| Ana Martinez | Chef de Parte - Cocina Internacional | En revision |
+| Luis Fernandez | Recepcionista de Hotel Bilingue | Pendiente |
+| Sofia Torres | Camarero/a de Sala - Restaurante Gourmet | Pendiente |
+| Javier Morales | Chef de Parte - Cocina Internacional | Pendiente |
+| Ana Martinez | Camarero/a de Eventos y Banquetes | Aceptada |
+| Elena Ruiz | Gobernante/a de Hotel (Housekeeping) | En revision |
+| Pablo Garcia | Camarero/a de Sala - Restaurante Gourmet | Pendiente |
+| Carmen Vega | Pastelero/a - Produccion de Reposteria | Pendiente |
+| Diego Hernandez | Camarero/a de Sala - Restaurante Gourmet | En revision |
+| Sofia Torres | Camarero/a de Eventos y Banquetes | Rechazada |
 
 ### 6. Flujo de trabajo con Git
 

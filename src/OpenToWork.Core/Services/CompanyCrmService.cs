@@ -374,6 +374,7 @@ public class CompanyCrmService : ICompanyCrmService
             AssignedToUserId = pipeline.AssignedToUserId,
             AssignedAt = pipeline.AssignedAt,
             StageEnteredAt = pipeline.StageEnteredAt,
+            MeetingDate = pipeline.MeetingDate,
             CreatedAt = pipeline.CreatedAt,
             Notes = pipeline.Notes,
             IsDismissed = pipeline.IsDismissed,
@@ -459,6 +460,8 @@ public class CompanyCrmService : ICompanyCrmService
         pipeline.CurrentStage = dto.ToStage;
         pipeline.StageEnteredAt = DateTime.UtcNow;
         pipeline.Notes = dto.Notes ?? pipeline.Notes;
+        if (dto.MeetingDate.HasValue)
+            pipeline.MeetingDate = dto.MeetingDate;
         pipeline.UpdatedAt = DateTime.UtcNow;
         pipeline.UpdatedBy = adminId;
 
@@ -545,6 +548,21 @@ public class CompanyCrmService : ICompanyCrmService
 
         await _db.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "CompanyCrm.Reassign", "PTCompanyPipeline", pipelineId, "Empresa reasignada a otro usuario", ipAddress);
+
+        return true;
+    }
+
+    public async Task<bool> UpdateNotesAsync(Guid pipelineId, UpdatePipelineNotesDto dto, Guid adminId, string? ipAddress)
+    {
+        var pipeline = await _db.PT_CompanyPipelines.FirstOrDefaultAsync(p => p.Id == pipelineId && !p.IsDeleted);
+        if (pipeline == null) return false;
+
+        pipeline.Notes = dto.Notes;
+        pipeline.UpdatedAt = DateTime.UtcNow;
+        pipeline.UpdatedBy = adminId;
+
+        await _db.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "CompanyCrm.UpdateNotes", "PTCompanyPipeline", pipelineId, "Notas del pipeline actualizadas", ipAddress);
 
         return true;
     }

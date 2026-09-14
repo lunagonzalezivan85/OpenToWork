@@ -1,10 +1,12 @@
 {
     "title": "Buscar Vacantes",
+    "subtitle": "Encuentra el trabajo que estás buscando",
     "searchPlaceholder": "Buscar por título, descripción o requisitos...",
     "locationPlaceholder": "Ubicación",
     "filters": "Filtros",
     "noResults": "No se encontraron vacantes",
     "results": "vacantes encontradas",
+    "clearFilters": "Limpiar filtros",
     "salaryRange": "Rango salarial",
     "expiresIn": "Expira en",
     "days": "días",

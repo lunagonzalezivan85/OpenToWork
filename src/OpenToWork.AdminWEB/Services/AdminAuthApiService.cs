@@ -95,6 +95,23 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<(AdminUserDto? User, string? Error)> CreateUserAsync(CreateUserDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/users", dto);
+        if (response.IsSuccessStatusCode)
+            return (await response.Content.ReadFromJsonAsync<AdminUserDto>(), null);
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            return (null, error?.Error ?? "Error al crear usuario");
+        }
+        catch
+        {
+            return (null, "Error al crear usuario");
+        }
+    }
+
     public async Task<bool> ChangeUserRoleAsync(Guid id, int role)
     {
         await SetAuthHeaderAsync();
@@ -1082,10 +1099,49 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> UpdateCompanyPipelineNotesAsync(Guid pipelineId, UpdatePipelineNotesDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/company-crm/pipeline/{pipelineId}/notes", dto);
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<List<PlanDto>> GetPlansAsync()
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.GetAsync("api/admin/company-crm/plans");
         return await response.Content.ReadFromJsonAsync<List<PlanDto>>() ?? new();
+    }
+
+    // --- Cartera de Clientes (Portfolio) ---
+
+    public async Task<List<PortfolioSummaryDto>> GetPortfolioAsync(Guid? assignedTo = null)
+    {
+        await SetAuthHeaderAsync();
+        var url = "api/admin/portfolio";
+        if (assignedTo.HasValue) url += $"?assignedTo={assignedTo.Value}";
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<PortfolioSummaryDto>>() ?? new();
+    }
+
+    // --- Pagos centralizados ---
+
+    public async Task<PaymentListResultDto?> GetPaymentsAsync(int? status = null, int page = 1, int pageSize = 20)
+    {
+        await SetAuthHeaderAsync();
+        var url = $"api/admin/payments?page={page}&pageSize={pageSize}";
+        if (status.HasValue) url += $"&status={status.Value}";
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<PaymentListResultDto>();
+    }
+
+    public async Task<ContractPaymentDto?> MarkPaymentPaidAsync(Guid trancheId, string? notes)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/payments/{trancheId}/mark-paid", new MarkTranchePaidDto { Notes = notes });
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<ContractPaymentDto>();
     }
 }

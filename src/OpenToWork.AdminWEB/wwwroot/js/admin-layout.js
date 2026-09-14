@@ -29,6 +29,13 @@ window.adminLayout = {
         if (sidebar) sidebar.classList.remove('open');
         if (overlay) overlay.classList.remove('active');
     },
+    toggleSubmenu: function (groupId) {
+        const group = document.getElementById(groupId);
+        if (!group) return;
+        const expanded = group.classList.toggle('expanded');
+        group.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        localStorage.setItem('otwadmin-submenu-' + groupId, expanded ? '1' : '0');
+    },
     init: function () {
         if (window.innerWidth <= 768) return;
         if (localStorage.getItem('otwadmin-sidebar-collapsed') !== '1') return;
@@ -39,9 +46,24 @@ window.adminLayout = {
             sidebar.classList.add('collapsed');
             main.classList.add('sidebar-collapsed');
         }
+    },
+    initSubmenus: function () {
+        document.querySelectorAll('.admin-nav-group--collapsible').forEach(function (g) {
+            var id = g.id;
+            if (!id) return;
+            var saved = localStorage.getItem('otwadmin-submenu-' + id);
+            if (saved === '0') {
+                g.classList.remove('expanded');
+                g.setAttribute('aria-expanded', 'false');
+            } else {
+                g.classList.add('expanded');
+                g.setAttribute('aria-expanded', 'true');
+            }
+        });
     }
 };
 
 document.addEventListener('DOMContentLoaded', function () {
     window.adminLayout.init();
+    window.adminLayout.initSubmenus();
 });

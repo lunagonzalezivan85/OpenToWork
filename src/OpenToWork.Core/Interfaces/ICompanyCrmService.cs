@@ -18,5 +18,6 @@ public interface ICompanyCrmService
     Task<bool> DismissCompanyAsync(Guid pipelineId, DismissCompanyDto dto, Guid adminId, string? ipAddress);
     Task<bool> RestoreCompanyAsync(Guid pipelineId, Guid adminId, string? ipAddress);
     Task<bool> ReassignAsync(Guid pipelineId, Guid newUserId, Guid adminId, string? ipAddress);
+    Task<bool> UpdateNotesAsync(Guid pipelineId, UpdatePipelineNotesDto dto, Guid adminId, string? ipAddress);
     Task<List<PlanDto>> GetPlansAsync();
 }

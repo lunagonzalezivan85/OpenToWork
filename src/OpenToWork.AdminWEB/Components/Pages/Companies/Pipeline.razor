@@ -15,7 +15,7 @@
         <p class="admin-page-header-subtitle">@Lang.T("admin.companies.pipelineSubtitle")</p>
     </div>
     <div class="admin-page-actions">
-        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo("/companies/new"))">+ @Lang.T("admin.companies.add")</button>
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="ShowQuickAdd">+ @Lang.T("admin.companies.add")</button>
     </div>
 </div>
 
@@ -181,7 +181,94 @@ else
     }
 }
 
+@* === Quick Add Modal === *@
+@if (ShowQuickAddModal)
+{
+    <div class="admin-modal-overlay" @onclick="() => ShowQuickAddModal = false">
+        <div class="admin-modal" @onclick:stopPropagation="true" style="max-width: 800px;">
+            <h3 class="admin-modal-title">Nueva empresa (Lead)</h3>
+            <div class="admin-modal-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">Nombre de la empresa *</label>
+                        <input type="text" @bind="QuickAddDto.Name" class="ot-input-field" placeholder="Hotel Ejemplo" />
+                    </div>
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">Razon social</label>
+                        <input type="text" @bind="QuickAddDto.LegalName" class="ot-input-field" placeholder="Hoteles Ejemplo S.A." />
+                    </div>
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">Contacto</label>
+                        <input type="text" @bind="QuickAddDto.ContactName" class="ot-input-field" placeholder="Nombre del contacto" />
+                    </div>
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">Telefono</label>
+                        <input type="text" @bind="QuickAddDto.ContactPhone" class="ot-input-field" placeholder="+34 ..." />
+                    </div>
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">Direccion</label>
+                        <input type="text" @bind="QuickAddDto.Address" class="ot-input-field" placeholder="Calle, numero, ciudad" />
+                    </div>
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">Industria</label>
+                        <input type="text" @bind="QuickAddDto.Industry" class="ot-input-field" placeholder="Hosteleria" />
+                    </div>
+                    <div class="ot-input-group" style="grid-column: 1 / -1;">
+                        <label class="ot-input-label">Descripcion</label>
+                        <textarea @bind="QuickAddDto.Description" class="ot-input-field" rows="3" placeholder="Breve descripcion de la empresa"></textarea>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(QuickAddError))
+                {
+                    <p style="color: var(--danger); font-size: 0.8rem; margin-top: 0.75rem;">@QuickAddError</p>
+                }
+            </div>
+            <div class="admin-modal-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ShowQuickAddModal = false">Cancelar</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@QuickAddSaving" @onclick="SubmitQuickAdd">@(QuickAddSaving ? "Guardando..." : "Crear lead")</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
+    private bool ShowQuickAddModal { get; set; }
+    private CreateCompanyDto QuickAddDto { get; set; } = new();
+    private string? QuickAddError { get; set; }
+    private bool QuickAddSaving { get; set; }
+
+    private void ShowQuickAdd()
+    {
+        QuickAddDto = new CreateCompanyDto { Industry = "Hosteleria" };
+        QuickAddError = null;
+        ShowQuickAddModal = true;
+    }
+
+    private async Task SubmitQuickAdd()
+    {
+        if (QuickAddSaving) return;
+        QuickAddError = null;
+
+        if (string.IsNullOrWhiteSpace(QuickAddDto.Name))
+        {
+            QuickAddError = "El nombre de la empresa es obligatorio.";
+            return;
+        }
+
+        QuickAddSaving = true;
+        var company = await AuthApi.CreateCompanyAsync(QuickAddDto);
+        QuickAddSaving = false;
+
+        if (company == null)
+        {
+            QuickAddError = "Error al crear la empresa.";
+            return;
+        }
+
+        ShowQuickAddModal = false;
+        await LoadPipeline();
+    }
+
     private CompanyPipelineResultDto? PipelineData;
     private List<AdminUserDto> AssignableUsers = new();
     private bool IsLoading = true;

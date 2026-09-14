@@ -2,11 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using OpenToWork.AdminAPI.Authorization;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
 [Route("api/admin/users")]
-[RequireStaffRole]
+[RequireStaffRole(AdminStaffRole.SuperAdmin, AdminStaffRole.Reclutador, AdminStaffRole.Comercial)]
 public class UsersController : AdminControllerBase
 {
     private readonly IAdminUserService _userService;
@@ -71,5 +72,21 @@ public class UsersController : AdminControllerBase
 
         var result = await _userService.ChangeRoleAsync(id, dto.Role, AdminId, ClientIp);
         return result ? NoContent() : NotFound();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
+    {
+        if (string.IsNullOrEmpty(dto.Email) || string.IsNullOrEmpty(dto.Password))
+            return BadRequest(new { message = "Email y contraseña son obligatorios" });
+        if (dto.Password.Length < 6)
+            return BadRequest(new { message = "La contraseña debe tener al menos 6 caracteres" });
+        if (!Enum.IsDefined(typeof(OpenToWork.Shared.Enums.UserRole), dto.PrimaryRole))
+            return BadRequest(new { message = "Rol inválido" });
+
+        var result = await _userService.CreateUserAsync(dto, AdminId, ClientIp);
+        if (result == null)
+            return BadRequest(new { message = "No se pudo crear el usuario (email ya registrado)" });
+        return Ok(result);
     }
 }

@@ -115,6 +115,13 @@ public class CompanyCrmController : AdminControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    [HttpPut("pipeline/{pipelineId}/notes")]
+    public async Task<IActionResult> UpdateNotes(Guid pipelineId, [FromBody] UpdatePipelineNotesDto dto)
+    {
+        var result = await _crmService.UpdateNotesAsync(pipelineId, dto, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpGet("plans")]
     public async Task<IActionResult> GetPlans()
     {

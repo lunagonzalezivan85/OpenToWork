@@ -14,6 +14,7 @@
 <div class="admin-page-header">
     <h1>@Lang.T("admin.users.title")</h1>
     <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenCreateModal">@Lang.T("admin.users.create")</button>
         <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ExportCsv">@Lang.T("admin.users.exportCsv")</button>
     </div>
 </div>
@@ -115,12 +116,70 @@ else
     </div>
 }
 
+@if (ShowCreateModal)
+{
+    <div class="admin-modal-overlay" @onclick="CloseCreateModal">
+        <div class="admin-modal" @onclick:stopPropagation="true" style="min-width: 420px; max-width: 90vw;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 class="admin-modal-title" style="margin: 0;">@Lang.T("admin.users.createTitle")</h3>
+                <button class="ot-btn ot-btn--outline ot-btn--small" style="padding: 0.2rem 0.5rem; font-size: 1rem;" @onclick="CloseCreateModal">&times;</button>
+            </div>
+            <div class="admin-modal-body">
+                @if (CreateError != null)
+                {
+                    <p style="color: var(--danger); font-size: 0.85rem;">@CreateError</p>
+                }
+                <div>
+                    <label>@Lang.T("admin.users.createEmail")</label>
+                    <input type="email" @bind="NewUserEmail" class="admin-modal-input" style="width: 100%;" placeholder="user@email.com" />
+                </div>
+                <div>
+                    <label>@Lang.T("admin.users.createPassword")</label>
+                    <input type="password" @bind="NewUserPassword" class="admin-modal-input" style="width: 100%;" placeholder="******" />
+                </div>
+                <div>
+                    <label>@Lang.T("admin.users.createRole")</label>
+                    <select @bind="NewUserRole" class="admin-modal-select" style="width: 100%;">
+                        <option value="0">@Lang.T("admin.users.roleCandidate")</option>
+                        <option value="1">@Lang.T("admin.users.roleCompany")</option>
+                        <option value="2">@Lang.T("admin.users.roleAdmin")</option>
+                    </select>
+                </div>
+                @if (NewUserRole == 2)
+                {
+                    <div>
+                        <label>@Lang.T("admin.users.createStaffRole")</label>
+                        <select @bind="NewUserStaffRole" class="admin-modal-select" style="width: 100%;">
+                            <option value="1">@Lang.T("admin.users.staffRecruiter")</option>
+                            <option value="2">@Lang.T("admin.users.staffComercial")</option>
+                        </select>
+                    </div>
+                }
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseCreateModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsCreating" @onclick="SubmitCreateAsync">
+                    @(IsCreating ? Lang.T("admin.common.loading") : Lang.T("admin.common.confirm"))
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<AdminUserDto> AllUsers = new();
     private List<AdminUserDto>? UsersList;
     private string? SelectedRole { get; set; }
     private string SearchTerm { get; set; } = "";
     private Guid? CurrentAdminId;
+
+    private bool ShowCreateModal;
+    private bool IsCreating;
+    private string? CreateError;
+    private string NewUserEmail = "";
+    private string NewUserPassword = "";
+    private int NewUserRole = 0;
+    private int NewUserStaffRole = 1;
 
     private List<AdminUserDto> FilteredUsers
     {
@@ -233,5 +292,57 @@ else
         if (bytes == null) return;
 
         await JS.InvokeVoidAsync("fileDownload.save", $"users-{DateTime.Now:yyyyMMddHHmmss}.csv", "text/csv", Convert.ToBase64String(bytes));
+    }
+
+    private void OpenCreateModal()
+    {
+        ShowCreateModal = true;
+        CreateError = null;
+        NewUserEmail = "";
+        NewUserPassword = "";
+        NewUserRole = 0;
+        NewUserStaffRole = 1;
+    }
+
+    private void CloseCreateModal()
+    {
+        ShowCreateModal = false;
+    }
+
+    private async Task SubmitCreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewUserEmail) || string.IsNullOrWhiteSpace(NewUserPassword))
+        {
+            CreateError = Lang.T("admin.users.createErrorFields");
+            return;
+        }
+
+        IsCreating = true;
+        CreateError = null;
+        try
+        {
+            var dto = new CreateUserDto
+            {
+                Email = NewUserEmail,
+                Password = NewUserPassword,
+                PrimaryRole = NewUserRole,
+                StaffRole = NewUserRole == 2 ? NewUserStaffRole : null
+            };
+            var (user, error) = await AuthApi.CreateUserAsync(dto);
+            if (user == null)
+            {
+                CreateError = error ?? Lang.T("admin.users.createError");
+            }
+            else
+            {
+                ShowCreateModal = false;
+                await LoadUsers();
+            }
+        }
+        catch
+        {
+            CreateError = Lang.T("admin.users.createError");
+        }
+        IsCreating = false;
     }
 }

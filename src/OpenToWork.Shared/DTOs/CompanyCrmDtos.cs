@@ -134,6 +134,7 @@ public class CompanyMoveStageDto
 {
     public int ToStage { get; set; }
     public string? Notes { get; set; }
+    public DateTime? MeetingDate { get; set; }
 }
 
 public class CompanyStageLogDto
@@ -171,6 +172,7 @@ public class CompanyPipelineDetailDto
     public Guid? AssignedToUserId { get; set; }
     public DateTime? AssignedAt { get; set; }
     public DateTime? StageEnteredAt { get; set; }
+    public DateTime? MeetingDate { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? Notes { get; set; }
     public bool IsDismissed { get; set; }
@@ -183,6 +185,11 @@ public class CompanyPipelineDetailDto
 public class DismissCompanyDto
 {
     public string? Reason { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class UpdatePipelineNotesDto
+{
     public string? Notes { get; set; }
 }
 

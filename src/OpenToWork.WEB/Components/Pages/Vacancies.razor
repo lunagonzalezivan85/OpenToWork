@@ -9,68 +9,114 @@
 
 <PageTitle>@Lang.T("vacancies.title")</PageTitle>
 
-<div class="page-container">
-    <div class="vacancies-page-header">
-        <h1 class="vacancies-page-title">@Lang.T("vacancies.title")</h1>
-        <span class="vacancies-page-count">@TotalResults @Lang.T("vacancies.results")</span>
-    </div>
+<!-- Hero -->
+<div class="vacancies-hero">
+    <div class="vacancies-hero-overlay"></div>
+    <div class="vacancies-hero-container">
+        <h1 class="vacancies-hero-title">@Lang.T("vacancies.title")</h1>
+        <p class="vacancies-hero-subtitle">@Lang.T("vacancies.subtitle")</p>
 
-    <div class="cmd-search-wrapper">
-        <div class="cmd-search-bar">
-            <div class="cmd-search-prefix">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.35-4.35" />
-                </svg>
+        <div class="cmd-search-wrapper">
+            <div class="cmd-search-bar">
+                <div class="cmd-search-prefix">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                </div>
+                <input type="text" class="cmd-search-input" @ref="SearchInputRef" @bind="SearchKeyword"
+                       placeholder="@Lang.T("common.home.searchPlaceholder")"
+                       @onkeydown="HandleSearchKeyDown" @oninput="OnSearchInput" />
+                <div class="cmd-search-location">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <input type="text" class="cmd-search-location-input" @bind="SearchLocation"
+                           placeholder="@Lang.T("common.home.locationPlaceholder")"
+                           @onkeydown="HandleSearchKeyDown" @oninput="OnSearchInput" />
+                </div>
+                <button class="cmd-search-btn" @onclick="HandleSearchClick">
+                    <span>@Lang.T("common.buttons.search")</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                </button>
             </div>
-            <input type="text" class="cmd-search-input" @ref="SearchInputRef" @bind="SearchKeyword" @bind:event="oninput"
-                   placeholder="@Lang.T("common.home.searchPlaceholder")"
-                   @onkeydown="HandleSearchKeyDown" />
-            <div class="cmd-search-location">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                </svg>
-                <input type="text" class="cmd-search-location-input" @bind="SearchLocation" @bind:event="oninput"
-                       placeholder="@Lang.T("common.home.locationPlaceholder")"
-                       @onkeydown="HandleSearchKeyDown" />
+
+            <!-- Category filter chips -->
+            <div class="cmd-chips vacancies-chips">
+                <div class="cmd-chips-list">
+                    @foreach (var cat in Categories)
+                    {
+                        <button class="cmd-chip @(ActiveCategory == cat.Key ? "cmd-chip--active" : "")"
+                                @onclick="() => SelectCategory(cat.Key)">
+                            <span class="cmd-chip-check">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12">
+                                    <path d="M20 6L9 17l-5-5" />
+                                </svg>
+                            </span>
+                            @cat.Value
+                        </button>
+                    }
+                </div>
             </div>
-            <button class="cmd-search-btn" @onclick="HandleSearchClick">
-                <span>@Lang.T("common.buttons.search")</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-            </button>
+        </div>
+
+        <!-- Results count in hero -->
+        <div class="vacancies-hero-results">
+            @if (!IsLoading && TotalResults > 0)
+            {
+                <span class="vacancies-hero-results-count">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                    </svg>
+                    @TotalResults @Lang.T("vacancies.results")
+                </span>
+            }
+            @if (!string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory))
+            {
+                <button class="vacancies-clear-all" @onclick="ClearAllFilters">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                    @Lang.T("vacancies.clearFilters")
+                </button>
+            }
         </div>
     </div>
+</div>
 
-    @if (!string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory))
-    {
-        <div class="vacancies-active-filters">
-            @if (!string.IsNullOrEmpty(ActiveQuery))
-            {
-                <span class="vacancies-filter-tag">
-                    @ActiveQuery
-                    <button @onclick="ClearQuery" class="vacancies-filter-remove">×</button>
-                </span>
-            }
-            @if (!string.IsNullOrEmpty(ActiveLocation))
-            {
-                <span class="vacancies-filter-tag">
-                    📍 @ActiveLocation
-                    <button @onclick="ClearLocation" class="vacancies-filter-remove">×</button>
-                </span>
-            }
-            @if (!string.IsNullOrEmpty(ActiveCategory))
-            {
-                <span class="vacancies-filter-tag">
-                    @GetCategoryLabel(ActiveCategory)
-                    <button @onclick="ClearCategory" class="vacancies-filter-remove">×</button>
-                </span>
-            }
-        </div>
-    }
+<!-- Active filters -->
+@if (!string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory))
+{
+    <div class="vacancies-active-filters">
+        @if (!string.IsNullOrEmpty(ActiveQuery))
+        {
+            <span class="vacancies-filter-tag">
+                @ActiveQuery
+                <button @onclick="ClearQuery" class="vacancies-filter-remove">×</button>
+            </span>
+        }
+        @if (!string.IsNullOrEmpty(ActiveLocation))
+        {
+            <span class="vacancies-filter-tag">
+                📍 @ActiveLocation
+                <button @onclick="ClearLocation" class="vacancies-filter-remove">×</button>
+            </span>
+        }
+        @if (!string.IsNullOrEmpty(ActiveCategory))
+        {
+            <span class="vacancies-filter-tag">
+                @GetCategoryLabel(ActiveCategory)
+                <button @onclick="ClearCategory" class="vacancies-filter-remove">×</button>
+            </span>
+        }
+    </div>
+}
 
+<!-- Results -->
+<div class="vacancies-results-section">
     @if (IsLoading)
     {
         <div class="home-vacancies-loading">
@@ -188,8 +234,45 @@
         catch
         {
             VacancyList = new();
+            TotalResults = 0;
         }
         IsLoading = false;
+    }
+
+    private CancellationTokenSource? _searchCts;
+
+    private async Task OnSearchInput()
+    {
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+        await Task.Delay(350, token);
+        if (token.IsCancellationRequested) return;
+        ActiveQuery = SearchKeyword;
+        ActiveLocation = SearchLocation;
+        CurrentPage = 1;
+        await LoadVacancies();
+    }
+
+    private void SelectCategory(string category)
+    {
+        if (ActiveCategory == category)
+            ActiveCategory = "";
+        else
+            ActiveCategory = category;
+        CurrentPage = 1;
+        _ = LoadVacancies();
+    }
+
+    private async Task ClearAllFilters()
+    {
+        ActiveQuery = "";
+        ActiveLocation = "";
+        ActiveCategory = "";
+        SearchKeyword = "";
+        SearchLocation = "";
+        CurrentPage = 1;
+        await LoadVacancies();
     }
 
     private async Task GoToPage(int page)
@@ -233,8 +316,21 @@
         if (!string.IsNullOrEmpty(ActiveLocation)) query.Add($"location={Uri.EscapeDataString(ActiveLocation)}");
         if (!string.IsNullOrEmpty(ActiveCategory)) query.Add($"category={ActiveCategory}");
         var qs = query.Count > 0 ? "?" + string.Join("&", query) : "";
-        Nav.NavigateTo($"/vacancies{qs}", forceLoad: true);
+        Nav.NavigateTo($"/vacancies{qs}");
     }
+
+    private Dictionary<string, string> Categories => new()
+    {
+        { "Camarero", Lang.T("common.nav.categoryCamarero") },
+        { "AyudanteCamarero", Lang.T("common.nav.categoryAyudanteCamarero") },
+        { "Cocinero", Lang.T("common.nav.categoryCocinero") },
+        { "AyudanteCocina", Lang.T("common.nav.categoryAyudanteCocina") },
+        { "JefeSala", Lang.T("common.nav.categoryJefeSala") },
+        { "Barman", Lang.T("common.nav.categoryBarman") },
+        { "AyudanteBarra", Lang.T("common.nav.categoryAyudanteBarra") },
+        { "ResponsableLocal", Lang.T("common.nav.categoryResponsableLocal") },
+        { "RecepcionistaHotel", Lang.T("common.nav.categoryRecepcionistaHotel") }
+    };
 
     private string GetCategoryLabel(string category)
     {

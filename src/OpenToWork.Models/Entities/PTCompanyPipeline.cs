@@ -24,6 +24,8 @@ public class PTCompanyPipeline : BaseEntity
 
     public DateTime? StageEnteredAt { get; set; }
 
+    public DateTime? MeetingDate { get; set; }
+
     [MaxLength(1000)]
     public string? Notes { get; set; }
 

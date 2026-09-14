@@ -77,7 +77,9 @@
         "myVacancies": "My Vacancies",
         "messages": "Messages",
         "searchJobs": "Search Jobs",
-        "panel": "Dashboard"
+        "panel": "Dashboard",
+        "news": "News",
+        "jobs": "Jobs"
     },
     "messages": {
         "title": "Messages",
@@ -112,7 +114,10 @@
         "searchPlaceholder": "Search jobs, companies, keywords...",
         "locationPlaceholder": "Remote or city...",
         "categories": "Categories",
-        "noVacancies": "No vacancies found"
+        "noVacancies": "No vacancies found",
+        "statsVacancies": "Vacancies",
+        "statsCompanies": "Companies",
+        "statsFree": "Free Application"
     },
     "footer": {
         "menu": "Menu",

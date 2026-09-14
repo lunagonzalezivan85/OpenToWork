@@ -6,7 +6,7 @@
 // which then surfaces as "The POST request does not specify which form is
 // being submitted" when a form on that stale page is submitted. Bumping the
 // cache name also purges any already-cached bad entries from v1 installs.
-const CACHE_NAME = 'tratodirecto-v1';
+const CACHE_NAME = 'tratodirecto-v6';
 const ASSETS = [
   '/icon.svg',
   '/manifest.json',
@@ -16,6 +16,7 @@ const ASSETS = [
   '/css/portal-nav.css',
   '/css/home-v2.css',
   '/css/wizard-profile.css',
+  '/css/profile-v2.css',
   '/css/responsive.css',
   '/themes/navy/theme.css'
 ];
@@ -39,24 +40,19 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  // Only cache-first the known static assets above. Page navigations (Razor
-  // component HTML), the Blazor Server circuit/boot endpoints (_blazor,
-  // _framework) and API calls must always go to the network uncached - see
-  // the note on CACHE_NAME for why caching them corrupts the Blazor circuit.
   const url = new URL(event.request.url);
   const isStaticAsset = url.origin === self.location.origin &&
     (ASSETS.includes(url.pathname) || url.pathname.startsWith('/css/') || url.pathname.startsWith('/themes/'));
   if (!isStaticAsset) return;
 
+  // Network-first: always fetch latest, fall back to cache only if offline
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached);
-    })
+    fetch(event.request).then((response) => {
+      if (response && response.status === 200) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+      }
+      return response;
+    }).catch(() => caches.match(event.request))
   );
 });

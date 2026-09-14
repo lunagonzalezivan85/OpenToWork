@@ -281,4 +281,40 @@ public class AdminUserService : IAdminUserService
         CreatedAt = u.CreatedAt,
         LastLoginAt = u.LastLoginAt
     };
+
+    public async Task<AdminUserDto?> CreateUserAsync(CreateUserDto dto, Guid adminId, string? ipAddress)
+    {
+        if (!Enum.IsDefined(typeof(UserRole), dto.PrimaryRole)) return null;
+        if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password)) return null;
+        if (dto.Password.Length < 6) return null;
+
+        var exists = await _context.SC_Users.AnyAsync(u => u.Email == dto.Email && !u.IsDeleted);
+        if (exists) return null;
+
+        var user = new SCUser
+        {
+            Email = dto.Email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            PrimaryRole = dto.PrimaryRole,
+            EmailVerified = true,
+            IsActive = true,
+            CreatedBy = adminId
+        };
+
+        if (dto.PrimaryRole == (int)UserRole.Admin)
+        {
+            user.StaffRole = dto.StaffRole ?? (int)AdminStaffRole.Reclutador;
+            user.PasswordExpiresAt = DateTime.UtcNow.AddDays(90);
+        }
+
+        user.UserRoles.Add(new SCUserRole { Role = dto.PrimaryRole, SCUserId = user.Id, CreatedBy = adminId });
+
+        _context.SC_Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(adminId, "CreateUser", "SC_Users", user.Id,
+            $"{{\"email\":\"{user.Email}\",\"role\":{dto.PrimaryRole}}}", ipAddress);
+
+        return ToDto(user);
+    }
 }

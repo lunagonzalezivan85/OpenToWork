@@ -496,31 +496,108 @@
 }
 
 /* ===== Vacancies Page Extras ===== */
-.vacancies-page-header {
+.vacancies-hero {
+    position: relative;
+    background: linear-gradient(135deg, #0B132B 0%, #1C3F6A 100%);
+    padding: 3rem 1.5rem 2.5rem;
+    overflow: hidden;
+}
+
+.vacancies-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 70% 30%, rgba(0, 102, 255, 0.15) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.vacancies-hero-container {
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.vacancies-hero-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+}
+
+.vacancies-hero-subtitle {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 2rem;
+}
+
+.vacancies-hero-results {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--space-lg);
+    justify-content: center;
+    gap: var(--space-md);
+    margin-top: 1.5rem;
 }
 
-.vacancies-page-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--text-primary);
-    letter-spacing: -0.02em;
-}
-
-.vacancies-page-count {
-    font-size: 0.88rem;
-    color: var(--text-muted);
+.vacancies-hero-results-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.35rem 0.9rem;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.85rem;
     font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.vacancies-clear-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.35rem 0.8rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.vacancies-clear-all:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #FFFFFF;
+}
+
+.vacancies-chips {
+    margin-top: var(--space-md);
 }
 
 .vacancies-active-filters {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-xs);
-    margin-bottom: var(--space-lg);
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-xl);
+    padding: 0 1.5rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.vacancies-results-section {
+    padding: 0 1.5rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.vacancies-page-count {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    font-weight: 600;
 }
 
 .vacancies-filter-tag {

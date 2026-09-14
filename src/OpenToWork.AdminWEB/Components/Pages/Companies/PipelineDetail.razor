@@ -39,6 +39,10 @@ else
             </p>
         </div>
         <div class="admin-page-actions">
+            @if (!Detail.IsDismissed && Detail.CurrentStage != (int)CompanyPipelineStage.CerradoGanado)
+            {
+                <button class="ot-btn ot-btn--small" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;" @onclick="OpenDismissModal">@Lang.T("admin.companies.dismiss")</button>
+            }
             <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Detail.CompanyId}"))">@Lang.T("admin.common.back")</button>
         </div>
     </div>
@@ -83,7 +87,7 @@ else
                 </div>
             </div>
             <div class="admin-user-card-body" style="flex-direction: column; align-items: stretch; gap: 0.75rem;">
-                @* Stage 0: Lead - Basic company info *@
+                @* Stage 0: Lead - Basic company info + contact data *@
                 @if (Detail.CurrentStage == (int)CompanyPipelineStage.Lead)
                 {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -112,6 +116,29 @@ else
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 0.35rem;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
                                 @Lang.T("admin.companies.searchOnMap")
                             </button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #E8F1FF; font-size: 0.85rem; font-weight: 600; color: #3A506B;">Datos de contacto</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem;">
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.contactName")</label>
+                            <input @bind="EditContactName" class="admin-input" placeholder='@Lang.T("admin.companies.contactNamePlaceholder")' />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.contactPosition")</label>
+                            <input @bind="EditContactPosition" class="admin-input" placeholder='@Lang.T("admin.companies.contactPositionPlaceholder")' />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.contactPhone")</label>
+                            <input @bind="EditContactPhone" class="admin-input" placeholder="+34..." />
+                        </div>
+                        <div>
+                            <label class="admin-form-label">@Lang.T("admin.companies.contactEmail")</label>
+                            <input @bind="EditContactEmail" class="admin-input" placeholder="email@empresa.com" />
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label class="admin-form-label">@Lang.T("admin.companies.linkedin")</label>
+                            <input @bind="EditLinkedIn" class="admin-input" placeholder="https://linkedin.com/company/..." />
                         </div>
                     </div>
                 }
@@ -144,6 +171,16 @@ else
                 @* Stage 2: Reunion Agendada - Company legal details *@
                 else if (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada)
                 {
+                    @if (Detail.MeetingDate.HasValue)
+                    {
+                        <div style="background: #E8F1FF; border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.75rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#0066FF" stroke-width="2" width="20" height="20"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #778DA9;">Reunion agendada</div>
+                                <div style="font-size: 0.9rem; font-weight: 600; color: #0066FF;">@Detail.MeetingDate.Value.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</div>
+                            </div>
+                        </div>
+                    }
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                         <div>
                             <label class="admin-form-label">@Lang.T("admin.companies.legalName")</label>
@@ -241,7 +278,6 @@ else
                             @Lang.T("admin.companies.advanceStage")
                         </button>
                         <div style="flex: 1;"></div>
-                        <button class="ot-btn ot-btn--small" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;" @onclick="OpenDismissModal">@Lang.T("admin.companies.dismiss")</button>
                         @if (AdminUsers.Count > 0)
                         {
                             <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="OpenReassignModal">@Lang.T("admin.companies.reassignBtn")</button>
@@ -349,16 +385,71 @@ else
     @if (ShowAdvanceModal)
     {
         <div style="position: fixed; inset: 0; background: rgba(11,19,43,0.4); z-index: 9999; display: flex; align-items: center; justify-content: center;" @onclick="CloseAdvanceModal">
-            <div style="background: #fff; border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);" @onclick:stopPropagation="true">
+            <div style="background: #fff; border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 520px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);" @onclick:stopPropagation="true">
                 <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 700; color: #0B132B;">@Lang.T("admin.companies.advanceStageTitle")</h3>
                 <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #778DA9;">
                     @GetStageName(Detail.CurrentStage) <span style="color: #0066FF;">&rarr;</span> <strong style="color: #0066FF;">@GetStageName(Detail.CurrentStage + 1)</strong>
                 </p>
+                @if (Detail.CurrentStage == (int)CompanyPipelineStage.Lead)
+                {
+                    <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">¿Como contactaste al cliente? *</label>
+                    <select @bind="AdvanceContactMethod" class="admin-input" style="width: 100%; margin-bottom: 1rem;">
+                        <option value="">Selecciona un metodo</option>
+                        <option value="Llamada telefonica">Llamada telefonica</option>
+                        <option value="Visita al local">Visita al local</option>
+                        <option value="Encontrado en la web">Encontrado en la web</option>
+                        <option value="Email">Email</option>
+                        <option value="LinkedIn">LinkedIn</option>
+                        <option value="Recomendacion">Recomendacion</option>
+                        <option value="Feria / Evento">Feria / Evento</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                }
+                @if (Detail.CurrentStage == (int)CompanyPipelineStage.Contactado)
+                {
+                    <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">Fecha de reunion *</label>
+                    <input type="datetime-local" value="@(AdvanceMeetingDate?.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") ?? "")" @oninput="OnMeetingDateChanged" class="admin-input" style="width: 100%; margin-bottom: 1rem;" />
+                }
+                @if (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada)
+                {
+                    <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">¿Que plan se le oferto al cliente? *</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
+                        @for (var pi = 0; pi < Plans.Count; pi++)
+                        {
+                            var plan = Plans[pi];
+                            var isSelected = AdvancePlanId == plan.Id;
+                            var accentColor = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
+                            var accentBg = pi == 0 ? "#F1F5F9" : pi == 1 ? "#E8F1FF" : "#F0F7FF";
+                            var accentBorder = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
+                            <div @onclick="() => SelectAdvancePlan(plan.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1rem 0.75rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: all 0.2s; display: flex; flex-direction: column; gap: 0.35rem; position: relative; overflow: hidden;">
+                                @if (isSelected)
+                                {
+                                    <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: @accentBorder;"></div>
+                                }
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: @(isSelected ? accentBorder : "#0B132B");">@plan.Name</span>
+                                    @if (isSelected)
+                                    {
+                                        <div style="width: 20px; height: 20px; border-radius: 50%; background: @accentBorder; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="11" height="11"><polyline points="20 6 9 17 4 12" /></svg>
+                                        </div>
+                                    }
+                                </div>
+                                <div style="display: flex; align-items: baseline; gap: 0.15rem;">
+                                    <span style="font-size: 1.4rem; font-weight: 800; color: @accentColor;">@plan.Price.ToString("0")</span>
+                                    <span style="font-size: 0.8rem; font-weight: 600; color: @accentColor;">€</span>
+                                    <span style="font-size: 0.7rem; font-weight: 400; color: #778DA9;">/@Lang.T("admin.companies.month")</span>
+                                </div>
+                                <p style="font-size: 0.72rem; color: #778DA9; margin: 0; line-height: 1.3;">@plan.Description</p>
+                            </div>
+                        }
+                    </div>
+                }
                 <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">@Lang.T("admin.companies.commentRequired") *</label>
                 <textarea @bind="ActionNotes" rows="4" class="admin-input" placeholder="@Lang.T("admin.companies.advanceCommentPlaceholder")"></textarea>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
                     <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseAdvanceModal">@Lang.T("admin.common.cancel")</button>
-                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@string.IsNullOrWhiteSpace(ActionNotes)" @onclick="ConfirmAdvance">@Lang.T("admin.companies.confirmAdvance")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@(string.IsNullOrWhiteSpace(ActionNotes) || (Detail.CurrentStage == (int)CompanyPipelineStage.Lead && string.IsNullOrEmpty(AdvanceContactMethod)) || (Detail.CurrentStage == (int)CompanyPipelineStage.Contactado && !AdvanceMeetingDate.HasValue) || (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && !AdvancePlanId.HasValue))" @onclick="ConfirmAdvance">@Lang.T("admin.companies.confirmAdvance")</button>
                 </div>
             </div>
         </div>
@@ -484,6 +575,10 @@ else
     private int? EditCompanySize;
     private string? EditDescription;
     private string? EditNotes;
+    private string? EditContactMethod;
+    private string? AdvanceContactMethod;
+    private DateTime? AdvanceMeetingDate;
+    private Guid? AdvancePlanId;
 
     private List<KeyValuePair<int, string>> WizardSteps => new()
     {
@@ -573,6 +668,42 @@ else
         EditCompanySize = Detail.CompanySize;
         EditDescription = Detail.Description;
         EditNotes = Detail.Notes;
+        EditContactMethod = ParseContactMethod(Detail.Notes);
+    }
+
+    private static string? ParseContactMethod(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes)) return null;
+        var prefix = "[METODO: ";
+        var idx = notes.IndexOf(prefix);
+        if (idx < 0) return null;
+        var start = idx + prefix.Length;
+        var end = notes.IndexOf("]", start);
+        if (end < 0) return null;
+        return notes.Substring(start, end - start);
+    }
+
+    private async Task SaveContactMethod()
+    {
+        if (Detail == null || string.IsNullOrEmpty(EditContactMethod)) return;
+        var existingNotes = Detail.Notes ?? "";
+        var cleanNotes = existingNotes;
+        var prefix = "[METODO: ";
+        var idx = cleanNotes.IndexOf(prefix);
+        if (idx >= 0)
+        {
+            var end = cleanNotes.IndexOf("]", idx);
+            if (end >= 0)
+                cleanNotes = (cleanNotes.Substring(0, idx) + cleanNotes.Substring(end + 1)).Trim();
+            else
+                cleanNotes = "";
+        }
+        var newNotes = $"[METODO: {EditContactMethod}]";
+        if (!string.IsNullOrWhiteSpace(cleanNotes))
+            newNotes += " " + cleanNotes;
+        var dto = new UpdatePipelineNotesDto { Notes = newNotes };
+        await AuthApi.UpdateCompanyPipelineNotesAsync(_pipelineId, dto);
+        await LoadDetail();
     }
 
     private void ToggleChecklist()
@@ -654,6 +785,9 @@ else
     private void OpenAdvanceModal()
     {
         ActionNotes = "";
+        AdvanceContactMethod = EditContactMethod;
+        AdvanceMeetingDate = Detail?.MeetingDate?.ToLocalTime();
+        AdvancePlanId = SelectedPlanId;
         ShowAdvanceModal = true;
     }
 
@@ -661,16 +795,55 @@ else
     {
         ShowAdvanceModal = false;
         ActionNotes = "";
+        AdvanceContactMethod = null;
+        AdvanceMeetingDate = null;
+        AdvancePlanId = null;
+    }
+
+    private void SelectAdvancePlan(Guid planId)
+    {
+        AdvancePlanId = planId;
+    }
+
+    private void OnMeetingDateChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val))
+            AdvanceMeetingDate = null;
+        else if (DateTime.TryParse(val, out var parsed))
+            AdvanceMeetingDate = parsed;
     }
 
     private async Task ConfirmAdvance()
     {
         if (string.IsNullOrWhiteSpace(ActionNotes)) return;
+        if (Detail!.CurrentStage == (int)CompanyPipelineStage.Lead && string.IsNullOrEmpty(AdvanceContactMethod)) return;
+        if (Detail!.CurrentStage == (int)CompanyPipelineStage.Contactado && !AdvanceMeetingDate.HasValue) return;
+        if (Detail!.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && !AdvancePlanId.HasValue) return;
         await SaveProgress();
         var nextStage = Detail!.CurrentStage + 1;
-        var success = await AuthApi.MoveCompanyStageAsync(_pipelineId, new CompanyMoveStageDto { ToStage = nextStage, Notes = ActionNotes });
+        var notes = ActionNotes;
+        DateTime? meetingDate = null;
+        if (Detail.CurrentStage == (int)CompanyPipelineStage.Lead && !string.IsNullOrEmpty(AdvanceContactMethod))
+        {
+            notes = $"[METODO: {AdvanceContactMethod}] {ActionNotes}";
+        }
+        if (Detail.CurrentStage == (int)CompanyPipelineStage.Contactado && AdvanceMeetingDate.HasValue)
+        {
+            meetingDate = DateTime.SpecifyKind(AdvanceMeetingDate.Value.ToUniversalTime(), DateTimeKind.Utc);
+        }
+        if (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && AdvancePlanId.HasValue)
+        {
+            var planName = Plans.FirstOrDefault(p => p.Id == AdvancePlanId.Value)?.Name ?? "";
+            notes = $"[PLAN: {planName}] {ActionNotes}";
+            SelectedPlanId = AdvancePlanId;
+        }
+        var success = await AuthApi.MoveCompanyStageAsync(_pipelineId, new CompanyMoveStageDto { ToStage = nextStage, Notes = notes, MeetingDate = meetingDate });
         ShowAdvanceModal = false;
         ActionNotes = "";
+        AdvanceContactMethod = null;
+        AdvanceMeetingDate = null;
+        AdvancePlanId = null;
         if (success) await LoadDetail();
     }
 

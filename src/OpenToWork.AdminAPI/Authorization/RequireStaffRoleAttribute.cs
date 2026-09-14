@@ -22,6 +22,12 @@ public class RequireStaffRoleAttribute : Attribute, IAuthorizationFilter
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         var claim = context.HttpContext.User.FindFirst("staffRole")?.Value;
+
+        if (string.IsNullOrEmpty(claim))
+        {
+            claim = "0";
+        }
+
         if (!int.TryParse(claim, out var roleValue))
         {
             context.Result = new Microsoft.AspNetCore.Mvc.ForbidResult();

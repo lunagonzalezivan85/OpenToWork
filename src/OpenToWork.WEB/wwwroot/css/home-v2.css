@@ -138,8 +138,9 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0.7rem 1.4rem;
-    border-radius: var(--radius-md);
+    padding: 0.65rem 1.4rem;
+    margin: 4px;
+    border-radius: 50px;
     background: var(--gradient-accent);
     color: #FFFFFF;
     font-family: var(--font-family);
@@ -195,28 +196,28 @@
     gap: 6px;
     padding: 0.4rem 0.9rem;
     border-radius: var(--radius-pill);
-    background: var(--text-muted);
-    color: var(--nav-text);
+    background: #F1F5F9;
+    color: #334155;
     font-family: var(--font-family);
     font-size: 0.82rem;
     font-weight: 600;
-    border: 1px solid transparent;
+    border: 1px solid #E2E8F0;
     cursor: pointer;
     transition: all var(--transition-fast);
-    opacity: 0.7;
 }
 
 .cmd-chip:hover {
-    opacity: 1;
+    background: #EFF6FF;
+    border-color: #93C5FD;
+    color: #2563EB;
     transform: translateY(-1px);
 }
 
 .cmd-chip--active {
-    background: var(--accent-primary);
-    color: #FFFFFF;
-    opacity: 1;
-    border-color: var(--accent-primary);
-    box-shadow: var(--shadow-sm);
+    background: #EFF6FF;
+    color: #2563EB;
+    border-color: #2563EB;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15);
 }
 
 .cmd-chip-check {
@@ -226,12 +227,122 @@
     width: 16px;
     height: 16px;
     border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.2);
+    background: #2563EB;
+    color: #FFFFFF;
     flex-shrink: 0;
 }
 
 .cmd-chip:not(.cmd-chip--active) .cmd-chip-check {
     display: none;
+}
+
+/* ===== Hero Stats ===== */
+.home-hero-stats {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--space-md);
+    margin-top: var(--space-2xl);
+}
+
+.home-hero-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 1.25rem 1.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(8px);
+    transition: transform 0.2s ease, background 0.2s ease;
+    min-width: 160px;
+    min-height: 140px;
+    flex: 1 1 160px;
+    max-width: 200px;
+}
+
+.home-hero-stat-card:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.home-hero-stat-card--accent {
+    background: rgba(0, 102, 255, 0.2);
+    border-color: rgba(0, 102, 255, 0.35);
+}
+
+.home-hero-stat-card--accent:hover {
+    background: rgba(0, 102, 255, 0.28);
+}
+
+.home-hero-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    color: #FFFFFF;
+    margin-bottom: 0.25rem;
+}
+
+.home-hero-stat-card--accent .home-hero-stat-icon {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.home-hero-stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.home-hero-stat-value--text {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: center;
+}
+
+.home-hero-stat-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+@media (max-width: 640px) {
+    .home-hero-stats {
+        flex-wrap: wrap;
+        gap: var(--space-sm);
+    }
+
+    .home-hero-stat-card {
+        min-width: 90px;
+        min-height: 120px;
+        flex: 1 1 90px;
+        max-width: 130px;
+        padding: 1rem 1.25rem;
+    }
+
+    .home-hero-stat-value {
+        font-size: 1.5rem;
+    }
+
+    .home-hero-stat-value--text {
+        font-size: 0.8rem;
+    }
+
+    .home-hero-stat-icon {
+        width: 40px;
+        height: 40px;
+    }
 }
 
 /* ===== Vacancies Section ===== */
@@ -374,11 +485,12 @@
     font-size: 0.82rem;
     color: var(--text-secondary);
     line-height: 1.5;
-    flex: 1;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    min-height: 2.46rem;
 }
 
 .home-vacancy-card-meta {
@@ -386,6 +498,7 @@
     align-items: center;
     gap: var(--space-md);
     flex-wrap: wrap;
+    margin-bottom: 12px;
 }
 
 .home-vacancy-card-meta-item {
@@ -397,8 +510,14 @@
 }
 
 .home-vacancy-card-salary {
-    color: var(--success);
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-pill);
+    background: #DCFCE7;
+    color: #166534;
     font-weight: 700;
+    font-size: 0.8rem;
 }
 
 .home-vacancy-card-footer {
@@ -418,14 +537,21 @@
 }
 
 .home-vacancy-card-action {
-    font-size: 0.82rem;
-    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.35rem 0.8rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent-light);
     color: var(--accent-primary);
-    transition: transform var(--transition-fast);
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all var(--transition-fast);
 }
 
 .home-vacancy-card:hover .home-vacancy-card-action {
-    transform: translateX(3px);
+    background: var(--accent-primary);
+    color: #FFFFFF;
 }
 
 /* ===== Loading Skeleton ===== */

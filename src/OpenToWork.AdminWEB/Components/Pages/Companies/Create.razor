@@ -223,6 +223,7 @@ else if (WizardStep == 2)
         <div class="admin-form-actions">
             <button type="button" class="ot-btn ot-btn--primary ot-btn--small" @onclick="AddVacancyAndContinue">@Lang.T("admin.companies.addVacancy")</button>
             <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="AddVacancyAndNew">@Lang.T("admin.companies.addAnotherVacancy")</button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="SkipVacancy">Omitir vacante</button>
             <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="PrevStep">@Lang.T("admin.vacancies.back")</button>
         </div>
     </div>
@@ -422,16 +423,17 @@ else if (WizardStep == 4)
         WizardStep = 2;
     }
 
+    private void SkipVacancy()
+    {
+        WizardError = null;
+        WizardStep = 3;
+    }
+
     private async Task ConfirmAndGenerate()
     {
         if (IsSavingVacancy || IsGeneratingContract) return;
         WizardError = null;
 
-        if (VacancyDtos.Count == 0)
-        {
-            WizardError = Lang.T("admin.vacancies.wizardRequired");
-            return;
-        }
 
         if (CreatedCompanyId == Guid.Empty)
         {
@@ -445,6 +447,13 @@ else if (WizardStep == 4)
             }
             CreatedCompanyId = company.Id;
             CreatedCompanyName = company.Name;
+        }
+
+        // If no vacancies, skip contract generation and go to company detail
+        if (VacancyDtos.Count == 0)
+        {
+            Nav.NavigateTo($"/companies/{CreatedCompanyId}");
+            return;
         }
 
         // Create all vacancies and collect their IDs

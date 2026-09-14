@@ -1,10 +1,12 @@
 {
     "title": "Search Vacancies",
+    "subtitle": "Find the job you are looking for",
     "searchPlaceholder": "Search by title, description or requirements...",
     "locationPlaceholder": "Location",
     "filters": "Filters",
     "noResults": "No vacancies found",
     "results": "vacancies found",
+    "clearFilters": "Clear filters",
     "salaryRange": "Salary range",
     "expiresIn": "Expires in",
     "days": "days",

@@ -1,92 +1,70 @@
 -- ============================================
--- OpenToWork - Seed Data para pruebas
+-- OpenToWork - Seed Data Hosteleria
 -- Ejecutar despues de aplicar todas las migraciones
+-- Password para TODOS los usuarios: Empresa123!
+-- (hash BCrypt valido generado via API)
 -- ============================================
 
 USE OpenToWorkDb;
 
 -- ============================================
--- 1. Empresas (necesitan usuario SC_Users primero)
+-- 1. Usuarios empresa (hosteleria)
 -- ============================================
 
--- Usuario empresa 1
 INSERT INTO SC_Users (Id, Email, PasswordHash, PrimaryRole, IsActive, EmailVerified, CreatedAt, IsDeleted)
-VALUES (
-    'a1111111-1111-1111-1111-111111111111',
-    'empresa@techcorp.com',
-    '$2a$11$N7qV8x2Y3Z5wQ1rT6uI9pO0lKjHgFEdCbAsDfGhJkLmN0pQ1rSt',
-    1, -- Company role
-    1, 1, NOW(), 0
-);
-
--- Usuario empresa 2
-INSERT INTO SC_Users (Id, Email, PasswordHash, PrimaryRole, IsActive, EmailVerified, CreatedAt, IsDeleted)
-VALUES (
-    'a2222222-2222-2222-2222-222222222222',
-    'contacto@innovatelabs.com',
-    '$2a$11$N7qV8x2Y3Z5wQ1rT6uI9pO0lKjHgFEdCbAsDfGhJkLmN0pQ1rSt',
-    1,
-    1, 1, NOW(), 0
-);
-
--- Usuario empresa 3
-INSERT INTO SC_Users (Id, Email, PasswordHash, PrimaryRole, IsActive, EmailVerified, CreatedAt, IsDeleted)
-VALUES (
-    'a3333333-3333-3333-3333-333333333333',
-    'rrhh@globalsoft.com',
-    '$2a$11$N7qV8x2Y3Z5wQ1rT6uI9pO0lKjHgFEdCbAsDfGhJkLmN0pQ1rSt',
-    1,
-    1, 1, NOW(), 0
-);
+VALUES
+('a1111111-1111-1111-1111-111111111111', 'rrhh@hotelsolcaribe.com', '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 1, 1, 1, NOW(), 0),
+('a2222222-2222-2222-2222-222222222222', 'rrhh@grupolapaella.es',  '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 1, 1, 1, NOW(), 0),
+('a3333333-3333-3333-3333-333333333333', 'rrhh@cateringdelmar.es', '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 1, 1, 1, NOW(), 0);
 
 -- ============================================
--- 2. Perfiles de empresa
+-- 2. Perfiles de empresa (hosteleria)
 -- ============================================
 
-INSERT INTO PT_Companies (Id, SCUserId, Name, Description, Website, Country, City, Industry, CompanySize, ContactEmail, ContactPhone, IsVerified, CreatedAt, IsDeleted)
+INSERT INTO PT_Companies (Id, SCUserId, Name, LegalName, Description, Website, Country, City, Address, Industry, CompanySize, ContactName, ContactPosition, ContactEmail, ContactPhone, IsVerified, Status, CreatedAt, IsDeleted)
 VALUES
 (
     'b1111111-1111-1111-1111-111111111111',
     'a1111111-1111-1111-1111-111111111111',
-    'TechCorp Solutions',
-    'Empresa lider en desarrollo de software y consultoria tecnologica. Especializados en soluciones cloud y transformacion digital.',
-    'https://techcorp.com',
-    'Colombia', 'Bogota',
-    'Tecnologia / Software',
-    250,
-    'empresa@techcorp.com',
-    '+57 320 123 4567',
-    1, NOW(), 0
+    'Hotel Sol Caribe',
+    'Hoteles Sol Caribe S.A.S.',
+    'Cadena hotelera de 4 estrellas con 3 propiedades en el Caribe colombiano. 180 habitaciones, restaurante gourmet, spa y centro de convenciones. Famosos por nuestra hospitalidad y servicio al cliente.',
+    'https://hotelsolcaribe.com',
+    'Colombia', 'Cartagena', 'Bocagrande, Av. San Martin 6-120',
+    'Hosteleria / Hoteles', 220,
+    'Carolina Restrepo', 'Directora de RRHH',
+    'rrhh@hotelsolcaribe.com', '+57 300 123 4567',
+    1, 3, NOW(), 0
 ),
 (
     'b2222222-2222-2222-2222-222222222222',
     'a2222222-2222-2222-2222-222222222222',
-    'Innovate Labs',
-    'Startup enfocada en inteligencia artificial y machine learning. Creamos productos que transforman industrias.',
-    'https://innovatelabs.com',
-    'Mexico', 'Ciudad de Mexico',
-    'IA / Machine Learning',
-    50,
-    'contacto@innovatelabs.com',
-    '+52 55 9876 5432',
-    1, NOW(), 0
+    'Grupo La Paella',
+    'Grupo Gastronomico La Paella S.L.',
+    'Grupo de restauracion espanol con 8 restaurantes en Madrid y Barcelona. Especializados en cocina mediterranea, arroces y mariscos frescos. Mas de 25 anos de tradicion.',
+    'https://grupolapaella.es',
+    'Espana', 'Madrid', 'Calle de la Cava Baja 24',
+    'Hosteleria / Restaurantes', 160,
+    'Javier Moreno', 'Gerente de Personal',
+    'rrhh@grupolapaella.es', '+34 910 555 123',
+    1, 3, NOW(), 0
 ),
 (
     'b3333333-3333-3333-3333-333333333333',
     'a3333333-3333-3333-3333-333333333333',
-    'GlobalSoft Inc.',
-    'Corporacion multinacional de desarrollo de software empresarial. Presencia en 15 paises.',
-    'https://globalsoft.com',
-    'Argentina', 'Buenos Aires',
-    'Software Empresarial',
-    1000,
-    'rrhh@globalsoft.com',
-    '+54 11 5555 4444',
-    0, NOW(), 0
+    'Catering Del Mar',
+    'Catering Del Mar Barcelona S.L.',
+    'Empresa lider en catering de eventos en Barcelona. Bodas, eventos corporativos y convenciones. Equipo de 90 profesionales entre cocina, sala y logistica.',
+    'https://cateringdelmar.es',
+    'Espana', 'Barcelona', 'Passeig de Gracia 45',
+    'Hosteleria / Catering', 90,
+    'Marta Puig', 'Coordinadora de RRHH',
+    'rrhh@cateringdelmar.es', '+34 930 222 888',
+    0, 2, NOW(), 0
 );
 
 -- ============================================
--- 3. Vacantes permanentes (pt_vacancies)
+-- 3. Vacantes permanentes (hosteleria)
 -- Status: 0=Draft, 1=Active, 2=Closed
 -- ContractType: 0=FullTime, 1=PartTime, 2=Contract, 3=Freelance
 -- WorkMode: 0=OnSite, 1=Hybrid, 2=Remote
@@ -97,260 +75,319 @@ VALUES
 INSERT INTO PT_Vacancies (Id, PT_CompanyId, Title, Description, Requirements, SalaryMin, SalaryMax, Location, ContractType, WorkMode, Category, ExperienceLevel, EnglishLevel, Status, PublishedAt, ViewsCount, CreatedAt, IsDeleted)
 VALUES
 (
-    UUID(), 'b1111111-1111-1111-1111-111111111111',
-    'Desarrollador Backend Senior (.NET)',
-    'Buscamos un Desarrollador Backend Senior con experiencia en .NET y arquitectura de microservicios. Lideraras el desarrollo de APIs de alto rendimiento y participaras en decisiones arquitectonicas clave.',
-    '- 5+ anos de experiencia en C# y .NET\n- Experiencia con Entity Framework Core\n- Conocimiento de microservicios y Docker\n- Experiencia con SQL Server o MySQL\n- Git y CI/CD',
-    6000000, 9000000,
-    'Bogota, Colombia',
-    0, 1, 'Desarrollo', 2, 3,
-    1, NOW(), 145, NOW(), 0
+    'e1111111-1111-1111-1111-111111111111', 'b1111111-1111-1111-1111-111111111111',
+    'Chef de Parte - Cocina Internacional',
+    'Buscamos Chef de Parte para nuestro restaurante gourmet frente al mar. Te encargaras de la estacion caliente elaborando platos de cocina internacional y caribena con producto local fresco.',
+    '- 3+ anos de experiencia como chef de parte\n- Conocimiento de HACCP y normas de sanidad\n- Cocina internacional y caribena\n- Trabajo bajo presion en servicio de alto volumen\n- Disponibilidad para turnos rotativos',
+    3500000, 5000000, 'Cartagena, Colombia', 0, 0, 'Cocina', 1, 2, 1, NOW(), 87, NOW(), 0
 ),
 (
-    UUID(), 'b1111111-1111-1111-1111-111111111111',
-    'Desarrollador Frontend React',
-    'Unete a nuestro equipo para construir interfaces modernas y responsivas con React y TypeScript. Trabajaremos en la nueva plataforma de e-commerce.',
-    '- 3+ anos de experiencia en React\n- TypeScript avanzado\n- CSS Modules / Tailwind\n- Experiencia con testing (Jest, RTL)\n- Conocimiento de UX/UI',
-    3500000, 5500000,
-    'Bogota, Colombia',
-    0, 2, 'Desarrollo', 1, 2,
-    1, NOW(), 89, NOW(), 0
+    'e2222222-2222-2222-2222-222222222222', 'b1111111-1111-1111-1111-111111111111',
+    'Recepcionista de Hotel Bilingue',
+    'Seras la primera imagen de nuestro hotel. Atencion a huespedes en espanol e ingles, check-in/check-out, gestion de reservas y resolucion de incidencias con excelencia en servicio.',
+    '- 2+ anos de experiencia en recepcion hotelera\n- Ingles avanzado (B2/C1) imprescindible\n- Manejo de PMS (Opera, Sihot o similar)\n- Excelente presencia y trato al cliente\n- Turnos rotativos incluyendo fines de semana',
+    2800000, 3800000, 'Cartagena, Colombia', 0, 0, 'Recepcion', 1, 3, 1, NOW(), 132, NOW(), 0
 ),
 (
-    UUID(), 'b1111111-1111-1111-1111-111111111111',
-    'Arquitecto de Software',
-    'Lideraras el diseno arquitectural de nuestra plataforma SaaS. Definiras estandares, patrones y mejores practicas para todo el equipo de desarrollo.',
-    '- 8+ anos de experiencia en desarrollo de software\n- Experiencia como arquitecto\n- Conocimiento de Azure/AWS\n- Microservicios y event-driven architecture\n- Liderazgo tecnico',
-    10000000, 15000000,
-    'Bogota, Colombia',
-    0, 1, 'Arquitectura', 3, 4,
-    1, NOW(), 56, NOW(), 0
+    'e3333333-3333-3333-3333-333333333333', 'b1111111-1111-1111-1111-111111111111',
+    'Gobernante/a de Hotel (Housekeeping)',
+    'Dirigiras el equipo de gobernanta de nuestras 180 habitaciones. Planificacion de limpiezas, control de calidad, gestion de inventario de amenidades y coordinacion con mantenimiento.',
+    '- 3+ anos en departamento de pisos hotelero\n- Experiencia liderando equipos de 10+ personas\n- Gestion de inventarios y consumos\n- Conocimiento de estandares de calidad hotelera\n- Portugues o ingles valorable',
+    3200000, 4200000, 'Cartagena, Colombia', 0, 0, 'Housekeeping', 2, 1, 1, NOW(), 45, NOW(), 0
 ),
 (
-    UUID(), 'b2222222-2222-2222-2222-222222222222',
-    'Ingeniero de Machine Learning',
-    'Desarrollaras modelos de IA para procesamiento de lenguaje natural y vision computacional. Trabajaras con datasets grandes y deployment en produccion.',
-    '- 4+ anos de experiencia en ML/DS\n- Python, TensorFlow/PyTorch\n- Experiencia con MLOps\n- Conocimiento de NLP y LLMs\n- Publicaciones cientificas (deseable)',
-    7000000, 12000000,
-    'Ciudad de Mexico, Mexico',
-    0, 2, 'Inteligencia Artificial', 2, 4,
-    1, NOW(), 234, NOW(), 0
+    'e4444444-4444-4444-4444-444444444444', 'b2222222-2222-2222-2222-222222222222',
+    'Camarero/a de Sala - Restaurante Gourmet',
+    'Buscamos camareros/as profesionales para nuestro restaurante de cocina mediterranea en el centro de Madrid. Servicio de sala, maridaje, recomendacion de carta y atencion personalizada.',
+    '- 2+ anos de experiencia en sala en restauracion\n- Conocimiento de vinos y maridaje\n- Manejo de TPV digital\n- Orientacion al cliente y trabajo en equipo\n- Incorporacion inmediata',
+    1800000, 2400000, 'Madrid, Espana', 0, 0, 'Sala', 1, 1, 1, NOW(), 156, NOW(), 0
 ),
 (
-    UUID(), 'b2222222-2222-2222-2222-222222222222',
-    'Data Scientist Junior',
-    'Oportunidad para talentos emergentes en data science. Analizaras datos, crearas dashboards y participaras en proyectos de ML.',
-    '- 1+ ano de experiencia o proyectos relevantes\n- Python (Pandas, NumPy, Scikit-learn)\n- SQL\n- Visualizacion de datos (Power BI, Tableau)\n- Ganas de aprender',
-    2500000, 4000000,
-    'Ciudad de Mexico, Mexico',
-    0, 2, 'Data Science', 0, 1,
-    1, NOW(), 178, NOW(), 0
+    'e5555555-5555-5555-5555-555555555555', 'b2222222-2222-2222-2222-222222222222',
+    'Segundo/a de Cocina (Sous Chef)',
+    'Apoya al Jefe de Cocina en la gestion diaria de nuestra cocina de arroces y pescado. Supervision de equipo, control de costes, elaboracion de menus y garantia de calidad.',
+    '- 5+ anos de experiencia en cocina de restaurante\n- 2+ anos como segundo de cocina\n- Especialidad en arroces y producto mediterraneo\n- Gestion de equipos de 8+ personas\n- Control de costes y escandallos',
+    2200000, 3000000, 'Madrid, Espana', 0, 0, 'Cocina', 2, 2, 1, NOW(), 98, NOW(), 0
 ),
 (
-    UUID(), 'b3333333-3333-3333-3333-333333333333',
-    'Project Manager IT',
-    'Gestionaras proyectos de software empresarial para clientes globales. Metodologia agil (Scrum/Kanban) y gestion de equipos distribuidos.',
-    '- 5+ anos de experiencia en gestion de proyectos IT\n- Certificacion PMP o Scrum (deseable)\n- Experiencia con Jira/Confluence\n- Ingles avanzado\n- Gestion de presupuestos',
-    5000000, 8000000,
-    'Buenos Aires, Argentina',
-    0, 1, 'Gestion', 2, 4,
-    1, NOW(), 67, NOW(), 0
+    'e6666666-6666-6666-6666-666666666666', 'b3333333-3333-3333-3333-333333333333',
+    'Camarero/a de Eventos y Banquetes',
+    'Forma parte de nuestro equipo de banquetes para bodas y eventos corporativos en Barcelona. Montaje de salones, servicio emplatado, buffet y cocktail en eventos de hasta 500 invitados.',
+    '- 1+ ano de experiencia en banquetes o eventos\n- Servicio emplatado y desbarasado\n- Disponibilidad fines de semana (alta temporada)\n- Vehiculo propio valorable\n- Actitud positiva y dinamismo',
+    1600000, 2100000, 'Barcelona, Espana', 1, 0, 'Banquetes', 0, 1, 1, NOW(), 203, NOW(), 0
 ),
 (
-    UUID(), 'b3333333-3333-3333-3333-333333333333',
-    'QA Automation Engineer',
-    'Implementaras estrategias de testing automatizado para nuestra plataforma. Selenium, Cypress y integracion con CI/CD.',
-    '- 3+ anos de experiencia en QA automation\n- Selenium, Cypress o Playwright\n- Integracion con CI/CD (GitHub Actions, Azure DevOps)\n- API testing (Postman, RestSharp)\n- Ingles intermedio',
-    3000000, 5000000,
-    'Buenos Aires, Argentina',
-    0, 2, 'Calidad', 1, 2,
-    1, NOW(), 112, NOW(), 0
+    'e7777777-7777-7777-7777-777777777777', 'b3333333-3333-3333-3333-333333333333',
+    'Pastelero/a - Produccion de Reposteria',
+    'Elaboracion de postres y dulces para eventos: tartas de boda, mesas dulces, petit fours. Trabajaras en nuestra central de produccion con producto de temporada.',
+    '- 2+ anos de experiencia en pasteleria/reposteria\n- Conocimiento de tecnicas de pasteleria moderna\n- Higiene y manipulacion de alimentos\n- Creatividad y gusto por el detalle',
+    1700000, 2300000, 'Barcelona, Espana', 0, 0, 'Pasteleria', 1, 1, 0, NULL, 0, NOW(), 0
 ),
 (
-    UUID(), 'b3333333-3333-3333-3333-333333333333',
-    'DevOps Engineer',
-    'Gestionaras la infraestructura cloud, pipelines de CI/CD y observabilidad. Kubernetes, Terraform y monitoreo.',
-    '- 4+ anos de experiencia en DevOps\n- Kubernetes, Docker\n- Terraform, Ansible\n- Azure o AWS\n- Monitoreo (Prometheus, Grafana)',
-    6000000, 9500000,
-    'Remoto, Latinoamerica',
-    0, 2, 'Infraestructura', 2, 3,
-    1, NOW(), 201, NOW(), 0
-),
--- Vacante en Draft (no publicada)
-(
-    UUID(), 'b1111111-1111-1111-1111-111111111111',
-    'Especialista en Ciberseguridad',
-    'Buscamos un experto en ciberseguridad para auditar y proteger nuestros sistemas. Pentesting, analisis de vulnerabilidades y respuesta a incidentes.',
-    '- 5+ anos en ciberseguridad\n- CEH, OSCP o similar\n- Experiencia con SIEM\n- Pentesting y forense\n- Ingles avanzado',
-    8000000, 13000000,
-    'Bogota, Colombia',
-    0, 1, 'Seguridad', 2, 4,
-    0, NULL, 0, NOW(), 0
-),
--- Vacante Cerrada
-(
-    UUID(), 'b2222222-2222-2222-2222-222222222222',
-    'Backend Developer Python (Cerrada)',
-    'Posicion cerrada. Buscabamos desarrollador Python con experiencia en FastAPI.',
-    '- 3+ anos Python\n- FastAPI o Django\n- PostgreSQL\n- Docker',
-    4000000, 6500000,
-    'Ciudad de Mexico, Mexico',
-    0, 2, 'Desarrollo', 1, 2,
-    2, DATE_SUB(NOW(), INTERVAL 30 DAY), 340, DATE_SUB(NOW(), INTERVAL 60 DAY), 0
+    'e8888888-8888-8888-8888-888888888888', 'b2222222-2222-2222-2222-222222222222',
+    'Jefe/a de Sala (Cerrada)',
+    'Posicion cerrada. Buscabamos jefe de sala con experiencia en restauracion de alta gama.',
+    '- 5+ anos de experiencia\n- Gestion de equipos\n- Ingles avanzado',
+    2600000, 3400000, 'Madrid, Espana', 0, 0, 'Sala', 3, 3, 2, DATE_SUB(NOW(), INTERVAL 30 DAY), 289, DATE_SUB(NOW(), INTERVAL 60 DAY), 0
 );
 
 -- ============================================
--- 4. Vacantes temporales (pt_tempvacancies)
+-- 4. Vacantes temporales (hosteleria)
 -- ============================================
 
 INSERT INTO PT_TempVacancies (Id, SCUserId, Title, Description, Requirements, SalaryMin, SalaryMax, Location, ContractType, ExpiresAt, IsPublished, Category, ExperienceLevel, EnglishLevel, WorkMode, CreatedAt, IsDeleted)
 VALUES
 (
-    UUID(), '9bac8f5a-d504-4dcb-834b-ebddce3cb6a0',
-    'Freelance - Disenador UX/UI',
-    'Proyecto freelance para rediseno de dashboard administrativo. 2 semanas de duracion.',
-    '- 3+ anos experiencia UX/UI\n- Figma avanzado\n- Portfolio con proyectos SaaS\n- Disponibilidad inmediata',
-    1500000, 3000000,
-    'Remoto',
-    3, DATE_ADD(NOW(), INTERVAL 14 DAY),
-    1, 'Diseno', 1, 1, 2, NOW(), 0
+    'f1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111',
+    'Extra de Sala - Temporada Alta',
+    'Refuerzo de personal de sala para temporada de diciembre y enero. Turnos de noche y fines de semana en hotel de playa.',
+    '- Experiencia previa en sala o barra\n- Disponibilidad inmediata\n- Trato excelente al cliente',
+    1500000, 2000000, 'Cartagena, Colombia', 2, DATE_ADD(NOW(), INTERVAL 45 DAY), 1, 'Sala', 0, 1, 0, NOW(), 0
 ),
 (
-    UUID(), '9bac8f5a-d504-4dcb-834b-ebddce3cb6a0',
-    'Contrato - Desarrollador Full Stack 3 meses',
-    'Cubrir licencia por 3 meses. Stack: .NET + React. Proyecto en produccion.',
-    '- 4+ anos .NET + React\n- SQL Server\n- Experiencia en produccion\n- Disponibilidad inmediata',
-    4000000, 6000000,
-    'Medellin, Colombia',
-    2, DATE_ADD(NOW(), INTERVAL 90 DAY),
-    1, 'Desarrollo', 1, 2, 1, NOW(), 0
-),
-(
-    UUID(), '9bac8f5a-d504-4dcb-834b-ebddce3cb6a0',
-    'Part-time - Community Manager Tecnologia',
-    'Gestion de redes sociales para startup tecnologica. 20 horas semanales.',
-    '- 2+ anos experiencia community management\n- Conocimiento del sector tech\n- Ingles intermedio\n- Creatividad',
-    1200000, 2000000,
-    'Remoto',
-    1, DATE_ADD(NOW(), INTERVAL 45 DAY),
-    1, 'Marketing', 0, 1, 2, NOW(), 0
+    'f2222222-2222-2222-2222-222222222222', 'a2222222-2222-2222-2222-222222222222',
+    'Cocinero/a de Refuerzo - Eventos',
+    'Cocinero/a para refuerzo en eventos privados y catering de fin de semana. Elaboracion de menus cerrados para 50-150 comensales.',
+    '- 2+ anos de experiencia en cocina\n- Elaboracion de menus en volumen\n- Incorporacion inmediata',
+    1800000, 2500000, 'Madrid, Espana', 2, DATE_ADD(NOW(), INTERVAL 30 DAY), 1, 'Cocina', 1, 1, 0, NOW(), 0
 );
 
 -- ============================================
--- 5. Skills
+-- 5. Skills (hosteleria)
 -- ============================================
 
 INSERT INTO PT_Skills (Id, Name, Category, CreatedAt, IsDeleted)
 VALUES
-(UUID(), 'C#', 'Programacion', NOW(), 0),
-(UUID(), '.NET Core', 'Programacion', NOW(), 0),
-(UUID(), 'React', 'Frontend', NOW(), 0),
-(UUID(), 'TypeScript', 'Frontend', NOW(), 0),
-(UUID(), 'Python', 'Programacion', NOW(), 0),
-(UUID(), 'SQL Server', 'Base de Datos', NOW(), 0),
-(UUID(), 'MySQL', 'Base de Datos', NOW(), 0),
-(UUID(), 'Docker', 'DevOps', NOW(), 0),
-(UUID(), 'Kubernetes', 'DevOps', NOW(), 0),
-(UUID(), 'Azure', 'Cloud', NOW(), 0),
-(UUID(), 'AWS', 'Cloud', NOW(), 0),
-(UUID(), 'Git', 'Herramientas', NOW(), 0),
-(UUID(), 'Figma', 'Diseno', NOW(), 0),
-(UUID(), 'Machine Learning', 'IA', NOW(), 0),
-(UUID(), 'TensorFlow', 'IA', NOW(), 0),
-(UUID(), 'Scrum', 'Metodologias', NOW(), 0),
-(UUID(), 'Jira', 'Herramientas', NOW(), 0),
-(UUID(), 'Selenium', 'Testing', NOW(), 0),
-(UUID(), 'Cypress', 'Testing', NOW(), 0),
-(UUID(), 'Terraform', 'DevOps', NOW(), 0);
+('51111111-1111-1111-1111-111111111111', 'Cocina Internacional', 'Cocina', NOW(), 0),
+('52222222-2222-2222-2222-222222222222', 'Cocina Mediterranea', 'Cocina', NOW(), 0),
+('53333333-3333-3333-3333-333333333333', 'Reposteria y Pasteleria', 'Cocina', NOW(), 0),
+('54444444-4444-4444-4444-444444444444', 'HACCP / Seguridad Alimentaria', 'Cocina', NOW(), 0),
+('55555555-5555-5555-5555-555555555555', 'Servicio de Sala', 'Sala', NOW(), 0),
+('56666666-6666-6666-6666-666666666666', 'Maridaje de Vinos', 'Sala', NOW(), 0),
+('57777777-7777-7777-7777-777777777777', 'Cocteleria', 'Barra', NOW(), 0),
+('58888888-8888-8888-8888-888888888888', 'Cafe y Barista', 'Barra', NOW(), 0),
+('59999999-9999-9999-9999-999999999999', 'Atencion al Cliente', 'Transversal', NOW(), 0),
+('5aaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Gestion de PMS (Opera/Sihot)', 'Recepcion', NOW(), 0),
+('5bbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Ingles B2', 'Idiomas', NOW(), 0),
+('5ccccccc-cccc-cccc-cccc-cccccccccccc', 'Ingles C1', 'Idiomas', NOW(), 0),
+('5ddddddd-dddd-dddd-dddd-dddddddddddd', 'Gestion de Equipos', 'Gestion', NOW(), 0),
+('5fffffff-ffff-ffff-ffff-ffffffffffff', 'Control de Costes', 'Gestion', NOW(), 0),
+('5eeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'Banquetes y Eventos', 'Sala', NOW(), 0),
+('50000000-0000-0000-0000-000000000001', 'Housekeeping / Limpieza', 'Housekeeping', NOW(), 0),
+('50000000-0000-0000-0000-000000000002', 'Barista / Cafeteria', 'Barra', NOW(), 0),
+('50000000-0000-0000-0000-000000000003', 'Cocina Creativa / Autor', 'Cocina', NOW(), 0),
+('50000000-0000-0000-0000-000000000004', 'Sommellerie', 'Sala', NOW(), 0),
+('50000000-0000-0000-0000-000000000005', 'Maitre d Hotel', 'Sala', NOW(), 0);
 
 -- ============================================
--- 6. Usuarios postulantes (candidates)
--- Password para todos: Candidato123!
--- El hash se debe generar con BCrypt, pero usamos el mismo del admin temporalmente
--- y se actualizara al primer login o desde la API
+-- 6. Usuarios candidatos
+-- Password para TODOS: Empresa123!
 -- ============================================
 
--- Postulante 1
 INSERT INTO SC_Users (Id, Email, PasswordHash, PrimaryRole, IsActive, EmailVerified, CreatedAt, IsDeleted)
-VALUES (
-    'c1111111-1111-1111-1111-111111111111',
-    'juan.perez@gmail.com',
-    '$2a$11$N7qV8x2Y3Z5wQ1rT6uI9pO0lKjHgFEdCbAsDfGhJkLmN0pQ1rSt',
-    0, -- Candidate
-    1, 1, NOW(), 0
-);
-
--- Postulante 2
-INSERT INTO SC_Users (Id, Email, PasswordHash, PrimaryRole, IsActive, EmailVerified, CreatedAt, IsDeleted)
-VALUES (
-    'c2222222-2222-2222-2222-222222222222',
-    'maria.gonzalez@hotmail.com',
-    '$2a$11$N7qV8x2Y3Z5wQ1rT6uI9pO0lKjHgFEdCbAsDfGhJkLmN0pQ1rSt',
-    0,
-    1, 1, NOW(), 0
-);
-
--- Postulante 3
-INSERT INTO SC_Users (Id, Email, PasswordHash, PrimaryRole, IsActive, EmailVerified, CreatedAt, IsDeleted)
-VALUES (
-    'c3333333-3333-3333-3333-333333333333',
-    'carlos.rodriguez@outlook.com',
-    '$2a$11$N7qV8x2Y3Z5wQ1rT6uI9pO0lKjHgFEdCbAsDfGhJkLmN0pQ1rSt',
-    0,
-    1, 1, NOW(), 0
-);
+VALUES
+('c1111111-1111-1111-1111-111111111111', 'ana.martinez@gmail.com',        '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 0, 1, 1, NOW(), 0),
+('c2222222-2222-2222-2222-222222222222', 'luis.fernandez@hotmail.com',   '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 0, 1, 1, NOW(), 0),
+('c3333333-3333-3333-3333-333333333333', 'sofia.torres@outlook.com',     '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 0, 1, 1, NOW(), 0),
+('c4444444-4444-4444-4444-444444444444', 'javier.morales@outlook.com',   '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 0, 1, 1, NOW(), 0),
+('c5555555-5555-5555-5555-555555555555', 'elena.ruiz@gmail.com',         '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 0, 1, 1, NOW(), 0),
+('c6666666-6666-6666-6666-666666666666', 'pablo.garcia@hotmail.com',     '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 0, 1, 1, NOW(), 0),
+('c7777777-7777-7777-7777-777777777777', 'carmen.vega@outlook.com',     '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 0, 1, 1, NOW(), 0),
+('c8888888-8888-8888-8888-888888888888', 'diego.hernandez@gmail.com',    '$2a$11$FyRm9WWY1JbDgBjFTqv8UuzkGgJiKgRwrMnaHJhMGnC43I2t2GZ7i', 0, 1, 1, NOW(), 0);
 
 -- ============================================
--- 7. Perfiles de candidato
+-- 7. Perfiles de candidato (hosteleria)
 -- ============================================
 
-INSERT INTO PT_Candidates (Id, SCUserId, FirstName, LastName, Title, Summary, LinkedInUrl, CvUrl, WizardCompleted, WizardStep, Country, City, YearsOfExperience, CreatedAt, IsDeleted)
+INSERT INTO PT_Candidates (Id, SCUserId, FirstName, LastName, Phone, Title, Summary, LinkedInUrl, PortfolioUrl, Country, City, WizardCompleted, WizardStep, YearsOfExperience, HasPassport, Nationality, HasTransport, Availability, CreatedAt, IsDeleted)
 VALUES
 (
-    'd1111111-1111-1111-1111-111111111111',
-    'c1111111-1111-1111-1111-111111111111',
-    'Juan', 'Perez',
-    'Desarrollador Backend Senior',
-    'Desarrollador Backend con 6 anos de experiencia en C# y .NET. Especializado en APIs de alto rendimiento y microservicios.',
-    'https://linkedin.com/in/juanperez',
-    'https://drive.google.com/cv/juanperez',
-    1, 10, 'Colombia', 'Bogota', 6, NOW(), 0
+    'd1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111',
+    'Ana', 'Martinez', '+34 611 222 333',
+    'Chef de Parte - Cocina Internacional',
+    'Chef de parte con 5 anos de experiencia en restaurantes de cocina internacional y hoteles de 4 estrellas. Especialista en estacion caliente, producto fresco y cocina de mercado. Certificada en HACCP.',
+    'https://linkedin.com/in/anamartinezchef', NULL,
+    'Espana', 'Madrid', 1, 10, 5, 1, 'Espanola', 1, 2, NOW(), 0
 ),
 (
-    'd2222222-2222-2222-2222-222222222222',
-    'c2222222-2222-2222-2222-222222222222',
-    'Maria', 'Gonzalez',
-    'Frontend Developer',
-    'Frontend Developer con 4 anos de experiencia en React y TypeScript. Apasionada por UX y accesibilidad.',
-    'https://linkedin.com/in/mariagonzalez',
-    NULL,
-    1, 10, 'Mexico', 'Ciudad de Mexico', 4, NOW(), 0
+    'd2222222-2222-2222-2222-222222222222', 'c2222222-2222-2222-2222-222222222222',
+    'Luis', 'Fernandez', '+57 301 555 8888',
+    'Recepcionista Hotelero Bilingue',
+    'Recepcionista de hotel con 4 anos de experiencia en hoteles de 4 y 5 estrellas. Ingles C1 y portugues intermedio. Dominio de Opera PMS. Especialista en fidelizacion de huespedes.',
+    'https://linkedin.com/in/luisfernandezhotel', NULL,
+    'Colombia', 'Cartagena', 1, 10, 4, 1, 'Colombiana', 0, 1, NOW(), 0
 ),
 (
-    'd3333333-3333-3333-3333-333333333333',
-    'c3333333-3333-3333-3333-333333333333',
-    'Carlos', 'Rodriguez',
-    'Full Stack Developer',
-    'Full Stack Developer con experiencia en .NET, React y Azure. Busco nuevos retos en arquitectura cloud.',
+    'd3333333-3333-3333-3333-333333333333', 'c3333333-3333-3333-3333-333333333333',
+    'Sofia', 'Torres', '+34 622 444 777',
+    'Camarera Profesional y Sumiller',
+    'Camarera con 6 anos de experiencia en restauracion de alta gama en Barcelona. Certificada como sumiller por la UECA. Especialista en maridaje y servicio de vinos.',
+    'https://linkedin.com/in/sofiatorressumiller', NULL,
+    'Espana', 'Barcelona', 1, 10, 6, 1, 'Espanola', 1, 1, NOW(), 0
+),
+(
+    'd4444444-4444-4444-4444-444444444444', 'c4444444-4444-4444-4444-444444444444',
+    'Javier', 'Morales', '+57 312 999 777',
+    'Cocinero - Cocina Mediterranea',
+    'Cocinero con 3 anos de experiencia en cocina mediterranea y de mercado. Apasionado por el producto local y la cocina de temporada. En formacion continua.',
     NULL, NULL,
-    0, 5, 'Argentina', 'Buenos Aires', 5, NOW(), 0
+    'Colombia', 'Cartagena', 1, 10, 3, 0, 'Colombiana', 1, 1, NOW(), 0
+),
+(
+    'd5555555-5555-5555-5555-555555555555', 'c5555555-5555-5555-5555-555555555555',
+    'Elena', 'Ruiz', '+34 633 111 444',
+    'Gobernanta de Hotel',
+    'Gobernanta con 7 anos de experiencia en hoteles de 4 y 5 estrellas. Gestion de equipos de 15+ personas, control de calidad de habitaciones y amenidades. Experiencia en auditorias de calidad.',
+    'https://linkedin.com/in/elenaruizhousekeeping', NULL,
+    'Espana', 'Madrid', 1, 10, 7, 1, 'Espanola', 1, 1, NOW(), 0
+),
+(
+    'd6666666-6666-6666-6666-666666666666', 'c6666666-6666-6666-6666-666666666666',
+    'Pablo', 'Garcia', '+34 644 222 555',
+    'Barista y Camarero de Cafeteria',
+    'Barista profesional con 4 anos de experiencia en cafeterias de especialidad. Latte art, metodos de extraccion, conocimiento de origenes y tostado. Atencion al cliente de alta calidad.',
+    'https://linkedin.com/in/pablogarciabarista', NULL,
+    'Espana', 'Barcelona', 1, 10, 4, 0, 'Espanola', 0, 1, NOW(), 0
+),
+(
+    'd7777777-7777-7777-7777-777777777777', 'c7777777-7777-7777-7777-777777777777',
+    'Carmen', 'Vega', '+34 655 333 666',
+    'Pastelera - Reposteria de Autor',
+    'Pastelera con 5 anos de experiencia en pasteleria artesanal y de autor. Especialista en tartas de boda, mesas dulces y petit fours. Formacion en Le Cordon Bleu.',
+    'https://linkedin.com/in/carmenvegapastelera', 'https://instagram.com/carmenvega.pasteleria',
+    'Espana', 'Barcelona', 1, 10, 5, 1, 'Espanola', 1, 1, NOW(), 0
+),
+(
+    'd8888888-8888-8888-8888-888888888888', 'c8888888-8888-8888-8888-888888888888',
+    'Diego', 'Hernandez', '+57 316 777 222',
+    'Maitre de Sala - Restauracion',
+    'Maitre con 8 anos de experiencia en restauracion de alta gama. Gestion de equipos de 20+ personas, control de reservas, eventos privados y experiencia del comensal. Ingles fluido.',
+    'https://linkedin.com/in/diegohernandezmaitre', NULL,
+    'Colombia', 'Cartagena', 1, 10, 8, 1, 'Colombiana', 1, 2, NOW(), 0
 );
 
 -- ============================================
--- 8. Aplicaciones (postulaciones)
+-- 8. Experiencias laborales
+-- ============================================
+
+INSERT INTO PT_CandidateExperiences (Id, PT_CandidateId, CompanyName, JobTitle, Description, StartDate, EndDate, IsCurrentJob, Location, CreatedAt, IsDeleted)
+VALUES
+-- Ana Martinez
+(UUID(), 'd1111111-1111-1111-1111-111111111111', 'Hotel Riu Plaza Espana', 'Chef de Parte', 'Gestion de la estacion caliente en restaurante de 300 cubiertos diarios. Elaboracion de carta de temporada y supervision de 4 cocineros de linea.', DATE_SUB(NOW(), INTERVAL 36 MONTH), NULL, 1, 'Madrid, Espana', NOW(), 0),
+(UUID(), 'd1111111-1111-1111-1111-111111111111', 'Restaurante Casa Mono', 'Cocinera', 'Cocina de mercado y producto. Elaboracion de entrantes y postres. Control de compras y proveedores locales.', DATE_SUB(NOW(), INTERVAL 84 MONTH), DATE_SUB(NOW(), INTERVAL 36 MONTH), 0, 'Barcelona, Espana', NOW(), 0),
+-- Luis Fernandez
+(UUID(), 'd2222222-2222-2222-2222-222222222222', 'Hotel Melia Cartagena', 'Recepcionista Turno Manana', 'Check-in/check-out de huespedes VIP, gestion de reservas grupales y resolucion de incidencias. Valoracion media de huespedes 4.8/5.', DATE_SUB(NOW(), INTERVAL 30 MONTH), NULL, 1, 'Cartagena, Colombia', NOW(), 0),
+(UUID(), 'd2222222-2222-2222-2222-222222222222', 'Hostal El Viajero', 'Recepcionista Nocturno', 'Atencion al huesped en turno nocturno, facturacion y cierre de caja. Gestion de overbooking en temporada alta.', DATE_SUB(NOW(), INTERVAL 66 MONTH), DATE_SUB(NOW(), INTERVAL 36 MONTH), 0, 'Cartagena, Colombia', NOW(), 0),
+-- Sofia Torres
+(UUID(), 'd3333333-3333-3333-3333-333333333333', 'Restaurante Cinc Sentits', 'Camarera / Sumiller', 'Servicio de sala en restaurante con estrella Michelin. Carta de vinos de 200 referencias y maridaje en menu degustacion.', DATE_SUB(NOW(), INTERVAL 48 MONTH), NULL, 1, 'Barcelona, Espana', NOW(), 0),
+(UUID(), 'd3333333-3333-3333-3333-333333333333', 'Hotel Arts Barcelona', 'Camarera de Banquetes', 'Servicio de banquetes y eventos en hotel 5 estrellas. Eventos de hasta 400 comensales. Servicio emplatado y buffet.', DATE_SUB(NOW(), INTERVAL 96 MONTH), DATE_SUB(NOW(), INTERVAL 48 MONTH), 0, 'Barcelona, Espana', NOW(), 0),
+-- Javier Morales
+(UUID(), 'd4444444-4444-4444-4444-444444444444', 'Restaurante La Mulata', 'Cocinero', 'Cocina caribena y de producto local. Elaboracion de mise en place, fondos y salsas. Apoyo en partida caliente en servicio de 150 cubiertos.', DATE_SUB(NOW(), INTERVAL 24 MONTH), NULL, 1, 'Cartagena, Colombia', NOW(), 0),
+-- Elena Ruiz
+(UUID(), 'd5555555-5555-5555-5555-555555555555', 'Hotel Villa Magna', 'Gobernanta', 'Direccion del departamento de pisos de hotel 5 estrellas. Gestion de 20 camareras, control de calidad y inventarios. Auditorias trimestrales.', DATE_SUB(NOW(), INTERVAL 42 MONTH), NULL, 1, 'Madrid, Espana', NOW(), 0),
+(UUID(), 'd5555555-5555-5555-5555-555555555555', 'Hotel NH Collection', 'Supervisora de Pisos', 'Supervision de limpieza de 120 habitaciones. Control de amenidades y reportes de mantenimiento. Coordinacion con turnos.', DATE_SUB(NOW(), INTERVAL 96 MONTH), DATE_SUB(NOW(), INTERVAL 42 MONTH), 0, 'Madrid, Espana', NOW(), 0),
+-- Pablo Garcia
+(UUID(), 'd6666666-6666-6666-6666-666666666666', 'Cafe de Especialidad Nomad', 'Barista / Encargado', 'Preparacion de cafes de especialidad, latte art y metodos de extraccion. Gestion de stock, proveedores y atencion al cliente.', DATE_SUB(NOW(), INTERVAL 30 MONTH), NULL, 1, 'Barcelona, Espana', NOW(), 0),
+(UUID(), 'd6666666-6666-6666-6666-666666666666', 'Starbucks Coffee', 'Camarero / Barista', 'Atencion al cliente, preparacion de bebidas y gestion de caja. Turnos de manana y tarde en establecimiento de alto volumen.', DATE_SUB(NOW(), INTERVAL 60 MONTH), DATE_SUB(NOW(), INTERVAL 30 MONTH), 0, 'Barcelona, Espana', NOW(), 0),
+-- Carmen Vega
+(UUID(), 'd7777777-7777-7777-7777-777777777777', 'Pasteleria La Dulce Elena', 'Pastelera Jefa', 'Elaboracion de tartas de boda, mesas dulces y petit fours para eventos. Gestion de pedidos personalizados y equipo de 3 pasteleros.', DATE_SUB(NOW(), INTERVAL 36 MONTH), NULL, 1, 'Barcelona, Espana', NOW(), 0),
+(UUID(), 'd7777777-7777-7777-7777-777777777777', 'Hotel W Barcelona', 'Pastelera de Eventos', 'Postres y dulces para banquetes y eventos de hotel 5 estrellas. Mesas dulces para bodas y convenciones.', DATE_SUB(NOW(), INTERVAL 72 MONTH), DATE_SUB(NOW(), INTERVAL 36 MONTH), 0, 'Barcelona, Espana', NOW(), 0),
+-- Diego Hernandez
+(UUID(), 'd8888888-8888-8888-8888-888888888888', 'Restaurante La Mulata', 'Maitre', 'Direccion de sala en restaurante de alta gama. Gestion de reservas, equipo de 12 camareros, eventos privados y experiencia del comensal.', DATE_SUB(NOW(), INTERVAL 48 MONTH), NULL, 1, 'Cartagena, Colombia', NOW(), 0),
+(UUID(), 'd8888888-8888-8888-8888-888888888888', 'Hotel Las Aguas', 'Jefe de Sala', 'Supervision de servicio de restaurante y room service en hotel 4 estrellas. Turnos y formacion de personal de sala.', DATE_SUB(NOW(), INTERVAL 108 MONTH), DATE_SUB(NOW(), INTERVAL 48 MONTH), 0, 'Cartagena, Colombia', NOW(), 0);
+
+-- ============================================
+-- 9. Formacion academica
+-- ============================================
+
+INSERT INTO PT_CandidateEducations (Id, PT_CandidateId, Institution, Degree, FieldOfStudy, StartDate, EndDate, IsInProgress, CreatedAt, IsDeleted)
+VALUES
+(UUID(), 'd1111111-1111-1111-1111-111111111111', 'Escuela de Hosteleria de Madrid', 'Tecnico Superior en Direccion de Cocina', 'Gastronomia', DATE_SUB(NOW(), INTERVAL 96 MONTH), DATE_SUB(NOW(), INTERVAL 90 MONTH), 0, NOW(), 0),
+(UUID(), 'd2222222-2222-2222-2222-222222222222', 'Universidad de Cartagena', 'Tecnologo en Gestion Hotelera y Turistica', 'Turismo', DATE_SUB(NOW(), INTERVAL 72 MONTH), DATE_SUB(NOW(), INTERVAL 66 MONTH), 0, NOW(), 0),
+(UUID(), 'd3333333-3333-3333-3333-333333333333', 'Escuela de Hosteleria de Barcelona', 'Curso de Sumilleria', 'Enologia', DATE_SUB(NOW(), INTERVAL 36 MONTH), DATE_SUB(NOW(), INTERVAL 34 MONTH), 0, NOW(), 0),
+(UUID(), 'd4444444-4444-4444-4444-444444444444', 'SENA - Cartagena', 'Tecnico en Cocina', 'Gastronomia', DATE_SUB(NOW(), INTERVAL 60 MONTH), DATE_SUB(NOW(), INTERVAL 54 MONTH), 0, NOW(), 0),
+(UUID(), 'd5555555-5555-5555-5555-555555555555', 'Escuela Internacional de Hosteleria', 'Tecnico Superior en Gestion de Pisos', 'Hosteleria', DATE_SUB(NOW(), INTERVAL 108 MONTH), DATE_SUB(NOW(), INTERVAL 96 MONTH), 0, NOW(), 0),
+(UUID(), 'd6666666-6666-6666-6666-666666666666', 'Escuela de Barismo de Barcelona', 'Certificacion de Barista Profesional', 'Cafe', DATE_SUB(NOW(), INTERVAL 48 MONTH), DATE_SUB(NOW(), INTERVAL 46 MONTH), 0, NOW(), 0),
+(UUID(), 'd7777777-7777-7777-7777-777777777777', 'Le Cordon Bleu Paris', 'Diploma de Pasteleria', 'Reposteria', DATE_SUB(NOW(), INTERVAL 72 MONTH), DATE_SUB(NOW(), INTERVAL 66 MONTH), 0, NOW(), 0),
+(UUID(), 'd8888888-8888-8888-8888-888888888888', 'Escuela de Hosteleria de Bogota', 'Tecnico Superior en Direccion de Sala', 'Restauracion', DATE_SUB(NOW(), INTERVAL 120 MONTH), DATE_SUB(NOW(), INTERVAL 108 MONTH), 0, NOW(), 0);
+
+-- ============================================
+-- 10. Certificaciones
+-- ============================================
+
+INSERT INTO PT_CandidateCertifications (Id, PT_CandidateId, Name, Issuer, IssueDate, CreatedAt, IsDeleted)
+VALUES
+(UUID(), 'd1111111-1111-1111-1111-111111111111', 'Certificacion HACCP', 'AESAN', DATE_SUB(NOW(), INTERVAL 48 MONTH), NOW(), 0),
+(UUID(), 'd2222222-2222-2222-2222-222222222222', 'Opera PMS Certified', 'Oracle Hospitality', DATE_SUB(NOW(), INTERVAL 24 MONTH), NOW(), 0),
+(UUID(), 'd3333333-3333-3333-3333-333333333333', 'Certificacion de Sumilleria UECA', 'Union Espanola de Catadores', DATE_SUB(NOW(), INTERVAL 30 MONTH), NOW(), 0),
+(UUID(), 'd4444444-4444-4444-4444-444444444444', 'Manipulador de Alimentos', 'SENA', DATE_SUB(NOW(), INTERVAL 18 MONTH), NOW(), 0),
+(UUID(), 'd5555555-5555-5555-5555-555555555555', 'Auditoria de Calidad Hotelera', 'ICH Hotel Quality', DATE_SUB(NOW(), INTERVAL 36 MONTH), NOW(), 0),
+(UUID(), 'd6666666-6666-6666-6666-666666666666', 'Barista Profesional SCA', 'Specialty Coffee Association', DATE_SUB(NOW(), INTERVAL 24 MONTH), NOW(), 0),
+(UUID(), 'd7777777-7777-7777-7777-777777777777', 'Diploma de Pasteleria de Autor', 'Le Cordon Bleu', DATE_SUB(NOW(), INTERVAL 66 MONTH), NOW(), 0),
+(UUID(), 'd8888888-8888-8888-8888-888888888888', 'Maitre d Hotel Certificado', 'European Hospitality', DATE_SUB(NOW(), INTERVAL 60 MONTH), NOW(), 0);
+
+-- ============================================
+-- 11. Skills de candidatos
+-- ============================================
+
+INSERT INTO PT_CandidateSkills (Id, PT_CandidateId, PT_SkillId, ProficiencyLevel, CreatedAt, IsDeleted)
+VALUES
+-- Ana: Cocina Internacional, Mediterranea, HACCP, Ingles B2, Cocina Creativa
+(UUID(), 'd1111111-1111-1111-1111-111111111111', '51111111-1111-1111-1111-111111111111', 4, NOW(), 0),
+(UUID(), 'd1111111-1111-1111-1111-111111111111', '52222222-2222-2222-2222-222222222222', 4, NOW(), 0),
+(UUID(), 'd1111111-1111-1111-1111-111111111111', '54444444-4444-4444-4444-444444444444', 4, NOW(), 0),
+(UUID(), 'd1111111-1111-1111-1111-111111111111', '5bbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 3, NOW(), 0),
+(UUID(), 'd1111111-1111-1111-1111-111111111111', '50000000-0000-0000-0000-000000000003', 3, NOW(), 0),
+-- Luis: Atencion al Cliente, PMS, Ingles B2/C1
+(UUID(), 'd2222222-2222-2222-2222-222222222222', '59999999-9999-9999-9999-999999999999', 4, NOW(), 0),
+(UUID(), 'd2222222-2222-2222-2222-222222222222', '5aaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 4, NOW(), 0),
+(UUID(), 'd2222222-2222-2222-2222-222222222222', '5bbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 4, NOW(), 0),
+(UUID(), 'd2222222-2222-2222-2222-222222222222', '5ccccccc-cccc-cccc-cccc-cccccccccccc', 3, NOW(), 0),
+-- Sofia: Sala, Maridaje, Sommellerie, Ingles C1, Banquetes
+(UUID(), 'd3333333-3333-3333-3333-333333333333', '55555555-5555-5555-5555-555555555555', 4, NOW(), 0),
+(UUID(), 'd3333333-3333-3333-3333-333333333333', '56666666-6666-6666-6666-666666666666', 4, NOW(), 0),
+(UUID(), 'd3333333-3333-3333-3333-333333333333', '5ccccccc-cccc-cccc-cccc-cccccccccccc', 4, NOW(), 0),
+(UUID(), 'd3333333-3333-3333-3333-333333333333', '50000000-0000-0000-0000-000000000004', 4, NOW(), 0),
+(UUID(), 'd3333333-3333-3333-3333-333333333333', '5eeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 3, NOW(), 0),
+-- Javier: Cocina Mediterranea, HACCP, Atencion al Cliente
+(UUID(), 'd4444444-4444-4444-4444-444444444444', '52222222-2222-2222-2222-222222222222', 3, NOW(), 0),
+(UUID(), 'd4444444-4444-4444-4444-444444444444', '54444444-4444-4444-4444-444444444444', 3, NOW(), 0),
+(UUID(), 'd4444444-4444-4444-4444-444444444444', '59999999-9999-9999-9999-999999999999', 3, NOW(), 0),
+-- Elena: Housekeeping, Gestion de Equipos, Control de Costes
+(UUID(), 'd5555555-5555-5555-5555-555555555555', '50000000-0000-0000-0000-000000000001', 4, NOW(), 0),
+(UUID(), 'd5555555-5555-5555-5555-555555555555', '5ddddddd-dddd-dddd-dddd-dddddddddddd', 4, NOW(), 0),
+(UUID(), 'd5555555-5555-5555-5555-555555555555', '5fffffff-ffff-ffff-ffff-ffffffffffff', 3, NOW(), 0),
+(UUID(), 'd5555555-5555-5555-5555-555555555555', '59999999-9999-9999-9999-999999999999', 3, NOW(), 0),
+-- Pablo: Barista, Atencion al Cliente, Cocteleria
+(UUID(), 'd6666666-6666-6666-6666-666666666666', '50000000-0000-0000-0000-000000000002', 4, NOW(), 0),
+(UUID(), 'd6666666-6666-6666-6666-666666666666', '58888888-8888-8888-8888-888888888888', 4, NOW(), 0),
+(UUID(), 'd6666666-6666-6666-6666-666666666666', '59999999-9999-9999-9999-999999999999', 4, NOW(), 0),
+(UUID(), 'd6666666-6666-6666-6666-666666666666', '57777777-7777-7777-7777-777777777777', 3, NOW(), 0),
+-- Carmen: Pasteleria, HACCP, Cocina Creativa
+(UUID(), 'd7777777-7777-7777-7777-777777777777', '53333333-3333-3333-3333-333333333333', 4, NOW(), 0),
+(UUID(), 'd7777777-7777-7777-7777-777777777777', '54444444-4444-4444-4444-444444444444', 4, NOW(), 0),
+(UUID(), 'd7777777-7777-7777-7777-777777777777', '50000000-0000-0000-0000-000000000003', 3, NOW(), 0),
+-- Diego: Maitre, Sala, Gestion de Equipos, Ingles C1, Control de Costes
+(UUID(), 'd8888888-8888-8888-8888-888888888888', '50000000-0000-0000-0000-000000000005', 4, NOW(), 0),
+(UUID(), 'd8888888-8888-8888-8888-888888888888', '55555555-5555-5555-5555-555555555555', 4, NOW(), 0),
+(UUID(), 'd8888888-8888-8888-8888-888888888888', '5ddddddd-dddd-dddd-dddd-dddddddddddd', 4, NOW(), 0),
+(UUID(), 'd8888888-8888-8888-8888-888888888888', '5ccccccc-cccc-cccc-cccc-cccccccccccc', 3, NOW(), 0),
+(UUID(), 'd8888888-8888-8888-8888-888888888888', '5fffffff-ffff-ffff-ffff-ffffffffffff', 3, NOW(), 0);
+
+-- ============================================
+-- 12. Aplicaciones (postulaciones)
 -- Status: 0=Pending, 1=Reviewing, 2=Accepted, 3=Rejected
 -- ============================================
 
--- Obtener IDs de vacantes dinamicamente
-SET @vac1 = (SELECT Id FROM pt_vacancies WHERE Title = 'Desarrollador Backend Senior (.NET)' LIMIT 1);
-SET @vac2 = (SELECT Id FROM pt_vacancies WHERE Title = 'Desarrollador Frontend React' LIMIT 1);
-SET @vac3 = (SELECT Id FROM pt_vacancies WHERE Title = 'Ingeniero de Machine Learning' LIMIT 1);
-SET @vac4 = (SELECT Id FROM pt_vacancies WHERE Title = 'DevOps Engineer' LIMIT 1);
-
 INSERT INTO PT_Applications (Id, PT_CandidateId, PT_VacancyId, Status, CoverLetter, CreatedAt, IsDeleted)
 VALUES
-(UUID(), 'd1111111-1111-1111-1111-111111111111', @vac1, 1, 'Tengo 6 anos de experiencia en .NET y he liderado migraciones a microservicios. Me entusiasma la oportunidad en TechCorp.', NOW(), 0),
-(UUID(), 'd2222222-2222-2222-2222-222222222222', @vac2, 0, 'Como frontend developer con experiencia en React y TypeScript, me encantaria aportar al equipo de e-commerce.', NOW(), 0),
-(UUID(), 'd3333333-3333-3333-3333-333333333333', @vac3, 0, 'He trabajado en proyectos de ML con Python y TensorFlow. Tengo experiencia deployando modelos en produccion.', NOW(), 0),
-(UUID(), 'd1111111-1111-1111-1111-111111111111', @vac4, 2, 'Mi experiencia en DevOps con Kubernetes y Azure se alinea perfectamente con lo que buscan.', NOW(), 0),
-(UUID(), 'd3333333-3333-3333-3333-333333333333', @vac1, 0, 'Full stack developer con fuerte base en backend .NET. Listo para nuevos retos.', NOW(), 0);
+(UUID(), 'd1111111-1111-1111-1111-111111111111', 'e1111111-1111-1111-1111-111111111111', 1, 'Chef de parte con 5 anos de experiencia en cocina internacional. Me encantaria aportar mi experiencia en producto caribeno a vuestro equipo.', NOW(), 0),
+(UUID(), 'd2222222-2222-2222-2222-222222222222', 'e2222222-2222-2222-2222-222222222222', 0, 'Recepcionista hotelera bilingue con 4 anos de experiencia en hoteles de 4 estrellas. Experiencia comprobada con Opera PMS.', NOW(), 0),
+(UUID(), 'd3333333-3333-3333-3333-333333333333', 'e4444444-4444-4444-4444-444444444444', 0, 'Camarera y sumiller certificada con experiencia en sala de alta gama. Gran conocimiento de vinos espanoles.', NOW(), 0),
+(UUID(), 'd4444444-4444-4444-4444-444444444444', 'e1111111-1111-1111-1111-111111111111', 0, 'Cocinero con 2 anos de experiencia en cocina caribena. Formacion SENA y muchas ganas de crecer.', NOW(), 0),
+(UUID(), 'd1111111-1111-1111-1111-111111111111', 'e6666666-6666-6666-6666-666666666666', 2, 'Experiencia en banquetes y eventos para 100+ comensales. Disponibilidad inmediata de fin de semana.', NOW(), 0),
+(UUID(), 'd5555555-5555-5555-5555-555555555555', 'e3333333-3333-3333-3333-333333333333', 1, 'Gobernanta con 7 anos de experiencia en hoteles 5 estrellas. Gestion de equipos y control de calidad.', NOW(), 0),
+(UUID(), 'd6666666-6666-6666-6666-666666666666', 'e4444444-4444-4444-4444-444444444444', 0, 'Barista con experiencia en atencion al cliente. Busco oportunidad en sala de restaurante.', NOW(), 0),
+(UUID(), 'd7777777-7777-7777-7777-777777777777', 'e7777777-7777-7777-7777-777777777777', 0, 'Pastelera con formacion en Le Cordon Bleu. Experiencia en tartas de boda y mesas dulces para eventos.', NOW(), 0),
+(UUID(), 'd8888888-8888-8888-8888-888888888888', 'e4444444-4444-4444-4444-444444444444', 1, 'Maitre con 8 anos de experiencia en restauracion de alta gama. Gestion de equipos y eventos privados.', NOW(), 0),
+(UUID(), 'd3333333-3333-3333-3333-333333333333', 'e6666666-6666-6666-6666-666666666666', 3, 'Interes en eventos y banquetes pero busco posicion mas estable en sala de restaurante.', NOW(), 0);

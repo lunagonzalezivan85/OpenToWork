@@ -41,6 +41,11 @@ public class AdminAuthService : IAdminAuthService
         if (user.PasswordExpiresAt.HasValue && user.PasswordExpiresAt.Value < DateTime.UtcNow)
             throw new UnauthorizedAccessException("Password expired");
 
+        if (!user.StaffRole.HasValue)
+        {
+            user.StaffRole = (int)AdminStaffRole.SuperAdmin;
+        }
+
         user.LastLoginAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -92,7 +97,7 @@ public class AdminAuthService : IAdminAuthService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new("primaryRole", user.PrimaryRole.ToString()),
-            new("staffRole", user.StaffRole?.ToString() ?? string.Empty),
+            new("staffRole", (user.StaffRole ?? (int)AdminStaffRole.SuperAdmin).ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Role, UserRole.Admin.ToString())
         };
