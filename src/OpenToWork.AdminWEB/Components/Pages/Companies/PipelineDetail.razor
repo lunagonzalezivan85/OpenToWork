@@ -526,7 +526,7 @@ else
                 <div id="map-container" style="width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 1px solid #E8F1FF;"></div>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
                     <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseMapModal">@Lang.T("admin.common.cancel")</button>
-                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="CloseMapModal">@Lang.T("admin.companies.useLocation")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="UseSelectedLocation">@Lang.T("admin.companies.useLocation")</button>
                 </div>
             </div>
         </div>
@@ -636,14 +636,6 @@ else
         Plans = await AuthApi.GetPlansAsync();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await JS.InvokeVoidAsync("mapPicker.init", DotNetObjectReference.Create(this));
-        }
-    }
-
     private async Task LoadDetail()
     {
         Detail = await AuthApi.GetCompanyPipelineDetailAsync(_pipelineId);
@@ -717,6 +709,13 @@ else
     }
 
     // --- Map ---
+    private class MapLocationResult
+    {
+        public string? Country { get; set; }
+        public string? City { get; set; }
+        public string? Address { get; set; }
+    }
+
     private async Task OpenMapModal()
     {
         ShowMapModal = true;
@@ -745,12 +744,16 @@ else
         }
     }
 
-    [Microsoft.JSInterop.JSInvokable]
-    public void OnLocationSelected(string country, string city)
+    private async Task UseSelectedLocation()
     {
-        if (!string.IsNullOrWhiteSpace(country)) EditCountry = country;
-        if (!string.IsNullOrWhiteSpace(city)) EditCity = city;
-        StateHasChanged();
+        var result = await JS.InvokeAsync<MapLocationResult?>("mapPicker.getSelectedLocation");
+        if (result != null)
+        {
+            if (!string.IsNullOrWhiteSpace(result.Country)) EditCountry = result.Country;
+            if (!string.IsNullOrWhiteSpace(result.City)) EditCity = result.City;
+            if (!string.IsNullOrWhiteSpace(result.Address)) EditAddress = result.Address;
+        }
+        await CloseMapModal();
     }
 
     private async Task SaveProgress()

@@ -1,11 +1,7 @@
 window.mapPicker = {
     _map: null,
     _marker: null,
-    _dotNetRef: null,
-
-    init: function (dotNetRef) {
-        this._dotNetRef = dotNetRef;
-    },
+    _selected: null,
 
     openMap: function (containerId, lat, lng) {
         const el = document.getElementById(containerId);
@@ -16,6 +12,7 @@ window.mapPicker = {
             this._map = null;
             this._marker = null;
         }
+        this._selected = null;
 
         const defaultLat = lat || 40.4168;
         const defaultLng = lng || -3.7038;
@@ -47,7 +44,7 @@ window.mapPicker = {
     searchLocation: function (query) {
         if (!query || query.trim().length < 3) return;
 
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(query)}&limit=1`, {
             headers: { 'Accept-Language': 'es' }
         })
             .then(r => r.json())
@@ -69,7 +66,7 @@ window.mapPicker = {
     },
 
     reverseGeocode: function (lat, lng) {
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=es`, {
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=es`, {
             headers: { 'Accept-Language': 'es' }
         })
             .then(r => r.json())
@@ -85,9 +82,23 @@ window.mapPicker = {
         const country = addr.country || '';
         const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.state || '';
 
-        if (this._dotNetRef) {
-            this._dotNetRef.invokeMethodAsync('OnLocationSelected', country, city);
+        const road = addr.road || addr.pedestrian || addr.street || '';
+        const houseNumber = addr.house_number || '';
+        let address = road && houseNumber ? `${road} ${houseNumber}` : (road || houseNumber);
+        if (!address && data.display_name) {
+            address = data.display_name.split(',')[0].trim();
         }
+
+        // Se guarda localmente en vez de empujarlo a .NET de inmediato: si el circuito de
+        // Blazor Server se reconecto mientras el usuario buscaba, una llamada async hacia una
+        // referencia .NET guardada quedaria apuntando a una instancia ya descartada. En su
+        // lugar, el boton "Usar ubicacion" lo pide (getSelectedLocation) en el momento del
+        // clic, cuando el circuito activo esta garantizado.
+        this._selected = { country, city, address };
+    },
+
+    getSelectedLocation: function () {
+        return this._selected;
     },
 
     closeMap: function () {
@@ -96,5 +107,6 @@ window.mapPicker = {
             this._map = null;
             this._marker = null;
         }
+        this._selected = null;
     }
 };
