@@ -52,6 +52,7 @@ public class AppDbContext : DbContext
     public DbSet<PTJobLevel> PT_JobLevels => Set<PTJobLevel>();
     public DbSet<PTJobType> PT_JobTypes => Set<PTJobType>();
     public DbSet<PTJobTypePrice> PT_JobTypePrices => Set<PTJobTypePrice>();
+    public DbSet<PTJobTypeSkill> PT_JobTypeSkills => Set<PTJobTypeSkill>();
     public DbSet<PTPromoCode> PT_PromoCodes => Set<PTPromoCode>();
     public DbSet<PTPromoCodeRedemption> PT_PromoCodeRedemptions => Set<PTPromoCodeRedemption>();
 
@@ -316,6 +317,21 @@ public class AppDbContext : DbContext
             e.HasIndex(vs => new { vs.PT_VacancyId, vs.PT_SkillId, vs.IsDeleted }).IsUnique();
             e.HasIndex(vs => new { vs.PT_SkillId, vs.IsDeleted });
             e.Property(vs => vs.IsRequired).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<PTJobTypeSkill>(e =>
+        {
+            e.ToTable("PT_JobTypeSkills");
+            e.HasIndex(s => new { s.PT_JobTypeId, s.PT_SkillId, s.IsDeleted }).IsUnique();
+            e.Property(s => s.IsRequired).HasDefaultValue(true);
+            e.HasOne(s => s.JobType)
+                .WithMany(t => t.DefaultSkills)
+                .HasForeignKey(s => s.PT_JobTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(s => s.Skill)
+                .WithMany()
+                .HasForeignKey(s => s.PT_SkillId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<ADAuditLog>(e =>

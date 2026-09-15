@@ -310,6 +310,21 @@ public class AdminAuthApiService
         return await ReadResultAsync<JobTypePriceDto>(response);
     }
 
+    public async Task<List<AdminSkillDto>> GetJobTypeSkillsAsync(Guid jobTypeId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/pricing/job-types/{jobTypeId}/skills");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<AdminSkillDto>>() ?? new();
+    }
+
+    public async Task<(List<AdminSkillDto>? Result, string? Error)> SetJobTypeSkillsAsync(Guid jobTypeId, List<Guid> skillIds)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/pricing/job-types/{jobTypeId}/skills", new SetJobTypeSkillsDto { SkillIds = skillIds });
+        return await ReadResultAsync<List<AdminSkillDto>>(response);
+    }
+
     // ===== Codigos promocionales =====
 
     public async Task<List<PromoCodeDto>> GetPromoCodesAsync()

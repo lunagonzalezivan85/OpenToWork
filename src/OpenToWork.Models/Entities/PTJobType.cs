@@ -26,4 +26,6 @@ public class PTJobType : BaseEntity
     public bool IsActive { get; set; } = true;
 
     public virtual ICollection<PTJobTypePrice> Prices { get; set; } = new List<PTJobTypePrice>();
+
+    public virtual ICollection<PTJobTypeSkill> DefaultSkills { get; set; } = new List<PTJobTypeSkill>();
 }

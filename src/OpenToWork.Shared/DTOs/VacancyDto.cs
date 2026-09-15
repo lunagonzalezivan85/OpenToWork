@@ -28,6 +28,7 @@ public class VacancyDto
     public Guid? JobTypeId { get; set; }
     public string? JobTypeName { get; set; }
     public string? JobLevelName { get; set; }
+    public List<string> Skills { get; set; } = new();
 }
 
 public class CreateVacancyDto
@@ -45,6 +46,12 @@ public class CreateVacancyDto
     public int? EnglishLevel { get; set; }
     public int? RequiredApplicants { get; set; }
     public int? YearsExperience { get; set; }
+
+    /// <summary>Tipo de puesto elegido en el wizard de Nueva Vacante - trae sus skills predeterminados.</summary>
+    public Guid? PT_JobTypeId { get; set; }
+
+    /// <summary>Skills seleccionados (predeterminados del puesto +/- ajustes de la empresa) a guardar como PT_VacancySkills.</summary>
+    public List<Guid>? SkillIds { get; set; }
 }
 
 public class UpdateVacancyDto

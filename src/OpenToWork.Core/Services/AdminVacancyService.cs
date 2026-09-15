@@ -87,7 +87,7 @@ public class AdminVacancyService : IAdminVacancyService
     /// <summary>Codigo de PT_Vacancy.Category (texto libre historico) -> nombre del PTJobType
     /// sembrado (docs/seed-job-pricing.sql). Puente temporal mientras el formulario de
     /// vacante no seleccione el tipo de puesto directamente por Id.</summary>
-    private static readonly Dictionary<string, string> CategoryToJobTypeName = new()
+    internal static readonly Dictionary<string, string> CategoryToJobTypeName = new()
     {
         ["Camarero"] = "Camarero/a",
         ["AyudanteCamarero"] = "Ayudante de camarero/a",
@@ -99,6 +99,12 @@ public class AdminVacancyService : IAdminVacancyService
         ["JefeSala"] = "Jefe/a de sala",
         ["ResponsableLocal"] = "Responsable de local"
     };
+
+    /// <summary>Inverso de CategoryToJobTypeName: nombre del PTJobType -> codigo legado de Category,
+    /// para que las vacantes creadas seleccionando el tipo de puesto por Id sigan siendo
+    /// encontradas por los filtros de busqueda publicos que todavia usan el codigo.</summary>
+    internal static readonly Dictionary<string, string> JobTypeNameToCategory =
+        CategoryToJobTypeName.ToDictionary(kv => kv.Value, kv => kv.Key);
 
     private async Task<Guid?> ResolveJobTypeIdAsync(string? category)
     {
@@ -120,7 +126,14 @@ public class AdminVacancyService : IAdminVacancyService
         if (jobTypeId.HasValue)
         {
             var jobType = await _context.PT_JobTypes.FirstOrDefaultAsync(t => t.Id == jobTypeId.Value && !t.IsDeleted);
-            if (jobType != null) category = jobType.Name;
+            if (jobType != null)
+            {
+                // Los filtros de busqueda publicos (Vacancies.razor/Home.razor) comparan Category
+                // contra el codigo legado (ej. "AyudanteBarra"), no el nombre visible.
+                category = JobTypeNameToCategory.TryGetValue(jobType.Name, out var legacyCode)
+                    ? legacyCode
+                    : jobType.Name;
+            }
         }
         else
         {
@@ -152,6 +165,28 @@ public class AdminVacancyService : IAdminVacancyService
 
         _context.PT_Vacancies.Add(vacancy);
         await _context.SaveChangesAsync();
+
+        if (dto.SkillIds is { Count: > 0 })
+        {
+            var requestedIds = dto.SkillIds.Distinct().ToList();
+            var validIds = await _context.PT_Skills
+                .Where(s => requestedIds.Contains(s.Id) && !s.IsDeleted)
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            foreach (var skillId in validIds)
+            {
+                _context.PT_VacancySkills.Add(new PTVacancySkill
+                {
+                    PT_VacancyId = vacancy.Id,
+                    PT_SkillId = skillId,
+                    IsRequired = true,
+                    CreatedBy = adminId
+                });
+            }
+            if (validIds.Count > 0) await _context.SaveChangesAsync();
+        }
+
         await _auditLog.LogAsync(adminId, "CreateVacancy", "PT_Vacancies", vacancy.Id, $"{{\"title\":\"{dto.Title}\"}}", ipAddress);
 
         return new AdminVacancyDto
@@ -196,7 +231,12 @@ public class AdminVacancyService : IAdminVacancyService
                 ViewsCount = v.ViewsCount,
                 JobTypeId = v.PT_JobTypeId,
                 JobTypeName = v.JobType != null ? v.JobType.Name : null,
-                JobLevelName = v.JobType != null ? v.JobType.JobLevel.Name : null
+                JobLevelName = v.JobType != null ? v.JobType.JobLevel.Name : null,
+                Skills = v.VacancySkills
+                    .Where(vs => !vs.IsDeleted)
+                    .OrderBy(vs => vs.Skill.Name)
+                    .Select(vs => vs.Skill.Name)
+                    .ToList()
             })
             .FirstOrDefaultAsync();
     }

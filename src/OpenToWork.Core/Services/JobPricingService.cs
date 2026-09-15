@@ -302,4 +302,93 @@ public class JobPricingService : IJobPricingService
             })
             .FirstOrDefaultAsync();
     }
+
+    // ===== Skills predeterminados por tipo de puesto =====
+
+    public async Task<List<AdminSkillDto>> GetJobTypeSkillsAsync(Guid jobTypeId)
+    {
+        var exists = await _context.PT_JobTypes.AnyAsync(t => t.Id == jobTypeId && !t.IsDeleted);
+        if (!exists) throw new InvalidOperationException("El tipo de puesto no existe.");
+
+        return await _context.PT_JobTypeSkills
+            .Where(s => s.PT_JobTypeId == jobTypeId && !s.IsDeleted && !s.Skill.IsDeleted)
+            .OrderBy(s => s.Skill.Category).ThenBy(s => s.Skill.Name)
+            .Select(s => new AdminSkillDto { Id = s.Skill.Id, Name = s.Skill.Name, Category = s.Skill.Category })
+            .ToListAsync();
+    }
+
+    public async Task<List<AdminSkillDto>> SetJobTypeSkillsAsync(Guid jobTypeId, List<Guid> skillIds, Guid adminId, string? ipAddress)
+    {
+        var jobType = await _context.PT_JobTypes.FirstOrDefaultAsync(t => t.Id == jobTypeId && !t.IsDeleted)
+            ?? throw new InvalidOperationException("El tipo de puesto no existe.");
+
+        // Incluye filas soft-deleted: reactivarlas en vez de insertar una nueva evita chocar con el
+        // indice unico (PT_JobTypeId, PT_SkillId, IsDeleted) cuando un skill se destilda y re-tilda.
+        var allRows = await _context.PT_JobTypeSkills
+            .Where(s => s.PT_JobTypeId == jobTypeId)
+            .ToListAsync();
+
+        var requestedIds = skillIds.Distinct().ToList();
+        var wantedIds = (await _context.PT_Skills
+            .Where(s => requestedIds.Contains(s.Id) && !s.IsDeleted)
+            .Select(s => s.Id)
+            .ToListAsync()).ToHashSet();
+        var rowsBySkillId = allRows.ToDictionary(r => r.PT_SkillId);
+
+        foreach (var row in allRows.Where(r => !r.IsDeleted && !wantedIds.Contains(r.PT_SkillId)))
+        {
+            row.IsDeleted = true;
+            row.DeletedAt = DateTime.UtcNow;
+            row.DeletedBy = adminId;
+        }
+
+        foreach (var skillId in wantedIds)
+        {
+            if (rowsBySkillId.TryGetValue(skillId, out var existingRow))
+            {
+                if (existingRow.IsDeleted)
+                {
+                    existingRow.IsDeleted = false;
+                    existingRow.DeletedAt = null;
+                    existingRow.DeletedBy = null;
+                    existingRow.UpdatedAt = DateTime.UtcNow;
+                    existingRow.UpdatedBy = adminId;
+                }
+            }
+            else
+            {
+                _context.PT_JobTypeSkills.Add(new PTJobTypeSkill
+                {
+                    PT_JobTypeId = jobTypeId,
+                    PT_SkillId = skillId,
+                    CreatedBy = adminId
+                });
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "SetJobTypeSkills", "PT_JobTypeSkills", jobTypeId,
+            $"{{\"jobType\":\"{jobType.Name}\",\"skillCount\":{wantedIds.Count}}}", ipAddress);
+
+        return await GetJobTypeSkillsAsync(jobTypeId);
+    }
+
+    public async Task<List<JobTypeOptionDto>> GetActiveJobTypeOptionsAsync()
+    {
+        return await _context.PT_JobTypes
+            .Where(t => !t.IsDeleted && t.IsActive)
+            .OrderBy(t => t.SortOrder).ThenBy(t => t.Name)
+            .Select(t => new JobTypeOptionDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                JobLevelName = t.JobLevel.Name,
+                DefaultSkills = t.DefaultSkills
+                    .Where(s => !s.IsDeleted && !s.Skill.IsDeleted)
+                    .OrderBy(s => s.Skill.Category).ThenBy(s => s.Skill.Name)
+                    .Select(s => new AdminSkillDto { Id = s.Skill.Id, Name = s.Skill.Name, Category = s.Skill.Category })
+                    .ToList()
+            })
+            .ToListAsync();
+    }
 }

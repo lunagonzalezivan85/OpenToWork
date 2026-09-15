@@ -19,6 +19,23 @@ public class PermanentVacancyService : IPermanentVacancyService
 
     public async Task<VacancyDto> CreateVacancyAsync(Guid companyId, CreateVacancyDto dto, Guid userId)
     {
+        var category = dto.Category;
+        if (dto.PT_JobTypeId.HasValue)
+        {
+            var jobTypeName = await _context.PT_JobTypes
+                .Where(t => t.Id == dto.PT_JobTypeId.Value)
+                .Select(t => t.Name)
+                .FirstOrDefaultAsync();
+            if (jobTypeName != null)
+            {
+                // Los filtros de busqueda publicos (Vacancies.razor/Home.razor) todavia comparan
+                // Category contra el codigo legado (ej. "AyudanteBarra"), no el nombre visible.
+                category = AdminVacancyService.JobTypeNameToCategory.TryGetValue(jobTypeName, out var legacyCode)
+                    ? legacyCode
+                    : jobTypeName;
+            }
+        }
+
         var vacancy = new PTVacancy
         {
             PT_CompanyId = companyId,
@@ -30,7 +47,8 @@ public class PermanentVacancyService : IPermanentVacancyService
             Location = dto.Location,
             ContractType = dto.ContractType,
             WorkMode = dto.WorkMode,
-            Category = dto.Category,
+            Category = category,
+            PT_JobTypeId = dto.PT_JobTypeId,
             ExperienceLevel = dto.ExperienceLevel,
             EnglishLevel = dto.EnglishLevel,
             Status = 0,
@@ -39,6 +57,28 @@ public class PermanentVacancyService : IPermanentVacancyService
 
         _context.PT_Vacancies.Add(vacancy);
         await _context.SaveChangesAsync();
+
+        if (dto.SkillIds is { Count: > 0 })
+        {
+            var requestedIds = dto.SkillIds.Distinct().ToList();
+            var validIds = await _context.PT_Skills
+                .Where(s => requestedIds.Contains(s.Id) && !s.IsDeleted)
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            foreach (var skillId in validIds)
+            {
+                _context.PT_VacancySkills.Add(new PTVacancySkill
+                {
+                    PT_VacancyId = vacancy.Id,
+                    PT_SkillId = skillId,
+                    IsRequired = true,
+                    CreatedBy = userId
+                });
+            }
+            if (validIds.Count > 0) await _context.SaveChangesAsync();
+        }
+
         return await MapToDtoAsync(vacancy);
     }
 
@@ -64,10 +104,7 @@ public class PermanentVacancyService : IPermanentVacancyService
             .OrderByDescending(v => v.CreatedAt)
             .ToListAsync();
 
-        var dtos = new List<VacancyDto>();
-        foreach (var v in vacancies)
-            dtos.Add(await MapToDtoAsync(v));
-        return dtos;
+        return await MapManyToDtoAsync(vacancies);
     }
 
     public async Task<(IEnumerable<VacancyDto> Items, int Total)> SearchVacanciesAsync(SearchPermanentVacancyDto search)
@@ -113,9 +150,7 @@ public class PermanentVacancyService : IPermanentVacancyService
             .Take(search.PageSize)
             .ToListAsync();
 
-        var dtos = new List<VacancyDto>();
-        foreach (var v in items)
-            dtos.Add(await MapToDtoAsync(v));
+        var dtos = await MapManyToDtoAsync(items);
         return (dtos, total);
     }
 
@@ -236,27 +271,83 @@ public class PermanentVacancyService : IPermanentVacancyService
     private async Task<VacancyDto> MapToDtoAsync(PTVacancy v)
     {
         var company = v.Company ?? await _context.PT_Companies.FirstOrDefaultAsync(c => c.Id == v.PT_CompanyId);
-        return new VacancyDto
-        {
-            Id = v.Id,
-            CompanyId = v.PT_CompanyId,
-            CompanyName = company?.Name ?? string.Empty,
-            CompanyLogoUrl = company?.LogoUrl,
-            CompanyIsVerified = company?.IsVerified ?? false,
-            Title = v.Title,
-            Description = v.Description,
-            Requirements = v.Requirements,
-            SalaryMin = v.SalaryMin,
-            SalaryMax = v.SalaryMax,
-            Location = v.Location,
-            ContractType = v.ContractType,
-            WorkMode = v.WorkMode,
-            Category = v.Category,
-            ExperienceLevel = v.ExperienceLevel,
-            EnglishLevel = v.EnglishLevel,
-            Status = v.Status,
-            PublishedAt = v.PublishedAt,
-            ViewsCount = v.ViewsCount
-        };
+
+        var jobType = v.PT_JobTypeId.HasValue
+            ? await _context.PT_JobTypes
+                .Where(t => t.Id == v.PT_JobTypeId.Value)
+                .Select(t => new { t.Id, t.Name, LevelName = t.JobLevel.Name })
+                .FirstOrDefaultAsync()
+            : null;
+
+        var skills = await _context.PT_VacancySkills
+            .Where(vs => vs.PT_VacancyId == v.Id && !vs.IsDeleted)
+            .OrderBy(vs => vs.Skill.Name)
+            .Select(vs => vs.Skill.Name)
+            .ToListAsync();
+
+        return BuildDto(v, company, jobType?.Id, jobType?.Name, jobType?.LevelName, skills);
     }
+
+    /// <summary>Version batch de MapToDtoAsync: 2 queries totales (tipos de puesto + skills) en vez
+    /// de 2 por vacante, para listar/buscar sin generar N+1.</summary>
+    private async Task<List<VacancyDto>> MapManyToDtoAsync(List<PTVacancy> vacancies)
+    {
+        var jobTypeIds = vacancies.Where(v => v.PT_JobTypeId.HasValue).Select(v => v.PT_JobTypeId!.Value).Distinct().ToList();
+        var jobTypes = jobTypeIds.Count == 0
+            ? new Dictionary<Guid, (string Name, string LevelName)>()
+            : (await _context.PT_JobTypes
+                .Where(t => jobTypeIds.Contains(t.Id))
+                .Select(t => new { t.Id, t.Name, LevelName = t.JobLevel.Name })
+                .ToListAsync())
+                .ToDictionary(t => t.Id, t => (t.Name, t.LevelName));
+
+        var vacancyIds = vacancies.Select(v => v.Id).ToList();
+        var skillsByVacancy = (await _context.PT_VacancySkills
+                .Where(vs => vacancyIds.Contains(vs.PT_VacancyId) && !vs.IsDeleted)
+                .OrderBy(vs => vs.Skill.Name)
+                .Select(vs => new { vs.PT_VacancyId, SkillName = vs.Skill.Name })
+                .ToListAsync())
+            .GroupBy(x => x.PT_VacancyId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.SkillName).ToList());
+
+        var dtos = new List<VacancyDto>(vacancies.Count);
+        foreach (var v in vacancies)
+        {
+            var company = v.Company;
+            (Guid, string, string)? jobType = v.PT_JobTypeId.HasValue && jobTypes.TryGetValue(v.PT_JobTypeId.Value, out var jt)
+                ? (v.PT_JobTypeId.Value, jt.Name, jt.LevelName)
+                : null;
+            var skills = skillsByVacancy.TryGetValue(v.Id, out var s) ? s : new List<string>();
+
+            dtos.Add(BuildDto(v, company, jobType?.Item1, jobType?.Item2, jobType?.Item3, skills));
+        }
+        return dtos;
+    }
+
+    private static VacancyDto BuildDto(PTVacancy v, PTCompany? company, Guid? jobTypeId, string? jobTypeName, string? jobLevelName, List<string> skills) => new()
+    {
+        Id = v.Id,
+        CompanyId = v.PT_CompanyId,
+        CompanyName = company?.Name ?? string.Empty,
+        CompanyLogoUrl = company?.LogoUrl,
+        CompanyIsVerified = company?.IsVerified ?? false,
+        Title = v.Title,
+        Description = v.Description,
+        Requirements = v.Requirements,
+        SalaryMin = v.SalaryMin,
+        SalaryMax = v.SalaryMax,
+        Location = v.Location,
+        ContractType = v.ContractType,
+        WorkMode = v.WorkMode,
+        Category = v.Category,
+        ExperienceLevel = v.ExperienceLevel,
+        EnglishLevel = v.EnglishLevel,
+        Status = v.Status,
+        PublishedAt = v.PublishedAt,
+        ViewsCount = v.ViewsCount,
+        JobTypeId = jobTypeId,
+        JobTypeName = jobTypeName,
+        JobLevelName = jobLevelName,
+        Skills = skills
+    };
 }

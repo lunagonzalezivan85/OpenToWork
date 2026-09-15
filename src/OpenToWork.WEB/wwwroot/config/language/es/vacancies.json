@@ -52,10 +52,12 @@
         "workModePrompt": "¿Cuál es la modalidad de trabajo?",
         "salaryPrompt": "¿Cuál es el rango salarial?",
         "descriptionPrompt": "Describe la vacante y sus responsabilidades",
-        "requirementsPrompt": "¿Qué requisitos necesita el candidato?"
+        "requirementsPrompt": "¿Qué requisitos necesita el candidato?",
+        "skillsPrompt": "Estos son los skills sugeridos para el puesto. Podés destildar o agregar otros."
     },
     "errors": {
         "titleRequired": "El título de la vacante es obligatorio",
+        "jobTypeRequired": "Selecciona un tipo de puesto",
         "createFailed": "No se pudo crear la vacante. Verifica que tienes permisos de empresa.",
         "publishBlocked": "No se pudo publicar la vacante",
         "publishGeneric": "Ocurrió un error al publicar la vacante. Intenta de nuevo."
@@ -91,7 +93,9 @@
         "salaryMin": "Salario mínimo",
         "salaryMax": "Salario máximo",
         "location": "Ubicación",
-        "category": "Categoría"
+        "category": "Categoría",
+        "jobTypePlaceholder": "Selecciona un tipo de puesto...",
+        "skills": "Skills requeridos"
     },
     "notFound": "No se pudo cargar la vacante. Es posible que no exista o haya sido eliminada.",
     "matchScore": {

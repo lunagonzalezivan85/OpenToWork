@@ -98,7 +98,13 @@
                     <div class="fab-chat-bubble fab-chat-bubble--bot">
                         <p>@Lang.T("vacancies.wizard.categoryPrompt")</p>
                     </div>
-                    <input class="ot-input-field fab-chat-input" placeholder="@Lang.T("vacancies.fields.category")" @bind="NewVacancy.Category" />
+                    <select class="ot-input-field fab-chat-input" @bind="SelectedJobTypeIdText" @bind:after="OnJobTypeChanged">
+                        <option value="">@Lang.T("vacancies.fields.jobTypePlaceholder")</option>
+                        @foreach (var jobType in JobTypeOptions)
+                        {
+                            <option value="@jobType.Id">@jobType.Name</option>
+                        }
+                    </select>
                 </div>
 
                 <div class="fab-chat-step">
@@ -147,6 +153,29 @@
                     </div>
                     <textarea class="ot-input-field fab-chat-input" rows="3" placeholder="@Lang.T("vacancies.fields.requirements")" @bind="NewVacancy.Requirements"></textarea>
                 </div>
+
+                @if (AvailableSkills.Count > 0)
+                {
+                    <div class="fab-chat-step">
+                        <div class="fab-chat-bubble fab-chat-bubble--bot">
+                            <p>@Lang.T("vacancies.wizard.skillsPrompt")</p>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                            @foreach (var skill in AvailableSkills)
+                            {
+                                var isSelected = SelectedSkillIds.Contains(skill.Id);
+                                <button type="button"
+                                    class="@("ot-chip" + (isSelected ? " ot-chip--active" : ""))"
+                                    style="@(isSelected
+                                        ? "background: var(--accent-primary, #6366f1); color: #fff; border: 1px solid var(--accent-primary, #6366f1);"
+                                        : "background: transparent; border: 1px solid var(--border-color, #d1d5db);") padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.85rem; cursor: pointer;"
+                                    @onclick="() => ToggleSkill(skill.Id)">
+                                    @skill.Name
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
 
             <!-- Modal Footer -->
@@ -180,6 +209,12 @@
     private bool IsSaving { get; set; }
     private CreateVacancyDto NewVacancy { get; set; } = new();
 
+    private List<JobTypeOptionDto> JobTypeOptions { get; set; } = new();
+    private List<AdminSkillDto> AvailableSkills { get; set; } = new();
+    private string SelectedJobTypeIdText { get; set; } = "";
+    private Guid? SelectedJobTypeId { get; set; }
+    private HashSet<Guid> SelectedSkillIds { get; set; } = new();
+
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
@@ -189,7 +224,25 @@
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("action", out var action) && action == "create")
             ShowCreateForm = true;
 
-        await LoadVacancies();
+        var jobTypesTask = AuthApi.GetJobTypesAsync();
+        var skillsTask = AuthApi.GetSkillsCatalogAsync();
+        await Task.WhenAll(LoadVacancies(), jobTypesTask, skillsTask);
+
+        JobTypeOptions = jobTypesTask.Result;
+        AvailableSkills = skillsTask.Result;
+    }
+
+    private void OnJobTypeChanged()
+    {
+        SelectedJobTypeId = Guid.TryParse(SelectedJobTypeIdText, out var id) ? id : null;
+        var jobType = JobTypeOptions.FirstOrDefault(t => t.Id == SelectedJobTypeId);
+        SelectedSkillIds = jobType?.DefaultSkills.Select(s => s.Id).ToHashSet() ?? new HashSet<Guid>();
+    }
+
+    private void ToggleSkill(Guid skillId)
+    {
+        if (!SelectedSkillIds.Remove(skillId))
+            SelectedSkillIds.Add(skillId);
     }
 
     private async Task LoadVacancies()
@@ -214,7 +267,22 @@
             return;
         }
 
+        if (SelectedJobTypeId == null)
+        {
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                icon = "error",
+                title = Lang.T("common.labels.error"),
+                text = Lang.T("vacancies.errors.jobTypeRequired"),
+                confirmButtonColor = "#6366f1",
+                timer = 3000
+            });
+            return;
+        }
+
         IsSaving = true;
+        NewVacancy.PT_JobTypeId = SelectedJobTypeId;
+        NewVacancy.SkillIds = SelectedSkillIds.ToList();
 
         try
         {
@@ -222,6 +290,9 @@
             if (result != null)
             {
                 NewVacancy = new CreateVacancyDto();
+                SelectedJobTypeIdText = "";
+                SelectedJobTypeId = null;
+                SelectedSkillIds.Clear();
                 ShowCreateForm = false;
                 await LoadVacancies();
                 await JS.InvokeVoidAsync("Swal.fire", new

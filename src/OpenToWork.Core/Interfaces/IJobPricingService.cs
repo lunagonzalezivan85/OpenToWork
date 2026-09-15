@@ -24,4 +24,11 @@ public interface IJobPricingService
 
     /// <summary>Precio vigente de un tipo de puesto a una fecha dada (default: ahora). Null si nunca se le fijo precio.</summary>
     Task<JobTypePriceDto?> GetActivePriceAsync(Guid jobTypeId, DateTime? atDate = null);
+
+    // Skills predeterminados por tipo de puesto
+    Task<List<AdminSkillDto>> GetJobTypeSkillsAsync(Guid jobTypeId);
+    Task<List<AdminSkillDto>> SetJobTypeSkillsAsync(Guid jobTypeId, List<Guid> skillIds, Guid adminId, string? ipAddress);
+
+    /// <summary>Tipos de puesto activos con sus skills predeterminados, para el selector de la empresa al crear una vacante.</summary>
+    Task<List<JobTypeOptionDto>> GetActiveJobTypeOptionsAsync();
 }

@@ -193,6 +193,22 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<List<VacancyDto>>() ?? new();
     }
 
+    public async Task<List<JobTypeOptionDto>> GetJobTypesAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/job-types");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<JobTypeOptionDto>>() ?? new();
+    }
+
+    public async Task<List<AdminSkillDto>> GetSkillsCatalogAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/skills");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<AdminSkillDto>>() ?? new();
+    }
+
     public async Task<List<ApplicationDto>> GetVacancyApplicationsAsync(Guid vacancyId)
     {
         await SetAuthHeaderAsync();

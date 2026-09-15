@@ -128,6 +128,20 @@
                 </div>
             }
 
+            <!-- Skills -->
+            @if (Vacancy.Skills.Count > 0)
+            {
+                <div class="vacancy-detail-section">
+                    <h3 class="vacancy-detail-section-title">@Lang.T("vacancies.fields.skills")</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                        @foreach (var skill in Vacancy.Skills)
+                        {
+                            <span class="vacancy-detail-badge">@skill</span>
+                        }
+                    </div>
+                </div>
+            }
+
             <!-- Apply section (no nested card, just a divider + form) -->
             <div class="vacancy-detail-apply">
                 <h3 class="vacancy-detail-section-title">@Lang.T("applications.applyTitle")</h3>

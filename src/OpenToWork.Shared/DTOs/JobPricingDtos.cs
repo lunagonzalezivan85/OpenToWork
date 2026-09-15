@@ -65,3 +65,20 @@ public class SetJobTypePriceDto
     public DateTime? EffectiveFrom { get; set; }
     public string? Notes { get; set; }
 }
+
+// ===== Skills predeterminados por tipo de puesto =====
+
+public class SetJobTypeSkillsDto
+{
+    public List<Guid> SkillIds { get; set; } = new();
+}
+
+/// <summary>Opcion de tipo de puesto para el selector de la empresa al crear una vacante,
+/// con sus skills predeterminados ya resueltos.</summary>
+public class JobTypeOptionDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string JobLevelName { get; set; } = string.Empty;
+    public List<AdminSkillDto> DefaultSkills { get; set; } = new();
+}

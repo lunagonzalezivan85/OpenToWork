@@ -71,6 +71,10 @@ public class AdminCreateVacancyDto
     public int? EnglishLevel { get; set; }
     public int? RequiredApplicants { get; set; }
     public int? YearsExperience { get; set; }
+
+    /// <summary>Skills predeterminados del tipo de puesto (u otros elegidos por el admin) a
+    /// guardar como PT_VacancySkills - mismo mecanismo que el wizard de empresa en OpenToWork.WEB.</summary>
+    public List<Guid>? SkillIds { get; set; }
 }
 
 /// <summary>

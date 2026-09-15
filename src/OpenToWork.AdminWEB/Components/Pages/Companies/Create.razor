@@ -5,6 +5,7 @@
 @inject LanguageService Lang
 @inject AdminAuthApiService AuthApi
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>@Lang.T("admin.companies.create")</PageTitle>
 
@@ -64,6 +65,12 @@
                 <div class="admin-form-field">
                     <label>@Lang.T("admin.companies.city")</label>
                     <InputText @bind-Value="CompanyDto.City" class="admin-input" placeholder='@Lang.T("admin.companies.cityPlaceholder")' />
+                </div>
+                <div class="admin-form-field admin-form-field--full">
+                    <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="OpenMapModal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align: middle; margin-right: 0.35rem;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                        @Lang.T("admin.companies.searchOnMap")
+                    </button>
                 </div>
                 <div class="admin-form-field">
                     <label>@Lang.T("admin.companies.address")</label>
@@ -133,7 +140,7 @@ else if (WizardStep == 2)
             </div>
             <div class="admin-form-field">
                 <label>@Lang.T("admin.vacancies.category")</label>
-                <select @bind="CurrentVacancy.JobTypeId" class="admin-input">
+                <select @bind="CurrentVacancy.JobTypeId" @bind:after="OnJobTypeChanged" class="admin-input">
                     <option value="">@Lang.T("admin.contract.jobTypeUnmapped")</option>
                     @foreach (var level in JobTypes.GroupBy(t => t.JobLevelName))
                     {
@@ -307,6 +314,24 @@ else if (WizardStep == 4)
     </div>
 }
 
+@if (ShowMapModal)
+{
+    <div style="position: fixed; inset: 0; background: rgba(11,19,43,0.4); z-index: 9999; display: flex; align-items: center; justify-content: center;" @onclick="CloseMapModal">
+        <div style="background: #fff; border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 640px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);" @onclick:stopPropagation="true">
+            <h3 style="margin: 0 0 0.75rem 0; font-size: 1.1rem; font-weight: 700; color: #0B132B;">@Lang.T("admin.companies.searchOnMap")</h3>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <input @bind="MapSearchQuery" class="admin-input" placeholder='@Lang.T("admin.companies.mapSearchPlaceholder")' @onkeyup="OnMapSearchKeyUp" />
+                <button type="button" class="ot-btn ot-btn--primary ot-btn--small" @onclick="SearchOnMap">@Lang.T("admin.companies.search")</button>
+            </div>
+            <div id="create-company-map-container" style="width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 1px solid #E8F1FF;"></div>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseMapModal">@Lang.T("admin.common.cancel")</button>
+                <button type="button" class="ot-btn ot-btn--primary ot-btn--small" @onclick="UseSelectedLocation">@Lang.T("admin.companies.useLocation")</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private int WizardStep { get; set; } = 1;
     private CreateCompanyDto CompanyDto { get; set; } = new();
@@ -323,11 +348,80 @@ else if (WizardStep == 4)
     private List<Guid> CreatedVacancyIds { get; set; } = new();
     private List<JobTypeDto> JobTypes { get; set; } = new();
 
+    // Map modal state
+    private bool ShowMapModal;
+    private string MapSearchQuery = "";
+
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
         JobTypes = await AuthApi.GetJobTypesAsync();
+    }
+
+    /// <summary>Al elegir el tipo de puesto, sus skills predeterminados se toman como requisitos
+    /// (editables despues por el admin para ajustarlos a lo que pide la empresa puntualmente).</summary>
+    private async Task OnJobTypeChanged()
+    {
+        if (CurrentVacancy.JobTypeId is not { } jobTypeId)
+        {
+            CurrentVacancy.SkillIds = null;
+            return;
+        }
+
+        var defaultSkills = await AuthApi.GetJobTypeSkillsAsync(jobTypeId);
+        CurrentVacancy.SkillIds = defaultSkills.Select(s => s.Id).ToList();
+
+        if (string.IsNullOrWhiteSpace(CurrentVacancy.Requirements) && defaultSkills.Count > 0)
+            CurrentVacancy.Requirements = string.Join("\n", defaultSkills.Select(s => $"- {s.Name}"));
+    }
+
+    // --- Map ---
+    private class MapLocationResult
+    {
+        public string? Country { get; set; }
+        public string? City { get; set; }
+        public string? Address { get; set; }
+    }
+
+    private async Task OpenMapModal()
+    {
+        ShowMapModal = true;
+        StateHasChanged();
+        await Task.Delay(100);
+        await JS.InvokeVoidAsync("mapPicker.openMap", "create-company-map-container", 40.4168, -3.7038);
+    }
+
+    private async Task CloseMapModal()
+    {
+        ShowMapModal = false;
+        await JS.InvokeVoidAsync("mapPicker.closeMap");
+    }
+
+    private async Task SearchOnMap()
+    {
+        if (string.IsNullOrWhiteSpace(MapSearchQuery)) return;
+        await JS.InvokeVoidAsync("mapPicker.searchLocation", MapSearchQuery);
+    }
+
+    private void OnMapSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            _ = SearchOnMap();
+        }
+    }
+
+    private async Task UseSelectedLocation()
+    {
+        var result = await JS.InvokeAsync<MapLocationResult?>("mapPicker.getSelectedLocation");
+        if (result != null)
+        {
+            if (!string.IsNullOrWhiteSpace(result.Country)) CompanyDto.Country = result.Country;
+            if (!string.IsNullOrWhiteSpace(result.City)) CompanyDto.City = result.City;
+            if (!string.IsNullOrWhiteSpace(result.Address)) CompanyDto.Address = result.Address;
+        }
+        await CloseMapModal();
     }
 
     private string GetStepName(int step) => step switch

@@ -52,10 +52,12 @@
         "workModePrompt": "What is the work mode?",
         "salaryPrompt": "What is the salary range?",
         "descriptionPrompt": "Describe the vacancy and its responsibilities",
-        "requirementsPrompt": "What requirements does the candidate need?"
+        "requirementsPrompt": "What requirements does the candidate need?",
+        "skillsPrompt": "Here are the suggested skills for this position. You can uncheck or add others."
     },
     "errors": {
         "titleRequired": "Vacancy title is required",
+        "jobTypeRequired": "Select a job type",
         "createFailed": "Could not create the vacancy. Make sure you have company permissions.",
         "publishBlocked": "Couldn't publish the vacancy",
         "publishGeneric": "Something went wrong publishing the vacancy. Please try again."
@@ -91,7 +93,9 @@
         "salaryMin": "Minimum salary",
         "salaryMax": "Maximum salary",
         "location": "Location",
-        "category": "Category"
+        "category": "Category",
+        "jobTypePlaceholder": "Select a job type...",
+        "skills": "Required skills"
     },
     "notFound": "Could not load the vacancy. It may not exist or has been deleted.",
     "matchScore": {

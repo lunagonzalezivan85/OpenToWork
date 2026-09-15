@@ -64,6 +64,7 @@ else
                     </td>
                     <td>
                         <div class="admin-table-actions">
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => OpenSkillsModal(type)">@Lang.T("admin.pricing.defaultSkills")</button>
                             <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => OpenPriceModal(type)">@Lang.T("admin.pricing.setPrice")</button>
                             <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => OpenEditModal(type)">@Lang.T("admin.common.edit")</button>
                             <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Delete(type.Id)">@Lang.T("admin.common.delete")</button>
@@ -147,6 +148,47 @@ else
     </div>
 }
 
+@if (ShowSkillsModal && SkillsTarget != null)
+{
+    <div class="admin-modal-overlay" @onclick="CloseSkillsModal">
+        <div class="admin-modal" @onclick:stopPropagation="true">
+            <h3 class="admin-modal-title">@Lang.T("admin.pricing.defaultSkills") - @SkillsTarget.Name</h3>
+            <div class="admin-modal-body">
+                @if (ModalError != null)
+                {
+                    <div class="alert alert-error">@ModalError</div>
+                }
+                <p style="font-size: 0.85rem; color: var(--text-muted);">@Lang.T("admin.pricing.defaultSkillsHint")</p>
+                @if (AllSkills.Count == 0)
+                {
+                    <p>@Lang.T("admin.pricing.noSkillsAvailable")</p>
+                }
+                else
+                {
+                    <div style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem;">
+                        @foreach (var skill in AllSkills)
+                        {
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+                                <input type="checkbox" checked="@SelectedSkillIds.Contains(skill.Id)"
+                                    @onchange="e => ToggleSkill(skill.Id, (bool)e.Value!)" />
+                                <span>@skill.Name</span>
+                                @if (!string.IsNullOrWhiteSpace(skill.Category))
+                                {
+                                    <span style="color: var(--text-muted); font-size: 0.8rem;">(@skill.Category)</span>
+                                }
+                            </label>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="admin-modal-actions">
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseSkillsModal">@Lang.T("admin.common.cancel")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="SaveSkills">@Lang.T("admin.common.save")</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<JobTypeDto>? Types;
     private List<JobLevelDto> Levels { get; set; } = new();
@@ -161,6 +203,11 @@ else
     private JobTypeDto? PriceTarget;
     private SetJobTypePriceDto PriceForm { get; set; } = new();
     private List<JobTypePriceDto> PriceHistory { get; set; } = new();
+
+    private bool ShowSkillsModal;
+    private JobTypeDto? SkillsTarget;
+    private List<AdminSkillDto> AllSkills { get; set; } = new();
+    private HashSet<Guid> SelectedSkillIds { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -252,6 +299,39 @@ else
         }
         ShowPriceModal = false;
         await Load();
+    }
+
+    private async Task OpenSkillsModal(JobTypeDto type)
+    {
+        SkillsTarget = type;
+        ModalError = null;
+        if (AllSkills.Count == 0)
+            AllSkills = await AuthApi.GetSkillsAsync();
+        var current = await AuthApi.GetJobTypeSkillsAsync(type.Id);
+        SelectedSkillIds = current.Select(s => s.Id).ToHashSet();
+        ShowSkillsModal = true;
+    }
+
+    private void CloseSkillsModal() => ShowSkillsModal = false;
+
+    private void ToggleSkill(Guid skillId, bool isChecked)
+    {
+        if (isChecked) SelectedSkillIds.Add(skillId);
+        else SelectedSkillIds.Remove(skillId);
+    }
+
+    private async Task SaveSkills()
+    {
+        ModalError = null;
+        if (SkillsTarget == null) return;
+
+        var (result, error) = await AuthApi.SetJobTypeSkillsAsync(SkillsTarget.Id, SelectedSkillIds.ToList());
+        if (result == null)
+        {
+            ModalError = error ?? Lang.T("admin.pricing.saveError");
+            return;
+        }
+        ShowSkillsModal = false;
     }
 
     private static string FormatEur(decimal? amount, string currency) => amount.HasValue

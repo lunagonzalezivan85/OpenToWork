@@ -114,4 +114,30 @@ public class PricingController : AdminControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    [HttpGet("job-types/{id:guid}/skills")]
+    public async Task<IActionResult> GetJobTypeSkills(Guid id)
+    {
+        try
+        {
+            return Ok(await _pricing.GetJobTypeSkillsAsync(id));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpPut("job-types/{id:guid}/skills")]
+    public async Task<IActionResult> SetJobTypeSkills(Guid id, [FromBody] SetJobTypeSkillsDto dto)
+    {
+        try
+        {
+            return Ok(await _pricing.SetJobTypeSkillsAsync(id, dto.SkillIds, AdminId, ClientIp));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
