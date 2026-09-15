@@ -1452,6 +1452,46 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 
 ## Bitácora de Cambios
 
+### Sesión 2026-09-15 — Skills predeterminados por tipo de puesto (Dsiezar)
+
+Cada tipo de puesto del catálogo (Camarero/a, Barman, etc.) puede tener skills predeterminados configurables por admin, que se usan como requisitos por defecto al crear una vacante, tanto desde el portal de empresa como desde la captación de empresa del CRM admin.
+
+**Modelo de datos:**
+- Nueva tabla `PT_JobTypeSkills` (join `PTJobType` ↔ `PTSkill`), migración `AddJobTypeSkills`.
+
+**Admin (Pricing > Tipos de Puesto):**
+- Botón "Skills predeterminados" por tipo de puesto — modal con checkboxes del catálogo completo de skills.
+- Endpoints `GET`/`PUT api/admin/pricing/job-types/{id}/skills`.
+
+**Empresa - Nueva Vacante (`OpenToWork.WEB`):**
+- El campo libre "Categoría" se reemplaza por un selector de "Tipo de puesto".
+- Al elegir el puesto, sus skills predeterminados aparecen como chips editables (tildar/destildar), guardados en `PT_VacancySkills`.
+- Nuevos endpoints públicos de solo lectura `api/job-types` y `api/skills`.
+- `Category` se sigue derivando del tipo de puesto (con el código legado que usan los filtros de búsqueda públicos) para no romper búsqueda/filtrado existentes.
+
+**Captación de Empresa (CRM admin, `Companies/Create.razor`):**
+- Al elegir el tipo de puesto que busca la empresa, los Requisitos se autocompletan con los skills predeterminados (editable por el admin) y se guardan también como `PT_VacancySkills` estructurados.
+
+**Revisión de código posterior — 10 hallazgos, todos verificados en vivo antes de aplicarlos:**
+- `SetJobTypeSkillsAsync` reactiva filas soft-deleted en vez de duplicar (evitaba una violación del índice único al tildar/destildar un skill más de una vez).
+- Se excluyen skills soft-deleted de los defaults de un tipo de puesto.
+- Validación de tipo de puesto obligatorio en el wizard de empresa.
+- `SkillIds` inválidos se filtran antes de insertar (evita 500 por violación de FK).
+- `AdminVacancyService.GetByIdAsync` ahora también proyecta `Skills`.
+- `MapToDtoAsync` batch-fetchea tipos de puesto y skills (elimina N+1 en listados/búsqueda de vacantes).
+- `GET job-types/{id}/skills` valida existencia (400 en vez de 200+`[]`).
+- CSS vars inexistentes corregidas en los chips de skills del wizard.
+- `OnInitializedAsync` usa `Task.WhenAll` en vez de awaits secuenciales.
+
+**Otros cambios incluidos en este push:**
+- Fix del selector de mapa en `Companies/Create.razor` y `PipelineDetail.razor` — el botón "Usar ubicación" no aplicaba la ubicación elegida.
+- `scripts/start-dev.bat` / `stop-dev.bat` para levantar/bajar MySQL + los 4 servidores localmente.
+- Enums `WarrantyReplacementReason`/`Status` (borrador, sin wiring todavía).
+
+**Nota:** el wizard de captación de empresa es pantalla de Iluna (CRM) — el cambio ahí es lógica de negocio nueva, no solo visual, avisarle.
+
+- Commits `dbf087c`..`013b2df` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
 ### Sesión 2026-09-10 — Mejoras del documento contractual + campo ContactDniNie + página de edición de empresa (Iluna)
 
 **Documento contractual (`VacancyContractDocument.razor`) — refinamiento visual y de contenido:**
