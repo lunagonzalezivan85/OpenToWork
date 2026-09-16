@@ -191,6 +191,8 @@ public class NegotiationService : INegotiationService
 
         var warrantyDays = await _warranty.GetWarrantyDaysForVacancyAsync(negotiation.PT_VacancyId);
         var (warrantyEndsAt, warrantyStatus) = WarrantyCalculator.Calculate(negotiation.IncorporationDate, warrantyDays);
+        var hasActiveReplacement = await _context.PT_WarrantyReplacements
+            .AnyAsync(w => w.OriginalNegotiationId == negotiation.Id && w.Status == (int)WarrantyReplacementStatus.EnCurso && !w.IsDeleted);
 
         return new NegotiationDto
         {
@@ -206,6 +208,7 @@ public class NegotiationService : INegotiationService
             IncorporationDate = negotiation.IncorporationDate,
             WarrantyEndsAt = warrantyEndsAt,
             WarrantyStatus = (int?)warrantyStatus,
+            HasActiveWarrantyReplacement = hasActiveReplacement,
             Candidates = negotiation.Candidates
                 .Where(c => !c.IsDeleted)
                 .Select(c => new NegotiationCandidateDto

@@ -11,10 +11,12 @@ namespace OpenToWork.AdminAPI.Controllers;
 public class NegotiationsController : AdminControllerBase
 {
     private readonly INegotiationService _negotiationService;
+    private readonly IWarrantyReplacementService _warrantyReplacementService;
 
-    public NegotiationsController(INegotiationService negotiationService)
+    public NegotiationsController(INegotiationService negotiationService, IWarrantyReplacementService warrantyReplacementService)
     {
         _negotiationService = negotiationService;
+        _warrantyReplacementService = warrantyReplacementService;
     }
 
     [HttpPost]
@@ -57,6 +59,21 @@ public class NegotiationsController : AdminControllerBase
         try
         {
             var result = await _negotiationService.SetIncorporationDateAsync(id, dto.IncorporationDate, AdminId);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Activa una reposicion de garantia (paso 20) sobre esta negociacion cerrada.</summary>
+    [HttpPost("{id}/warranty-replacement")]
+    public async Task<IActionResult> ActivateWarrantyReplacement(Guid id, [FromBody] ActivateWarrantyReplacementDto dto)
+    {
+        try
+        {
+            var result = await _warrantyReplacementService.ActivateFromNegotiationAsync(id, dto, AdminId, ClientIp);
             return result == null ? NotFound() : Ok(result);
         }
         catch (InvalidOperationException ex)

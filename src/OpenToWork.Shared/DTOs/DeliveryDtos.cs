@@ -35,6 +35,10 @@ public class DeliveryDto
 
     /// <summary>WarrantyStatus (Activa/PorVencer/Vencida), o null si WarrantyEndsAt es null.</summary>
     public int? WarrantyStatus { get; set; }
+
+    /// <summary>true si ya existe una reposicion de garantia EnCurso sobre esta entrega
+    /// (evita activar una segunda mientras la primera sigue abierta).</summary>
+    public bool HasActiveWarrantyReplacement { get; set; }
 }
 
 public class VacancyApplicantSummaryDto

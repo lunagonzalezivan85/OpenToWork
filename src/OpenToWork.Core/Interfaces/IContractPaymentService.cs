@@ -16,4 +16,10 @@ public interface IContractPaymentService
     /// <summary>true si el contrato de la vacante dada tiene su tramo de Apertura pagado.
     /// Si la vacante no esta ligada a ningun contrato, devuelve true (no bloquea).</summary>
     Task<bool> IsOpeningPaidForVacancyAsync(Guid vacancyId);
+
+    /// <summary>Crea un cargo ad-hoc (TrancheType=ReposicionSegunda) sobre el contrato, monto =
+    /// FeeAmount * percentage / 100. A diferencia de CreateTranchesForContractAsync, NO es
+    /// idempotente: siempre inserta una fila nueva (se llama una sola vez, cuando se activa la
+    /// 2a reposicion de garantia). Devuelve el Id del tramo creado.</summary>
+    Task<Guid> CreateReplacementChargeAsync(Guid contractId, decimal percentage, string description);
 }

@@ -400,6 +400,36 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<List<WarrantyReplacementDto>> GetWarrantyReplacementsByContractAsync(Guid contractId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/contracts/{contractId}/warranty-replacements");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<WarrantyReplacementDto>>() ?? new();
+    }
+
+    public async Task<WarrantyReplacementCandidatesDto> GetWarrantyReplacementCandidatesAsync(Guid vacancyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/contracts/warranty-replacements/vacancy/{vacancyId}/candidates");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<WarrantyReplacementCandidatesDto>() ?? new();
+    }
+
+    public async Task<(WarrantyReplacementDto? Result, string? Error)> LinkWarrantyReplacementAsync(Guid replacementId, LinkWarrantyReplacementDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/contracts/warranty-replacements/{replacementId}/link", dto);
+        return await ReadResultAsync<WarrantyReplacementDto>(response);
+    }
+
+    public async Task<(WarrantyReplacementDto? Result, string? Error)> CancelWarrantyReplacementAsync(Guid replacementId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsync($"api/admin/contracts/warranty-replacements/{replacementId}/cancel", null);
+        return await ReadResultAsync<WarrantyReplacementDto>(response);
+    }
+
     public async Task<AdminVacancyDto?> CreateVacancyAsync(AdminCreateVacancyDto dto)
     {
         await SetAuthHeaderAsync();
@@ -798,6 +828,13 @@ public class AdminAuthApiService
         return await response.Content.ReadFromJsonAsync<DeliveryDto>();
     }
 
+    public async Task<(WarrantyReplacementDto? Result, string? Error)> ActivateDeliveryWarrantyReplacementAsync(Guid deliveryId, ActivateWarrantyReplacementDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment-deliveries/{deliveryId}/warranty-replacement", dto);
+        return await ReadResultAsync<WarrantyReplacementDto>(response);
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");
@@ -1004,6 +1041,13 @@ public class AdminAuthApiService
         var response = await _httpClient.GetAsync($"api/admin/negotiations/vacancy/{vacancyId}");
         if (!response.IsSuccessStatusCode) return new();
         return await response.Content.ReadFromJsonAsync<List<NegotiationDto>>() ?? new();
+    }
+
+    public async Task<(WarrantyReplacementDto? Result, string? Error)> ActivateNegotiationWarrantyReplacementAsync(Guid negotiationId, ActivateWarrantyReplacementDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/negotiations/{negotiationId}/warranty-replacement", dto);
+        return await ReadResultAsync<WarrantyReplacementDto>(response);
     }
 
     // --- Company CRM ---

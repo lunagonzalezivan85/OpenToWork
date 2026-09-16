@@ -295,6 +295,94 @@ else if (Contract != null)
                 }
             }
         </div>
+
+        <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+            <h3 class="admin-recruitment-card-title">@Lang.T("admin.warrantyReplacement.panelTitle")</h3>
+            @if (WarrantyReplacements.Count == 0)
+            {
+                <p style="color: var(--text-muted); font-size: 0.85rem;">@Lang.T("admin.warrantyReplacement.panelEmpty")</p>
+            }
+            else
+            {
+                @foreach (var wr in WarrantyReplacements)
+                {
+                    <div class="admin-recruitment-info-row" style="align-items: flex-start; flex-direction: column; gap: 0.4rem;">
+                        <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
+                            <div>
+                                <strong>@wr.VacancyTitle</strong>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">@GetReplacementReasonLabel(wr.Reason)</div>
+                                @if (wr.IsExclusion)
+                                {
+                                    <span class="admin-result-badge admin-result-badge--danger" style="margin-top:0.2rem; display:inline-block;">@Lang.T("admin.warrantyReplacement.exclusionWarning")</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(wr.Notes))
+                                {
+                                    <div style="font-size:0.75rem; font-style:italic; color:var(--text-muted); margin-top:0.2rem;">"@wr.Notes"</div>
+                                }
+                            </div>
+                            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem;">
+                                @if (wr.ReplacementNumber > 0)
+                                {
+                                    <span class="admin-result-badge admin-result-badge--info">@(wr.ReplacementNumber == 1 ? Lang.T("admin.warrantyReplacement.replacementFirst") : Lang.T("admin.warrantyReplacement.replacementSecond"))</span>
+                                }
+                                <span class="admin-result-badge @GetReplacementStatusBadgeClass(wr.Status)">@GetReplacementStatusLabel(wr.Status)</span>
+                            </div>
+                        </div>
+                        <div style="font-size:0.78rem; color:var(--text-muted);">
+                            @Lang.T("admin.warrantyReplacement.requestedBy") @wr.RequestedByName · @wr.RequestedAt.ToString("dd/MM/yyyy")
+                            @if (!string.IsNullOrWhiteSpace(wr.OriginalCandidateName))
+                            {
+                                <text> · @Lang.T("admin.warrantyReplacement.originalCandidate"): @wr.OriginalCandidateName</text>
+                            }
+                        </div>
+                        @if (wr.ChargeAmount.HasValue)
+                        {
+                            <div style="font-size:0.78rem;">
+                                <strong>@FormatEur(wr.ChargeAmount.Value)</strong>
+                                <span class="admin-result-badge @(wr.ChargeStatus == (int)PaymentTrancheStatus.Pagado ? "admin-result-badge--success" : "admin-result-badge--warning")" style="margin-left:0.3rem;">
+                                    @(wr.ChargeStatus == (int)PaymentTrancheStatus.Pagado ? Lang.T("admin.contract.tranchePaid") : Lang.T("admin.contract.tranchePending"))
+                                </span>
+                            </div>
+                        }
+                        @if (wr.Status == (int)WarrantyReplacementStatus.Completada && !string.IsNullOrWhiteSpace(wr.ReplacementCandidateName))
+                        {
+                            <div style="font-size:0.78rem; color:var(--text-muted);">@Lang.T("admin.warrantyReplacement.replacementCandidate"): @wr.ReplacementCandidateName</div>
+                        }
+                        @if (wr.Status == (int)WarrantyReplacementStatus.EnCurso)
+                        {
+                            @if (LinkingReplacementId == wr.Id)
+                            {
+                                <div style="display:flex; gap:0.4rem; align-items:center; width:100%; flex-wrap:wrap;">
+                                    <select class="admin-select" @bind="LinkSelection">
+                                        <option value="">@Lang.T("admin.warrantyReplacement.linkPlaceholder")</option>
+                                        @if (LinkCandidates != null)
+                                        {
+                                            @foreach (var n in LinkCandidates.Negotiations.Where(x => x.Status == (int)NegotiationStatus.Cerrada && x.Id != wr.OriginalNegotiationId))
+                                            {
+                                                <option value="n:@n.Id">@(n.Candidates.FirstOrDefault(c => c.ApplicationId == n.WinningApplicationId)?.CandidateName ?? n.Id.ToString())</option>
+                                            }
+                                            @foreach (var d in LinkCandidates.Deliveries.Where(x => x.Id != wr.OriginalDeliveryId))
+                                            {
+                                                <option value="d:@d.Id">@d.CandidateName</option>
+                                            }
+                                        }
+                                    </select>
+                                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => ConfirmLinkAsync(wr.Id)">@Lang.T("admin.warrantyReplacement.link")</button>
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => LinkingReplacementId = null">@Lang.T("admin.common.cancel")</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div style="display:flex; gap:0.4rem;">
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => StartLinkAsync(wr)">@Lang.T("admin.warrantyReplacement.link")</button>
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ConfirmCancelReplacementAsync(wr.Id)">@Lang.T("admin.warrantyReplacement.cancel")</button>
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            }
+        </div>
     }
 
         @if (Contract.Status == (int)ContractStatus.Sent)
@@ -368,6 +456,12 @@ else if (Contract != null)
     private Guid? MarkingPaidTrancheId { get; set; }
     private string? MarkPaidNotes { get; set; }
 
+    // Garantias de reposicion (paso 20)
+    private List<WarrantyReplacementDto> WarrantyReplacements { get; set; } = new();
+    private Guid? LinkingReplacementId { get; set; }
+    private string LinkSelection { get; set; } = "";
+    private WarrantyReplacementCandidatesDto? LinkCandidates { get; set; }
+
     private static readonly (string Code, string Key)[] ScopeCatalog =
     {
         ("publicacion", "admin.contract.scopePublicacion"),
@@ -400,6 +494,7 @@ else if (Contract != null)
         }
         LoadForm();
         await LoadTranchesAsync();
+        await LoadWarrantyReplacementsAsync();
         IsLoading = false;
     }
 
@@ -416,7 +511,80 @@ else if (Contract != null)
         PaymentTrancheType.Apertura => Lang.T("admin.contract.paymentOpening"),
         PaymentTrancheType.Validacion => Lang.T("admin.contract.paymentValidation"),
         PaymentTrancheType.Consolidacion => Lang.T("admin.contract.paymentConsolidation"),
+        PaymentTrancheType.ReposicionSegunda => Lang.T("admin.contract.paymentReplacement"),
         _ => "-"
+    };
+
+    private async Task LoadWarrantyReplacementsAsync()
+    {
+        if (Contract != null && Contract.Status == (int)ContractStatus.Accepted)
+            WarrantyReplacements = await AuthApi.GetWarrantyReplacementsByContractAsync(Contract.Id);
+        else
+            WarrantyReplacements = new();
+    }
+
+    private async Task StartLinkAsync(WarrantyReplacementDto wr)
+    {
+        LinkingReplacementId = wr.Id;
+        LinkSelection = "";
+        LinkCandidates = await AuthApi.GetWarrantyReplacementCandidatesAsync(wr.VacancyId);
+    }
+
+    private async Task ConfirmLinkAsync(Guid replacementId)
+    {
+        if (string.IsNullOrEmpty(LinkSelection)) return;
+        var parts = LinkSelection.Split(':', 2);
+        if (parts.Length != 2 || !Guid.TryParse(parts[1], out var id)) return;
+
+        var dto = new LinkWarrantyReplacementDto();
+        if (parts[0] == "n") dto.NegotiationId = id; else dto.DeliveryId = id;
+
+        var (result, _) = await AuthApi.LinkWarrantyReplacementAsync(replacementId, dto);
+        if (result != null)
+        {
+            LinkingReplacementId = null;
+            await LoadWarrantyReplacementsAsync();
+        }
+    }
+
+    private async Task ConfirmCancelReplacementAsync(Guid replacementId)
+    {
+        var (result, _) = await AuthApi.CancelWarrantyReplacementAsync(replacementId);
+        if (result != null)
+            await LoadWarrantyReplacementsAsync();
+    }
+
+    private string GetReplacementReasonLabel(int reason) => (WarrantyReplacementReason)reason switch
+    {
+        WarrantyReplacementReason.BajoDesempeno => Lang.T("admin.warrantyReplacement.reasonBajoDesempeno"),
+        WarrantyReplacementReason.ProblemasAsistencia => Lang.T("admin.warrantyReplacement.reasonProblemasAsistencia"),
+        WarrantyReplacementReason.FaltaGraveORobo => Lang.T("admin.warrantyReplacement.reasonFaltaGraveORobo"),
+        WarrantyReplacementReason.BajaMedica => Lang.T("admin.warrantyReplacement.reasonBajaMedica"),
+        WarrantyReplacementReason.RenunciaVoluntaria => Lang.T("admin.warrantyReplacement.reasonRenunciaVoluntaria"),
+        WarrantyReplacementReason.Otro => Lang.T("admin.warrantyReplacement.reasonOtro"),
+        WarrantyReplacementReason.ImpagoDeNomina => Lang.T("admin.warrantyReplacement.reasonImpagoDeNomina"),
+        WarrantyReplacementReason.CambioSustancialDeCondiciones => Lang.T("admin.warrantyReplacement.reasonCambioSustancialDeCondiciones"),
+        WarrantyReplacementReason.CierreDelNegocio => Lang.T("admin.warrantyReplacement.reasonCierreDelNegocio"),
+        WarrantyReplacementReason.IncumplimientoNormativo => Lang.T("admin.warrantyReplacement.reasonIncumplimientoNormativo"),
+        _ => reason.ToString()
+    };
+
+    private string GetReplacementStatusLabel(int status) => (WarrantyReplacementStatus)status switch
+    {
+        WarrantyReplacementStatus.EnCurso => Lang.T("admin.warrantyReplacement.statusEnCurso"),
+        WarrantyReplacementStatus.Completada => Lang.T("admin.warrantyReplacement.statusCompletada"),
+        WarrantyReplacementStatus.Cancelada => Lang.T("admin.warrantyReplacement.statusCancelada"),
+        WarrantyReplacementStatus.ExcluidaDeGarantia => Lang.T("admin.warrantyReplacement.statusExcluida"),
+        _ => status.ToString()
+    };
+
+    private string GetReplacementStatusBadgeClass(int status) => (WarrantyReplacementStatus)status switch
+    {
+        WarrantyReplacementStatus.EnCurso => "admin-result-badge--warning",
+        WarrantyReplacementStatus.Completada => "admin-result-badge--success",
+        WarrantyReplacementStatus.Cancelada => "admin-result-badge--muted",
+        WarrantyReplacementStatus.ExcluidaDeGarantia => "admin-result-badge--danger",
+        _ => "admin-result-badge--muted"
     };
 
     private async Task ConfirmMarkPaidAsync(Guid trancheId)
@@ -590,6 +758,7 @@ else if (Contract != null)
         {
             Contract = await AuthApi.GetContractAsync(Contract.Id);
             await LoadTranchesAsync();
+            await LoadWarrantyReplacementsAsync();
         }
     }
 

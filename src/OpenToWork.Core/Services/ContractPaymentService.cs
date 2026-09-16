@@ -111,4 +111,26 @@ public class ContractPaymentService : IContractPaymentService
         // Si el tramo todavia no existe (el contrato aun no fue aceptado), se considera no pagado.
         return openingTranche != null && openingTranche.Status == (int)PaymentTrancheStatus.Pagado;
     }
+
+    public async Task<Guid> CreateReplacementChargeAsync(Guid contractId, decimal percentage, string description)
+    {
+        var contract = await _context.PT_VacancyContracts
+            .FirstOrDefaultAsync(c => c.Id == contractId && !c.IsDeleted);
+
+        var feeAmount = contract?.FeeAmount ?? 0m;
+        var tranche = new PTContractPayment
+        {
+            PT_VacancyContractId = contractId,
+            TrancheType = (int)PaymentTrancheType.ReposicionSegunda,
+            Percentage = percentage,
+            Amount = Math.Round(feeAmount * percentage / 100m, 2),
+            Status = (int)PaymentTrancheStatus.Pendiente,
+            Notes = description
+        };
+
+        _context.PT_ContractPayments.Add(tranche);
+        await _context.SaveChangesAsync();
+
+        return tranche.Id;
+    }
 }

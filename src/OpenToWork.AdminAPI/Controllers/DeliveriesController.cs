@@ -11,10 +11,12 @@ namespace OpenToWork.AdminAPI.Controllers;
 public class DeliveriesController : AdminControllerBase
 {
     private readonly IDeliveryService _deliveryService;
+    private readonly IWarrantyReplacementService _warrantyReplacementService;
 
-    public DeliveriesController(IDeliveryService deliveryService)
+    public DeliveriesController(IDeliveryService deliveryService, IWarrantyReplacementService warrantyReplacementService)
     {
         _deliveryService = deliveryService;
+        _warrantyReplacementService = warrantyReplacementService;
     }
 
     [HttpPost]
@@ -46,6 +48,21 @@ public class DeliveriesController : AdminControllerBase
         try
         {
             var result = await _deliveryService.SetIncorporationDateAsync(id, dto.IncorporationDate, AdminId);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Activa una reposicion de garantia (paso 20) sobre esta entrega Contratada.</summary>
+    [HttpPost("{id}/warranty-replacement")]
+    public async Task<IActionResult> ActivateWarrantyReplacement(Guid id, [FromBody] ActivateWarrantyReplacementDto dto)
+    {
+        try
+        {
+            var result = await _warrantyReplacementService.ActivateFromDeliveryAsync(id, dto, AdminId, ClientIp);
             return result == null ? NotFound() : Ok(result);
         }
         catch (InvalidOperationException ex)

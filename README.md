@@ -48,7 +48,7 @@ El proyecto se compone de **3 portales independientes**:
 >
 > **Como usar esto:** cada item marcado `[ ]` es una pieza real de negocio que hoy NO tiene ningun soporte en el codigo (no es una tarea tecnica generica, es un paso que el dueno del negocio necesita que el sistema sepa que paso). A medida que se construya cada uno, marcarlo `[x]` aqui y actualizar/republicar el artifact de arriba para que Iluna y Darwin vean el avance real.
 >
-> **Estado al 13-Sep-2026:** 17 construidos / 1 parcial / 7 faltantes (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: fecha de incorporacion + visibilidad de garantia (pasos 17 y 19).
+> **Estado al 16-Sep-2026:** 21 construidos / 1 parcial / 3 faltantes (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: activacion de garantia de reposicion (paso 20 + sub-pasos 20.1/20.2/20.3).
 
 ### A. Captacion y Contratacion del Cliente
 
@@ -80,18 +80,18 @@ El proyecto se compone de **3 portales independientes**:
 ### D. Seguimiento y Garantia
 
 - [x] 19. Seguimiento Durante el Periodo de Garantia — **construido 13-Sep** (visibilidad, no bitacora de contacto): `WarrantyCalculator` calcula en vivo Activa/Por vencer/Vencida a partir de `IncorporationDate` + `WarrantyDays` del contrato, mostrado como badge junto a cada negociacion/entrega. Sigue faltando el registro de contacto activo con cliente/candidato y el gate explicito "¿continua?" que dispara la reposicion (eso es el paso 20, ver abajo)
-- [ ] 20. Activacion de Garantia de Reposicion — `WarrantyDays` existe en el contrato y en `PTJobLevel`, pero es solo un numero impreso en el PDF; no hay ningun job/proceso que lo vigile (no existe ni un solo `BackgroundService` en la solucion)
-- [ ] 20.1 Analisis de Causa Raiz — no existe
-- [ ] 20.2 Nueva Busqueda Sin Costo (1a reposicion) — no hay vinculo entre una reposicion y el proceso de reclutamiento original
-- [ ] 20.3 Segunda Reposicion (50% del valor) — no existe
+- [x] 20. Activacion de Garantia de Reposicion — **construido 16-Sep**: entidad `PTWarrantyReplacement` + boton "Activar Garantia de Reposicion" junto al badge de garantia (en `/vacancies` para Negociaciones y en la ficha de candidato para Entregas). Sigue siendo activacion manual (no hay `BackgroundService` que vigile vencimientos, ver alcance abajo)
+- [x] 20.1 Analisis de Causa Raiz — **construido 16-Sep**: 10 motivos estructurados en `WarrantyReplacementReason` (6 cubiertos por la garantia + 4 exclusiones contractuales) + notas libres, en vez de texto libre sin estructura
+- [x] 20.2 Nueva Busqueda Sin Costo (1a reposicion) — **construido 16-Sep**: activar la reposicion reabre la vacante (`Status=Active`) para una nueva busqueda; cuando la nueva negociacion/entrega cierra, se "Vincula" desde el panel del contrato, dejando el registro real que faltaba entre la reposicion y el nuevo proceso de reclutamiento
+- [x] 20.3 Segunda Reposicion (50% del valor) — **construido 16-Sep**: la 2a reposicion sobre la misma vacante genera automaticamente un cargo del 50% del `FeeAmount` (reutiliza el mecanismo de tramos de pago existente, `PaymentTrancheType.ReposicionSegunda`), visible en el mismo panel "Tramos de Pago". Un 3er intento sobre la misma vacante es rechazado (tope de 2 reposiciones cubiertas)
 - [ ] 21. Cierre del Proceso (post-garantia) — no hay un estado que distinga "cerrado exitoso post-garantia" de simplemente "vacante cerrada"
 - [ ] 22. Feedback y Mejora Continua — no existe ninguna encuesta o registro de feedback del cliente
 
 ### Politicas del documento oficial (paneles laterales)
 
-- [ ] Garantia por tipo de perfil (Operativo=30d / Encargados-Tecnicos=45d / Responsables-Cualificados=60d) — *parcial*: el campo `WarrantyDays` es configurable por nivel de puesto en `/pricing/job-levels`, pero esos 3 valores especificos no estan sembrados — confirmar que existan en el catalogo real
-- [ ] Exclusiones de Garantia (impago de nomina, cambio sustancial de condiciones, cierre del negocio, incumplimiento normativo) — solo hay un campo de texto libre ("Excepciones pactadas") en el contrato, no las 4 causales estructuradas
-- [ ] "¿Y si el candidato...?" (roba/falta grave, baja medica, renuncia voluntaria) — no existe ningun registro de conducta o motivo de salida posterior a la colocacion
+- [x] Garantia por tipo de perfil (Operativo=30d / Encargados-Tecnicos=45d / Responsables-Cualificados=60d) — **verificado 16-Sep contra la BD real**: `/pricing/job-levels` tiene los 3 niveles sembrados, pero con **30 / 40 / 60** dias (no 45) — confirmar con Darwin si el valor real de "Encargados y Tecnicos" debe corregirse a 45 en el catalogo
+- [x] Exclusiones de Garantia (impago de nomina, cambio sustancial de condiciones, cierre del negocio, incumplimiento normativo) — **construido 16-Sep**: las 4 causales son motivos estructurados de `WarrantyReplacementReason` (`ImpagoDeNomina`/`CambioSustancialDeCondiciones`/`CierreDelNegocio`/`IncumplimientoNormativo`); al elegir una, la reposicion queda `ExcluidaDeGarantia` (no cuenta como 1a/2a, no reabre la vacante). El campo de texto libre ("Excepciones pactadas") del contrato sigue existiendo aparte, para condiciones no cubiertas por estas 4
+- [x] "¿Y si el candidato...?" (roba/falta grave, baja medica, renuncia voluntaria) — **construido 16-Sep**: son 3 de los 6 motivos cubiertos de `WarrantyReplacementReason` (`FaltaGraveORobo`/`BajaMedica`/`RenunciaVoluntaria`), quedan registrados igual que cualquier otra causa de reposicion
 - [ ] 30/50/20 ligado a eventos reales del sistema — **parcial, mejorado 13-Sep**: la Apertura (30%) ya esta ligada a un evento real (bloquea publicar la vacante) y los 3 tramos son registros reales pagado/pendiente, no solo porcentajes. Sigue faltando el disparo automatico de Validacion al cerrar la negociacion y de Consolidacion a los +30 dias de incorporacion — hoy ambos los marca un admin a mano
 
 ---
@@ -1451,6 +1451,28 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-16 — Garantía de Reposición (paso 20 del Gap Analysis) (Dsiezar)
+
+Cierra el último bloque grande de la Auditoría del Ciclo Comercial: cuando una colocación falla dentro del período de garantía, un admin puede registrar por qué, activar una reposición gratuita (la 1ª) o cobrada al 50% (la 2ª), y dejar un vínculo real con la nueva colocación que la resuelve — cubre los pasos 20/20.1/20.2/20.3 y 3 bullets más de "Políticas del documento oficial" (exclusiones de garantía, "¿y si el candidato...?", garantía por tipo de perfil).
+
+**Modelo de datos:**
+- Nueva tabla `PT_WarrantyReplacements` (migración `WarrantyReplacements`): motivo (`WarrantyReplacementReason`, 10 valores: 6 cubiertos + 4 exclusiones contractuales), si es exclusión, número de reposición (1/2/0), estado (`EnCurso`/`Completada`/`Cancelada`/`ExcluidaDeGarantia`), quién y cuándo la solicitó, vínculo a la colocación original (`PTNegotiation` o `PTCandidateDelivery`) y a la de reemplazo una vez vinculada.
+- `PaymentTrancheType` gana `ReposicionSegunda=3` — el cargo del 50% de la 2ª reposición se crea como una fila más en la tabla de tramos de pago ya existente (`PTContractPayment`), reutilizando el mismo panel "Tramos de Pago" y el botón "Marcar como pagado" sin cambios adicionales.
+
+**Lógica (`IWarrantyReplacementService`):**
+- Activar desde una negociación cerrada o una entrega Contratada: si el motivo es una exclusión contractual, la reposición queda `ExcluidaDeGarantia` (no cuenta, no reabre la vacante). Si no, cuenta cuántas reposiciones no-canceladas/no-excluidas tiene ya la vacante — 1ª gratis, 2ª genera el cargo del 50%, una 3ª es rechazada ("ya agotó las 2 reposiciones cubiertas por la garantía").
+- Activar reabre la vacante (`Status=Active`) para una nueva búsqueda — el vínculo real que pedía el punto 20.2.
+- "Vincular" (desde el panel del contrato) conecta la reposición con la nueva negociación/entrega que la resuelve, marcándola `Completada`; "Cancelar" la da de baja sin contar para el tope de 2.
+
+**UI:**
+- Botón "Activar Garantía de Reposición" junto al badge de garantía en `Vacancies.razor` (Negociaciones, rol Comercial) y `Candidates/PipelineDetail.razor` (Entregas, rol Reclutador) — formulario inline con los 10 motivos + notas, mismo patrón visual que el resto del panel.
+- Panel nuevo "Garantías de Reposición" en `VacancyContract.razor`, debajo de "Tramos de Pago": lista las reposiciones del contrato con motivo, chip de exclusión, número/costo, estado, candidato original → candidato de reposición, y los controles Vincular/Cancelar.
+- Roles: los endpoints nuevos se agregaron a los controllers existentes (`NegotiationsController`/`VacancyContractController` = Comercial, `DeliveriesController` = Reclutador), sin crear un controller nuevo.
+
+**Verificado end-to-end** contra MySQL real y ambos flujos (contrato de prueba `TD-2026-0004`, vacante "Camarero", garantía de 90 días): 1ª reposición activada desde una negociación cerrada real (Juan Perez) → vacante reabierta; 2ª reposición sobre la misma vacante → cargo de 450€ (50% de 900€) creado correctamente y visible en Tramos de Pago; 3er intento → rechazado con el mensaje esperado; motivo de exclusión → `ExcluidaDeGarantia`, sin reabrir la vacante; "Cancelar" y "Vincular" probados desde la UI; flujo de Entregas probado directo contra el endpoint (fixture sintético, eliminado después de la prueba) confirmando paridad con Negociaciones. De paso, verificado contra la BD real que los 3 niveles de garantía están sembrados pero con **30/40/60 días, no 30/45/60** — pendiente confirmar con Darwin si hay que corregir el catálogo.
+
+- Commit(s) en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ### Sesión 2026-09-15 — Skills predeterminados por tipo de puesto (Dsiezar)
 

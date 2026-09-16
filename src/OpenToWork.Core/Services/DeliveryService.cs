@@ -181,6 +181,22 @@ public class DeliveryService : IDeliveryService
         return await GetDeliveryDtoAsync(deliveryId);
     }
 
+    public async Task<List<DeliveryDto>> GetHiredDeliveriesByVacancyAsync(Guid vacancyId)
+    {
+        var deliveries = await _context.PT_CandidateDeliveries
+            .Include(d => d.Candidate)
+            .Include(d => d.Vacancy)
+            .Include(d => d.Company)
+            .Where(d => d.PT_VacancyId == vacancyId && d.Status == (int)DeliveryStatus.Hired && !d.IsDeleted)
+            .OrderByDescending(d => d.DeliveredAt)
+            .ToListAsync();
+
+        var dtos = new List<DeliveryDto>();
+        foreach (var d in deliveries)
+            dtos.Add(await MapToDtoAsync(d));
+        return dtos;
+    }
+
     private async Task<DeliveryDto?> GetDeliveryDtoAsync(Guid deliveryId)
     {
         var delivery = await _context.PT_CandidateDeliveries
@@ -196,6 +212,8 @@ public class DeliveryService : IDeliveryService
         var verification = await _verificationStatus.GetVerificationStatusAsync(d.PT_CandidateId);
         var warrantyDays = await _warranty.GetWarrantyDaysForVacancyAsync(d.PT_VacancyId);
         var (warrantyEndsAt, warrantyStatus) = WarrantyCalculator.Calculate(d.IncorporationDate, warrantyDays);
+        var hasActiveReplacement = await _context.PT_WarrantyReplacements
+            .AnyAsync(w => w.OriginalDeliveryId == d.Id && w.Status == (int)WarrantyReplacementStatus.EnCurso && !w.IsDeleted);
 
         return new DeliveryDto
         {
@@ -218,7 +236,8 @@ public class DeliveryService : IDeliveryService
             IsVerifiedTD = verification.IsVerifiedTD,
             IncorporationDate = d.IncorporationDate,
             WarrantyEndsAt = warrantyEndsAt,
-            WarrantyStatus = (int?)warrantyStatus
+            WarrantyStatus = (int?)warrantyStatus,
+            HasActiveWarrantyReplacement = hasActiveReplacement
         };
     }
 }

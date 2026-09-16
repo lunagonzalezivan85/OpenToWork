@@ -73,6 +73,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDeliveryService, DeliveryService>();
         services.AddScoped<IContractPaymentService, ContractPaymentService>();
         services.AddScoped<IWarrantyLookupService, WarrantyLookupService>();
+        services.AddScoped<IWarrantyReplacementService, WarrantyReplacementService>();
 
         return services;
     }

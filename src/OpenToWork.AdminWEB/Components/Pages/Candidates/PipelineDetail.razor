@@ -1148,6 +1148,43 @@ else
                                             <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.negotiation.warrantyNoData")</span>
                                         }
                                     </div>
+                                    @if (d.WarrantyStatus.HasValue
+                                        && ((WarrantyStatus)d.WarrantyStatus.Value == WarrantyStatus.Activa || (WarrantyStatus)d.WarrantyStatus.Value == WarrantyStatus.PorVencer)
+                                        && !d.HasActiveWarrantyReplacement)
+                                    {
+                                        @if (ActivatingReplacementForId == d.Id)
+                                        {
+                                            <div style="margin-top:0.5rem; padding:0.5rem; border:1px solid var(--input-border); border-radius:8px;">
+                                                <select class="admin-select" @bind="ReplacementReason">
+                                                    @foreach (var opt in WarrantyReplacementReasonOptions)
+                                                    {
+                                                        <option value="@opt.Value">@opt.Label</option>
+                                                    }
+                                                </select>
+                                                @if (IsExclusionReason(ReplacementReason))
+                                                {
+                                                    <p style="color: var(--danger); font-size: 0.75rem; margin: 0.35rem 0;">@Lang.T("admin.warrantyReplacement.exclusionWarning")</p>
+                                                }
+                                                <textarea class="admin-input" rows="2" style="margin-top:0.35rem; width:100%;" @bind="ReplacementNotes" placeholder="@Lang.T("admin.warrantyReplacement.notesPlaceholder")"></textarea>
+                                                @if (!string.IsNullOrEmpty(ReplacementError))
+                                                {
+                                                    <p style="color: var(--danger); font-size: 0.75rem; margin: 0.35rem 0;">@ReplacementError</p>
+                                                }
+                                                <div style="display:flex; gap:0.4rem; margin-top:0.35rem;">
+                                                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsDeliveryBusy" @onclick="() => ConfirmActivateReplacementAsync(d.Id)">@Lang.T("admin.common.confirm")</button>
+                                                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { ActivatingReplacementForId = null; ReplacementError = null; }">@Lang.T("admin.common.cancel")</button>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div style="margin-top:0.5rem;">
+                                                <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => { ActivatingReplacementForId = d.Id; ReplacementReason = 0; ReplacementNotes = null; ReplacementError = null; }">
+                                                    @Lang.T("admin.negotiation.activateReplacement")
+                                                </button>
+                                            </div>
+                                        }
+                                    }
                                 }
                             }
                         </div>
@@ -1368,6 +1405,48 @@ else
     private List<DeliveryDto> Deliveries { get; set; } = new();
     private Dictionary<Guid, DateTime> IncorporationDateByDelivery { get; set; } = new();
     private bool IsDeliveryBusy { get; set; }
+
+    // Garantia de reposicion (paso 20): un solo formulario abierto a la vez.
+    private Guid? ActivatingReplacementForId { get; set; }
+    private int ReplacementReason { get; set; }
+    private string? ReplacementNotes { get; set; }
+    private string? ReplacementError { get; set; }
+
+    private static bool IsExclusionReason(int reason) => ((WarrantyReplacementReason)reason).IsExclusion();
+
+    private List<(int Value, string Label)> WarrantyReplacementReasonOptions => new()
+    {
+        (0, Lang.T("admin.warrantyReplacement.reasonBajoDesempeno")),
+        (1, Lang.T("admin.warrantyReplacement.reasonProblemasAsistencia")),
+        (2, Lang.T("admin.warrantyReplacement.reasonFaltaGraveORobo")),
+        (3, Lang.T("admin.warrantyReplacement.reasonBajaMedica")),
+        (4, Lang.T("admin.warrantyReplacement.reasonRenunciaVoluntaria")),
+        (5, Lang.T("admin.warrantyReplacement.reasonOtro")),
+        (6, Lang.T("admin.warrantyReplacement.reasonImpagoDeNomina")),
+        (7, Lang.T("admin.warrantyReplacement.reasonCambioSustancialDeCondiciones")),
+        (8, Lang.T("admin.warrantyReplacement.reasonCierreDelNegocio")),
+        (9, Lang.T("admin.warrantyReplacement.reasonIncumplimientoNormativo"))
+    };
+
+    private async Task ConfirmActivateReplacementAsync(Guid deliveryId)
+    {
+        if (IsDeliveryBusy) return;
+        IsDeliveryBusy = true;
+        ReplacementError = null;
+
+        var dto = new ActivateWarrantyReplacementDto { Reason = ReplacementReason, Notes = ReplacementNotes };
+        var (result, error) = await AuthApi.ActivateDeliveryWarrantyReplacementAsync(deliveryId, dto);
+        if (result != null)
+        {
+            ActivatingReplacementForId = null;
+            Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail!.Id);
+        }
+        else
+        {
+            ReplacementError = error ?? "No se pudo activar la reposicion.";
+        }
+        IsDeliveryBusy = false;
+    }
     private string DeliverVacancyId { get; set; } = "";
     private string DeliverAdminNote { get; set; } = "";
     private string? DeliverError { get; set; }

@@ -41,12 +41,15 @@ public enum PromoDiscountType
 }
 
 /// <summary>Tramo de pago del anexo (30/50/20): Apertura al firmar, Validacion al elegir
-/// candidato del shortlist, Consolidacion 30 dias tras la incorporacion.</summary>
+/// candidato del shortlist, Consolidacion 30 dias tras la incorporacion. ReposicionSegunda es
+/// un cargo ad-hoc (no parte del 30/50/20 original): 50% del FeeAmount, se crea una sola vez
+/// cuando se activa la segunda reposicion de garantia sobre una vacante.</summary>
 public enum PaymentTrancheType
 {
     Apertura = 0,
     Validacion = 1,
-    Consolidacion = 2
+    Consolidacion = 2,
+    ReposicionSegunda = 3
 }
 
 /// <summary>Estado de un tramo de pago (PTContractPayment). Simple pagado/pendiente por ahora,

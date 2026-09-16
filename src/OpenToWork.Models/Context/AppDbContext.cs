@@ -49,6 +49,7 @@ public class AppDbContext : DbContext
     public DbSet<PTVacancyContract> PT_VacancyContracts => Set<PTVacancyContract>();
     public DbSet<PTContractVacancy> PT_ContractVacancies => Set<PTContractVacancy>();
     public DbSet<PTContractPayment> PT_ContractPayments => Set<PTContractPayment>();
+    public DbSet<PTWarrantyReplacement> PT_WarrantyReplacements => Set<PTWarrantyReplacement>();
     public DbSet<PTJobLevel> PT_JobLevels => Set<PTJobLevel>();
     public DbSet<PTJobType> PT_JobTypes => Set<PTJobType>();
     public DbSet<PTJobTypePrice> PT_JobTypePrices => Set<PTJobTypePrice>();
@@ -230,6 +231,45 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(p => p.PaidByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PTWarrantyReplacement>(e =>
+        {
+            e.ToTable("PT_WarrantyReplacements");
+            e.HasIndex(w => new { w.PT_VacancyId, w.IsDeleted });
+            e.Property(w => w.Status).HasDefaultValue(0);
+            e.HasOne(w => w.Contract)
+                .WithMany()
+                .HasForeignKey(w => w.PT_VacancyContractId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(w => w.Vacancy)
+                .WithMany()
+                .HasForeignKey(w => w.PT_VacancyId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(w => w.OriginalNegotiation)
+                .WithMany()
+                .HasForeignKey(w => w.OriginalNegotiationId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(w => w.OriginalDelivery)
+                .WithMany()
+                .HasForeignKey(w => w.OriginalDeliveryId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(w => w.ReplacementNegotiation)
+                .WithMany()
+                .HasForeignKey(w => w.ReplacementNegotiationId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(w => w.ReplacementDelivery)
+                .WithMany()
+                .HasForeignKey(w => w.ReplacementDeliveryId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(w => w.ChargeTranche)
+                .WithMany()
+                .HasForeignKey(w => w.ChargeTrancheId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(w => w.RequestedByUser)
+                .WithMany()
+                .HasForeignKey(w => w.RequestedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<PTJobLevel>(e =>

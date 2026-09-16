@@ -13,12 +13,16 @@ public class VacancyContractController : AdminControllerBase
     private readonly IAdminContractService _contractService;
     private readonly IPromoCodeService _promoCodeService;
     private readonly IContractPaymentService _paymentService;
+    private readonly IWarrantyReplacementService _warrantyReplacementService;
+    private readonly IDeliveryService _deliveryService;
 
-    public VacancyContractController(IAdminContractService contractService, IPromoCodeService promoCodeService, IContractPaymentService paymentService)
+    public VacancyContractController(IAdminContractService contractService, IPromoCodeService promoCodeService, IContractPaymentService paymentService, IWarrantyReplacementService warrantyReplacementService, IDeliveryService deliveryService)
     {
         _contractService = contractService;
         _promoCodeService = promoCodeService;
         _paymentService = paymentService;
+        _warrantyReplacementService = warrantyReplacementService;
+        _deliveryService = deliveryService;
     }
 
     [HttpGet("{contractId:guid}")]
@@ -104,5 +108,56 @@ public class VacancyContractController : AdminControllerBase
     {
         var result = await _paymentService.MarkAsPaidAsync(trancheId, dto, AdminId);
         return result == null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>Reposiciones de garantia (paso 20) activadas sobre las vacantes de este contrato.</summary>
+    [HttpGet("{contractId:guid}/warranty-replacements")]
+    public async Task<IActionResult> GetWarrantyReplacements(Guid contractId)
+    {
+        var result = await _warrantyReplacementService.GetByContractAsync(contractId);
+        return Ok(result);
+    }
+
+    /// <summary>Negociaciones y entregas Contratadas de una vacante, para el selector de
+    /// "vincular" una reposicion de garantia en curso.</summary>
+    [HttpGet("warranty-replacements/vacancy/{vacancyId:guid}/candidates")]
+    public async Task<IActionResult> GetWarrantyReplacementCandidates(Guid vacancyId, [FromServices] INegotiationService negotiationService)
+    {
+        var result = new WarrantyReplacementCandidatesDto
+        {
+            Negotiations = await negotiationService.GetByVacancyAsync(vacancyId),
+            Deliveries = await _deliveryService.GetHiredDeliveriesByVacancyAsync(vacancyId)
+        };
+        return Ok(result);
+    }
+
+    /// <summary>Vincula la nueva negociacion/entrega que resuelve una reposicion en curso.</summary>
+    [HttpPut("warranty-replacements/{id:guid}/link")]
+    public async Task<IActionResult> LinkWarrantyReplacement(Guid id, [FromBody] LinkWarrantyReplacementDto dto)
+    {
+        try
+        {
+            var result = await _warrantyReplacementService.LinkReplacementAsync(id, dto, AdminId);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Cancela una reposicion de garantia en curso.</summary>
+    [HttpPut("warranty-replacements/{id:guid}/cancel")]
+    public async Task<IActionResult> CancelWarrantyReplacement(Guid id)
+    {
+        try
+        {
+            var result = await _warrantyReplacementService.CancelAsync(id, AdminId);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }
