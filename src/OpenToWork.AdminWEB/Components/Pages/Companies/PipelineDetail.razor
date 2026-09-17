@@ -204,24 +204,24 @@ else
                         </div>
                     </div>
                 }
-                @* Stage 3: Propuesta Enviada - Select plan *@
+                @* Stage 3: Propuesta Enviada - Select nivel de precio *@
                 else if (Detail.CurrentStage == (int)CompanyPipelineStage.PropuestaEnviada)
                 {
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
-                        @for (var pi = 0; pi < Plans.Count; pi++)
+                        @for (var pi = 0; pi < JobLevelCards.Count; pi++)
                         {
-                            var plan = Plans[pi];
-                            var isSelected = SelectedPlanId == plan.Id;
+                            var card = JobLevelCards[pi];
+                            var isSelected = SelectedJobLevelId == card.Id;
                             var accentColor = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
                             var accentBg = pi == 0 ? "#F1F5F9" : pi == 1 ? "#E8F1FF" : "#F0F7FF";
                             var accentBorder = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
-                            <div @onclick="() => SelectPlan(plan.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1.25rem 1rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: all 0.2s; display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden;">
+                            <div @onclick="() => SelectJobLevel(card.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1.25rem 1rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: all 0.2s; display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden;">
                                 @if (isSelected)
                                 {
                                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: @accentBorder;"></div>
                                 }
                                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <span style="font-size: 0.92rem; font-weight: 700; color: @(isSelected ? accentBorder : "#0B132B");">@plan.Name</span>
+                                    <span style="font-size: 0.92rem; font-weight: 700; color: @(isSelected ? accentBorder : "#0B132B"); word-break: break-word;">@card.Name</span>
                                     @if (isSelected)
                                     {
                                         <div style="width: 22px; height: 22px; border-radius: 50%; background: @accentBorder; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -229,12 +229,13 @@ else
                                         </div>
                                     }
                                 </div>
-                                <div style="display: flex; align-items: baseline; gap: 0.15rem;">
-                                    <span style="font-size: 1.6rem; font-weight: 800; color: @accentColor;">@plan.Price.ToString("0")</span>
+                                <div style="font-size: 0.68rem; font-weight: 600; color: #778DA9; text-transform: uppercase; letter-spacing: 0.03em;">@Lang.T("admin.companies.priceFrom")</div>
+                                <div style="display: flex; align-items: baseline; gap: 0.15rem; flex-wrap: wrap;">
+                                    <span style="font-size: 1.6rem; font-weight: 800; color: @accentColor;">@FormatMinPrice(card)</span>
                                     <span style="font-size: 0.85rem; font-weight: 600; color: @accentColor;">€</span>
-                                    <span style="font-size: 0.75rem; font-weight: 400; color: #778DA9;">/@Lang.T("admin.companies.month")</span>
+                                    <span style="font-size: 0.75rem; font-weight: 400; color: #778DA9;">/@Lang.T("admin.companies.perPosition")</span>
                                 </div>
-                                <p style="font-size: 0.78rem; color: #778DA9; margin: 0; line-height: 1.4;">@plan.Description</p>
+                                <p style="font-size: 0.78rem; color: #778DA9; margin: 0; line-height: 1.4;">@Lang.T("admin.companies.coverageDays") @card.ReferenceCoverageDays @Lang.T("admin.companies.days") · @Lang.T("admin.companies.warrantyDays") @card.WarrantyDays @Lang.T("admin.companies.days")</p>
                             </div>
                         }
                     </div>
@@ -412,22 +413,22 @@ else
                 }
                 @if (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada)
                 {
-                    <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">¿Que plan se le oferto al cliente? *</label>
+                    <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">@Lang.T("admin.companies.selectPlan") *</label>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
-                        @for (var pi = 0; pi < Plans.Count; pi++)
+                        @for (var pi = 0; pi < JobLevelCards.Count; pi++)
                         {
-                            var plan = Plans[pi];
-                            var isSelected = AdvancePlanId == plan.Id;
+                            var card = JobLevelCards[pi];
+                            var isSelected = AdvanceJobLevelId == card.Id;
                             var accentColor = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
                             var accentBg = pi == 0 ? "#F1F5F9" : pi == 1 ? "#E8F1FF" : "#F0F7FF";
                             var accentBorder = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
-                            <div @onclick="() => SelectAdvancePlan(plan.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1rem 0.75rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: all 0.2s; display: flex; flex-direction: column; gap: 0.35rem; position: relative; overflow: hidden;">
+                            <div @onclick="() => SelectAdvanceJobLevel(card.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1rem 0.75rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: all 0.2s; display: flex; flex-direction: column; gap: 0.35rem; position: relative; overflow: hidden;">
                                 @if (isSelected)
                                 {
                                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: @accentBorder;"></div>
                                 }
                                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <span style="font-size: 0.85rem; font-weight: 700; color: @(isSelected ? accentBorder : "#0B132B");">@plan.Name</span>
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: @(isSelected ? accentBorder : "#0B132B"); word-break: break-word;">@card.Name</span>
                                     @if (isSelected)
                                     {
                                         <div style="width: 20px; height: 20px; border-radius: 50%; background: @accentBorder; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -435,12 +436,13 @@ else
                                         </div>
                                     }
                                 </div>
-                                <div style="display: flex; align-items: baseline; gap: 0.15rem;">
-                                    <span style="font-size: 1.4rem; font-weight: 800; color: @accentColor;">@plan.Price.ToString("0")</span>
+                                <div style="font-size: 0.62rem; font-weight: 600; color: #778DA9; text-transform: uppercase; letter-spacing: 0.03em;">@Lang.T("admin.companies.priceFrom")</div>
+                                <div style="display: flex; align-items: baseline; gap: 0.15rem; flex-wrap: wrap;">
+                                    <span style="font-size: 1.4rem; font-weight: 800; color: @accentColor;">@FormatMinPrice(card)</span>
                                     <span style="font-size: 0.8rem; font-weight: 600; color: @accentColor;">€</span>
-                                    <span style="font-size: 0.7rem; font-weight: 400; color: #778DA9;">/@Lang.T("admin.companies.month")</span>
+                                    <span style="font-size: 0.7rem; font-weight: 400; color: #778DA9;">/@Lang.T("admin.companies.perPosition")</span>
                                 </div>
-                                <p style="font-size: 0.72rem; color: #778DA9; margin: 0; line-height: 1.3;">@plan.Description</p>
+                                <p style="font-size: 0.72rem; color: #778DA9; margin: 0; line-height: 1.3;">@Lang.T("admin.companies.coverageDays") @card.ReferenceCoverageDays @Lang.T("admin.companies.days") · @Lang.T("admin.companies.warrantyDays") @card.WarrantyDays @Lang.T("admin.companies.days")</p>
                             </div>
                         }
                     </div>
@@ -449,7 +451,7 @@ else
                 <textarea @bind="ActionNotes" rows="4" class="admin-input" placeholder="@Lang.T("admin.companies.advanceCommentPlaceholder")"></textarea>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
                     <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseAdvanceModal">@Lang.T("admin.common.cancel")</button>
-                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@(string.IsNullOrWhiteSpace(ActionNotes) || (Detail.CurrentStage == (int)CompanyPipelineStage.Lead && string.IsNullOrEmpty(AdvanceContactMethod)) || (Detail.CurrentStage == (int)CompanyPipelineStage.Contactado && !AdvanceMeetingDate.HasValue) || (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && !AdvancePlanId.HasValue))" @onclick="ConfirmAdvance">@Lang.T("admin.companies.confirmAdvance")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@(string.IsNullOrWhiteSpace(ActionNotes) || (Detail.CurrentStage == (int)CompanyPipelineStage.Lead && string.IsNullOrEmpty(AdvanceContactMethod)) || (Detail.CurrentStage == (int)CompanyPipelineStage.Contactado && !AdvanceMeetingDate.HasValue) || (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && !AdvanceJobLevelId.HasValue))" @onclick="ConfirmAdvance">@Lang.T("admin.companies.confirmAdvance")</button>
                 </div>
             </div>
         </div>
@@ -554,9 +556,39 @@ else
     private bool ShowMapModal;
     private string MapSearchQuery = "";
 
-    // Plans
-    private List<PlanDto> Plans = new();
-    private Guid? SelectedPlanId;
+    // Niveles de precio (catalogo real de Precios y Niveles de Precio, no PT_Plans)
+    private List<JobLevelDto> JobLevels = new();
+    private List<JobTypeDto> JobTypes = new();
+    private Guid? SelectedJobLevelId;
+
+    private class JobLevelPricingCard
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = "";
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
+        public int? ReferenceCoverageDays { get; set; }
+        public int? WarrantyDays { get; set; }
+    }
+
+    private List<JobLevelPricingCard> JobLevelCards =>
+        JobLevels.Where(l => l.IsActive).OrderBy(l => l.SortOrder).Select(l =>
+        {
+            var prices = JobTypes.Where(t => t.PT_JobLevelId == l.Id && t.CurrentPrice.HasValue)
+                .Select(t => t.CurrentPrice!.Value).ToList();
+            return new JobLevelPricingCard
+            {
+                Id = l.Id,
+                Name = l.Name,
+                MinPrice = prices.Count > 0 ? prices.Min() : (decimal?)null,
+                MaxPrice = prices.Count > 0 ? prices.Max() : (decimal?)null,
+                ReferenceCoverageDays = l.ReferenceCoverageDays,
+                WarrantyDays = l.WarrantyDays
+            };
+        }).ToList();
+
+    private string FormatMinPrice(JobLevelPricingCard card) =>
+        card.MinPrice.HasValue ? $"{card.MinPrice:0}" : "-";
 
     // Editable fields
     private string EditName = "";
@@ -578,7 +610,7 @@ else
     private string? EditContactMethod;
     private string? AdvanceContactMethod;
     private DateTime? AdvanceMeetingDate;
-    private Guid? AdvancePlanId;
+    private Guid? AdvanceJobLevelId;
 
     private List<KeyValuePair<int, string>> WizardSteps => new()
     {
@@ -633,7 +665,8 @@ else
         await LoadDetail();
         AdminUsers = await AuthApi.GetUsersAsync(role: (int)UserRole.Admin);
         SelectedUserId = AdminUsers.FirstOrDefault()?.Id.ToString() ?? "";
-        Plans = await AuthApi.GetPlansAsync();
+        JobLevels = await AuthApi.GetJobLevelsAsync();
+        JobTypes = await AuthApi.GetJobTypesAsync();
     }
 
     private async Task LoadDetail()
@@ -703,9 +736,9 @@ else
         ShowChecklist = !ShowChecklist;
     }
 
-    private void SelectPlan(Guid planId)
+    private void SelectJobLevel(Guid jobLevelId)
     {
-        SelectedPlanId = planId;
+        SelectedJobLevelId = jobLevelId;
     }
 
     // --- Map ---
@@ -790,7 +823,7 @@ else
         ActionNotes = "";
         AdvanceContactMethod = EditContactMethod;
         AdvanceMeetingDate = Detail?.MeetingDate?.ToLocalTime();
-        AdvancePlanId = SelectedPlanId;
+        AdvanceJobLevelId = SelectedJobLevelId;
         ShowAdvanceModal = true;
     }
 
@@ -800,12 +833,12 @@ else
         ActionNotes = "";
         AdvanceContactMethod = null;
         AdvanceMeetingDate = null;
-        AdvancePlanId = null;
+        AdvanceJobLevelId = null;
     }
 
-    private void SelectAdvancePlan(Guid planId)
+    private void SelectAdvanceJobLevel(Guid jobLevelId)
     {
-        AdvancePlanId = planId;
+        AdvanceJobLevelId = jobLevelId;
     }
 
     private void OnMeetingDateChanged(ChangeEventArgs e)
@@ -822,7 +855,7 @@ else
         if (string.IsNullOrWhiteSpace(ActionNotes)) return;
         if (Detail!.CurrentStage == (int)CompanyPipelineStage.Lead && string.IsNullOrEmpty(AdvanceContactMethod)) return;
         if (Detail!.CurrentStage == (int)CompanyPipelineStage.Contactado && !AdvanceMeetingDate.HasValue) return;
-        if (Detail!.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && !AdvancePlanId.HasValue) return;
+        if (Detail!.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && !AdvanceJobLevelId.HasValue) return;
         await SaveProgress();
         var nextStage = Detail!.CurrentStage + 1;
         var notes = ActionNotes;
@@ -835,18 +868,18 @@ else
         {
             meetingDate = DateTime.SpecifyKind(AdvanceMeetingDate.Value.ToUniversalTime(), DateTimeKind.Utc);
         }
-        if (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && AdvancePlanId.HasValue)
+        if (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && AdvanceJobLevelId.HasValue)
         {
-            var planName = Plans.FirstOrDefault(p => p.Id == AdvancePlanId.Value)?.Name ?? "";
-            notes = $"[PLAN: {planName}] {ActionNotes}";
-            SelectedPlanId = AdvancePlanId;
+            var card = JobLevelCards.FirstOrDefault(c => c.Id == AdvanceJobLevelId.Value);
+            notes = $"[TARIFA: {card?.Name} - desde {FormatMinPrice(card ?? new JobLevelPricingCard())}€] {ActionNotes}";
+            SelectedJobLevelId = AdvanceJobLevelId;
         }
         var success = await AuthApi.MoveCompanyStageAsync(_pipelineId, new CompanyMoveStageDto { ToStage = nextStage, Notes = notes, MeetingDate = meetingDate });
         ShowAdvanceModal = false;
         ActionNotes = "";
         AdvanceContactMethod = null;
         AdvanceMeetingDate = null;
-        AdvancePlanId = null;
+        AdvanceJobLevelId = null;
         if (success) await LoadDetail();
     }
 

@@ -104,7 +104,10 @@
     "notesPlaceholder": "Notas...",
     "apertura": "Apertura",
     "validacion": "Validación",
-    "consolidacion": "Consolidación"
+    "consolidacion": "Consolidación",
+    "reposicionSegunda": "Reposición de Garantía",
+    "totalTranches": "Total de Tramos",
+    "paidBy": "por"
   },
   "login": {
     "title": "Acceso Administrador",
@@ -375,7 +378,10 @@
     "deleted": "Eliminado correctamente",
     "status": "Estado",
     "active": "Activo",
-    "inactive": "Inactivo"
+    "inactive": "Inactivo",
+    "filter": "Filtrar",
+    "previous": "Anterior",
+    "next": "Siguiente"
   },
   "assigned": {
     "title": "Candidatos asignados",
@@ -827,8 +833,12 @@
     "hintProposal": "Documenta los detalles de la propuesta enviada",
     "hintNegotiation": "Registra los puntos de la negociación",
     "hintWon": "La empresa se ha cerrado con éxito",
-    "selectPlan": "Selecciona un plan",
-    "month": "mes",
+    "selectPlan": "¿Qué tarifa se le ofreció al cliente?",
+    "priceFrom": "Desde",
+    "perPosition": "posición cubierta",
+    "coverageDays": "Cobertura de referencia:",
+    "warrantyDays": "Garantía:",
+    "days": "días",
     "proposalNotes": "Notas de la propuesta",
     "proposalNotesPlaceholder": "Describe los servicios ofertados, condiciones, precios...",
     "negotiationNotes": "Notas de negociación",

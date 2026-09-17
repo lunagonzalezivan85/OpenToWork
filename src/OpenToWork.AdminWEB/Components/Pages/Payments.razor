@@ -33,18 +33,22 @@ else if (Result == null || Result.Items.Count == 0)
 }
 else
 {
-    <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-        <div class="admin-recruitment-card" style="flex: 1; margin: 0;">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.payments.totalAmount")</div>
-            <div style="font-size: 1.5rem; font-weight: 700;">@FormatEur(Result.TotalAmount)</div>
+    <div class="admin-stat-grid" style="margin-bottom: var(--space-lg);">
+        <div class="admin-stat-card admin-stat-card--info">
+            <span class="admin-stat-label">@Lang.T("admin.payments.totalTranches")</span>
+            <span class="admin-stat-value">@Result.TotalCount</span>
         </div>
-        <div class="admin-recruitment-card" style="flex: 1; margin: 0;">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.payments.totalPaid")</div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">@FormatEur(Result.TotalPaid)</div>
+        <div class="admin-stat-card">
+            <span class="admin-stat-label">@Lang.T("admin.payments.totalAmount")</span>
+            <span class="admin-stat-value">@FormatEur(Result.TotalAmount)</span>
         </div>
-        <div class="admin-recruitment-card" style="flex: 1; margin: 0;">
-            <div style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.payments.totalPending")</div>
-            <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">@FormatEur(Result.TotalPending)</div>
+        <div class="admin-stat-card admin-stat-card--success">
+            <span class="admin-stat-label">@Lang.T("admin.payments.totalPaid")</span>
+            <span class="admin-stat-value">@FormatEur(Result.TotalPaid)</span>
+        </div>
+        <div class="admin-stat-card admin-stat-card--warning">
+            <span class="admin-stat-label">@Lang.T("admin.payments.totalPending")</span>
+            <span class="admin-stat-value">@FormatEur(Result.TotalPending)</span>
         </div>
     </div>
 
@@ -75,6 +79,10 @@ else
                             @if (item.Status == (int)PaymentTrancheStatus.Pagado)
                             {
                                 <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.payments.paid")</span>
+                                @if (!string.IsNullOrWhiteSpace(item.PaidByName))
+                                {
+                                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">@Lang.T("admin.payments.paidBy") @item.PaidByName</div>
+                                }
                             }
                             else
                             {
@@ -129,6 +137,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
         await LoadAsync();
     }
 
@@ -160,6 +170,7 @@ else
         0 => Lang.T("admin.payments.apertura"),
         1 => Lang.T("admin.payments.validacion"),
         2 => Lang.T("admin.payments.consolidacion"),
+        3 => Lang.T("admin.payments.reposicionSegunda"),
         _ => "-"
     };
 }

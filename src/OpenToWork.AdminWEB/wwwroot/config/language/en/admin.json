@@ -104,7 +104,10 @@
     "notesPlaceholder": "Notes...",
     "apertura": "Opening",
     "validacion": "Validation",
-    "consolidacion": "Consolidation"
+    "consolidacion": "Consolidation",
+    "reposicionSegunda": "Warranty Replacement",
+    "totalTranches": "Total Tranches",
+    "paidBy": "by"
   },
   "login": {
     "title": "Administrator Access",
@@ -375,7 +378,10 @@
     "deleted": "Deleted successfully",
     "status": "Status",
     "active": "Active",
-    "inactive": "Inactive"
+    "inactive": "Inactive",
+    "filter": "Filter",
+    "previous": "Previous",
+    "next": "Next"
   },
   "assigned": {
     "title": "Assigned candidates",
@@ -827,8 +833,12 @@
     "hintProposal": "Document the proposal details sent",
     "hintNegotiation": "Record the negotiation points",
     "hintWon": "The company has been successfully closed",
-    "selectPlan": "Select a plan",
-    "month": "month",
+    "selectPlan": "Which rate was offered to the client?",
+    "priceFrom": "From",
+    "perPosition": "position filled",
+    "coverageDays": "Reference coverage:",
+    "warrantyDays": "Warranty:",
+    "days": "days",
     "proposalNotes": "Proposal notes",
     "proposalNotesPlaceholder": "Describe the services offered, conditions, pricing...",
     "negotiationNotes": "Negotiation notes",
