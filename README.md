@@ -54,7 +54,7 @@ El proyecto se compone de **3 portales independientes**:
 
 - [x] 1. Inicio: Gestion Comercial — pipeline comercial (`Lead → Contactado → Reunion → Propuesta → Negociacion → Cerrado Ganado`) con historial de etapas
 - [x] 2. Presentacion y Diagnostico — etapa "Contactado" + notas de la empresa
-- [x] 3. Propuesta de Servicio y Condiciones — etapa "Propuesta Enviada"; split 30/50/20 ya modelado en `PTVacancyContract`
+- [x] 3. Propuesta de Servicio y Condiciones — etapa "Propuesta Enviada"; split 30/50/20 ya modelado en `PTVacancyContract`. **Refinado 17-Sep:** los precios ofrecidos en esa etapa ahora salen del catalogo real de Precios y Niveles de Precio (antes eran 3 planes fijos de `PT_Plans` sin relacion con los precios reales de los contratos) — ver Bitacora
 - [x] 4. Firma Contrato de Servicio — estados Draft/Sent/Accepted/Rejected
 - [x] 5. Cliente paga primer 30% (gate "¿pago activado?") — **construido 13-Sep**: entidad `PTContractPayment` (tramos Apertura/Validacion/Consolidacion, auto-generados al aceptar el contrato); `PermanentVacancyService.PublishVacancyAsync` bloquea la publicacion de la vacante (con `InvalidOperationException` mostrado al cliente) hasta que un admin marca la Apertura como pagada en `/vacancies/{id}/contract`
 - [x] 6. Briefing y Perfil — cubierto por los campos de la vacante (requisitos, horario, salario)
@@ -1085,12 +1085,10 @@ El portal administrativo tiene el flujo completo: CRM de captacion de empresas, 
 
 > **Actualizado 06-Sep-2026 (Iluna):** Tareas pendientes derivadas del CRM de Captacion de Empresas.
 
-### 1. CRUD de Planes
-- Crear el CRUD completo de `PTPlan` en el portal administrativo para administrar los planes.
-- Modificar los 3 planes existentes (Basic, Premium, Platinum) para alinearlos a la marca **Trato Directo** (nombres, descripciones y precios reales).
-- Entidad `PTPlan` ya existe en `OpenToWork.Models/Entities/PTPlan.cs` con campos: Name, Description, Price, Currency, SortOrder, IsActive.
-- API endpoint ya existe: `GET /api/admin/company-crm/plans`.
-- Falta: `POST`, `PUT`, `DELETE` en el controller + servicio + UI en AdminWEB.
+### 1. CRUD de Planes — resuelto distinto a lo planteado (Dsiezar, 17-Sep)
+- ~~Crear el CRUD completo de `PTPlan` en el portal administrativo para administrar los planes. Modificar los 3 planes existentes (Basic, Premium, Platinum) para alinearlos a la marca Trato Directo.~~
+- **Decision de Darwin (17-Sep):** el modelo actual es venta directa por posicion cubierta, no autogestion por planes de suscripcion. En vez de construir un CRUD para `PTPlan`, la etapa "Propuesta Enviada" del CRM ahora consume el catalogo ya existente y ya editable de **Precios y Niveles de Precio** (`/pricing/job-levels`, `/pricing/job-types`) — el mismo que usan los contratos reales. Ver Bitacora, sesion 2026-09-17.
+- `PTPlan`/`GetPlansAsync()` se dejan intactos (sin CRUD) para cuando exista el modulo de autogestion de empresas a futuro.
 
 ### 2. Tabla de Configuracion del Sistema
 - Crear una tabla `SYSystemConfig` (o similar) para centralizar todas las configuraciones del sistema.
@@ -1451,6 +1449,16 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-17 — Bento Grid en Pagos + Tarifas reales en la Propuesta del CRM (Dsiezar)
+
+**Pagos (`/payments`):** rediseño visual con el patrón Bento Grid (`admin-stat-grid`) ya usado en otras pantallas del admin, agregando una 4ª tarjeta (Total de Tramos) a las 3 que ya existían (Monto Total/Pagado/Pendiente). De paso, verificación en vivo tras cada cambio encontró y corrigió 3 defectos reales: `GetTrancheLabel` no tenía el caso para `ReposicionSegunda` (mostraba "-" para los cargos de la Garantía de Reposición del 16-Sep); faltaban las claves `admin.common.filter`/`previous`/`next` (se mostraba la clave cruda); y faltaba el guard `Lang.InitializeAsync()` en `OnInitializedAsync`, causando texto sin traducir en un arranque en frío del circuito (bug intermitente, solo visible al navegar directo a `/payments` sin login previo en esa sesión). También se agregó quién marcó un tramo como pagado (`PaidByName`) bajo el badge "Pagado".
+
+**CRM — etapa "Propuesta Enviada" (`Companies/PipelineDetail.razor`):** hasta ahora esa etapa ofrecía 3 planes fijos de `PT_Plans` (Basic 49€/Premium 99€/Platinum 199€, sembrados a mano en 2026-09-06, sin CRUD ni relación con los precios reales de los contratos — ver punto pendiente "1. CRUD de Planes" en Observaciones). Decisión de Darwin: el modelo actual es venta directa por posición cubierta, no autogestión por planes de suscripción — los precios de `PT_Plans` quedan reservados para un futuro módulo de autogestión de empresas. En su lugar, esa etapa ahora consume el catálogo real y ya editable de **Precios y Niveles de Precio** (`PTJobLevel`/`PTJobType`, el mismo que usan los contratos en `/pricing/job-levels` y `/pricing/job-types`): las 3 tarjetas muestran cada nivel de puesto con su precio "desde" (el mínimo vigente entre sus tipos de puesto) y su cobertura/garantía de referencia. El texto que queda grabado en el historial de etapas pasa de `[PLAN: Basic]` a `[TARIFA: Personal Operativo - desde 450€]`. `PT_Plans`/`GetPlansAsync()` no se tocan, quedan intactos para cuando exista la autogestión.
+
+Verificado end-to-end contra MySQL real: empresa de prueba "Xian tian Di" en etapa "Reunión Agendada" → modal de avance muestra los 3 niveles reales (450€/1100€/2200€ "desde") → selección de "Personal Operativo" → avance confirmado a "Propuesta Enviada" → historial de etapas registra `[TARIFA: Personal Operativo - desde 450€]` → el panel de resumen de la etapa (fuera del modal) muestra el mismo catálogo real.
+
+- Commit `89573d2` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ### Sesión 2026-09-16 — Garantía de Reposición (paso 20 del Gap Analysis) (Dsiezar)
 
