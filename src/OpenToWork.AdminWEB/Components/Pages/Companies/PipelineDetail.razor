@@ -203,6 +203,25 @@ else
                             <textarea @bind="EditDescription" rows="3" class="admin-input" placeholder='@Lang.T("admin.companies.descriptionPlaceholder")'></textarea>
                         </div>
                     </div>
+                    <div style="border: 1px solid #E8F1FF; border-radius: 12px; padding: 0.75rem 1rem; margin-top: 0.75rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: @(CompanyVacancies.Count > 0 ? "0.4rem" : "0")">
+                            <strong style="font-size: 0.85rem; color: #0B132B;">@Lang.T("admin.companies.companyVacancies") (@CompanyVacancies.Count)</strong>
+                            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Detail.CompanyId}/vacancies"))">+ @Lang.T("admin.vacancies.create")</button>
+                        </div>
+                        @if (CompanyVacancies.Count == 0)
+                        {
+                            <p style="font-size: 0.8rem; color: #778DA9; margin: 0;">@Lang.T("admin.companies.noVacanciesYet")</p>
+                        }
+                        else
+                        {
+                            <ul style="margin: 0; padding-left: 1.1rem; font-size: 0.82rem; color: #0B132B;">
+                                @foreach (var v in CompanyVacancies)
+                                {
+                                    <li>@v.Title <span style="color: #778DA9; font-size: 0.75rem;">(@GetVacancyStatusLabel(v.Status))</span></li>
+                                }
+                            </ul>
+                        }
+                    </div>
                 }
                 @* Stage 3: Propuesta Enviada - Select nivel de precio *@
                 else if (Detail.CurrentStage == (int)CompanyPipelineStage.PropuestaEnviada)
@@ -237,6 +256,25 @@ else
                                 </div>
                                 <p style="font-size: 0.78rem; color: #778DA9; margin: 0; line-height: 1.4;">@Lang.T("admin.companies.coverageDays") @card.ReferenceCoverageDays @Lang.T("admin.companies.days") · @Lang.T("admin.companies.warrantyDays") @card.WarrantyDays @Lang.T("admin.companies.days")</p>
                             </div>
+                        }
+                    </div>
+                    <div style="border: 1px solid #E8F1FF; border-radius: 12px; padding: 0.75rem 1rem; margin-top: 0.75rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: @(CompanyVacancies.Count > 0 ? "0.4rem" : "0")">
+                            <strong style="font-size: 0.85rem; color: #0B132B;">@Lang.T("admin.companies.companyVacancies") (@CompanyVacancies.Count)</strong>
+                            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Detail.CompanyId}/vacancies"))">+ @Lang.T("admin.vacancies.create")</button>
+                        </div>
+                        @if (CompanyVacancies.Count == 0)
+                        {
+                            <p style="font-size: 0.8rem; color: #778DA9; margin: 0;">@Lang.T("admin.companies.noVacanciesYet")</p>
+                        }
+                        else
+                        {
+                            <ul style="margin: 0; padding-left: 1.1rem; font-size: 0.82rem; color: #0B132B;">
+                                @foreach (var v in CompanyVacancies)
+                                {
+                                    <li>@v.Title <span style="color: #778DA9; font-size: 0.75rem;">(@GetVacancyStatusLabel(v.Status))</span></li>
+                                }
+                            </ul>
                         }
                     </div>
                     <div style="margin-top: 0.75rem;">
@@ -446,12 +484,22 @@ else
                             </div>
                         }
                     </div>
+                    <div style="border: 1px solid @(CompanyVacancies.Count > 0 ? "#E8F1FF" : "#F5B700"); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+                            <strong style="font-size: 0.82rem; color: #0B132B;">@Lang.T("admin.companies.companyVacancies") (@CompanyVacancies.Count)</strong>
+                            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Detail.CompanyId}/vacancies"))">+ @Lang.T("admin.vacancies.create")</button>
+                        </div>
+                        @if (CompanyVacancies.Count == 0)
+                        {
+                            <p style="font-size: 0.75rem; color: #B45309; margin: 0.4rem 0 0;">@Lang.T("admin.companies.noVacanciesYet")</p>
+                        }
+                    </div>
                 }
                 <label class="admin-form-label" style="color: #3A506B; margin-bottom: 0.4rem;">@Lang.T("admin.companies.commentRequired") *</label>
                 <textarea @bind="ActionNotes" rows="4" class="admin-input" placeholder="@Lang.T("admin.companies.advanceCommentPlaceholder")"></textarea>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
                     <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseAdvanceModal">@Lang.T("admin.common.cancel")</button>
-                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@(string.IsNullOrWhiteSpace(ActionNotes) || (Detail.CurrentStage == (int)CompanyPipelineStage.Lead && string.IsNullOrEmpty(AdvanceContactMethod)) || (Detail.CurrentStage == (int)CompanyPipelineStage.Contactado && !AdvanceMeetingDate.HasValue) || (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && !AdvanceJobLevelId.HasValue))" @onclick="ConfirmAdvance">@Lang.T("admin.companies.confirmAdvance")</button>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@(string.IsNullOrWhiteSpace(ActionNotes) || (Detail.CurrentStage == (int)CompanyPipelineStage.Lead && string.IsNullOrEmpty(AdvanceContactMethod)) || (Detail.CurrentStage == (int)CompanyPipelineStage.Contactado && !AdvanceMeetingDate.HasValue) || (Detail.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && (!AdvanceJobLevelId.HasValue || CompanyVacancies.Count == 0)))" @onclick="ConfirmAdvance">@Lang.T("admin.companies.confirmAdvance")</button>
                 </div>
             </div>
         </div>
@@ -560,6 +608,17 @@ else
     private List<JobLevelDto> JobLevels = new();
     private List<JobTypeDto> JobTypes = new();
     private Guid? SelectedJobLevelId;
+
+    // Vacantes de la empresa - se exige al menos 1 para avanzar de Reunion Agendada a Propuesta Enviada
+    private List<AdminVacancyDto> CompanyVacancies = new();
+
+    private string GetVacancyStatusLabel(int status) => status switch
+    {
+        (int)VacancyStatus.Draft => Lang.T("admin.vacancies.statusDraft"),
+        (int)VacancyStatus.Active => Lang.T("admin.vacancies.statusActive"),
+        (int)VacancyStatus.Closed => Lang.T("admin.vacancies.statusClosed"),
+        _ => "-"
+    };
 
     private class JobLevelPricingCard
     {
@@ -672,7 +731,12 @@ else
     private async Task LoadDetail()
     {
         Detail = await AuthApi.GetCompanyPipelineDetailAsync(_pipelineId);
-        if (Detail != null) PopulateEditFields();
+        if (Detail != null)
+        {
+            PopulateEditFields();
+            var vacancyResult = await AuthApi.GetVacanciesAsync(page: 1, pageSize: 100, companyId: Detail.CompanyId);
+            CompanyVacancies = vacancyResult.Items;
+        }
     }
 
     private void PopulateEditFields()
@@ -855,7 +919,7 @@ else
         if (string.IsNullOrWhiteSpace(ActionNotes)) return;
         if (Detail!.CurrentStage == (int)CompanyPipelineStage.Lead && string.IsNullOrEmpty(AdvanceContactMethod)) return;
         if (Detail!.CurrentStage == (int)CompanyPipelineStage.Contactado && !AdvanceMeetingDate.HasValue) return;
-        if (Detail!.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && !AdvanceJobLevelId.HasValue) return;
+        if (Detail!.CurrentStage == (int)CompanyPipelineStage.ReunionAgendada && (!AdvanceJobLevelId.HasValue || CompanyVacancies.Count == 0)) return;
         await SaveProgress();
         var nextStage = Detail!.CurrentStage + 1;
         var notes = ActionNotes;

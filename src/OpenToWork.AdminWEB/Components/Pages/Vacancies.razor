@@ -474,6 +474,7 @@ else
         WizardError = null;
         ShowWizard = true;
         WizardCompanies = await AuthApi.GetCompaniesAsync(pageSize: 200);
+        if (CompanyId.HasValue) WizardModel.CompanyId = CompanyId.Value;
     }
 
     private void CloseWizard() => ShowWizard = false;

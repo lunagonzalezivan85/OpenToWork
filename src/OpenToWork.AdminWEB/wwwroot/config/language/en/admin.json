@@ -834,6 +834,8 @@
     "hintNegotiation": "Record the negotiation points",
     "hintWon": "The company has been successfully closed",
     "selectPlan": "Which rate was offered to the client?",
+    "companyVacancies": "Company vacancies",
+    "noVacanciesYet": "No vacancy has been registered for this company yet. Register at least one to continue.",
     "priceFrom": "From",
     "perPosition": "position filled",
     "coverageDays": "Reference coverage:",

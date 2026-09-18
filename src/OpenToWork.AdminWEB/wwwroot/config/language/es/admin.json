@@ -834,6 +834,8 @@
     "hintNegotiation": "Registra los puntos de la negociación",
     "hintWon": "La empresa se ha cerrado con éxito",
     "selectPlan": "¿Qué tarifa se le ofreció al cliente?",
+    "companyVacancies": "Vacantes de la empresa",
+    "noVacanciesYet": "Todavia no hay ninguna vacante registrada para esta empresa. Registra al menos una para poder continuar.",
     "priceFrom": "Desde",
     "perPosition": "posición cubierta",
     "coverageDays": "Cobertura de referencia:",
