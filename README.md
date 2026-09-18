@@ -1587,6 +1587,14 @@ Verificado end-to-end contra MySQL real: los filtros y el desglose renderizan co
 
 - Commit `36aedc6` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
+### Sesión 2026-09-18 — Bento Grid en Datos de la Empresa (Dsiezar)
+
+Rediseño visual de `/settings/company-profile` (construida horas antes en esta misma sesión) con el mismo patrón Bento Grid (`admin-chart-grid`/`admin-chart-card`) ya usado en Pagos y el Dashboard, en vez del formulario plano inicial. Tres tarjetas: "Identidad de la Empresa" (razón social, CIF, domicilio, registro mercantil), "Representante Legal y Jurisdicción", y una tercera de ancho completo con una **vista previa en vivo** de cómo se lee la cláusula REUNIDOS del Contrato Marco con los datos actuales — para que un SuperAdmin vea el efecto del cambio antes de guardar, sin tener que abrir un contrato de prueba.
+
+Durante la verificación se encontró (y no era un bug de este cambio) que el JWT de la sesión de prueba llevaba horas vencido — la pantalla renderizaba igual porque el gate de acceso (`IsSuperAdmin`) lee un rol guardado en `localStorage`, no valida el token; sin embargo las llamadas a la API fallaban en silencio (`GetSystemConfigAsync` devuelve `null` sin lanzar excepción) dejando los campos vacíos. Con sesión renovada, los 8 campos y la vista previa cargaron y guardaron correctamente.
+
+- Commit `46592a5` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
 Pregunta de Darwin que destapó un hueco real: "¿en qué momento voy a ingresar la vacante que necesita la empresa, con sus requisitos?". Investigación: existían dos caminos para cargar una vacante (el wizard de "Captación" en `/companies/new`, que crea empresa+vacante+contrato de una vez; y "Ver Vacantes" en la ficha de una empresa ya existente, con botón "+ Nueva vacante") pero **ninguno de los dos estaba conectado al pipeline de ventas**. Llegar a "Cerrado Ganado" solo ofrecía "Generar Contrato" (que busca un contrato *ya existente* y falla si no hay ninguno) — nada en el flujo Lead→...→Cerrado Ganado le pedía al admin cargar la vacante.
