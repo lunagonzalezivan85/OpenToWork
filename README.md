@@ -816,7 +816,8 @@ Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-f
 - [x] Validacion del flujo con el agente de RH — `docs/rh/validacion-flujo-negocio-2026-09-08.md`, `docs/rh/guia-embudo-ciego-iluna.md`
 
 **Pendiente:**
-- [ ] Sistema de suscripciones (planes: Basic, Pro, Enterprise) — requiere definir modelo de ingresos
+- [ ] Sistema de suscripciones para empresas — planes reales del sistema son Basic/Premium/Platinum (`PT_Plans`, ver "Observaciones para Darwin / Dsiezar" punto 4, pedido 18-Sep), no Basic/Pro/Enterprise; requiere definir modelo de ingresos, activar detras de un flag de configuracion
+- [ ] Plan de Prioridad para Candidatos (5.99 EUR) — nueva idea de Darwin (18-Sep), ver "Observaciones para Darwin / Dsiezar" punto 4
 - [ ] Entidad `COSubscription` — CompanyId, Plan, Status, StartDate, EndDate, MonthlyFee
 - [ ] Entidad `COSearchHistory` — CompanyId, Filters, ResultCount, SearchedAt
 - [ ] Entidad `COCandidateView` — CompanyId, CandidateId, ScoreSnapshot, ViewedAt
@@ -1104,6 +1105,14 @@ El portal administrativo tiene el flujo completo: CRM de captacion de empresas, 
 
 ### 1 y 2 (CRUD de Planes, tabla `SYSystemConfig` para templates de contrato) — siguen pendientes
 - La rama `iluna-embudo-ciego` (`40e2bc5`, 09-Sep) adelanta parte del punto 2 con la feature de **Contrato de vacantes** (`PTVacancyContract`), pero el template sigue sin salir de codigo a una tabla de configuracion. Pendiente de integrar a `main`.
+
+### 4. Dos funcionalidades nuevas a futuro, apagadas por defecto (pedido de Darwin, 18-Sep)
+
+No construir ahora — dejar documentado como intencion de producto para activar mas adelante mediante un parametro de configuracion (la tabla `SYSystemConfig` del punto 2, o un mecanismo equivalente si se construye antes que esa tabla). Ninguna de las dos debe quedar habilitada por defecto: el codigo que las implemente debe leer el flag y comportarse igual que hoy mientras este apagado.
+
+- **Plan de Prioridad para Candidatos (5.99 EUR)** — el candidato paga para que su perfil tenga prioridad de contratacion dentro de Trato Directo (por ejemplo, peso extra en el ranking de `CompatibilityService.CalculateMatchesForVacancyAsync`/`GenerateShortlist`, o aparecer primero en "Cumplen sin postularse"). Hoy no existe ninguna entidad ni campo para esto — haria falta algo como un `IsPriority`/fecha de vigencia en `PT_Candidates` o una tabla de suscripcion dedicada, mas el cobro (no hay pasarela de pagos integrada todavia, ver Fase 7).
+- **Autogestion de empresas via planes Basic/Premium/Platinum** — el catalogo `PT_Plans` ya existe (sembrado 06-Sep por Iluna) pero sin uso real: la etapa "Propuesta Enviada" del CRM usa el catalogo de Precios y Niveles de Precio para venta directa por posicion (decision de Darwin, 17-Sep, ver Observacion #1 arriba), no `PT_Plans`. Cuando se decida activar la autogestion, `PT_Plans` es el punto de partida — falta el CRUD, el checkout, y definir que desbloquea cada nivel.
+- Flag propuesto: `feature_candidate_priority_plan_enabled` y `feature_company_self_service_plans_enabled` (u otros nombres, a definir junto con `SYSystemConfig`) — controlan si estas dos opciones aparecen en la UI y si la logica de negocio asociada corre.
 
 ---
 
