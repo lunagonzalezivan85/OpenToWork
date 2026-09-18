@@ -1488,6 +1488,14 @@ Verificado end-to-end en el flujo de Negociaciones (vacante "Camarero de Sala"/L
 
 - Commits `1146468` (feature) en `dsiezar-fase-5`, merge fast-forward a `main`.
 
+### Sesión 2026-09-18 — Fix: "Cola de Shortlist" invisible en vacantes cerradas (Dsiezar)
+
+Resuelve la limitación de UI documentada en la sesión anterior, que había impedido probar en vivo el "Cierre del Proceso"/"Feedback" sobre una vacante ya `Cerrada`. Causa raíz: el botón "Cola de Shortlist" en `/vacancies` estaba condicionado a `Status == Active`, dejando todo el panel de negociaciones (garantía, incorporación, contratación, cierre de proceso, feedback) inaccesible desde la lista una vez cerrada la vacante — el resto del panel no tenía ningún gating propio, solo el botón que lo abre.
+
+Se quitó el guard; el botón ahora se muestra sin importar el estado de la vacante. Verificado en vivo: vacante "Camarero/a para restaurante de tapas" (Cerrada, Test Company Inc) → "Cola de Shortlist" → panel completo visible y funcional (negociación con Donald, "Incorporado el 01/06/2026", "Sin garantía definida en el contrato", "Proceso cerrado el 18/09/2026", botón "Registrar Feedback"). De paso se confirmó que `Candidates/PipelineDetail.razor` (flujo de Entregas) nunca tuvo un guard equivalente — no depende del estado de la vacante para mostrar sus controles, así que el flujo de Entregas no estaba bloqueado por este mismo bug.
+
+- Commit `c33772f` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
 Pregunta de Darwin que destapó un hueco real: "¿en qué momento voy a ingresar la vacante que necesita la empresa, con sus requisitos?". Investigación: existían dos caminos para cargar una vacante (el wizard de "Captación" en `/companies/new`, que crea empresa+vacante+contrato de una vez; y "Ver Vacantes" en la ficha de una empresa ya existente, con botón "+ Nueva vacante") pero **ninguno de los dos estaba conectado al pipeline de ventas**. Llegar a "Cerrado Ganado" solo ofrecía "Generar Contrato" (que busca un contrato *ya existente* y falla si no hay ninguno) — nada en el flujo Lead→...→Cerrado Ganado le pedía al admin cargar la vacante.
