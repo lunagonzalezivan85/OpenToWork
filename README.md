@@ -1114,6 +1114,22 @@ No construir ahora — dejar documentado como intencion de producto para activar
 - **Autogestion de empresas via planes Basic/Premium/Platinum** — el catalogo `PT_Plans` ya existe (sembrado 06-Sep por Iluna) pero sin uso real: la etapa "Propuesta Enviada" del CRM usa el catalogo de Precios y Niveles de Precio para venta directa por posicion (decision de Darwin, 17-Sep, ver Observacion #1 arriba), no `PT_Plans`. Cuando se decida activar la autogestion, `PT_Plans` es el punto de partida — falta el CRUD, el checkout, y definir que desbloquea cada nivel.
 - Flag propuesto: `feature_candidate_priority_plan_enabled` y `feature_company_self_service_plans_enabled` (u otros nombres, a definir junto con `SYSystemConfig`) — controlan si estas dos opciones aparecen en la UI y si la logica de negocio asociada corre.
 
+### 5. Bug pendiente: `Companies/Pipeline.razor` puede tumbar todo AdminWEB — a coordinar con Iluna (18-Sep)
+
+**Queda pendiente a proposito, sin corregir todavia** — decision de Darwin de dejarlo anotado y coordinar con Iluna antes de tocar su pantalla.
+
+Durante la verificacion de los Indicadores de Negocio (18-Sep), el servidor de AdminWEB se cayo por completo (`Unhandled exception`, proceso terminado, afecta a todos los usuarios conectados) con este stack:
+
+```
+System.InvalidOperationException: The current thread is not associated with the Dispatcher. Use InvokeAsync() to switch execution to the Dispatcher when triggering rendering or component state.
+   at Microsoft.AspNetCore.Components.ComponentBase.StateHasChanged()
+   at OpenToWork.AdminWEB.Components.Pages.Companies.Pipeline.<OnSearchKeyUp>b__48_0(Object _) in Pipeline.razor:line 401
+```
+
+Causa: el debounce del buscador en `Companies/Pipeline.razor` (`OnSearchKeyUp`, linea ~401) dispara `StateHasChanged()` desde el callback de un `Timer` que corre en un hilo del ThreadPool, no en el hilo del Dispatcher de Blazor. Esa excepcion no tiene ningun `try/catch` alrededor, así que no queda solo en el circuito del usuario que estaba buscando — **tumba el proceso entero del servidor** para todos.
+
+Fix esperado (una vez que Iluna de el visto bueno, es su pantalla — ver "Work division" en memoria): envolver la llamada en `await InvokeAsync(StateHasChanged)` dentro del callback del timer, mismo patron que ya usan los demas debounce de search en el proyecto.
+
 ---
 
 ## Datos de prueba (Seed Data)
