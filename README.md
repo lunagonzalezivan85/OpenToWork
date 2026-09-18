@@ -48,7 +48,7 @@ El proyecto se compone de **3 portales independientes**:
 >
 > **Como usar esto:** cada item marcado `[ ]` es una pieza real de negocio que hoy NO tiene ningun soporte en el codigo (no es una tarea tecnica generica, es un paso que el dueno del negocio necesita que el sistema sepa que paso). A medida que se construya cada uno, marcarlo `[x]` aqui y actualizar/republicar el artifact de arriba para que Iluna y Darwin vean el avance real.
 >
-> **Estado al 18-Sep-2026:** 24 construidos / 1 parcial / 0 faltantes (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: cierre del proceso post-garantia y feedback de mejora continua (pasos 21 y 22) — cierra por completo la Auditoria del Ciclo Comercial, solo queda pendiente el paso 7 (parcial).
+> **Estado al 18-Sep-2026:** 23 construidos / 1 parcial / 1 faltante (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: cierre del proceso post-garantia y feedback de mejora continua (pasos 21 y 22). Quedan pendientes el paso 7 (parcial, busqueda prevalidada generica en vez de por vacante puntual) y el paso 16 (contratacion laboral formal candidato-empresa, sin ninguna entidad que la represente todavia).
 
 ### A. Captacion y Contratacion del Cliente
 
