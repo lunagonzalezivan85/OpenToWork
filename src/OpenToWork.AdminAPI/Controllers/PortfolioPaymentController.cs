@@ -139,19 +139,15 @@ public class PortfolioPaymentController : AdminControllerBase
             })
             .ToListAsync();
 
-        var allPayments = await _db.PT_ContractPayments
-            .Where(p => !p.IsDeleted)
-            .ToListAsync();
-
         var result = new PaymentListResultDto
         {
             Items = items,
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize,
-            TotalAmount = allPayments.Sum(p => p.Amount),
-            TotalPaid = allPayments.Where(p => p.Status == (int)PaymentTrancheStatus.Pagado).Sum(p => p.Amount),
-            TotalPending = allPayments.Where(p => p.Status == (int)PaymentTrancheStatus.Pendiente).Sum(p => p.Amount)
+            TotalAmount = await query.SumAsync(p => p.Amount),
+            TotalPaid = await query.Where(p => p.Status == (int)PaymentTrancheStatus.Pagado).SumAsync(p => p.Amount),
+            TotalPending = await query.Where(p => p.Status == (int)PaymentTrancheStatus.Pendiente).SumAsync(p => p.Amount)
         };
 
         return Ok(result);
