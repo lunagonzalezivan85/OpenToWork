@@ -55,7 +55,7 @@ El proyecto se compone de **3 portales independientes**:
 - [x] 1. Inicio: Gestion Comercial — pipeline comercial (`Lead → Contactado → Reunion → Propuesta → Negociacion → Cerrado Ganado`) con historial de etapas
 - [x] 2. Presentacion y Diagnostico — etapa "Contactado" + notas de la empresa
 - [x] 3. Propuesta de Servicio y Condiciones — etapa "Propuesta Enviada"; split 30/50/20 ya modelado en `PTVacancyContract`. **Refinado 17-Sep:** los precios ofrecidos en esa etapa ahora salen del catalogo real de Precios y Niveles de Precio (antes eran 3 planes fijos de `PT_Plans` sin relacion con los precios reales de los contratos) — ver Bitacora
-- [x] 4. Firma Contrato de Servicio — estados Draft/Sent/Accepted/Rejected
+- [x] 4. Firma Contrato de Servicio — estados Draft/Sent/Accepted/Rejected. **Refinado 17-Sep:** "Generar Contrato" en la etapa "Cerrado Ganado" del pipeline ahora lleva directo a crear el contrato (`/vacancies/{id}/contract`) cuando todavia no existe uno, en vez de solo mostrar un error — ver Bitacora
 - [x] 5. Cliente paga primer 30% (gate "¿pago activado?") — **construido 13-Sep**: entidad `PTContractPayment` (tramos Apertura/Validacion/Consolidacion, auto-generados al aceptar el contrato); `PermanentVacancyService.PublishVacancyAsync` bloquea la publicacion de la vacante (con `InvalidOperationException` mostrado al cliente) hasta que un admin marca la Apertura como pagada en `/vacancies/{id}/contract`
 - [x] 6. Briefing y Perfil — cubierto por los campos de la vacante (requisitos, horario, salario). **Refinado 17-Sep:** ahora es un paso obligatorio del pipeline (gate al avanzar de "Reunion Agendada" a "Propuesta Enviada"), antes existia pero estaba desconectado del flujo de ventas — ver Bitacora
 
@@ -1463,7 +1463,14 @@ Pregunta de Darwin que destapó un hueco real: "¿en qué momento voy a ingresar
 
 **Verificado end-to-end:** empresa de prueba en "Reunión Agendada" con 0 vacantes → botón "Confirmar avance" deshabilitado aun con tarifa y comentario completos → se registra una vacante ("Camarero de Sala") desde el mismo modal → botón habilitado → avance confirmado a "Propuesta Enviada", con la vacante visible junto a las tarjetas de tarifa.
 
-- Commit `6c71044` en `dsiezar-fase-5`, merge fast-forward a `main`.
+**Siguiente eslabón de la misma cadena — "Generar Contrato" en Cerrado Ganado:** ese botón solo buscaba un contrato *ya existente* (`GetContractByCompanyAsync`) y mostraba un error generico si no habia ninguno, sin llevar al admin a ningun lado util para crearlo (la creacion real vive en `/vacancies/{id}/contract`, un `@page` aparte). Con el gate de arriba, al llegar a Cerrado Ganado la empresa ya tiene garantizada al menos 1 vacante, asi que ahora:
+- Con 1 sola vacante, "Generar Contrato" navega directo a `/vacancies/{id}/contract`.
+- Con mas de una, avisa que elija una y lleva a `/companies/{id}/vacancies` para elegirla.
+- Sin ninguna (caso limite que ya no deberia ocurrir), mantiene el aviso original.
+
+Tambien se agrego el bloque "Vacantes de la empresa" al panel de Cerrado Ganado. Verificado end-to-end: la misma empresa de prueba, ya en Cerrado Ganado con su vacante "Camarero de Sala" → "Generar Contrato" navega directo a `/vacancies/{vacancyId}/contract`.
+
+- Commits `6c71044` y `dd17a44` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ### Sesión 2026-09-17 — Bento Grid en Pagos + Tarifas reales en la Propuesta del CRM (Dsiezar)
 
