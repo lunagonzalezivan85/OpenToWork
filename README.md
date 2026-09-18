@@ -57,7 +57,7 @@ El proyecto se compone de **3 portales independientes**:
 - [x] 3. Propuesta de Servicio y Condiciones — etapa "Propuesta Enviada"; split 30/50/20 ya modelado en `PTVacancyContract`. **Refinado 17-Sep:** los precios ofrecidos en esa etapa ahora salen del catalogo real de Precios y Niveles de Precio (antes eran 3 planes fijos de `PT_Plans` sin relacion con los precios reales de los contratos) — ver Bitacora
 - [x] 4. Firma Contrato de Servicio — estados Draft/Sent/Accepted/Rejected
 - [x] 5. Cliente paga primer 30% (gate "¿pago activado?") — **construido 13-Sep**: entidad `PTContractPayment` (tramos Apertura/Validacion/Consolidacion, auto-generados al aceptar el contrato); `PermanentVacancyService.PublishVacancyAsync` bloquea la publicacion de la vacante (con `InvalidOperationException` mostrado al cliente) hasta que un admin marca la Apertura como pagada en `/vacancies/{id}/contract`
-- [x] 6. Briefing y Perfil — cubierto por los campos de la vacante (requisitos, horario, salario)
+- [x] 6. Briefing y Perfil — cubierto por los campos de la vacante (requisitos, horario, salario). **Refinado 17-Sep:** ahora es un paso obligatorio del pipeline (gate al avanzar de "Reunion Agendada" a "Propuesta Enviada"), antes existia pero estaba desconectado del flujo de ventas — ver Bitacora
 
 ### B. Reclutamiento y Seleccion
 
@@ -1449,6 +1449,21 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
+
+Pregunta de Darwin que destapó un hueco real: "¿en qué momento voy a ingresar la vacante que necesita la empresa, con sus requisitos?". Investigación: existían dos caminos para cargar una vacante (el wizard de "Captación" en `/companies/new`, que crea empresa+vacante+contrato de una vez; y "Ver Vacantes" en la ficha de una empresa ya existente, con botón "+ Nueva vacante") pero **ninguno de los dos estaba conectado al pipeline de ventas**. Llegar a "Cerrado Ganado" solo ofrecía "Generar Contrato" (que busca un contrato *ya existente* y falla si no hay ninguno) — nada en el flujo Lead→...→Cerrado Ganado le pedía al admin cargar la vacante.
+
+**Decisión de Darwin:** después de "Reunión Agendada", avanzar al siguiente nivel debe llevar a inscribir la vacante, y de ahí seguir hasta cerrar el trato.
+
+**Implementación (`Companies/PipelineDetail.razor`):**
+- Nueva sección "Vacantes de la empresa" (conteo + listado + botón "+ Nueva vacante") visible en el panel de las etapas "Reunión Agendada" y "Propuesta Enviada", y también dentro del modal de avance — reutiliza `GetVacanciesAsync(companyId:...)` y el wizard ya existente de `Vacancies.razor`, sin duplicar UI.
+- Gate nuevo: avanzar de "Reunión Agendada" a "Propuesta Enviada" ahora exige, además de la tarifa (ver sesión de abajo), al menos 1 vacante registrada para la empresa — mismo patrón que los demás gates del modal (método de contacto, fecha de reunión).
+- `Vacancies.razor`: el wizard "+ Nueva vacante" preselecciona la empresa cuando se llega desde `/companies/{id}/vacancies`, en vez de obligar a elegirla de nuevo entre 200 opciones.
+
+**Verificado end-to-end:** empresa de prueba en "Reunión Agendada" con 0 vacantes → botón "Confirmar avance" deshabilitado aun con tarifa y comentario completos → se registra una vacante ("Camarero de Sala") desde el mismo modal → botón habilitado → avance confirmado a "Propuesta Enviada", con la vacante visible junto a las tarjetas de tarifa.
+
+- Commit `6c71044` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ### Sesión 2026-09-17 — Bento Grid en Pagos + Tarifas reales en la Propuesta del CRM (Dsiezar)
 
