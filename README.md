@@ -821,7 +821,7 @@ Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-f
 - [ ] Entidad `COSubscription` — CompanyId, Plan, Status, StartDate, EndDate, MonthlyFee
 - [ ] Entidad `COSearchHistory` — CompanyId, Filters, ResultCount, SearchedAt
 - [ ] Entidad `COCandidateView` — CompanyId, CandidateId, ScoreSnapshot, ViewedAt
-- [ ] Busqueda avanzada con filtros por score, confiabilidad, estabilidad (`PTCandidateScore` ya existe desde Fase 3, falta la UI de busqueda)
+- [x] Busqueda avanzada con filtros por score, confiabilidad, estabilidad — **construido 18-Sep**: `/candidate-search` ya filtraba por `OverallScore`, ahora tambien por `StabilityIndex`/`ReliabilityIndex`/`EvidenceIndex`/`CompatibilityIndex` (`PTCandidateScore`, calculados desde Fase 3), con el desglose visible en cada resultado
 - [ ] Vista de perfiles evaluados con checkmarks de verificacion (`PTVerification` ya existe desde Fase 3, falta el checkmark en `VerifiedApplicants.razor`)
 - [ ] Reportes avanzados
 - [ ] Migracion EF Core para entidades corporativas restantes
@@ -939,7 +939,7 @@ Fase 3 (Motor de Scoring) ──────────────────
    - Entidad `COCompany` — ya cubierta por `PTCompany` (Registro/Login/Dashboard de empresa funcionando)
    - Entidades `COSubscription`/`COSearchHistory`/`COCandidateView` — pendientes
    - Sistema de suscripciones (planes: Basic, Pro, Enterprise) — pendiente
-   - Busqueda avanzada con filtros por score — pendiente (`PTCandidateScore` ya existe desde Fase 3)
+   - [x] Busqueda avanzada con filtros por score, confiabilidad y estabilidad — **construido 18-Sep**, ver linea 824
    - Vista de perfiles evaluados con checkmarks — pendiente
    - [x] Ranking automatico de candidatos por compatibilidad — `CompatibilityService`, sub-fase 3.4/3.8 (Dsiezar, 01-Sep)
    - Reportes avanzados — pendiente
@@ -1576,6 +1576,16 @@ Se le presentaron 3 opciones a Darwin: (a) solo los datos de identidad de TD, (b
 Verificado end-to-end: los 8 campos cargan y persisten correctamente; cambié la ciudad de jurisdicción de prueba (Madrid → Barcelona) y reabrí un contrato real ya existente (`TD-2026-0006`) — el cambio se reflejó en vivo en la cláusula 22.2 y en la firma, confirmando que el documento se renderiza en tiempo real (no es una plantilla estática guardada), y luego revertí el valor de prueba.
 
 - Commit `28658bf` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
+### Sesión 2026-09-18 — Filtros de estabilidad y confiabilidad en Búsqueda Avanzada (Dsiezar)
+
+Cierra el último pendiente de Fase 5 que era enteramente propio (`PTCandidateScore`, `ScoringService`, `CandidateSearch.razor` y `CandidateSearchService` son todos trabajo previo de Dsiezar — verificado por git blame antes de tocar nada). `/candidate-search` ya filtraba por `OverallScore`, estado de verificación y skill, pero los otros 3 índices que `ScoringService` calcula desde Fase 3 (`StabilityIndex`/"Estabilidad", `ReliabilityIndex`/"Confiabilidad", `EvidenceIndex`) nunca llegaban ni al filtro ni a la UI — solo se veían en el propio dashboard del candidato.
+
+Se agregaron los 4 filtros mínimos (`MinStabilityIndex`/`MinReliabilityIndex`/`MinEvidenceIndex`/`MinCompatibilityIndex`) al mismo mecanismo en memoria que ya filtraba `OverallScore` (documentado en el código como aceptable a la escala actual, no se tocó esa arquitectura), y cada resultado ahora muestra el desglose de los 4 sub-índices, no solo el score compuesto — la empresa puede ver *por qué* un candidato tiene el score que tiene.
+
+Verificado end-to-end contra MySQL real: los filtros y el desglose renderizan con datos reales (Donald: Evidencia 65, Confiabilidad 100; Juan Perez: Evidencia 0, Confiabilidad 100); filtrar por Evidencia mínima ≥60 devolvió solo a Donald, confirmando que el filtro nuevo realmente restringe resultados y no es cosmético.
+
+- Commit `36aedc6` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
