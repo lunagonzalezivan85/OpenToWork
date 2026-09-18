@@ -1496,6 +1496,12 @@ Se quitó el guard; el botón ahora se muestra sin importar el estado de la vaca
 
 - Commit `c33772f` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
+### Sesión 2026-09-18 — Fix: guard `Lang.InitializeAsync()` en Cartera de Clientes (Dsiezar)
+
+Mismo bug ya corregido el 17-Sep en `Payments.razor` (texto sin traducir — claves crudas en vez del idioma — en un arranque en frío del circuito Blazor), pendiente de aplicar en `Portfolio.razor`/`PortfolioDetail.razor` ("Cartera de Clientes", construidas en esta sesión). Se agregó el mismo guard (`if (Lang._translations.Count == 0) await Lang.InitializeAsync();` antes de `LoadAsync()`) a ambos `OnInitializedAsync`. Verificado con un reinicio real del servidor (circuito genuinamente frío) navegando directo a `/portfolio` y a `/portfolio/{comercialId}`: todo el texto renderiza traducido, sin claves crudas.
+
+- Commit `b2d8591` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
 Pregunta de Darwin que destapó un hueco real: "¿en qué momento voy a ingresar la vacante que necesita la empresa, con sus requisitos?". Investigación: existían dos caminos para cargar una vacante (el wizard de "Captación" en `/companies/new`, que crea empresa+vacante+contrato de una vez; y "Ver Vacantes" en la ficha de una empresa ya existente, con botón "+ Nueva vacante") pero **ninguno de los dos estaba conectado al pipeline de ventas**. Llegar a "Cerrado Ganado" solo ofrecía "Generar Contrato" (que busca un contrato *ya existente* y falla si no hay ninguno) — nada en el flujo Lead→...→Cerrado Ganado le pedía al admin cargar la vacante.
