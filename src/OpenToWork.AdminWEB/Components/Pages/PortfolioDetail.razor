@@ -59,8 +59,26 @@ else
         </div>
     </div>
 
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0;">
+        <input @bind="SearchQuery" @bind:event="oninput" class="admin-input" style="flex: 1; min-width: 200px;" placeholder="@Lang.T("admin.portfolio.searchPlaceholder")" />
+        <select @bind="StatusFilter" class="admin-select" style="min-width: 160px;">
+            <option value="">@Lang.T("admin.portfolio.allStatuses")</option>
+            <option value="0">@GetStageLabel(0)</option>
+            <option value="1">@GetStageLabel(1)</option>
+            <option value="2">@GetStageLabel(2)</option>
+            <option value="3">@GetStageLabel(3)</option>
+            <option value="4">@GetStageLabel(4)</option>
+            <option value="5">@GetStageLabel(5)</option>
+            <option value="6">@GetStageLabel(6)</option>
+        </select>
+    </div>
+
     <div class="admin-portfolio-detail-list">
-        @foreach (var company in Portfolio.Companies)
+        @if (FilteredCompanies.Count == 0)
+        {
+            <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.portfolio.noMatches")</div></div>
+        }
+        @foreach (var company in FilteredCompanies)
         {
             <div class="admin-portfolio-company-item admin-clickable" @onclick="() => OpenCompanyModal(company)">
                 <div class="admin-portfolio-company-main">
@@ -347,6 +365,23 @@ else
     private bool IsLoading = true;
     private PortfolioSummaryDto? Portfolio;
     private List<PortfolioSummaryDto> AllPortfolios = new();
+
+    private string SearchQuery = "";
+    private string StatusFilter = "";
+
+    private List<PortfolioCompanyDto> FilteredCompanies
+    {
+        get
+        {
+            if (Portfolio == null) return new();
+            var query = Portfolio.Companies.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(SearchQuery))
+                query = query.Where(c => c.CompanyName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(StatusFilter) && int.TryParse(StatusFilter, out var stage))
+                query = query.Where(c => c.CurrentStage == stage);
+            return query.ToList();
+        }
+    }
 
     private bool ShowAssignModal;
     private bool IsAssigning;
