@@ -48,7 +48,7 @@ El proyecto se compone de **3 portales independientes**:
 >
 > **Como usar esto:** cada item marcado `[ ]` es una pieza real de negocio que hoy NO tiene ningun soporte en el codigo (no es una tarea tecnica generica, es un paso que el dueno del negocio necesita que el sistema sepa que paso). A medida que se construya cada uno, marcarlo `[x]` aqui y actualizar/republicar el artifact de arriba para que Iluna y Darwin vean el avance real.
 >
-> **Estado al 16-Sep-2026:** 21 construidos / 1 parcial / 3 faltantes (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: activacion de garantia de reposicion (paso 20 + sub-pasos 20.1/20.2/20.3).
+> **Estado al 18-Sep-2026:** 24 construidos / 1 parcial / 0 faltantes (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: cierre del proceso post-garantia y feedback de mejora continua (pasos 21 y 22) — cierra por completo la Auditoria del Ciclo Comercial, solo queda pendiente el paso 7 (parcial).
 
 ### A. Captacion y Contratacion del Cliente
 
@@ -84,12 +84,12 @@ El proyecto se compone de **3 portales independientes**:
 - [x] 20.1 Analisis de Causa Raiz — **construido 16-Sep**: 10 motivos estructurados en `WarrantyReplacementReason` (6 cubiertos por la garantia + 4 exclusiones contractuales) + notas libres, en vez de texto libre sin estructura
 - [x] 20.2 Nueva Busqueda Sin Costo (1a reposicion) — **construido 16-Sep**: activar la reposicion reabre la vacante (`Status=Active`) para una nueva busqueda; cuando la nueva negociacion/entrega cierra, se "Vincula" desde el panel del contrato, dejando el registro real que faltaba entre la reposicion y el nuevo proceso de reclutamiento
 - [x] 20.3 Segunda Reposicion (50% del valor) — **construido 16-Sep**: la 2a reposicion sobre la misma vacante genera automaticamente un cargo del 50% del `FeeAmount` (reutiliza el mecanismo de tramos de pago existente, `PaymentTrancheType.ReposicionSegunda`), visible en el mismo panel "Tramos de Pago". Un 3er intento sobre la misma vacante es rechazado (tope de 2 reposiciones cubiertas)
-- [ ] 21. Cierre del Proceso (post-garantia) — no hay un estado que distinga "cerrado exitoso post-garantia" de simplemente "vacante cerrada"
-- [ ] 22. Feedback y Mejora Continua — no existe ninguna encuesta o registro de feedback del cliente
+- [x] 21. Cierre del Proceso (post-garantia) — **construido 18-Sep**: `ProcessClosedAt`/`ProcessClosedByUserId`/`ProcessClosureNotes` en `PTNegotiation`/`PTCandidateDelivery`. Boton "Cerrar Proceso" junto al badge de garantia, habilitado solo cuando el proceso esta Cerrada/Hired, la garantia ya vencio (o no hay garantia definida) y no hay una reposicion en curso sin resolver
+- [x] 22. Feedback y Mejora Continua — **construido 18-Sep**: `FeedbackRating` (1-5)/`FeedbackComments`/`FeedbackRecordedAt` en las mismas entidades. Boton "Registrar Feedback", habilitado solo una vez cerrado el proceso (paso 21) — antes no existia ningun registro de satisfaccion del cliente
 
 ### Politicas del documento oficial (paneles laterales)
 
-- [x] Garantia por tipo de perfil (Operativo=30d / Encargados-Tecnicos=45d / Responsables-Cualificados=60d) — **verificado 16-Sep contra la BD real**: `/pricing/job-levels` tiene los 3 niveles sembrados, pero con **30 / 40 / 60** dias (no 45) — confirmar con Darwin si el valor real de "Encargados y Tecnicos" debe corregirse a 45 en el catalogo
+- [x] Garantia por tipo de perfil (Operativo=30d / Encargados-Tecnicos=45d / Responsables-Cualificados=60d) — **corregido 18-Sep**: `/pricing/job-levels` tenia Encargados y Tecnicos en 40 dias (no 45); corregido vía UI a 30/45/60, coincide con el documento oficial
 - [x] Exclusiones de Garantia (impago de nomina, cambio sustancial de condiciones, cierre del negocio, incumplimiento normativo) — **construido 16-Sep**: las 4 causales son motivos estructurados de `WarrantyReplacementReason` (`ImpagoDeNomina`/`CambioSustancialDeCondiciones`/`CierreDelNegocio`/`IncumplimientoNormativo`); al elegir una, la reposicion queda `ExcluidaDeGarantia` (no cuenta como 1a/2a, no reabre la vacante). El campo de texto libre ("Excepciones pactadas") del contrato sigue existiendo aparte, para condiciones no cubiertas por estas 4
 - [x] "¿Y si el candidato...?" (roba/falta grave, baja medica, renuncia voluntaria) — **construido 16-Sep**: son 3 de los 6 motivos cubiertos de `WarrantyReplacementReason` (`FaltaGraveORobo`/`BajaMedica`/`RenunciaVoluntaria`), quedan registrados igual que cualquier otra causa de reposicion
 - [ ] 30/50/20 ligado a eventos reales del sistema — **parcial, mejorado 13-Sep**: la Apertura (30%) ya esta ligada a un evento real (bloquea publicar la vacante) y los 3 tramos son registros reales pagado/pendiente, no solo porcentajes. Sigue faltando el disparo automatico de Validacion al cerrar la negociacion y de Consolidacion a los +30 dias de incorporacion — hoy ambos los marca un admin a mano
@@ -1449,6 +1449,20 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-18 — Cierre del Proceso post-garantía y Feedback de Mejora Continua (pasos 21 y 22) (Dsiezar)
+
+Cierra por completo la Auditoría del Ciclo Comercial: los últimos dos pasos del flujo oficial que quedaban sin construir. Sesión iniciada probando en vivo cómo funciona la Garantía de Reposición (paso 20) con el usuario, lo que llevó a confirmar y corregir de paso el dato de garantía de "Encargados y Técnicos" en `/pricing/job-levels`: estaba en 40 días, se corrigió a 45 (vía UI, sin tocar código) para que coincida con el documento oficial (30/45/60).
+
+**Paso 21 — Cierre del Proceso (post-garantía):** antes no había ningún estado que distinguiera "cerrado exitoso post-garantía" de simplemente `Status=Cerrada`/`Hired`. Se agregó `ProcessClosedAt`/`ProcessClosedByUserId`/`ProcessClosureNotes` a `PTNegotiation` y `PTCandidateDelivery` (migración `ProcessClosure`). Botón "Cerrar Proceso" junto al badge de garantía (mismo lugar que "Activar Garantía de Reposición"), habilitado solo cuando: el proceso está Cerrada/Hired, la garantía ya venció (o no hay garantía definida en el contrato), y no hay una reposición en curso sin resolver. La regla (`CanCloseProcess`) se calcula en el servidor, no se duplica en el cliente.
+
+**Paso 22 — Feedback y Mejora Continua:** no existía ningún registro de satisfacción del cliente. Se agregó `FeedbackRating` (1-5)/`FeedbackComments`/`FeedbackRecordedAt`/`FeedbackRecordedByUserId` a las mismas dos entidades (migración `ProcessFeedback`). Botón "Registrar Feedback", habilitado solo una vez que el proceso ya está cerrado (paso 21) y no se registró feedback antes.
+
+Ambos pasos siguen el mismo patrón ya usado para la Garantía de Reposición: un formulario inline a la vez, sin controllers nuevos (endpoints agregados a `NegotiationsController`/`DeliveriesController` ya existentes, mismos roles Comercial/Reclutador), y cubriendo los dos flujos de "contratado" (Negociaciones y Entregas) por igual.
+
+Verificado end-to-end en el flujo de Negociaciones (vacante "Camarero de Sala"/Las Brasas, candidato Donald): negociación presentada → cerrada → incorporación registrada con fecha pasada (01/06/2026, sin garantía definida en el contrato de prueba) → "Cerrar Proceso" aparece y funciona ("Proceso cerrado el 18/09/2026") → "Registrar Feedback" aparece recién después de cerrado, no antes → feedback 5/5 con comentario guardado y mostrado correctamente. El flujo de Entregas usa el mismo código (`CloseProcessDto`/`RecordFeedbackDto` compartidos) y compila limpio, pero no se pudo probar en vivo en esta sesión por una limitación de UI ya documentada (una vacante Cerrada pierde el toggle "Cola de Shortlist" en `/vacancies`, y el estado de qué vacante está expandida es solo del cliente) — pendiente de una prueba en vivo si se decide construir una vista de negociación/entrega que no dependa de ese toggle.
+
+- Commits `1146468` (feature) en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
