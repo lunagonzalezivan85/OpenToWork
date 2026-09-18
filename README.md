@@ -1517,6 +1517,25 @@ Mismo bug ya corregido el 17-Sep en `Payments.razor` (texto sin traducir — cla
 
 No hubo cambio de código — solo se cerró la evaluación en el README, sin dejar ningún ítem abierto en la Auditoría del Ciclo Comercial ni en sus políticas asociadas.
 
+### Sesión 2026-09-18 — 6 Indicadores de Negocio en el panel principal (Dsiezar)
+
+Darwin: el panel principal (`Dashboard.razor`) solo tenía métricas de completitud de perfiles de candidatos — nada relevante para el dueño de la plataforma. Se agregó una sección nueva "Indicadores del Negocio" (arriba del todo, antes de "Perfiles"), con 6 tarjetas construidas sobre datos reales:
+
+1. **Ingresos Cobrados vs Pendiente** — suma de `PT_ContractPayments` por estado.
+2. **Tasa de Cierre Comercial** — Cerrado Ganado vs Cerrado Perdido del pipeline de empresas.
+3. **Tiempo Promedio de Contratación (días)** — desde `PT_Vacancy.PublishedAt` hasta `HiringDate`, combinando Negociaciones y Entregas.
+4. **Tasa de Éxito de Colocación** — 100% menos el % de contrataciones que necesitaron una reposición de garantía no excluida.
+5. **Valor en Pipeline Abierto** — suma de `FeeAmount` de contratos todavía en Draft/Sent (dinero que entraría si firman).
+6. **Empresas Estancadas (30+ días)** — empresas en pipeline abierto (no Ganado/Perdido) sin cambio de etapa reciente, señal de riesgo de perder el trato por falta de seguimiento.
+
+Nuevo endpoint `GET /api/admin/dashboard/business-metrics` (`BusinessMetricsDto`, `AdminDashboardService.GetBusinessMetricsAsync`), separado del endpoint de métricas operativas existente. Tarjetas de Ingresos y Empresas Estancadas navegan a `/payments` y `/companies/pipeline` respectivamente.
+
+Verificado en vivo contra MySQL real: 378€ cobrados / 1,332€ pendientes, 100% de cierre (6/0), 83% de éxito de colocación (1 de 6 con reposición), 900€ en pipeline abierto (2 contratos sin firmar). El indicador de Tiempo Promedio de Contratación mostró "-" porque el único dato de prueba con `HiringDate` tiene una fecha anterior a la publicación de su vacante (dato cargado manualmente durante testing, no un caso real) — el cálculo excluye duraciones negativas a propósito, así que se llenará correctamente con datos reales.
+
+**Hallazgo aparte (no corregido, fuera de alcance de hoy):** durante la verificación, el servidor de AdminWEB se cayó por completo (`Unhandled exception`, proceso terminado) por un bug pre-existente en `Companies/Pipeline.razor` (pantalla de Iluna) — el debounce del buscador llama `StateHasChanged()` desde un hilo que no es el del Dispatcher de Blazor, una excepción no controlada que mata el proceso entero para todos los usuarios. Reportado a Darwin, pendiente de que decida si se corrige (requiere tocar una pantalla de Iluna).
+
+- Commit `98daa03` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
 Pregunta de Darwin que destapó un hueco real: "¿en qué momento voy a ingresar la vacante que necesita la empresa, con sus requisitos?". Investigación: existían dos caminos para cargar una vacante (el wizard de "Captación" en `/companies/new`, que crea empresa+vacante+contrato de una vez; y "Ver Vacantes" en la ficha de una empresa ya existente, con botón "+ Nueva vacante") pero **ninguno de los dos estaba conectado al pipeline de ventas**. Llegar a "Cerrado Ganado" solo ofrecía "Generar Contrato" (que busca un contrato *ya existente* y falla si no hay ninguno) — nada en el flujo Lead→...→Cerrado Ganado le pedía al admin cargar la vacante.
