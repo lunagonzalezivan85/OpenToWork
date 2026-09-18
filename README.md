@@ -48,7 +48,7 @@ El proyecto se compone de **3 portales independientes**:
 >
 > **Como usar esto:** cada item marcado `[ ]` es una pieza real de negocio que hoy NO tiene ningun soporte en el codigo (no es una tarea tecnica generica, es un paso que el dueno del negocio necesita que el sistema sepa que paso). A medida que se construya cada uno, marcarlo `[x]` aqui y actualizar/republicar el artifact de arriba para que Iluna y Darwin vean el avance real.
 >
-> **Estado al 18-Sep-2026:** 23 construidos / 1 parcial / 1 faltante (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: cierre del proceso post-garantia y feedback de mejora continua (pasos 21 y 22). Quedan pendientes el paso 7 (parcial, busqueda prevalidada generica en vez de por vacante puntual) y el paso 16 (contratacion laboral formal candidato-empresa, sin ninguna entidad que la represente todavia).
+> **Estado al 18-Sep-2026:** 24 construidos / 1 parcial / 0 faltantes (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: fecha de contratacion candidato-empresa (paso 16, alcance recortado por decision de Darwin — TD no formaliza el contrato laboral, solo registra la fecha). Solo queda pendiente el paso 7 (parcial, busqueda prevalidada generica en vez de por vacante puntual).
 
 ### A. Captacion y Contratacion del Cliente
 
@@ -73,7 +73,7 @@ El proyecto se compone de **3 portales independientes**:
 
 - [x] 14. Seleccion del Candidato por el Cliente — `NegotiationService.CloseAsync` acepta al ganador, rechaza al resto, cierra la vacante
 - [x] 15. Cliente paga segundo 50% — **construido 13-Sep**: tramo "Validacion" trackeado (pagado/pendiente, con nota y quien lo marco) en el mismo panel del contrato. No bloquea nada (a diferencia del 30%, tu diagrama no tiene un gate aqui) — es un admin quien lo marca a mano
-- [ ] 16. Contratacion Laboral candidato-empresa (formal desde el Dia 1) — no existe ninguna entidad que represente el contrato laboral entre el candidato y el cliente
+- [x] 16. Contratacion Laboral candidato-empresa (formal desde el Dia 1) — **construido 18-Sep, alcance recortado por decision de Darwin**: TD no formaliza ni gestiona ese contrato laboral (es exclusivamente entre la empresa y el candidato); el sistema solo registra `HiringDate` en `PTNegotiation`/`PTCandidateDelivery` — la fecha en que la empresa contrata formalmente, independiente de `IncorporationDate` (primer dia de trabajo)
 - [x] 17. Incorporacion del Candidato — **construido 13-Sep**: campo `IncorporationDate` en `PTNegotiation` (flujo de Negociaciones) y en `PTCandidateDelivery` (Embudo Ciego) - los dos caminos de "hire" que existen en el sistema, ver nota debajo. Un admin la registra desde `/vacancies` (negociacion cerrada) o desde la ficha del candidato (entrega en estado Contratado)
 - [x] 18. Cliente paga ultimo 20% (30 dias post-incorporacion) — **construido 13-Sep**: tramo "Consolidacion" trackeado igual que el 15. Sigue faltando el disparo automatico a los 30 dias (depende del paso 17, fecha de incorporacion, que todavia no existe) — por ahora un admin lo marca pagado cuando corresponda
 
@@ -1449,6 +1449,16 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-18 — Fecha de Contratación candidato-empresa (paso 16) (Dsiezar)
+
+Cierra el último ítem faltante (no parcial) de la Auditoría del Ciclo Comercial. **Decisión de Darwin:** Trato Directo no formaliza ni gestiona el contrato laboral entre el candidato y la empresa — eso lo hace la empresa por su cuenta. Lo mínimo que el sistema debe registrar es la fecha en que la empresa contrata formalmente al candidato.
+
+Se agregó `HiringDate` a `PTNegotiation` y `PTCandidateDelivery` (migración `HiringDate`), deliberadamente **independiente** de `IncorporationDate` (que ya existía desde el 13-Sep y representa el primer día de trabajo) — la empresa puede firmar el contrato antes de que el candidato empiece a trabajar, son dos hitos distintos. Botón "Registrar fecha de contratación" junto al de "Registrar incorporación", mismo patrón, sin gating entre ambos (se pueden registrar en cualquier orden o ninguno).
+
+Verificado end-to-end en el flujo de Negociaciones (vacante "Camarero"/Xian tian Di, candidato Juan Perez): negociación cerrada → "Contratado el 10/09/2026" registrado → "Incorporado el 17/09/2026" registrado por separado → ambas fechas conviven sin afectar el cálculo de garantía (que sigue usando solo `IncorporationDate`) ni el resto del flujo (el botón "Activar Garantía de Reposición" sigue disponible con normalidad).
+
+- Commit `c07ce98` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ### Sesión 2026-09-18 — Cierre del Proceso post-garantía y Feedback de Mejora Continua (pasos 21 y 22) (Dsiezar)
 
