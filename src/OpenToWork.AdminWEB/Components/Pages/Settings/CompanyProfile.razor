@@ -37,41 +37,54 @@ else
     }
 
     <EditForm Model="Form" OnValidSubmit="Save">
-        <div class="admin-inline-form" style="flex-wrap: wrap;">
-            <div class="ot-input-group">
-                <label class="ot-input-label">@Lang.T("admin.companyProfile.legalName")</label>
-                <InputText class="ot-input-field" @bind-Value="Form.LegalName" />
+        <div class="admin-chart-grid">
+            <div class="admin-chart-card">
+                <span class="admin-chart-card-title">@Lang.T("admin.companyProfile.sectionIdentity")</span>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.companyProfile.legalName")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.LegalName" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.companyProfile.taxId")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.TaxId" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.companyProfile.address")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.Address" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.companyProfile.mercantileRegistry")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.MercantileRegistry" />
+                </div>
             </div>
-            <div class="ot-input-group">
-                <label class="ot-input-label">@Lang.T("admin.companyProfile.taxId")</label>
-                <InputText class="ot-input-field" @bind-Value="Form.TaxId" />
+            <div class="admin-chart-card">
+                <span class="admin-chart-card-title">@Lang.T("admin.companyProfile.sectionLegalRep")</span>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.companyProfile.legalRepName")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.LegalRepName" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.companyProfile.legalRepPosition")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.LegalRepPosition" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.companyProfile.legalRepDni")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.LegalRepDni" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.companyProfile.jurisdictionCity")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.JurisdictionCity" />
+                </div>
             </div>
-            <div class="ot-input-group">
-                <label class="ot-input-label">@Lang.T("admin.companyProfile.address")</label>
-                <InputText class="ot-input-field" @bind-Value="Form.Address" />
-            </div>
-            <div class="ot-input-group">
-                <label class="ot-input-label">@Lang.T("admin.companyProfile.mercantileRegistry")</label>
-                <InputText class="ot-input-field" @bind-Value="Form.MercantileRegistry" />
-            </div>
-            <div class="ot-input-group">
-                <label class="ot-input-label">@Lang.T("admin.companyProfile.legalRepName")</label>
-                <InputText class="ot-input-field" @bind-Value="Form.LegalRepName" />
-            </div>
-            <div class="ot-input-group">
-                <label class="ot-input-label">@Lang.T("admin.companyProfile.legalRepPosition")</label>
-                <InputText class="ot-input-field" @bind-Value="Form.LegalRepPosition" />
-            </div>
-            <div class="ot-input-group">
-                <label class="ot-input-label">@Lang.T("admin.companyProfile.legalRepDni")</label>
-                <InputText class="ot-input-field" @bind-Value="Form.LegalRepDni" />
-            </div>
-            <div class="ot-input-group">
-                <label class="ot-input-label">@Lang.T("admin.companyProfile.jurisdictionCity")</label>
-                <InputText class="ot-input-field" @bind-Value="Form.JurisdictionCity" />
+            <div class="admin-chart-card" style="grid-column: 1 / -1;">
+                <span class="admin-chart-card-title">@Lang.T("admin.companyProfile.sectionPreview")</span>
+                <p style="font-size: 0.82rem; line-height: 1.6; color: var(--text-secondary); margin: 0;">
+                    De una parte, <strong>@NonEmpty(Form.LegalName)</strong>, con domicilio social en @NonEmpty(Form.Address), CIF @NonEmpty(Form.TaxId), inscrita en el @NonEmpty(Form.MercantileRegistry), representada en este acto por D./Dña. @NonEmpty(Form.LegalRepName), en calidad de @NonEmpty(Form.LegalRepPosition), con DNI/NIE @NonEmpty(Form.LegalRepDni).
+                </p>
+                <p class="admin-page-header-subtitle" style="margin: 0;">@Lang.T("admin.companyProfile.previewNote")</p>
             </div>
         </div>
-        <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium" disabled="@IsSaving">@Lang.T("admin.common.save")</button>
+        <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium" style="margin-top: var(--space-md);" disabled="@IsSaving">@Lang.T("admin.common.save")</button>
     </EditForm>
 
     <p class="admin-page-header-subtitle" style="margin-top: var(--space-md);">@Lang.T("admin.companyProfile.usageNote")</p>
@@ -85,6 +98,8 @@ else
     private string? Error;
 
     private CompanyProfileForm Form = new();
+
+    private static string NonEmpty(string value) => string.IsNullOrWhiteSpace(value) ? "[●]" : value;
 
     protected override async Task OnInitializedAsync()
     {

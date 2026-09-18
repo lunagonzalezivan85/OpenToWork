@@ -30,6 +30,10 @@
   "companyProfile": {
     "title": "Datos de la Empresa",
     "subtitle": "Identidad legal de Trato Directo usada en el Contrato Marco",
+    "sectionIdentity": "Identidad de la Empresa",
+    "sectionLegalRep": "Representante Legal y Jurisdicción",
+    "sectionPreview": "Vista Previa (Cláusula Reunidos)",
+    "previewNote": "Así aparecerá en el Contrato Marco.",
     "legalName": "Razón Social",
     "taxId": "CIF",
     "address": "Domicilio Social",

@@ -30,6 +30,10 @@
   "companyProfile": {
     "title": "Company Profile",
     "subtitle": "Trato Directo's legal identity used in the Master Service Agreement",
+    "sectionIdentity": "Company Identity",
+    "sectionLegalRep": "Legal Representative & Jurisdiction",
+    "sectionPreview": "Preview (Parties Clause)",
+    "previewNote": "This is how it will appear in the Master Service Agreement.",
     "legalName": "Legal Name",
     "taxId": "Tax ID",
     "address": "Registered Address",
