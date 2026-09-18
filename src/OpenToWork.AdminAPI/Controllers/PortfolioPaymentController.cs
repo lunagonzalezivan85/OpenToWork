@@ -98,7 +98,7 @@ public class PortfolioPaymentController : AdminControllerBase
 
     /// <summary>Lista centralizada de todos los tramos de pago, con filtro por estado.</summary>
     [HttpGet("payments")]
-    public async Task<IActionResult> GetPayments([FromQuery] int? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetPayments([FromQuery] int? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? search = null)
     {
         var query = _db.PT_ContractPayments
             .Include(p => p.Contract)
@@ -108,6 +108,13 @@ public class PortfolioPaymentController : AdminControllerBase
 
         if (status.HasValue)
             query = query.Where(p => p.Status == status.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(p => p.Contract != null &&
+                (p.Contract.ContractNumber.Contains(search) ||
+                 (p.Contract.Company != null && p.Contract.Company.Name.Contains(search))));
+        }
 
         var totalCount = await query.CountAsync();
         var items = await query

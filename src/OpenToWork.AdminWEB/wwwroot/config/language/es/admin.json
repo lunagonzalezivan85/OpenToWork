@@ -90,6 +90,7 @@
     "title": "Pagos",
     "subtitle": "Tramos de pago de todos los contratos",
     "empty": "No hay tramos de pago registrados.",
+    "searchPlaceholder": "Buscar por contrato o empresa...",
     "allStatuses": "Todos los estados",
     "pending": "Pendiente",
     "paid": "Pagado",

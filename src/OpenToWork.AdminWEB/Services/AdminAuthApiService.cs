@@ -1186,11 +1186,12 @@ public class AdminAuthApiService
 
     // --- Pagos centralizados ---
 
-    public async Task<PaymentListResultDto?> GetPaymentsAsync(int? status = null, int page = 1, int pageSize = 20)
+    public async Task<PaymentListResultDto?> GetPaymentsAsync(int? status = null, int page = 1, int pageSize = 20, string? search = null)
     {
         await SetAuthHeaderAsync();
         var url = $"api/admin/payments?page={page}&pageSize={pageSize}";
         if (status.HasValue) url += $"&status={status.Value}";
+        if (!string.IsNullOrWhiteSpace(search)) url += $"&search={Uri.EscapeDataString(search)}";
         var response = await _httpClient.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<PaymentListResultDto>();

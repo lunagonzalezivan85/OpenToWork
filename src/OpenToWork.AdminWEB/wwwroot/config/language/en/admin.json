@@ -90,6 +90,7 @@
     "title": "Payments",
     "subtitle": "Payment tranches across all contracts",
     "empty": "No payment tranches registered.",
+    "searchPlaceholder": "Search by contract or company...",
     "allStatuses": "All statuses",
     "pending": "Pending",
     "paid": "Paid",

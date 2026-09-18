@@ -14,12 +14,13 @@
         <p class="admin-page-header-subtitle">@Lang.T("admin.payments.subtitle")</p>
     </div>
     <div class="admin-page-actions">
+        <input @bind="SearchQuery" @bind:event="oninput" @onkeyup="OnSearchKeyUp" class="admin-input" style="min-width: 220px;" placeholder="@Lang.T("admin.payments.searchPlaceholder")" />
         <select @bind="StatusFilter" class="admin-select" style="min-width: 150px;">
             <option value="">@Lang.T("admin.payments.allStatuses")</option>
             <option value="0">@Lang.T("admin.payments.pending")</option>
             <option value="1">@Lang.T("admin.payments.paid")</option>
         </select>
-        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="LoadAsync">@Lang.T("admin.common.filter")</button>
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="ApplyFilters">@Lang.T("admin.common.filter")</button>
     </div>
 </div>
 
@@ -134,6 +135,7 @@ else
     private bool IsLoading = true;
     private PaymentListResultDto? Result;
     private string? StatusFilter;
+    private string? SearchQuery;
     private int CurrentPage = 1;
     private Guid? MarkingPaidId;
     private string? MarkPaidNotes;
@@ -145,13 +147,24 @@ else
         await LoadAsync();
     }
 
+    private async Task ApplyFilters()
+    {
+        CurrentPage = 1;
+        await LoadAsync();
+    }
+
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await ApplyFilters();
+    }
+
     private async Task LoadAsync()
     {
         IsLoading = true;
         try
         {
             int? statusFilter = string.IsNullOrEmpty(StatusFilter) ? null : int.Parse(StatusFilter);
-            Result = await AuthApi.GetPaymentsAsync(statusFilter, CurrentPage, 20);
+            Result = await AuthApi.GetPaymentsAsync(statusFilter, CurrentPage, 20, SearchQuery);
         }
         catch { }
         IsLoading = false;
