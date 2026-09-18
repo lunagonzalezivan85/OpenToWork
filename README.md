@@ -48,7 +48,7 @@ El proyecto se compone de **3 portales independientes**:
 >
 > **Como usar esto:** cada item marcado `[ ]` es una pieza real de negocio que hoy NO tiene ningun soporte en el codigo (no es una tarea tecnica generica, es un paso que el dueno del negocio necesita que el sistema sepa que paso). A medida que se construya cada uno, marcarlo `[x]` aqui y actualizar/republicar el artifact de arriba para que Iluna y Darwin vean el avance real.
 >
-> **Estado al 18-Sep-2026:** 24 construidos / 1 parcial / 0 faltantes (de los 22 pasos + 3 sub-pasos de reposicion). Ultima actualizacion: fecha de contratacion candidato-empresa (paso 16, alcance recortado por decision de Darwin — TD no formaliza el contrato laboral, solo registra la fecha). Solo queda pendiente el paso 7 (parcial, busqueda prevalidada generica en vez de por vacante puntual).
+> **Estado al 18-Sep-2026:** 25 construidos / 0 parciales / 0 faltantes (de los 22 pasos + 3 sub-pasos de reposicion) — **Auditoria del Ciclo Comercial completa**. Ultima actualizacion: paso 7 re-evaluado (ya estaba resuelto por `CompatibilityService`, la evaluacion anterior miraba el servicio equivocado) y fecha de contratacion candidato-empresa (paso 16, alcance recortado por decision de Darwin — TD no formaliza el contrato laboral, solo registra la fecha).
 
 ### A. Captacion y Contratacion del Cliente
 
@@ -61,7 +61,7 @@ El proyecto se compone de **3 portales independientes**:
 
 ### B. Reclutamiento y Seleccion
 
-- [ ] 7. Consulta Base de Datos Prevalidada (filtrada por la vacante) — *parcial*: existe `CandidateSearchService`, pero solo filtra por score/skills genericos, no por los requisitos de una vacante puntual, y vive en la API publica no en el admin
+- [x] 7. Consulta Base de Datos Prevalidada (filtrada por la vacante) — **re-evaluado 18-Sep, ya estaba construido**: la evaluacion anterior miraba el servicio equivocado (`CandidateSearchService`, generico, portal de empresa). El que realmente resuelve este paso es `CompatibilityService.CalculateMatchesForVacancyAsync`/`GetNonApplicantMatchesAsync` — consulta exactamente la base prevalidada (`IsProfilePublic && WizardCompleted`) filtrada por los requisitos puntuales de la vacante (skills requeridas/opcionales, experiencia, ubicacion), en el admin, pestaña "Cumplen sin postularse" de la ficha de vacante (`/vacancies/{id}`), con filtro de % minimo de match y boton para postular directamente a quien califique. Verificado en vivo: 2 candidatos encontrados con desglose real de skills/experiencia/ubicacion contra una vacante de prueba
 - [x] 8. Busqueda Activa y Atraccion — vacantes publicas en el portal + postulacion directa del candidato
 - [x] 9. Preseleccion y Filtro Inicial — etapa "Postulacion" del pipeline de reclutamiento
 - [x] 10. Entrevistas y Evaluaciones — Evaluacion Tecnica + Entrevista Cultural con score y recomendacion
@@ -1449,6 +1449,20 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-18 — Paso 7 re-evaluado: ya estaba construido (Dsiezar)
+
+Cierra formalmente la **Auditoría del Ciclo Comercial completa** (25/25). No fue necesario escribir código nuevo — el paso llevaba semanas resuelto bajo un nombre distinto al que describía la evaluación anterior del gap-analysis.
+
+El README decía: "existe `CandidateSearchService`, pero solo filtra por score/skills genéricos, no por los requisitos de una vacante puntual, y vive en la API pública no en el admin". Esa evaluación miraba el servicio equivocado — `CandidateSearchService` es el buscador genérico que usa la **empresa** desde su portal (`/candidate-search`), sin relación con una vacante puntual, y es correcto que ese no resuelve el paso 7.
+
+Pero existe un segundo motor, completamente distinto, construido en una fase anterior para la función "Calcular Matches" del shortlist: `CompatibilityService.CalculateMatchesForVacancyAsync` consulta exactamente la base de datos prevalidada (`PT_Candidates` con `IsProfilePublic && WizardCompleted`) y calcula un `MatchPercentage` contra los requisitos puntuales de esa vacante (skills requeridas pesan el doble que las opcionales, bucket de años de experiencia, ubicación/modalidad). `GetNonApplicantMatchesAsync` filtra ese resultado a quienes **no han postulado todavía** — es decir, candidatos que ya están en la base y cumplen, pero TD todavía no los contactó para esta vacante en particular.
+
+Esto vive en el **admin** (no en la API pública), en la pestaña "Cumplen sin postularse" de la ficha de vacante (`/vacancies/{id}`, `VacancyDetail.razor`), con filtro de % mínimo de match (todos/≥50%/≥70%/≥80%) y un botón "Postular seleccionados" para llevar directamente a esos candidatos al pipeline de esa vacante.
+
+Verificado en vivo contra una vacante de prueba ("Camarero", Hostal Costa Brava, Junior, 2 años de experiencia, inglés requerido): "Cumplen sin postularse" pasó de 0 a 2 al ejecutar "Calcular matches", mostrando el desglose real de Skills/Experiencia/Ubicación por candidato.
+
+No se tocó código — solo se corrigió la evaluación en este README.
 
 ### Sesión 2026-09-18 — Fecha de Contratación candidato-empresa (paso 16) (Dsiezar)
 
