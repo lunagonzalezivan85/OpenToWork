@@ -208,7 +208,7 @@ else
                                             <span class="admin-portfolio-payment-amount">@FormatEur(payment.Amount)</span>
                                         </div>
                                         <div class="admin-portfolio-payment-meta">
-                                            <span class="admin-portfolio-payment-pct">@payment.Percentage%</span>
+                                            <span class="admin-portfolio-payment-pct">@FormatPct(payment.Percentage)%</span>
                                             <span class="admin-status admin-status--success">@Lang.T("admin.portfolio.paid")</span>
                                             <span class="admin-portfolio-payment-date">@(payment.PaidAt?.ToString("dd/MM/yyyy") ?? "-")</span>
                                         </div>
@@ -234,7 +234,7 @@ else
                                             <span class="admin-portfolio-payment-amount">@FormatEur(payment.Amount)</span>
                                         </div>
                                         <div class="admin-portfolio-payment-meta">
-                                            <span class="admin-portfolio-payment-pct">@payment.Percentage%</span>
+                                            <span class="admin-portfolio-payment-pct">@FormatPct(payment.Percentage)%</span>
                                             <span class="admin-status admin-status--neutral">@Lang.T("admin.portfolio.pending")</span>
                                         </div>
                                     </div>
@@ -521,6 +521,7 @@ else
     }
 
     private string FormatEur(decimal amount) => $"{amount:N2} EUR";
+    private string FormatPct(decimal pct) => $"{pct:F2}";
 
     private string GetStaffRoleLabel(int staffRole) => staffRole switch
     {
