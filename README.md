@@ -1091,12 +1091,11 @@ El portal administrativo tiene el flujo completo: CRM de captacion de empresas, 
 - **Decision de Darwin (17-Sep):** el modelo actual es venta directa por posicion cubierta, no autogestion por planes de suscripcion. En vez de construir un CRUD para `PTPlan`, la etapa "Propuesta Enviada" del CRM ahora consume el catalogo ya existente y ya editable de **Precios y Niveles de Precio** (`/pricing/job-levels`, `/pricing/job-types`) — el mismo que usan los contratos reales. Ver Bitacora, sesion 2026-09-17.
 - `PTPlan`/`GetPlansAsync()` se dejan intactos (sin CRUD) para cuando exista el modulo de autogestion de empresas a futuro.
 
-### 2. Tabla de Configuracion del Sistema
-- Crear una tabla `SYSystemConfig` (o similar) para centralizar todas las configuraciones del sistema.
-- Con prioridad: **modelos de contrato** — guardar ahi el contrato modelo (template) para que el sistema rellene los espacios dinamicamente en lugar de tener el HTML hardcodeado en `contract-generator.js`.
-- Campos sugeridos: `Key` (string unico), `Value` (text/JSON), `Category` (string), `Description`, `IsActive`.
-- Ejemplos de configuracion: `contract_template_default` (HTML del contrato), `company_name` ("Trato Directo"), `company_tax_id`, `company_address`, etc.
-- El generador de contratos debe leer el template desde la BD y reemplazar variables (`{{CompanyName}}`, `{{PlanName}}`, `{{Price}}`, etc.) en lugar de usar un template fijo en JS.
+### 2. Tabla de Configuracion del Sistema — resuelto con alcance acotado (Dsiezar, 18-Sep)
+- ~~Crear una tabla `SYSystemConfig` (o similar) para centralizar todas las configuraciones del sistema. Con prioridad: modelos de contrato — guardar ahi el contrato modelo (template) para que el sistema rellene los espacios dinamicamente en lugar de tener el HTML hardcodeado en `contract-generator.js`.~~
+- **Hallazgo:** `contract-generator.js` ya era codigo muerto — el generador de contratos basado en `PT_Plans` que señalaba este pedido fue reemplazado hace tiempo por el Contrato Marco real (`VacancyContractDocument.razor`), ver comentario en `Companies/PipelineDetail.razor:1036-1043`. Ese SI es el documento legal vigente hoy, pero su texto tambien esta hardcodeado — directo en Razor, no en JS.
+- **Decision de Darwin (18-Sep):** en vez de construir un motor de templates para las 23 clausulas del Contrato Marco (mucho trabajo, riesgo legal si alguien edita mal una clausula sin revision — es el documento que se firma con clientes reales), se acoto a lo mas valioso y de bajo riesgo: sacar a `SY_SystemConfig` los **datos de identidad legal de Trato Directo** (razon social, CIF, domicilio, inscripcion registral, representante legal, ciudad de jurisdiccion) que tambien estaban hardcodeados ahi — hoy editables desde `/settings/company-profile` (solo SuperAdmin) sin necesitar un deploy. Las 23 clausulas siguen fijas en el Razor, eso queda fuera de este alcance.
+- `SY_SystemConfig` (Key/Value/Category/Description/IsActive, indice unico en Key) queda como tabla generica reutilizable para futura configuracion del sistema, no limitada a estos 8 valores.
 
 ### 3. Consulta a IA y al Agente de RH — HECHO (Dsiezar, 07-Sep) + validado (Iluna, 08-Sep)
 - ~~Consultar a la IA y al agente de Recursos Humanos (ver `.agents/rh.md`) si lo llevado hasta ahora cumple con lo alineado a **Trato Directo**.~~ → `docs/rh/alineacion-trato-directo-y-arranque.md`
@@ -1565,6 +1564,18 @@ Fix: mover `StateHasChanged()` adentro del `InvokeAsync`, en los tres archivos.
 **Nota técnica de verificación:** el primer intento de reproducir el crash con el `type` del automatizador de navegador no disparó el filtro (limitación ya documentada en este proyecto — el automatizador no siempre dispara `input`/`keyup` reales). Se confirmó disparando esos eventos manualmente via JS: con el fix aplicado, el debounce se disparó repetidamente sin tumbar el servidor, el filtro funcionó correctamente ("Hostal" → 1 resultado de 8), y los logs quedaron sin errores.
 
 - Commit `aba82c7` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
+### Sesión 2026-09-18 — Tabla `SY_SystemConfig`: identidad legal de TD editable sin deploy (Dsiezar)
+
+Cierra el punto 2 de "Observaciones para Darwin / Dsiezar" (pedido de Iluna, 06-Sep) con alcance acotado. El pedido original apuntaba a sacar de `contract-generator.js` el template del contrato hacia una tabla de configuración — pero investigar reveló que **ese archivo ya es código muerto**: el generador basado en `PT_Plans` fue reemplazado hace tiempo por el Contrato Marco real (`VacancyContractDocument.razor`, 23 cláusulas + Anexo I), ver comentario en `Companies/PipelineDetail.razor:1036-1043`.
+
+Se le presentaron 3 opciones a Darwin: (a) solo los datos de identidad de TD, (b) eso + un motor de cláusulas editables, (c) solo la infraestructura genérica sin tocar el contrato. **Eligió (a)**: motor de cláusulas editables queda fuera — es el documento legal que se firma con clientes reales, y editar una cláusula sin revisión legal es un riesgo que no vale la pena correr hoy.
+
+**Construido:** tabla `SY_SystemConfig` (Key/Value/Category/Description/IsActive, índice único en Key) — genérica, reutilizable a futuro, no limitada a este caso. Los 8 datos de identidad legal de TD que estaban hardcodeados en `VacancyContractDocument.razor` (razón social, CIF, domicilio social, inscripción registral, nombre/cargo/DNI del representante legal, ciudad de firma y jurisdicción) ahora se leen de ahí, editables desde `/settings/company-profile` (nueva pantalla, solo SuperAdmin). Los valores sembrados (`docs/seed-system-config.sql`) son idénticos a los que estaban hardcodeados, así que nada cambia hasta que un SuperAdmin edite algo a propósito.
+
+Verificado end-to-end: los 8 campos cargan y persisten correctamente; cambié la ciudad de jurisdicción de prueba (Madrid → Barcelona) y reabrí un contrato real ya existente (`TD-2026-0006`) — el cambio se reflejó en vivo en la cláusula 22.2 y en la firma, confirmando que el documento se renderiza en tiempo real (no es una plantilla estática guardada), y luego revertí el valor de prueba.
+
+- Commit `28658bf` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
