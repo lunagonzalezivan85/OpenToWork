@@ -506,6 +506,16 @@ textarea.admin-input {
     color: var(--text-primary);
 }
 
+.admin-table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+}
+
+.ot-table .text-right {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Status badges in tables */
 .admin-status {
     display: inline-flex;

@@ -29,7 +29,10 @@
 }
 else if (Result == null || Result.Items.Count == 0)
 {
-    <div class="admin-empty"><div class="admin-empty-text">@Lang.T("admin.payments.empty")</div></div>
+    <div class="admin-empty">
+        <div class="admin-empty-icon">&#9632;</div>
+        <div class="admin-empty-text">@Lang.T("admin.payments.empty")</div>
+    </div>
 }
 else
 {
@@ -53,14 +56,14 @@ else
     </div>
 
     <div class="admin-table-wrapper">
-        <table class="admin-table">
+        <table class="ot-table">
             <thead>
                 <tr>
                     <th>@Lang.T("admin.payments.contract")</th>
                     <th>@Lang.T("admin.payments.company")</th>
                     <th>@Lang.T("admin.payments.tranche")</th>
-                    <th>@Lang.T("admin.payments.percentage")</th>
-                    <th>@Lang.T("admin.payments.amount")</th>
+                    <th class="text-right">@Lang.T("admin.payments.percentage")</th>
+                    <th class="text-right">@Lang.T("admin.payments.amount")</th>
                     <th>@Lang.T("admin.payments.status")</th>
                     <th>@Lang.T("admin.payments.paidDate")</th>
                     <th></th>
@@ -70,11 +73,11 @@ else
                 @foreach (var item in Result.Items)
                 {
                     <tr>
-                        <td><a href="/companies/@item.CompanyId" style="color: var(--primary); text-decoration: none;">@item.ContractNumber</a></td>
+                        <td><a href="/companies/@item.CompanyId" style="color: var(--accent-primary); text-decoration: none; font-weight: 600;">@item.ContractNumber</a></td>
                         <td>@item.CompanyName</td>
                         <td>@GetTrancheLabel(item.TrancheType)</td>
-                        <td>@FormatPct(item.Percentage)</td>
-                        <td><strong>@FormatEur(item.Amount)</strong></td>
+                        <td class="text-right">@FormatPct(item.Percentage)</td>
+                        <td class="text-right"><strong>@FormatEur(item.Amount)</strong></td>
                         <td>
                             @if (item.Status == (int)PaymentTrancheStatus.Pagado)
                             {
