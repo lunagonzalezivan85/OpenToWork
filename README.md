@@ -1114,9 +1114,9 @@ No construir ahora — dejar documentado como intencion de producto para activar
 - **Autogestion de empresas via planes Basic/Premium/Platinum** — el catalogo `PT_Plans` ya existe (sembrado 06-Sep por Iluna) pero sin uso real: la etapa "Propuesta Enviada" del CRM usa el catalogo de Precios y Niveles de Precio para venta directa por posicion (decision de Darwin, 17-Sep, ver Observacion #1 arriba), no `PT_Plans`. Cuando se decida activar la autogestion, `PT_Plans` es el punto de partida — falta el CRUD, el checkout, y definir que desbloquea cada nivel.
 - Flag propuesto: `feature_candidate_priority_plan_enabled` y `feature_company_self_service_plans_enabled` (u otros nombres, a definir junto con `SYSystemConfig`) — controlan si estas dos opciones aparecen en la UI y si la logica de negocio asociada corre.
 
-### 5. Bug pendiente: `Companies/Pipeline.razor` puede tumbar todo AdminWEB — a coordinar con Iluna (18-Sep)
+### 5. Bug corregido: `Companies/Pipeline.razor` podia tumbar todo AdminWEB (18-Sep)
 
-**Queda pendiente a proposito, sin corregir todavia** — decision de Darwin de dejarlo anotado y coordinar con Iluna antes de tocar su pantalla.
+**Corregido — decision de Darwin de proceder directamente, sin esperar a coordinar con Iluna primero** (aviso posterior pendiente, mismo criterio que otros cambios sobre sus pantallas).
 
 Durante la verificacion de los Indicadores de Negocio (18-Sep), el servidor de AdminWEB se cayo por completo (`Unhandled exception`, proceso terminado, afecta a todos los usuarios conectados) con este stack:
 
@@ -1126,9 +1126,13 @@ System.InvalidOperationException: The current thread is not associated with the 
    at OpenToWork.AdminWEB.Components.Pages.Companies.Pipeline.<OnSearchKeyUp>b__48_0(Object _) in Pipeline.razor:line 401
 ```
 
-Causa: el debounce del buscador en `Companies/Pipeline.razor` (`OnSearchKeyUp`, linea ~401) dispara `StateHasChanged()` desde el callback de un `Timer` que corre en un hilo del ThreadPool, no en el hilo del Dispatcher de Blazor. Esa excepcion no tiene ningun `try/catch` alrededor, así que no queda solo en el circuito del usuario que estaba buscando — **tumba el proceso entero del servidor** para todos.
+Causa: el debounce del buscador llamaba `StateHasChanged()` despues de un `await InvokeAsync(...)`, ya fuera del hilo del Dispatcher de Blazor (el `Timer` corre en un hilo del ThreadPool, sin el `SynchronizationContext` del circuito). Esa excepcion no tenia ningun `try/catch` alrededor, así que no quedaba solo en el circuito del usuario que estaba buscando — **tumbaba el proceso entero del servidor** para todos.
 
-Fix esperado (una vez que Iluna de el visto bueno, es su pantalla — ver "Work division" en memoria): envolver la llamada en `await InvokeAsync(StateHasChanged)` dentro del callback del timer, mismo patron que ya usan los demas debounce de search en el proyecto.
+El mismo patron exacto (mismo bug) existia en 3 archivos, los unicos del proyecto con este `Timer` de debounce: `Companies/Pipeline.razor`, `Companies/Index.razor` y `Candidates/Pipeline.razor`. Fix: mover `StateHasChanged()` adentro del `InvokeAsync`, en los tres.
+
+Verificado en vivo en los tres: se disparo el debounce repetidamente (busqueda real, no solo el metodo del automatizador que a veces no dispara `keyup`/`input` — ver nota tecnica en la Bitácora) sin que el servidor se cayera, el filtro de busqueda funciono correctamente ("Hostal" → 1 resultado), y los logs del servidor quedaron sin errores.
+
+- Commit `aba82c7` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ---
 
@@ -1548,9 +1552,19 @@ Nuevo endpoint `GET /api/admin/dashboard/business-metrics` (`BusinessMetricsDto`
 
 Verificado en vivo contra MySQL real: 378€ cobrados / 1,332€ pendientes, 100% de cierre (6/0), 83% de éxito de colocación (1 de 6 con reposición), 900€ en pipeline abierto (2 contratos sin firmar). El indicador de Tiempo Promedio de Contratación mostró "-" porque el único dato de prueba con `HiringDate` tiene una fecha anterior a la publicación de su vacante (dato cargado manualmente durante testing, no un caso real) — el cálculo excluye duraciones negativas a propósito, así que se llenará correctamente con datos reales.
 
-**Hallazgo aparte (no corregido, fuera de alcance de hoy):** durante la verificación, el servidor de AdminWEB se cayó por completo (`Unhandled exception`, proceso terminado) por un bug pre-existente en `Companies/Pipeline.razor` (pantalla de Iluna) — el debounce del buscador llama `StateHasChanged()` desde un hilo que no es el del Dispatcher de Blazor, una excepción no controlada que mata el proceso entero para todos los usuarios. Reportado a Darwin, pendiente de que decida si se corrige (requiere tocar una pantalla de Iluna).
+**Hallazgo aparte:** durante la verificación, el servidor de AdminWEB se cayó por completo (`Unhandled exception`, proceso terminado) por un bug pre-existente en `Companies/Pipeline.razor` (pantalla de Iluna) — el debounce del buscador llama `StateHasChanged()` desde un hilo que no es el del Dispatcher de Blazor, una excepción no controlada que mata el proceso entero para todos los usuarios. Reportado a Darwin, corregido en la sesión siguiente (ver entrada de abajo).
 
 - Commit `98daa03` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
+### Sesión 2026-09-18 — Fix: crash de AdminWEB por debounce de búsqueda (Dsiezar)
+
+Cierra el hallazgo de la sesión anterior. Darwin pidió atacarlo directamente en vez de esperar a coordinar con Iluna primero. Causa raíz: en `Companies/Pipeline.razor`, `Companies/Index.razor` y `Candidates/Pipeline.razor` (los únicos 3 archivos del proyecto con este patrón de debounce), el `Timer` del buscador llamaba `StateHasChanged()` **después** de un `await InvokeAsync(...)`, ya fuera del hilo del Dispatcher de Blazor — el callback del `Timer` corre en un hilo del ThreadPool sin el `SynchronizationContext` del circuito. Esa excepción no tenía ningún `try/catch`, así que no quedaba aislada al usuario que buscaba: **tumbaba el proceso entero de AdminWEB** para todos los conectados.
+
+Fix: mover `StateHasChanged()` adentro del `InvokeAsync`, en los tres archivos.
+
+**Nota técnica de verificación:** el primer intento de reproducir el crash con el `type` del automatizador de navegador no disparó el filtro (limitación ya documentada en este proyecto — el automatizador no siempre dispara `input`/`keyup` reales). Se confirmó disparando esos eventos manualmente via JS: con el fix aplicado, el debounce se disparó repetidamente sin tumbar el servidor, el filtro funcionó correctamente ("Hostal" → 1 resultado de 8), y los logs quedaron sin errores.
+
+- Commit `aba82c7` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
