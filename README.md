@@ -48,7 +48,7 @@ El proyecto se compone de **3 portales independientes**:
 >
 > **Como usar esto:** cada item marcado `[ ]` es una pieza real de negocio que hoy NO tiene ningun soporte en el codigo (no es una tarea tecnica generica, es un paso que el dueno del negocio necesita que el sistema sepa que paso). A medida que se construya cada uno, marcarlo `[x]` aqui y actualizar/republicar el artifact de arriba para que Iluna y Darwin vean el avance real.
 >
-> **Estado al 18-Sep-2026:** 25 construidos / 0 parciales / 0 faltantes (de los 22 pasos + 3 sub-pasos de reposicion) — **Auditoria del Ciclo Comercial completa**. Ultima actualizacion: paso 7 re-evaluado (ya estaba resuelto por `CompatibilityService`, la evaluacion anterior miraba el servicio equivocado) y fecha de contratacion candidato-empresa (paso 16, alcance recortado por decision de Darwin — TD no formaliza el contrato laboral, solo registra la fecha).
+> **Estado al 18-Sep-2026:** 25 construidos / 0 parciales / 0 faltantes (de los 22 pasos + 3 sub-pasos de reposicion) — **Auditoria del Ciclo Comercial completa**. De las "Politicas del documento oficial", tambien se cerro el ultimo bullet abierto: Validacion y Consolidacion quedan a criterio manual del admin, decision explicita de Darwin (no se automatiza su disparo). Ultima actualizacion: paso 7 re-evaluado (ya estaba resuelto por `CompatibilityService`, la evaluacion anterior miraba el servicio equivocado) y fecha de contratacion candidato-empresa (paso 16, alcance recortado por decision de Darwin — TD no formaliza el contrato laboral, solo registra la fecha).
 
 ### A. Captacion y Contratacion del Cliente
 
@@ -92,7 +92,7 @@ El proyecto se compone de **3 portales independientes**:
 - [x] Garantia por tipo de perfil (Operativo=30d / Encargados-Tecnicos=45d / Responsables-Cualificados=60d) — **corregido 18-Sep**: `/pricing/job-levels` tenia Encargados y Tecnicos en 40 dias (no 45); corregido vía UI a 30/45/60, coincide con el documento oficial
 - [x] Exclusiones de Garantia (impago de nomina, cambio sustancial de condiciones, cierre del negocio, incumplimiento normativo) — **construido 16-Sep**: las 4 causales son motivos estructurados de `WarrantyReplacementReason` (`ImpagoDeNomina`/`CambioSustancialDeCondiciones`/`CierreDelNegocio`/`IncumplimientoNormativo`); al elegir una, la reposicion queda `ExcluidaDeGarantia` (no cuenta como 1a/2a, no reabre la vacante). El campo de texto libre ("Excepciones pactadas") del contrato sigue existiendo aparte, para condiciones no cubiertas por estas 4
 - [x] "¿Y si el candidato...?" (roba/falta grave, baja medica, renuncia voluntaria) — **construido 16-Sep**: son 3 de los 6 motivos cubiertos de `WarrantyReplacementReason` (`FaltaGraveORobo`/`BajaMedica`/`RenunciaVoluntaria`), quedan registrados igual que cualquier otra causa de reposicion
-- [ ] 30/50/20 ligado a eventos reales del sistema — **parcial, mejorado 13-Sep**: la Apertura (30%) ya esta ligada a un evento real (bloquea publicar la vacante) y los 3 tramos son registros reales pagado/pendiente, no solo porcentajes. Sigue faltando el disparo automatico de Validacion al cerrar la negociacion y de Consolidacion a los +30 dias de incorporacion — hoy ambos los marca un admin a mano
+- [x] 30/50/20 ligado a eventos reales del sistema — **cerrado 18-Sep, decision explicita de Darwin**: la Apertura (30%) esta ligada a un evento real (bloquea publicar la vacante). Validacion y Consolidacion quedan a criterio manual del admin (no se automatiza su disparo al cerrar la negociacion ni a los 30 dias de incorporacion) — los 3 tramos siguen siendo registros reales pagado/pendiente, no solo porcentajes
 
 ---
 
@@ -1501,6 +1501,12 @@ Se quitó el guard; el botón ahora se muestra sin importar el estado de la vaca
 Mismo bug ya corregido el 17-Sep en `Payments.razor` (texto sin traducir — claves crudas en vez del idioma — en un arranque en frío del circuito Blazor), pendiente de aplicar en `Portfolio.razor`/`PortfolioDetail.razor` ("Cartera de Clientes", construidas en esta sesión). Se agregó el mismo guard (`if (Lang._translations.Count == 0) await Lang.InitializeAsync();` antes de `LoadAsync()`) a ambos `OnInitializedAsync`. Verificado con un reinicio real del servidor (circuito genuinamente frío) navegando directo a `/portfolio` y a `/portfolio/{comercialId}`: todo el texto renderiza traducido, sin claves crudas.
 
 - Commit `b2d8591` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
+### Sesión 2026-09-18 — Decisión: Validación y Consolidación quedan manuales (Dsiezar)
+
+Único punto que quedaba `[ ]` en "Políticas del documento oficial": el disparo automático de los tramos de pago Validación (al cerrar la negociación) y Consolidación (a los 30 días de incorporación). Pregunta directa a Darwin — respuesta: **quedan a criterio manual del admin**, no se automatiza. La Apertura (30%) sigue siendo la única con gate automático real (bloquea publicar la vacante), por ser la única que el diagrama oficial marca con un rombo de decisión.
+
+No hubo cambio de código — solo se cerró la evaluación en el README, sin dejar ningún ítem abierto en la Auditoría del Ciclo Comercial ni en sus políticas asociadas.
 
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
