@@ -32,6 +32,45 @@
         var withoutVacPct = totalCompanies > 0 ? (double)Metrics.CompaniesWithoutVacancies / totalCompanies * 100 : 0;
         var circumference = 2 * Math.PI * 56;
 
+        @* === Sección 0: Indicadores del Negocio *@
+        @if (BusinessMetrics != null)
+        {
+            var bm = BusinessMetrics;
+            <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionBusiness")</h2>
+            <div class="admin-stat-grid admin-stat-grid--3col" style="margin-bottom: var(--space-lg);">
+                <div class="admin-stat-card admin-stat-card--success admin-clickable" @onclick="GoToPayments">
+                    <span class="admin-stat-label">@Lang.T("admin.dashboard.revenueCollected")</span>
+                    <span class="admin-stat-value">@FormatEur(bm.RevenueCollected)</span>
+                    <span class="admin-stat-detail">@Lang.T("admin.dashboard.revenuePending"): @FormatEur(bm.RevenuePending)</span>
+                </div>
+                <div class="admin-stat-card admin-stat-card--info admin-clickable" @onclick="GoToCompanyPipeline">
+                    <span class="admin-stat-label">@Lang.T("admin.dashboard.winRate")</span>
+                    <span class="admin-stat-value">@bm.WinRatePercentage.ToString("F0")%</span>
+                    <span class="admin-stat-detail">@bm.DealsWon @Lang.T("admin.dashboard.won") / @bm.DealsLost @Lang.T("admin.dashboard.lost")</span>
+                </div>
+                <div class="admin-stat-card admin-clickable" @onclick="GoToVacancies">
+                    <span class="admin-stat-label">@Lang.T("admin.dashboard.timeToHire")</span>
+                    <span class="admin-stat-value">@(bm.AverageTimeToHireDays.HasValue ? bm.AverageTimeToHireDays.Value.ToString("F0") : "-")</span>
+                    <span class="admin-stat-detail">@bm.TimeToHireSampleSize @Lang.T("admin.dashboard.timeToHireDetail")</span>
+                </div>
+                <div class="admin-stat-card admin-stat-card--@(bm.PlacementSuccessRatePercentage >= 90 ? "success" : bm.PlacementSuccessRatePercentage >= 75 ? "warning" : "danger")">
+                    <span class="admin-stat-label">@Lang.T("admin.dashboard.placementSuccessRate")</span>
+                    <span class="admin-stat-value">@bm.PlacementSuccessRatePercentage.ToString("F0")%</span>
+                    <span class="admin-stat-detail">@bm.PlacementsWithWarrantyIssue / @bm.TotalHires @Lang.T("admin.dashboard.placementSuccessDetail")</span>
+                </div>
+                <div class="admin-stat-card admin-stat-card--warning admin-clickable" @onclick="GoToCompanyPipeline">
+                    <span class="admin-stat-label">@Lang.T("admin.dashboard.openPipelineValue")</span>
+                    <span class="admin-stat-value">@FormatEur(bm.OpenPipelineValue)</span>
+                    <span class="admin-stat-detail">@bm.OpenContractsCount @Lang.T("admin.dashboard.openContractsDetail")</span>
+                </div>
+                <div class="admin-stat-card admin-stat-card--danger admin-clickable" @onclick="GoToCompanyPipeline">
+                    <span class="admin-stat-label">@Lang.T("admin.dashboard.stalledCompanies")</span>
+                    <span class="admin-stat-value">@bm.StalledCompaniesCount</span>
+                    <span class="admin-stat-detail">@Lang.T("admin.dashboard.stalledCompaniesDetail")</span>
+                </div>
+            </div>
+        }
+
         @* === Sección 1: Perfiles *@
         <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionProfiles")</h2>
         <div class="admin-chart-grid">
@@ -216,6 +255,7 @@
 @code {
     private bool IsAuthenticated { get; set; }
     private DashboardMetricsDto? Metrics { get; set; }
+    private BusinessMetricsDto? BusinessMetrics { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -225,7 +265,13 @@
         IsAuthenticated = true;
 
         Metrics = await AuthApi.GetMetricsAsync();
+        BusinessMetrics = await AuthApi.GetBusinessMetricsAsync();
     }
+
+    private string FormatEur(decimal amount) => $"{amount:N2} EUR";
+
+    private void GoToPayments() => Nav.NavigateTo("/payments");
+    private void GoToCompanyPipeline() => Nav.NavigateTo("/companies/pipeline");
 
     private void GoToResults(string? role = null, string? filter = null, string? section = null)
     {

@@ -19,4 +19,11 @@ public class DashboardController : AdminControllerBase
         var metrics = await _dashboardService.GetMetricsAsync();
         return Ok(metrics);
     }
+
+    [HttpGet("business-metrics")]
+    public async Task<IActionResult> GetBusinessMetrics()
+    {
+        var metrics = await _dashboardService.GetBusinessMetricsAsync();
+        return Ok(metrics);
+    }
 }

@@ -789,6 +789,14 @@ textarea.admin-input {
 .admin-stat-card--info .admin-stat-value { color: var(--info); }
 .admin-stat-card--danger .admin-stat-value { color: var(--danger); }
 
+.admin-stat-grid--3col { grid-template-columns: repeat(3, 1fr); }
+
+.admin-stat-detail {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
 /* ============================================
    Admin Charts â€” Donut, Progress, Bar
    ============================================ */

@@ -63,6 +63,14 @@ public class AdminAuthApiService
         return await response.Content.ReadFromJsonAsync<DashboardMetricsDto>();
     }
 
+    public async Task<BusinessMetricsDto?> GetBusinessMetricsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/dashboard/business-metrics");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<BusinessMetricsDto>();
+    }
+
     public async Task<List<AdminUserDto>> GetUsersAsync(int page = 1, int pageSize = 1000, int? role = null)
     {
         await SetAuthHeaderAsync();

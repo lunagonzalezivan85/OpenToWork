@@ -145,6 +145,44 @@ public class DashboardMetricsDto
     public int CandidatesWithCV { get; set; }
 }
 
+/// <summary>6 indicadores de negocio para el dueño de la plataforma: ingresos, conversion
+/// comercial, velocidad de contratacion, calidad de colocacion, valor en pipeline y riesgo
+/// de perdida de clientes. Separado de DashboardMetricsDto (que es operativo/candidatos).</summary>
+public class BusinessMetricsDto
+{
+    /// <summary>1. Ingresos: cobrado vs pendiente sobre los tramos de pago ya generados
+    /// (PT_ContractPayments, solo contratos aceptados generan tramos).</summary>
+    public decimal RevenueCollected { get; set; }
+    public decimal RevenuePending { get; set; }
+    public decimal RevenueTotalBilled => RevenueCollected + RevenuePending;
+
+    /// <summary>2. Tasa de cierre comercial: Cerrado Ganado vs Cerrado Perdido del pipeline
+    /// de empresas (PT_CompanyPipelines).</summary>
+    public int DealsWon { get; set; }
+    public int DealsLost { get; set; }
+    public double WinRatePercentage { get; set; }
+
+    /// <summary>3. Tiempo promedio de contratacion en dias: desde la publicacion de la vacante
+    /// hasta la fecha de contratacion (HiringDate), combinando Negociaciones y Entregas.</summary>
+    public double? AverageTimeToHireDays { get; set; }
+    public int TimeToHireSampleSize { get; set; }
+
+    /// <summary>4. Tasa de exito de colocaciones: 100% menos el % de contrataciones que
+    /// requirieron una reposicion de garantia no excluida (PT_WarrantyReplacements).</summary>
+    public int TotalHires { get; set; }
+    public int PlacementsWithWarrantyIssue { get; set; }
+    public double PlacementSuccessRatePercentage { get; set; }
+
+    /// <summary>5. Valor potencial en contratos todavia no aceptados (Draft/Sent) — dinero
+    /// que entraria si esas empresas firman.</summary>
+    public decimal OpenPipelineValue { get; set; }
+    public int OpenContractsCount { get; set; }
+
+    /// <summary>6. Empresas en pipeline abierto (no Cerrado Ganado/Perdido) sin cambio de
+    /// etapa hace 30+ dias — riesgo de perder el trato por falta de seguimiento.</summary>
+    public int StalledCompaniesCount { get; set; }
+}
+
 public class AdminUserProfileDto
 {
     public Guid Id { get; set; }
