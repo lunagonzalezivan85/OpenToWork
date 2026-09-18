@@ -706,7 +706,14 @@
     "warrantyExpired": "Garantía vencida",
     "warrantyUntil": "hasta",
     "warrantyNoData": "Sin garantía definida en el contrato",
-    "activateReplacement": "Activar Garantía de Reposición"
+    "activateReplacement": "Activar Garantía de Reposición",
+    "closeProcess": "Cerrar Proceso",
+    "closeProcessNotesPlaceholder": "Resumen de cierre (opcional)...",
+    "processClosedOn": "Proceso cerrado el",
+    "recordFeedback": "Registrar Feedback",
+    "feedbackRatingLabel": "Satisfacción del cliente (1-5)",
+    "feedbackCommentsPlaceholder": "Comentarios del cliente (opcional)...",
+    "feedbackRecorded": "Feedback registrado:"
   },
   "warrantyReplacement": {
     "reasonLabel": "Motivo",

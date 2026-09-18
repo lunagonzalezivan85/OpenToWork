@@ -70,4 +70,34 @@ public class DeliveriesController : AdminControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    /// <summary>Cierre administrativo del proceso post-garantia (paso 21).</summary>
+    [HttpPost("{id}/close-process")]
+    public async Task<IActionResult> CloseProcess(Guid id, [FromBody] CloseProcessDto dto)
+    {
+        try
+        {
+            var result = await _deliveryService.CloseProcessAsync(id, dto, AdminId);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Registra feedback de mejora continua (paso 22) sobre un proceso ya cerrado.</summary>
+    [HttpPost("{id}/feedback")]
+    public async Task<IActionResult> RecordFeedback(Guid id, [FromBody] RecordFeedbackDto dto)
+    {
+        try
+        {
+            var result = await _deliveryService.RecordFeedbackAsync(id, dto, AdminId);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

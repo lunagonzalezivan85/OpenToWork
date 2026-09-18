@@ -164,6 +164,63 @@ public class NegotiationService : INegotiationService
         return await ToDtoAsync(id);
     }
 
+    public async Task<NegotiationDto?> CloseProcessAsync(Guid id, CloseProcessDto dto, Guid staffId)
+    {
+        var negotiation = await _context.PT_Negotiations.FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
+        if (negotiation == null) return null;
+        if (negotiation.Status != (int)NegotiationStatus.Cerrada)
+            throw new InvalidOperationException("Solo se puede cerrar el proceso de una negociacion cerrada.");
+        if (negotiation.ProcessClosedAt != null)
+            throw new InvalidOperationException("El proceso ya esta cerrado.");
+
+        var warrantyDays = await _warranty.GetWarrantyDaysForVacancyAsync(negotiation.PT_VacancyId);
+        var (_, warrantyStatus) = WarrantyCalculator.Calculate(negotiation.IncorporationDate, warrantyDays);
+        if (warrantyStatus.HasValue && warrantyStatus.Value != WarrantyStatus.Vencida)
+            throw new InvalidOperationException("La garantia todavia esta vigente, no se puede cerrar el proceso todavia.");
+
+        var hasActiveReplacement = await _context.PT_WarrantyReplacements
+            .AnyAsync(w => w.OriginalNegotiationId == id && w.Status == (int)WarrantyReplacementStatus.EnCurso && !w.IsDeleted);
+        if (hasActiveReplacement)
+            throw new InvalidOperationException("Hay una reposicion de garantia en curso sin resolver.");
+
+        negotiation.ProcessClosedAt = DateTime.UtcNow;
+        negotiation.ProcessClosedByUserId = staffId;
+        negotiation.ProcessClosureNotes = dto.Notes;
+        negotiation.UpdatedAt = DateTime.UtcNow;
+        negotiation.UpdatedBy = staffId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(staffId, "CloseNegotiationProcess", "PT_Negotiations", negotiation.Id, null, null);
+
+        return await ToDtoAsync(id);
+    }
+
+    public async Task<NegotiationDto?> RecordFeedbackAsync(Guid id, RecordFeedbackDto dto, Guid staffId)
+    {
+        if (dto.Rating < 1 || dto.Rating > 5)
+            throw new InvalidOperationException("El rating debe estar entre 1 y 5.");
+
+        var negotiation = await _context.PT_Negotiations.FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
+        if (negotiation == null) return null;
+        if (negotiation.ProcessClosedAt == null)
+            throw new InvalidOperationException("Solo se puede registrar feedback una vez cerrado el proceso.");
+        if (negotiation.FeedbackRecordedAt != null)
+            throw new InvalidOperationException("El feedback ya fue registrado.");
+
+        negotiation.FeedbackRating = dto.Rating;
+        negotiation.FeedbackComments = dto.Comments;
+        negotiation.FeedbackRecordedAt = DateTime.UtcNow;
+        negotiation.FeedbackRecordedByUserId = staffId;
+        negotiation.UpdatedAt = DateTime.UtcNow;
+        negotiation.UpdatedBy = staffId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(staffId, "RecordNegotiationFeedback", "PT_Negotiations", negotiation.Id,
+            $"{{\"rating\":{dto.Rating}}}", null);
+
+        return await ToDtoAsync(id);
+    }
+
     public async Task<List<NegotiationDto>> GetByVacancyAsync(Guid vacancyId)
     {
         var ids = await _context.PT_Negotiations
@@ -185,6 +242,7 @@ public class NegotiationService : INegotiationService
     {
         var negotiation = await _context.PT_Negotiations
             .Include(n => n.Vacancy)
+            .Include(n => n.ProcessClosedByUser)
             .Include(n => n.Candidates).ThenInclude(c => c.Application).ThenInclude(a => a.Candidate)
             .FirstOrDefaultAsync(n => n.Id == negotiationId);
         if (negotiation == null) return null;
@@ -193,6 +251,11 @@ public class NegotiationService : INegotiationService
         var (warrantyEndsAt, warrantyStatus) = WarrantyCalculator.Calculate(negotiation.IncorporationDate, warrantyDays);
         var hasActiveReplacement = await _context.PT_WarrantyReplacements
             .AnyAsync(w => w.OriginalNegotiationId == negotiation.Id && w.Status == (int)WarrantyReplacementStatus.EnCurso && !w.IsDeleted);
+        var canCloseProcess = negotiation.Status == (int)NegotiationStatus.Cerrada
+            && negotiation.ProcessClosedAt == null
+            && (!warrantyStatus.HasValue || warrantyStatus.Value == WarrantyStatus.Vencida)
+            && !hasActiveReplacement;
+        var canRecordFeedback = negotiation.ProcessClosedAt != null && negotiation.FeedbackRecordedAt == null;
 
         return new NegotiationDto
         {
@@ -209,6 +272,14 @@ public class NegotiationService : INegotiationService
             WarrantyEndsAt = warrantyEndsAt,
             WarrantyStatus = (int?)warrantyStatus,
             HasActiveWarrantyReplacement = hasActiveReplacement,
+            ProcessClosedAt = negotiation.ProcessClosedAt,
+            ProcessClosedByName = negotiation.ProcessClosedByUser?.Email,
+            ProcessClosureNotes = negotiation.ProcessClosureNotes,
+            CanCloseProcess = canCloseProcess,
+            FeedbackRating = negotiation.FeedbackRating,
+            FeedbackComments = negotiation.FeedbackComments,
+            FeedbackRecordedAt = negotiation.FeedbackRecordedAt,
+            CanRecordFeedback = canRecordFeedback,
             Candidates = negotiation.Candidates
                 .Where(c => !c.IsDeleted)
                 .Select(c => new NegotiationCandidateDto

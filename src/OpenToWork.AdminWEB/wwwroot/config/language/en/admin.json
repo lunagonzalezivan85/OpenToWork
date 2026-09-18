@@ -706,7 +706,14 @@
     "warrantyExpired": "Warranty expired",
     "warrantyUntil": "until",
     "warrantyNoData": "No warranty defined on the contract",
-    "activateReplacement": "Activate Replacement Warranty"
+    "activateReplacement": "Activate Replacement Warranty",
+    "closeProcess": "Close Process",
+    "closeProcessNotesPlaceholder": "Closing summary (optional)...",
+    "processClosedOn": "Process closed on",
+    "recordFeedback": "Record Feedback",
+    "feedbackRatingLabel": "Client satisfaction (1-5)",
+    "feedbackCommentsPlaceholder": "Client comments (optional)...",
+    "feedbackRecorded": "Feedback recorded:"
   },
   "warrantyReplacement": {
     "reasonLabel": "Reason",

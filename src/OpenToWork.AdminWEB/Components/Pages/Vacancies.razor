@@ -231,6 +231,80 @@ else
                                                             </div>
                                                         }
                                                     }
+                                                    @if (n.ProcessClosedAt.HasValue)
+                                                    {
+                                                        <div style="margin-top:0.5rem;">
+                                                            <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.negotiation.processClosedOn") @n.ProcessClosedAt.Value.ToString("dd/MM/yyyy")</span>
+                                                        </div>
+                                                    }
+                                                    else if (n.CanCloseProcess)
+                                                    {
+                                                        @if (ClosingProcessForId == n.Id)
+                                                        {
+                                                            <div style="margin-top:0.5rem; padding:0.5rem; border:1px solid var(--input-border); border-radius:8px;">
+                                                                <textarea class="admin-input" rows="2" style="width:100%;" @bind="CloseProcessNotes" placeholder="@Lang.T("admin.negotiation.closeProcessNotesPlaceholder")"></textarea>
+                                                                @if (!string.IsNullOrEmpty(CloseProcessError))
+                                                                {
+                                                                    <p style="color: var(--danger); font-size: 0.75rem; margin: 0.35rem 0;">@CloseProcessError</p>
+                                                                }
+                                                                <div style="display:flex; gap:0.4rem; margin-top:0.35rem;">
+                                                                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsNegotiationBusy" @onclick="() => ConfirmCloseProcessAsync(n.Id, v.Id)">@Lang.T("admin.common.confirm")</button>
+                                                                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { ClosingProcessForId = null; CloseProcessError = null; }">@Lang.T("admin.common.cancel")</button>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div style="margin-top:0.5rem;">
+                                                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { ClosingProcessForId = n.Id; CloseProcessNotes = null; CloseProcessError = null; }">
+                                                                    @Lang.T("admin.negotiation.closeProcess")
+                                                                </button>
+                                                            </div>
+                                                        }
+                                                    }
+                                                    @if (n.FeedbackRecordedAt.HasValue)
+                                                    {
+                                                        <div style="margin-top:0.5rem; font-size:0.8rem;">
+                                                            <span class="admin-result-badge admin-result-badge--info">@Lang.T("admin.negotiation.feedbackRecorded") @n.FeedbackRating/5</span>
+                                                            @if (!string.IsNullOrWhiteSpace(n.FeedbackComments))
+                                                            {
+                                                                <p style="color: var(--text-muted); margin: 0.3rem 0 0;">"@n.FeedbackComments"</p>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    else if (n.CanRecordFeedback)
+                                                    {
+                                                        @if (RecordingFeedbackForId == n.Id)
+                                                        {
+                                                            <div style="margin-top:0.5rem; padding:0.5rem; border:1px solid var(--input-border); border-radius:8px;">
+                                                                <label class="admin-form-label" style="font-size:0.75rem;">@Lang.T("admin.negotiation.feedbackRatingLabel")</label>
+                                                                <select class="admin-select" @bind="FeedbackRating">
+                                                                    <option value="5">5</option>
+                                                                    <option value="4">4</option>
+                                                                    <option value="3">3</option>
+                                                                    <option value="2">2</option>
+                                                                    <option value="1">1</option>
+                                                                </select>
+                                                                <textarea class="admin-input" rows="2" style="margin-top:0.35rem; width:100%;" @bind="FeedbackComments" placeholder="@Lang.T("admin.negotiation.feedbackCommentsPlaceholder")"></textarea>
+                                                                @if (!string.IsNullOrEmpty(FeedbackError))
+                                                                {
+                                                                    <p style="color: var(--danger); font-size: 0.75rem; margin: 0.35rem 0;">@FeedbackError</p>
+                                                                }
+                                                                <div style="display:flex; gap:0.4rem; margin-top:0.35rem;">
+                                                                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsNegotiationBusy" @onclick="() => ConfirmRecordFeedbackAsync(n.Id, v.Id)">@Lang.T("admin.common.confirm")</button>
+                                                                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { RecordingFeedbackForId = null; FeedbackError = null; }">@Lang.T("admin.common.cancel")</button>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div style="margin-top:0.5rem;">
+                                                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { RecordingFeedbackForId = n.Id; FeedbackRating = 5; FeedbackComments = null; FeedbackError = null; }">
+                                                                    @Lang.T("admin.negotiation.recordFeedback")
+                                                                </button>
+                                                            </div>
+                                                        }
+                                                    }
                                                 }
                                             }
                                         </div>
@@ -568,6 +642,17 @@ else
     private string? ReplacementNotes { get; set; }
     private string? ReplacementError { get; set; }
 
+    // Cierre del proceso post-garantia (paso 21): mismo patron de un formulario a la vez.
+    private Guid? ClosingProcessForId { get; set; }
+    private string? CloseProcessNotes { get; set; }
+    private string? CloseProcessError { get; set; }
+
+    // Feedback de mejora continua (paso 22): mismo patron de un formulario a la vez.
+    private Guid? RecordingFeedbackForId { get; set; }
+    private int FeedbackRating { get; set; } = 5;
+    private string? FeedbackComments { get; set; }
+    private string? FeedbackError { get; set; }
+
     private static bool IsExclusionReason(int reason) => ((WarrantyReplacementReason)reason).IsExclusion();
 
     private List<(int Value, string Label)> WarrantyReplacementReasonOptions => new()
@@ -600,6 +685,46 @@ else
         else
         {
             ReplacementError = error ?? "No se pudo activar la reposicion.";
+        }
+        IsNegotiationBusy = false;
+    }
+
+    private async Task ConfirmCloseProcessAsync(Guid negotiationId, Guid vacancyId)
+    {
+        if (IsNegotiationBusy) return;
+        IsNegotiationBusy = true;
+        CloseProcessError = null;
+
+        var dto = new CloseProcessDto { Notes = CloseProcessNotes };
+        var (result, error) = await AuthApi.CloseNegotiationProcessAsync(negotiationId, dto);
+        if (result != null)
+        {
+            ClosingProcessForId = null;
+            await LoadNegotiations(vacancyId);
+        }
+        else
+        {
+            CloseProcessError = error ?? "No se pudo cerrar el proceso.";
+        }
+        IsNegotiationBusy = false;
+    }
+
+    private async Task ConfirmRecordFeedbackAsync(Guid negotiationId, Guid vacancyId)
+    {
+        if (IsNegotiationBusy) return;
+        IsNegotiationBusy = true;
+        FeedbackError = null;
+
+        var dto = new RecordFeedbackDto { Rating = FeedbackRating, Comments = FeedbackComments };
+        var (result, error) = await AuthApi.RecordNegotiationFeedbackAsync(negotiationId, dto);
+        if (result != null)
+        {
+            RecordingFeedbackForId = null;
+            await LoadNegotiations(vacancyId);
+        }
+        else
+        {
+            FeedbackError = error ?? "No se pudo registrar el feedback.";
         }
         IsNegotiationBusy = false;
     }

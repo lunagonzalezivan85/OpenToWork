@@ -518,6 +518,14 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(n => n.WinningApplicationId)
                 .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(n => n.ProcessClosedByUser)
+                .WithMany()
+                .HasForeignKey(n => n.ProcessClosedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(n => n.FeedbackRecordedByUser)
+                .WithMany()
+                .HasForeignKey(n => n.FeedbackRecordedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<PTNegotiationCandidate>(e =>
@@ -600,6 +608,14 @@ public class AppDbContext : DbContext
             e.HasOne(d => d.DeliveredByUser)
                 .WithMany()
                 .HasForeignKey(d => d.DeliveredByUserId);
+            e.HasOne(d => d.ProcessClosedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.ProcessClosedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(d => d.FeedbackRecordedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.FeedbackRecordedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         SeedWizardSteps(modelBuilder);

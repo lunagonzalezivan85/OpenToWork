@@ -33,6 +33,23 @@ public class NegotiationDto
     /// <summary>true si ya existe una reposicion de garantia EnCurso sobre esta negociacion
     /// (evita activar una segunda mientras la primera sigue abierta).</summary>
     public bool HasActiveWarrantyReplacement { get; set; }
+
+    /// <summary>Paso 21: fecha en que se cerro administrativamente el proceso (garantia vencida
+    /// o sin garantia definida, sin reposiciones sin resolver). Null si sigue abierto.</summary>
+    public DateTime? ProcessClosedAt { get; set; }
+    public string? ProcessClosedByName { get; set; }
+    public string? ProcessClosureNotes { get; set; }
+
+    /// <summary>true si hoy se cumplen las condiciones para cerrar el proceso (calculado en el
+    /// servidor para no duplicar la regla en el cliente).</summary>
+    public bool CanCloseProcess { get; set; }
+
+    /// <summary>Paso 22: feedback de mejora continua, solo se puede registrar una vez cerrado
+    /// el proceso.</summary>
+    public int? FeedbackRating { get; set; }
+    public string? FeedbackComments { get; set; }
+    public DateTime? FeedbackRecordedAt { get; set; }
+    public bool CanRecordFeedback { get; set; }
 }
 
 public class CreateNegotiationDto
@@ -60,4 +77,15 @@ public class CloseNegotiationDto
 public class SetIncorporationDateDto
 {
     public DateTime IncorporationDate { get; set; }
+}
+
+public class CloseProcessDto
+{
+    public string? Notes { get; set; }
+}
+
+public class RecordFeedbackDto
+{
+    public int Rating { get; set; }
+    public string? Comments { get; set; }
 }

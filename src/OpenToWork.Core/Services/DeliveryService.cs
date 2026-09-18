@@ -181,6 +181,65 @@ public class DeliveryService : IDeliveryService
         return await GetDeliveryDtoAsync(deliveryId);
     }
 
+    public async Task<DeliveryDto?> CloseProcessAsync(Guid deliveryId, CloseProcessDto dto, Guid adminId)
+    {
+        var delivery = await _context.PT_CandidateDeliveries
+            .FirstOrDefaultAsync(d => d.Id == deliveryId && !d.IsDeleted);
+        if (delivery == null) return null;
+        if (delivery.Status != (int)DeliveryStatus.Hired)
+            throw new InvalidOperationException("Solo se puede cerrar el proceso de una entrega en estado Contratado.");
+        if (delivery.ProcessClosedAt != null)
+            throw new InvalidOperationException("El proceso ya esta cerrado.");
+
+        var warrantyDays = await _warranty.GetWarrantyDaysForVacancyAsync(delivery.PT_VacancyId);
+        var (_, warrantyStatus) = WarrantyCalculator.Calculate(delivery.IncorporationDate, warrantyDays);
+        if (warrantyStatus.HasValue && warrantyStatus.Value != WarrantyStatus.Vencida)
+            throw new InvalidOperationException("La garantia todavia esta vigente, no se puede cerrar el proceso todavia.");
+
+        var hasActiveReplacement = await _context.PT_WarrantyReplacements
+            .AnyAsync(w => w.OriginalDeliveryId == deliveryId && w.Status == (int)WarrantyReplacementStatus.EnCurso && !w.IsDeleted);
+        if (hasActiveReplacement)
+            throw new InvalidOperationException("Hay una reposicion de garantia en curso sin resolver.");
+
+        delivery.ProcessClosedAt = DateTime.UtcNow;
+        delivery.ProcessClosedByUserId = adminId;
+        delivery.ProcessClosureNotes = dto.Notes;
+        delivery.UpdatedAt = DateTime.UtcNow;
+        delivery.UpdatedBy = adminId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(adminId, "CloseDeliveryProcess", "PTCandidateDelivery", delivery.Id, null, null);
+
+        return await GetDeliveryDtoAsync(deliveryId);
+    }
+
+    public async Task<DeliveryDto?> RecordFeedbackAsync(Guid deliveryId, RecordFeedbackDto dto, Guid adminId)
+    {
+        if (dto.Rating < 1 || dto.Rating > 5)
+            throw new InvalidOperationException("El rating debe estar entre 1 y 5.");
+
+        var delivery = await _context.PT_CandidateDeliveries
+            .FirstOrDefaultAsync(d => d.Id == deliveryId && !d.IsDeleted);
+        if (delivery == null) return null;
+        if (delivery.ProcessClosedAt == null)
+            throw new InvalidOperationException("Solo se puede registrar feedback una vez cerrado el proceso.");
+        if (delivery.FeedbackRecordedAt != null)
+            throw new InvalidOperationException("El feedback ya fue registrado.");
+
+        delivery.FeedbackRating = dto.Rating;
+        delivery.FeedbackComments = dto.Comments;
+        delivery.FeedbackRecordedAt = DateTime.UtcNow;
+        delivery.FeedbackRecordedByUserId = adminId;
+        delivery.UpdatedAt = DateTime.UtcNow;
+        delivery.UpdatedBy = adminId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(adminId, "RecordDeliveryFeedback", "PTCandidateDelivery", delivery.Id,
+            $"{{\"rating\":{dto.Rating}}}", null);
+
+        return await GetDeliveryDtoAsync(deliveryId);
+    }
+
     public async Task<List<DeliveryDto>> GetHiredDeliveriesByVacancyAsync(Guid vacancyId)
     {
         var deliveries = await _context.PT_CandidateDeliveries
@@ -214,6 +273,14 @@ public class DeliveryService : IDeliveryService
         var (warrantyEndsAt, warrantyStatus) = WarrantyCalculator.Calculate(d.IncorporationDate, warrantyDays);
         var hasActiveReplacement = await _context.PT_WarrantyReplacements
             .AnyAsync(w => w.OriginalDeliveryId == d.Id && w.Status == (int)WarrantyReplacementStatus.EnCurso && !w.IsDeleted);
+        var canCloseProcess = d.Status == (int)DeliveryStatus.Hired
+            && d.ProcessClosedAt == null
+            && (!warrantyStatus.HasValue || warrantyStatus.Value == WarrantyStatus.Vencida)
+            && !hasActiveReplacement;
+        var canRecordFeedback = d.ProcessClosedAt != null && d.FeedbackRecordedAt == null;
+        var processClosedByName = d.ProcessClosedByUserId.HasValue
+            ? (await _context.SC_Users.Where(u => u.Id == d.ProcessClosedByUserId.Value).Select(u => u.Email).FirstOrDefaultAsync())
+            : null;
 
         return new DeliveryDto
         {
@@ -237,7 +304,15 @@ public class DeliveryService : IDeliveryService
             IncorporationDate = d.IncorporationDate,
             WarrantyEndsAt = warrantyEndsAt,
             WarrantyStatus = (int?)warrantyStatus,
-            HasActiveWarrantyReplacement = hasActiveReplacement
+            HasActiveWarrantyReplacement = hasActiveReplacement,
+            ProcessClosedAt = d.ProcessClosedAt,
+            ProcessClosedByName = processClosedByName,
+            ProcessClosureNotes = d.ProcessClosureNotes,
+            CanCloseProcess = canCloseProcess,
+            FeedbackRating = d.FeedbackRating,
+            FeedbackComments = d.FeedbackComments,
+            FeedbackRecordedAt = d.FeedbackRecordedAt,
+            CanRecordFeedback = canRecordFeedback
         };
     }
 }

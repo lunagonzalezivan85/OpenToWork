@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OpenToWork.Models.Context;
 
@@ -11,9 +12,11 @@ using OpenToWork.Models.Context;
 namespace OpenToWork.Models.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260918051022_ProcessClosure")]
+    partial class ProcessClosure
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -388,18 +391,6 @@ namespace OpenToWork.Models.Migrations
                     b.Property<Guid>("DeliveredByUserId")
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("FeedbackComments")
-                        .HasColumnType("longtext");
-
-                    b.Property<int?>("FeedbackRating")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("FeedbackRecordedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("FeedbackRecordedByUserId")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTime?>("IncorporationDate")
                         .HasColumnType("datetime(6)");
 
@@ -445,8 +436,6 @@ namespace OpenToWork.Models.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DeliveredByUserId");
-
-                    b.HasIndex("FeedbackRecordedByUserId");
 
                     b.HasIndex("PT_CandidateId");
 
@@ -1735,18 +1724,6 @@ namespace OpenToWork.Models.Migrations
                     b.Property<Guid?>("DeletedBy")
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("FeedbackComments")
-                        .HasColumnType("longtext");
-
-                    b.Property<int?>("FeedbackRating")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("FeedbackRecordedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("FeedbackRecordedByUserId")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTime?>("IncorporationDate")
                         .HasColumnType("datetime(6)");
 
@@ -1786,8 +1763,6 @@ namespace OpenToWork.Models.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedStaffId");
-
-                    b.HasIndex("FeedbackRecordedByUserId");
 
                     b.HasIndex("ProcessClosedByUserId");
 
@@ -1902,7 +1877,7 @@ namespace OpenToWork.Models.Migrations
                         new
                         {
                             Id = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3257),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(1122),
                             Currency = "EUR",
                             Description = "Plan básico con funcionalidades esenciales para empezar.",
                             IsActive = true,
@@ -1914,7 +1889,7 @@ namespace OpenToWork.Models.Migrations
                         new
                         {
                             Id = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3271),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(1154),
                             Currency = "EUR",
                             Description = "Plan premium con herramientas avanzadas de gestión y soporte prioritario.",
                             IsActive = true,
@@ -1926,7 +1901,7 @@ namespace OpenToWork.Models.Migrations
                         new
                         {
                             Id = new Guid("a3333333-3333-3333-3333-333333333333"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3274),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(1159),
                             Currency = "EUR",
                             Description = "Plan platinum con todas las funcionalidades, soporte dedicado y personalización total.",
                             IsActive = true,
@@ -3311,9 +3286,9 @@ namespace OpenToWork.Models.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("cef7ed57-c15b-4853-a8cd-df36746aa1e3"),
+                            Id = new Guid("2a47f02c-460f-423a-8fdb-3f48e0225a95"),
                             Category = "Identidad",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4135),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1663),
                             Description = "Pasaporte válido y en vigor",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3322,9 +3297,9 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("077f4720-5db1-4dc8-bdb4-41cbfa4aee74"),
+                            Id = new Guid("2c51aba9-50fd-4971-a0a6-c866c0db97cd"),
                             Category = "Identidad",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4141),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1675),
                             Description = "DNI / NIE / Cédula de identidad",
                             IsDeleted = false,
                             IsRequired = true,
@@ -3333,9 +3308,9 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("c2392b1c-17db-4835-841e-0991aa388b84"),
+                            Id = new Guid("b9921eb7-c90b-4af4-a80a-c94f892d5167"),
                             Category = "Migratorio",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4144),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1679),
                             Description = "Autorización de trabajo en el país de destino",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3344,9 +3319,9 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("619f40ee-1957-4a2f-aaf2-cefff11b39d6"),
+                            Id = new Guid("ff101b75-673b-487c-a5c8-4dc638bc3396"),
                             Category = "Habilitación",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4155),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1695),
                             Description = "Permiso de conducir válido",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3355,9 +3330,9 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("fd079955-e63a-4a22-bb81-90bf44144778"),
+                            Id = new Guid("aa98bf8e-e124-4415-95c9-07be8498b6e8"),
                             Category = "Migratorio",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4157),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1698),
                             Description = "Visado que habilita a trabajar legalmente",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3366,9 +3341,9 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("a5fe9e0d-a960-46ec-8d38-9e6613ea3173"),
+                            Id = new Guid("93125067-57d7-4c6b-967a-91fd2c9fb938"),
                             Category = "Salud",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4159),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1701),
                             Description = "Tarjeta sanitaria europea (TSE) o seguro médico privado",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3377,9 +3352,9 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("8e0494b7-2360-4090-9cd6-bb5ca71a12aa"),
+                            Id = new Guid("02efd895-3da2-4966-995d-97b659d7c124"),
                             Category = "Legal",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4161),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1704),
                             Description = "Certificado de antecedentes penales apostillado",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3388,9 +3363,9 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("073a27cb-9904-4413-b47f-a983d84e9285"),
+                            Id = new Guid("b17cebd9-0a42-4419-8bb6-6a266b7c85e6"),
                             Category = "Formación",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4164),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1710),
                             Description = "Título habilitante o certificación profesional",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3399,9 +3374,9 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("e854d85f-315d-4508-93e7-e21c6c136daf"),
+                            Id = new Guid("3ab1a3a5-299a-4c44-90ac-c99acb20dc0b"),
                             Category = "Fiscal",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4166),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1713),
                             Description = "Documento con número de afiliación a la seguridad social",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3410,9 +3385,9 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("bf1a761e-075e-437a-afa7-fa90e5e1c9c1"),
+                            Id = new Guid("de4e2d6a-7b5e-4c91-bd6c-fcbb22436b2e"),
                             Category = "Fiscal",
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 660, DateTimeKind.Utc).AddTicks(4167),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 458, DateTimeKind.Utc).AddTicks(1716),
                             Description = "Justificante de cuenta bancaria a nombre del candidato",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3544,8 +3519,8 @@ namespace OpenToWork.Models.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("66e1c211-3807-41ca-a535-8bf24794fdfd"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3186),
+                            Id = new Guid("d0aa55f9-a0bb-44a2-abe7-214836b593a0"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(757),
                             Description = "Tell us about yourself",
                             IsDeleted = false,
                             IsRequired = true,
@@ -3557,8 +3532,8 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("73be02bc-1ba7-4eef-a518-d477d2e34cff"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3195),
+                            Id = new Guid("1b9ab325-266f-4417-a0fb-ed55160c5bb4"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(903),
                             Description = "Where are you located?",
                             IsDeleted = false,
                             IsRequired = true,
@@ -3570,8 +3545,8 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("6b8a94f9-fbfd-4ca1-8fd1-0cfc7b7a25b4"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3197),
+                            Id = new Guid("900edc92-2be2-41ce-8f77-2d49fbc08884"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(910),
                             Description = "Your professional information",
                             IsDeleted = false,
                             IsRequired = true,
@@ -3583,8 +3558,8 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("1792297f-398d-4d45-bd8b-08f0d942bcaa"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3199),
+                            Id = new Guid("217d1bc0-5b94-4343-875b-9ef5d156244d"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(915),
                             Description = "Select your skills",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3596,8 +3571,8 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("750e6e61-ec3b-4249-bd2d-b52646fb72cc"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3201),
+                            Id = new Guid("22820536-4362-46ca-8cd1-b19a0d0a1ce8"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(919),
                             Description = "Choose your preference",
                             IsDeleted = false,
                             IsRequired = true,
@@ -3609,8 +3584,8 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("1f99447a-e34a-4602-bdaa-5ebe74753548"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3205),
+                            Id = new Guid("b0f13715-7789-4e63-8f4a-7024c8baba8c"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(948),
                             Description = "Verify your data is correct",
                             IsDeleted = false,
                             IsRequired = true,
@@ -3622,8 +3597,8 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("d7878013-8b76-4d8b-9644-30c4cff8274f"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3207),
+                            Id = new Guid("91bfe896-a380-4608-bdb5-7e30fb77d6ef"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(952),
                             Description = "Add your work experience",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3635,8 +3610,8 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("fc4d086a-cddb-48fd-824e-f80d60f46a1a"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3209),
+                            Id = new Guid("1dc6f4ed-8e67-4b7c-a2a8-1980f0652266"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(956),
                             Description = "Add your education",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3648,8 +3623,8 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("2b5743c7-f772-4539-aa44-d41e5cf0c32d"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3211),
+                            Id = new Guid("d821d0d8-5630-4640-9067-ccf19dbbba3f"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(960),
                             Description = "Add your certifications",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3661,8 +3636,8 @@ namespace OpenToWork.Models.Migrations
                         },
                         new
                         {
-                            Id = new Guid("01e579c0-d70c-4a80-ae52-bb9dc166b4ba"),
-                            CreatedAt = new DateTime(2026, 9, 18, 5, 20, 24, 662, DateTimeKind.Utc).AddTicks(3214),
+                            Id = new Guid("5832402e-1e27-4fa2-b88d-dd34faecc4ed"),
+                            CreatedAt = new DateTime(2026, 9, 18, 5, 10, 20, 463, DateTimeKind.Utc).AddTicks(967),
                             Description = "Upload your CV/resume",
                             IsDeleted = false,
                             IsRequired = false,
@@ -3734,11 +3709,6 @@ namespace OpenToWork.Models.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("OpenToWork.Models.Entities.SCUser", "FeedbackRecordedByUser")
-                        .WithMany()
-                        .HasForeignKey("FeedbackRecordedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("OpenToWork.Models.Entities.PTCandidate", "Candidate")
                         .WithMany()
                         .HasForeignKey("PT_CandidateId")
@@ -3773,8 +3743,6 @@ namespace OpenToWork.Models.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("DeliveredByUser");
-
-                    b.Navigation("FeedbackRecordedByUser");
 
                     b.Navigation("ProcessClosedByUser");
 
@@ -4086,11 +4054,6 @@ namespace OpenToWork.Models.Migrations
                         .HasForeignKey("AssignedStaffId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("OpenToWork.Models.Entities.SCUser", "FeedbackRecordedByUser")
-                        .WithMany()
-                        .HasForeignKey("FeedbackRecordedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("OpenToWork.Models.Entities.PTVacancy", "Vacancy")
                         .WithMany()
                         .HasForeignKey("PT_VacancyId")
@@ -4108,8 +4071,6 @@ namespace OpenToWork.Models.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("AssignedStaff");
-
-                    b.Navigation("FeedbackRecordedByUser");
 
                     b.Navigation("ProcessClosedByUser");
 

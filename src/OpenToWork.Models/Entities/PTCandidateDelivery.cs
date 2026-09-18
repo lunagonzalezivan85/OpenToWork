@@ -53,4 +53,29 @@ public class PTCandidateDelivery : BaseEntity
     /// comercial). Solo tiene sentido cuando Status = Hired. La usa el calculo de garantia
     /// (WarrantyDays del contrato de la vacante + esta fecha).</summary>
     public DateTime? IncorporationDate { get; set; }
+
+    /// <summary>Paso 21 del flujo comercial: cierre administrativo del proceso una vez vencida
+    /// la garantia (o sin garantia definida) y sin reposiciones sin resolver. Distingue un
+    /// "cerrado exitoso post-garantia" de simplemente Status=Hired.</summary>
+    public DateTime? ProcessClosedAt { get; set; }
+
+    public Guid? ProcessClosedByUserId { get; set; }
+
+    [ForeignKey("ProcessClosedByUserId")]
+    public virtual SCUser? ProcessClosedByUser { get; set; }
+
+    public string? ProcessClosureNotes { get; set; }
+
+    /// <summary>Paso 22: feedback de mejora continua registrado por el admin (conversacion con
+    /// el cliente) una vez cerrado el proceso. Rating 1-5, null si no se ha registrado.</summary>
+    public int? FeedbackRating { get; set; }
+
+    public string? FeedbackComments { get; set; }
+
+    public DateTime? FeedbackRecordedAt { get; set; }
+
+    public Guid? FeedbackRecordedByUserId { get; set; }
+
+    [ForeignKey("FeedbackRecordedByUserId")]
+    public virtual SCUser? FeedbackRecordedByUser { get; set; }
 }

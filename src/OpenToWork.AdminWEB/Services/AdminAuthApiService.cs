@@ -835,6 +835,20 @@ public class AdminAuthApiService
         return await ReadResultAsync<WarrantyReplacementDto>(response);
     }
 
+    public async Task<(DeliveryDto? Result, string? Error)> CloseDeliveryProcessAsync(Guid deliveryId, CloseProcessDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment-deliveries/{deliveryId}/close-process", dto);
+        return await ReadResultAsync<DeliveryDto>(response);
+    }
+
+    public async Task<(DeliveryDto? Result, string? Error)> RecordDeliveryFeedbackAsync(Guid deliveryId, RecordFeedbackDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment-deliveries/{deliveryId}/feedback", dto);
+        return await ReadResultAsync<DeliveryDto>(response);
+    }
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");
@@ -1048,6 +1062,20 @@ public class AdminAuthApiService
         await SetAuthHeaderAsync();
         var response = await _httpClient.PostAsJsonAsync($"api/admin/negotiations/{negotiationId}/warranty-replacement", dto);
         return await ReadResultAsync<WarrantyReplacementDto>(response);
+    }
+
+    public async Task<(NegotiationDto? Result, string? Error)> CloseNegotiationProcessAsync(Guid negotiationId, CloseProcessDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/negotiations/{negotiationId}/close-process", dto);
+        return await ReadResultAsync<NegotiationDto>(response);
+    }
+
+    public async Task<(NegotiationDto? Result, string? Error)> RecordNegotiationFeedbackAsync(Guid negotiationId, RecordFeedbackDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/negotiations/{negotiationId}/feedback", dto);
+        return await ReadResultAsync<NegotiationDto>(response);
     }
 
     // --- Company CRM ---
