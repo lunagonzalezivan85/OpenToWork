@@ -397,8 +397,11 @@ else
         _debounceTimer?.Dispose();
         _debounceTimer = new System.Threading.Timer(async _ =>
         {
-            await InvokeAsync(async () => await LoadPipeline());
-            StateHasChanged();
+            await InvokeAsync(async () =>
+            {
+                await LoadPipeline();
+                StateHasChanged();
+            });
         }, null, 400, System.Threading.Timeout.Infinite);
     }
 

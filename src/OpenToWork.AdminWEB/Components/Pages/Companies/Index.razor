@@ -99,8 +99,11 @@ else
         _debounceTimer?.Dispose();
         _debounceTimer = new System.Threading.Timer(async _ =>
         {
-            await InvokeAsync(async () => await LoadCompanies());
-            StateHasChanged();
+            await InvokeAsync(async () =>
+            {
+                await LoadCompanies();
+                StateHasChanged();
+            });
         }, null, 400, System.Threading.Timeout.Infinite);
     }
 
