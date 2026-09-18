@@ -1,0 +1,164 @@
+@page "/settings/company-profile"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+
+<PageTitle>@Lang.T("admin.companyProfile.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.companyProfile.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.companyProfile.subtitle")</p>
+    </div>
+</div>
+
+@if (!IsSuperAdmin)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.staff.notAuthorized")</div>
+    </div>
+}
+else if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else
+{
+    @if (SavedMessage)
+    {
+        <p style="color: var(--success); font-size: 0.85rem;">@Lang.T("admin.companyProfile.saved")</p>
+    }
+    @if (Error != null)
+    {
+        <p style="color: var(--danger); font-size: 0.85rem;">@Error</p>
+    }
+
+    <EditForm Model="Form" OnValidSubmit="Save">
+        <div class="admin-inline-form" style="flex-wrap: wrap;">
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.companyProfile.legalName")</label>
+                <InputText class="ot-input-field" @bind-Value="Form.LegalName" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.companyProfile.taxId")</label>
+                <InputText class="ot-input-field" @bind-Value="Form.TaxId" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.companyProfile.address")</label>
+                <InputText class="ot-input-field" @bind-Value="Form.Address" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.companyProfile.mercantileRegistry")</label>
+                <InputText class="ot-input-field" @bind-Value="Form.MercantileRegistry" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.companyProfile.legalRepName")</label>
+                <InputText class="ot-input-field" @bind-Value="Form.LegalRepName" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.companyProfile.legalRepPosition")</label>
+                <InputText class="ot-input-field" @bind-Value="Form.LegalRepPosition" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.companyProfile.legalRepDni")</label>
+                <InputText class="ot-input-field" @bind-Value="Form.LegalRepDni" />
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("admin.companyProfile.jurisdictionCity")</label>
+                <InputText class="ot-input-field" @bind-Value="Form.JurisdictionCity" />
+            </div>
+        </div>
+        <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium" disabled="@IsSaving">@Lang.T("admin.common.save")</button>
+    </EditForm>
+
+    <p class="admin-page-header-subtitle" style="margin-top: var(--space-md);">@Lang.T("admin.companyProfile.usageNote")</p>
+}
+
+@code {
+    private bool IsSuperAdmin;
+    private bool IsLoading = true;
+    private bool IsSaving;
+    private bool SavedMessage;
+    private string? Error;
+
+    private CompanyProfileForm Form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var staffRoleRaw = await LocalStorage.GetItemAsync("otwadmin-staff-role");
+        IsSuperAdmin = int.TryParse(staffRoleRaw, out var role) && role == (int)AdminStaffRole.SuperAdmin;
+
+        if (IsSuperAdmin)
+            await LoadAsync();
+
+        IsLoading = false;
+    }
+
+    private async Task LoadAsync()
+    {
+        var items = await AuthApi.GetSystemConfigAsync();
+        var byKey = (items ?? new()).ToDictionary(i => i.Key, i => i.Value ?? "");
+
+        string Get(string key) => byKey.GetValueOrDefault(key, "");
+
+        Form = new CompanyProfileForm
+        {
+            LegalName = Get("company_legal_name"),
+            TaxId = Get("company_tax_id"),
+            Address = Get("company_address"),
+            MercantileRegistry = Get("company_mercantile_registry"),
+            LegalRepName = Get("legal_rep_name"),
+            LegalRepPosition = Get("legal_rep_position"),
+            LegalRepDni = Get("legal_rep_dni"),
+            JurisdictionCity = Get("jurisdiction_city")
+        };
+    }
+
+    private async Task Save()
+    {
+        IsSaving = true;
+        SavedMessage = false;
+        Error = null;
+
+        var dto = new UpdateSystemConfigDto
+        {
+            Items = new List<SystemConfigItemDto>
+            {
+                new() { Key = "company_legal_name", Value = Form.LegalName },
+                new() { Key = "company_tax_id", Value = Form.TaxId },
+                new() { Key = "company_address", Value = Form.Address },
+                new() { Key = "company_mercantile_registry", Value = Form.MercantileRegistry },
+                new() { Key = "legal_rep_name", Value = Form.LegalRepName },
+                new() { Key = "legal_rep_position", Value = Form.LegalRepPosition },
+                new() { Key = "legal_rep_dni", Value = Form.LegalRepDni },
+                new() { Key = "jurisdiction_city", Value = Form.JurisdictionCity }
+            }
+        };
+
+        var ok = await AuthApi.UpdateSystemConfigAsync(dto);
+        if (ok)
+            SavedMessage = true;
+        else
+            Error = Lang.T("admin.common.errorGeneric");
+
+        IsSaving = false;
+    }
+
+    private class CompanyProfileForm
+    {
+        public string LegalName { get; set; } = "";
+        public string TaxId { get; set; } = "";
+        public string Address { get; set; } = "";
+        public string MercantileRegistry { get; set; } = "";
+        public string LegalRepName { get; set; } = "";
+        public string LegalRepPosition { get; set; } = "";
+        public string LegalRepDni { get; set; } = "";
+        public string JurisdictionCity { get; set; } = "";
+    }
+}

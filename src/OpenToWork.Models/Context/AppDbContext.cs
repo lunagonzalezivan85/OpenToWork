@@ -50,6 +50,7 @@ public class AppDbContext : DbContext
     public DbSet<PTContractVacancy> PT_ContractVacancies => Set<PTContractVacancy>();
     public DbSet<PTContractPayment> PT_ContractPayments => Set<PTContractPayment>();
     public DbSet<PTWarrantyReplacement> PT_WarrantyReplacements => Set<PTWarrantyReplacement>();
+    public DbSet<SYSystemConfig> SY_SystemConfig => Set<SYSystemConfig>();
     public DbSet<PTJobLevel> PT_JobLevels => Set<PTJobLevel>();
     public DbSet<PTJobType> PT_JobTypes => Set<PTJobType>();
     public DbSet<PTJobTypePrice> PT_JobTypePrices => Set<PTJobTypePrice>();
@@ -270,6 +271,14 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(w => w.RequestedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SYSystemConfig>(e =>
+        {
+            e.ToTable("SY_SystemConfig");
+            e.HasIndex(c => c.Key).IsUnique().HasFilter("IsDeleted = 0");
+            e.Property(c => c.Category).HasDefaultValue("General");
+            e.Property(c => c.IsActive).HasDefaultValue(true);
         });
 
         modelBuilder.Entity<PTJobLevel>(e =>

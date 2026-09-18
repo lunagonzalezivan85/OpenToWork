@@ -15,14 +15,16 @@ public class VacancyContractController : AdminControllerBase
     private readonly IContractPaymentService _paymentService;
     private readonly IWarrantyReplacementService _warrantyReplacementService;
     private readonly IDeliveryService _deliveryService;
+    private readonly ISystemConfigService _configService;
 
-    public VacancyContractController(IAdminContractService contractService, IPromoCodeService promoCodeService, IContractPaymentService paymentService, IWarrantyReplacementService warrantyReplacementService, IDeliveryService deliveryService)
+    public VacancyContractController(IAdminContractService contractService, IPromoCodeService promoCodeService, IContractPaymentService paymentService, IWarrantyReplacementService warrantyReplacementService, IDeliveryService deliveryService, ISystemConfigService configService)
     {
         _contractService = contractService;
         _promoCodeService = promoCodeService;
         _paymentService = paymentService;
         _warrantyReplacementService = warrantyReplacementService;
         _deliveryService = deliveryService;
+        _configService = configService;
     }
 
     [HttpGet("{contractId:guid}")]
@@ -30,6 +32,15 @@ public class VacancyContractController : AdminControllerBase
     {
         var contract = await _contractService.GetByIdAsync(contractId);
         return contract == null ? NotFound() : Ok(contract);
+    }
+
+    /// <summary>Datos de identidad legal de Trato Directo para el Contrato Marco (SY_SystemConfig,
+    /// categoria CompanyIdentity) - editable desde /settings/company-profile (solo SuperAdmin).</summary>
+    [HttpGet("company-identity")]
+    public async Task<IActionResult> GetCompanyIdentity()
+    {
+        var identity = await _configService.GetCompanyIdentityAsync();
+        return Ok(identity);
     }
 
     [HttpGet("by-company/{companyId:guid}")]

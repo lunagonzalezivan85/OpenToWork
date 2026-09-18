@@ -16,6 +16,7 @@
     "skillTests": "Pruebas Técnicas",
     "staff": "Personal",
     "settings": "Configuración",
+    "companyProfile": "Datos de la Empresa",
     "createUsers": "Crear usuarios",
     "security": "Seguridad",
     "auditLog": "Auditoría",
@@ -25,6 +26,20 @@
     "portfolio": "Cartera de Clientes",
     "payments": "Pagos",
     "logout": "Cerrar sesión"
+  },
+  "companyProfile": {
+    "title": "Datos de la Empresa",
+    "subtitle": "Identidad legal de Trato Directo usada en el Contrato Marco",
+    "legalName": "Razón Social",
+    "taxId": "CIF",
+    "address": "Domicilio Social",
+    "mercantileRegistry": "Inscripción Registral",
+    "legalRepName": "Nombre del Representante Legal",
+    "legalRepPosition": "Cargo del Representante Legal",
+    "legalRepDni": "DNI/NIE del Representante Legal",
+    "jurisdictionCity": "Ciudad de Firma y Jurisdicción",
+    "saved": "Cambios guardados correctamente.",
+    "usageNote": "Estos datos se usan en el Contrato Marco (Contrato de Prestación de Servicios) de cada empresa. El documento se genera en vivo cada vez que se abre o imprime, así que un cambio aquí también se ve reflejado en contratos ya firmados la próxima vez que se consulten — editar solo si cambia la información legal real de Trato Directo."
   },
   "portfolio": {
     "title": "Cartera de Clientes",
@@ -392,6 +407,7 @@
     "back": "Volver",
     "notSpecified": "Sin especificar",
     "retry": "Reintentar",
+    "errorGeneric": "Ocurrio un error. Intenta de nuevo.",
     "confirm": "Confirmar",
     "deleted": "Eliminado correctamente",
     "status": "Estado",

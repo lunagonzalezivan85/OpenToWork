@@ -189,6 +189,29 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<List<SystemConfigDto>?> GetSystemConfigAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/system-config");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<List<SystemConfigDto>>();
+    }
+
+    public async Task<bool> UpdateSystemConfigAsync(UpdateSystemConfigDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync("api/admin/system-config", dto);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<CompanyIdentityDto?> GetCompanyIdentityAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/contracts/company-identity");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CompanyIdentityDto>();
+    }
+
     public async Task<AdminVacancyContractDto?> GetContractAsync(Guid contractId)
     {
         await SetAuthHeaderAsync();

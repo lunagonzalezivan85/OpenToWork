@@ -38,7 +38,7 @@ else
                 <div class="cd-logo">TD</div>
             </div>
             <div class="cd-letterhead-center">
-                <div class="cd-brand-name">TRATO DIRECTO HUMAN SERVICES, S.L.</div>
+                <div class="cd-brand-name">@Identity.LegalName</div>
                 <div class="cd-brand-sub">CONTRATO MARCO DE PRESTACIÓN DE SERVICIOS DE SELECCIÓN E INTERMEDIACIÓN LABORAL</div>
             </div>
             <div class="cd-letterhead-right">
@@ -58,7 +58,7 @@ else
         @* === REUNIDOS === *@
         <section class="cd-section">
             <h3 class="cd-section-title">REUNIDOS</h3>
-            <p class="cd-legal-text">De una parte, <strong>TRATO DIRECTO HUMAN SERVICES, S.L.</strong>, con domicilio social en Calle de Lugo 15, Alcobendas, CIF 1235567, inscrita en el Registro Mercantil de Madrid, Tomo 1, Folio 1, Hoja 1, representada en este acto por D./Dña. Luis Alejandro Velasquez, en calidad de Representante Legal, con DNI/NIE 3212312345 (en adelante, «TRATO DIRECTO»).</p>
+            <p class="cd-legal-text">De una parte, <strong>@Identity.LegalName</strong>, con domicilio social en @Identity.Address, CIF @Identity.TaxId, inscrita en el @Identity.MercantileRegistry, representada en este acto por D./Dña. @Identity.LegalRepName, en calidad de @Identity.LegalRepPosition, con DNI/NIE @Identity.LegalRepDni (en adelante, «TRATO DIRECTO»).</p>
             <p class="cd-legal-text">De otra parte, <strong>@(Contract.CompanyLegalName ?? Contract.CompanyName ?? "[●]")</strong>, con domicilio en @(Contract.CompanyAddress ?? "[●]")@(!string.IsNullOrEmpty(Contract.CompanyCity) ? ", " + Contract.CompanyCity : "")@(!string.IsNullOrEmpty(Contract.CompanyCountry) ? ", " + Contract.CompanyCountry : ""), CIF/NIF @(Contract.CompanyTaxId ?? "[●]"), representada en este acto por D./Dña. @(Contract.CompanyContactName ?? "[●]"), en calidad de @(Contract.CompanyContactPosition ?? "[●]"), con DNI/NIE @(Contract.CompanyContactDniNie ?? "[●]") (en adelante, «EL CLIENTE»).</p>
             <p class="cd-legal-text">Ambas partes, reconociéndose capacidad legal suficiente para contratar y obligarse, acuerdan suscribir el presente Contrato Marco.</p>
         </section>
@@ -214,7 +214,7 @@ else
 
             <h4 class="cd-clause-title">22. Legislación y jurisdicción</h4>
             <p class="cd-legal-text">22.1. El contrato se regirá por la legislación española.</p>
-            <p class="cd-legal-text">22.2. Las partes se someten a los Juzgados y Tribunales de Madrid, con renuncia a cualquier otro fuero.</p>
+            <p class="cd-legal-text">22.2. Las partes se someten a los Juzgados y Tribunales de @Identity.JurisdictionCity, con renuncia a cualquier otro fuero.</p>
             <p class="cd-legal-text">22.3. Si una norma imperativa atribuye una competencia distinta, se aplicará dicha norma.</p>
 
             <h4 class="cd-clause-title">23. Integridad, nulidad parcial y prevalencia</h4>
@@ -226,12 +226,12 @@ else
 
         @* === Firmas Contrato Marco === *@
         <section class="cd-section cd-section--signatures">
-            <p class="cd-signature-date">Firmado en Madrid, a @Contract.CreatedAt.ToString("dd") de @Contract.CreatedAt.ToString("MMMM") de @Contract.CreatedAt.ToString("yyyy")</p>
+            <p class="cd-signature-date">Firmado en @Identity.JurisdictionCity, a @Contract.CreatedAt.ToString("dd") de @Contract.CreatedAt.ToString("MMMM") de @Contract.CreatedAt.ToString("yyyy")</p>
             <div class="cd-signatures">
                 <div class="cd-signature-block">
                     <div class="cd-signature-line"></div>
-                    <p class="cd-signature-name"><strong>TRATO DIRECTO HUMAN SERVICES, S.L.</strong></p>
-                    <p class="cd-signature-name">D./Dña.: Luis Alejandro Velasquez — Cargo: Representante Legal</p>
+                    <p class="cd-signature-name"><strong>@Identity.LegalName</strong></p>
+                    <p class="cd-signature-name">D./Dña.: @Identity.LegalRepName — Cargo: @Identity.LegalRepPosition</p>
                 </div>
                 <div class="cd-signature-block">
                     <div class="cd-signature-line"></div>
@@ -374,8 +374,8 @@ else
             <div class="cd-signatures">
                 <div class="cd-signature-block">
                     <div class="cd-signature-line"></div>
-                    <p class="cd-signature-name"><strong>TRATO DIRECTO HUMAN SERVICES, S.L.</strong></p>
-                    <p class="cd-signature-name">D./Dña.: Luis Alejandro Velasquez — Cargo: Representante Legal</p>
+                    <p class="cd-signature-name"><strong>@Identity.LegalName</strong></p>
+                    <p class="cd-signature-name">D./Dña.: @Identity.LegalRepName — Cargo: @Identity.LegalRepPosition</p>
                 </div>
                 <div class="cd-signature-block">
                     <div class="cd-signature-line"></div>
@@ -391,6 +391,7 @@ else
     [Parameter] public Guid ContractId { get; set; }
 
     private AdminVacancyContractDto? Contract;
+    private CompanyIdentityDto Identity = new();
     private bool IsLoading { get; set; } = true;
 
     protected override async Task OnInitializedAsync()
@@ -399,6 +400,7 @@ else
             await Lang.InitializeAsync();
 
         Contract = await AuthApi.GetContractAsync(ContractId);
+        Identity = await AuthApi.GetCompanyIdentityAsync() ?? new();
         IsLoading = false;
     }
 
