@@ -299,6 +299,25 @@ else
                         </div>
                         <p style="font-size: 0.95rem; font-weight: 600; color: #0B132B; margin-bottom: 0.25rem;">@Lang.T("admin.companies.wonTitle")</p>
                         <p style="font-size: 0.85rem; color: #778DA9; margin-bottom: 1rem;">@Lang.T("admin.companies.wonHint")</p>
+                        <div style="border: 1px solid #E8F1FF; border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1rem; text-align: left;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: @(CompanyVacancies.Count > 0 ? "0.4rem" : "0")">
+                                <strong style="font-size: 0.85rem; color: #0B132B;">@Lang.T("admin.companies.companyVacancies") (@CompanyVacancies.Count)</strong>
+                                <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Detail.CompanyId}/vacancies"))">+ @Lang.T("admin.vacancies.create")</button>
+                            </div>
+                            @if (CompanyVacancies.Count == 0)
+                            {
+                                <p style="font-size: 0.8rem; color: #778DA9; margin: 0;">@Lang.T("admin.companies.noVacanciesYet")</p>
+                            }
+                            else
+                            {
+                                <ul style="margin: 0; padding-left: 1.1rem; font-size: 0.82rem; color: #0B132B;">
+                                    @foreach (var v in CompanyVacancies)
+                                    {
+                                        <li>@v.Title <span style="color: #778DA9; font-size: 0.75rem;">(@GetVacancyStatusLabel(v.Status))</span></li>
+                                    }
+                                </ul>
+                            }
+                        </div>
                         <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
                             <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GenerateContract">@Lang.T("admin.companies.generateContract")</button>
                             <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="MarkAsActive">@Lang.T("admin.companies.markAsActive")</button>
@@ -1029,6 +1048,18 @@ else
         if (contract != null)
         {
             Nav.NavigateTo($"/contracts/{contract.Id}/document", forceLoad: true);
+            return;
+        }
+
+        if (CompanyVacancies.Count == 1)
+        {
+            Nav.NavigateTo($"/vacancies/{CompanyVacancies[0].Id}/contract");
+            return;
+        }
+        if (CompanyVacancies.Count > 1)
+        {
+            await JS.InvokeVoidAsync("notify.warning", Lang.T("admin.companies.selectVacancyForContract"));
+            Nav.NavigateTo($"/companies/{Detail.CompanyId}/vacancies");
             return;
         }
 

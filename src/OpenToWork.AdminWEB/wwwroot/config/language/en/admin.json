@@ -849,6 +849,7 @@
     "wonHint": "Generate the contract and mark the company as active",
     "generateContract": "Generate contract",
     "noContractYet": "This company doesn't have any vacancies yet. Add one to generate its contract.",
+    "selectVacancyForContract": "Select the vacancy you want to generate the contract for.",
     "markAsActive": "Mark as active",
     "contractGenerated": "Contract generated successfully",
     "searchOnMap": "Search on map",
