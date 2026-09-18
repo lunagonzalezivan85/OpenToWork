@@ -408,6 +408,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
         await LoadAsync();
     }
 
