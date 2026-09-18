@@ -24,6 +24,22 @@
                     <input type="number" min="0" max="100" class="wizard-input" @bind="MinScore" placeholder="0-100" />
                 </div>
                 <div class="wizard-form-field">
+                    <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minStability")</label>
+                    <input type="number" min="0" max="100" class="wizard-input" @bind="MinStability" placeholder="0-100" />
+                </div>
+                <div class="wizard-form-field">
+                    <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minReliability")</label>
+                    <input type="number" min="0" max="100" class="wizard-input" @bind="MinReliability" placeholder="0-100" />
+                </div>
+                <div class="wizard-form-field">
+                    <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minEvidence")</label>
+                    <input type="number" min="0" max="100" class="wizard-input" @bind="MinEvidence" placeholder="0-100" />
+                </div>
+                <div class="wizard-form-field">
+                    <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minCompatibility")</label>
+                    <input type="number" min="0" max="100" class="wizard-input" @bind="MinCompatibility" placeholder="0-100" />
+                </div>
+                <div class="wizard-form-field">
                     <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minStatus")</label>
                     <select class="wizard-input" @bind="MinStatus">
                         <option value="">@Lang.T("dashboard.candidateSearch.anyStatus")</option>
@@ -82,6 +98,12 @@
                         </div>
                         <span class="dash-score-status">@VerificationStatusLabel(r.VerificationStatus)</span>
                     </div>
+                    <p class="dash-chart-info-text" style="margin-top: var(--space-sm);">
+                        @Lang.T("dashboard.score.stability") @r.StabilityIndex ·
+                        @Lang.T("dashboard.score.reliability") @r.ReliabilityIndex ·
+                        @Lang.T("dashboard.score.evidence") @r.EvidenceIndex ·
+                        @Lang.T("dashboard.score.compatibility") @r.CompatibilityIndex
+                    </p>
                 </div>
             }
         </div>
@@ -99,6 +121,10 @@
 
 @code {
     private int? MinScore { get; set; }
+    private int? MinStability { get; set; }
+    private int? MinReliability { get; set; }
+    private int? MinEvidence { get; set; }
+    private int? MinCompatibility { get; set; }
     private string MinStatus { get; set; } = "";
     private string SkillId { get; set; } = "";
     private List<SkillOptionDto> Skills { get; set; } = new();
@@ -140,6 +166,10 @@
         var filter = new CandidateSearchFilterDto
         {
             MinOverallScore = MinScore,
+            MinStabilityIndex = MinStability,
+            MinReliabilityIndex = MinReliability,
+            MinEvidenceIndex = MinEvidence,
+            MinCompatibilityIndex = MinCompatibility,
             MinVerificationStatus = string.IsNullOrEmpty(MinStatus) ? null : int.Parse(MinStatus),
             SkillId = string.IsNullOrEmpty(SkillId) ? null : Guid.Parse(SkillId),
             Page = Page,

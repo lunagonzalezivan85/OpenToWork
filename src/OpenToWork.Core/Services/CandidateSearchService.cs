@@ -44,13 +44,27 @@ public class CandidateSearchService : ICandidateSearchService
         var candidateIds = candidates.Select(c => c.Id).ToList();
         var scores = await _context.PT_CandidateScores
             .Where(s => !s.IsDeleted && candidateIds.Contains(s.PT_CandidateId))
-            .ToDictionaryAsync(s => s.PT_CandidateId, s => s.OverallScore);
+            .ToDictionaryAsync(s => s.PT_CandidateId, s => s);
 
         var results = new List<CandidateSearchResultDto>();
         foreach (var c in candidates)
         {
-            var overallScore = scores.GetValueOrDefault(c.Id, 0);
+            var score = scores.GetValueOrDefault(c.Id);
+            var overallScore = score?.OverallScore ?? 0;
+            var stability = score?.StabilityIndex ?? 0;
+            var reliability = score?.ReliabilityIndex ?? 0;
+            var evidence = score?.EvidenceIndex ?? 0;
+            var compatibility = score?.CompatibilityIndex ?? 0;
+
             if (filter.MinOverallScore.HasValue && overallScore < filter.MinOverallScore.Value)
+                continue;
+            if (filter.MinStabilityIndex.HasValue && stability < filter.MinStabilityIndex.Value)
+                continue;
+            if (filter.MinReliabilityIndex.HasValue && reliability < filter.MinReliabilityIndex.Value)
+                continue;
+            if (filter.MinEvidenceIndex.HasValue && evidence < filter.MinEvidenceIndex.Value)
+                continue;
+            if (filter.MinCompatibilityIndex.HasValue && compatibility < filter.MinCompatibilityIndex.Value)
                 continue;
 
             var status = await _verificationStatusService.GetVerificationStatusAsync(c.Id);
@@ -65,6 +79,10 @@ public class CandidateSearchService : ICandidateSearchService
                 City = c.City,
                 Country = c.Country,
                 OverallScore = overallScore,
+                StabilityIndex = stability,
+                ReliabilityIndex = reliability,
+                EvidenceIndex = evidence,
+                CompatibilityIndex = compatibility,
                 VerificationStatus = status.Status,
                 IsVerifiedTD = status.IsVerifiedTD
             });

@@ -615,6 +615,10 @@ public class ApiAuthService
         await SetAuthHeaderAsync();
         var query = $"api/candidates/search?page={filter.Page}&pageSize={filter.PageSize}";
         if (filter.MinOverallScore.HasValue) query += $"&minOverallScore={filter.MinOverallScore}";
+        if (filter.MinStabilityIndex.HasValue) query += $"&minStabilityIndex={filter.MinStabilityIndex}";
+        if (filter.MinReliabilityIndex.HasValue) query += $"&minReliabilityIndex={filter.MinReliabilityIndex}";
+        if (filter.MinEvidenceIndex.HasValue) query += $"&minEvidenceIndex={filter.MinEvidenceIndex}";
+        if (filter.MinCompatibilityIndex.HasValue) query += $"&minCompatibilityIndex={filter.MinCompatibilityIndex}";
         if (filter.MinVerificationStatus.HasValue) query += $"&minVerificationStatus={filter.MinVerificationStatus}";
         if (filter.SkillId.HasValue) query += $"&skillId={filter.SkillId}";
         var response = await _httpClient.GetAsync(query);
