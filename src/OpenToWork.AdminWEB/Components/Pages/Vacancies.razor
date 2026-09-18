@@ -82,10 +82,7 @@ else
                             {
                                 <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Moderate(v.Id, (int)VacancyStatus.Closed)">@Lang.T("admin.vacancies.close")</button>
                             }
-                            @if ((VacancyStatus)v.Status == VacancyStatus.Active)
-                            {
-                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ToggleShortlist(v.Id)">@Lang.T("admin.shortlist.title")</button>
-                            }
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ToggleShortlist(v.Id)">@Lang.T("admin.shortlist.title")</button>
                         </div>
                     </td>
                 </tr>
