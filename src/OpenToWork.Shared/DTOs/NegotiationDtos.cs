@@ -21,6 +21,10 @@ public class NegotiationDto
     public string? Notes { get; set; }
     public List<NegotiationCandidateDto> Candidates { get; set; } = new();
 
+    /// <summary>Paso 16: fecha en que la empresa contrata formalmente al candidato (firma su
+    /// contrato laboral, gestionado por la empresa, no por TD).</summary>
+    public DateTime? HiringDate { get; set; }
+
     public DateTime? IncorporationDate { get; set; }
 
     /// <summary>IncorporationDate + WarrantyDays del contrato de la vacante. Null si falta la
@@ -77,6 +81,11 @@ public class CloseNegotiationDto
 public class SetIncorporationDateDto
 {
     public DateTime IncorporationDate { get; set; }
+}
+
+public class SetHiringDateDto
+{
+    public DateTime HiringDate { get; set; }
 }
 
 public class CloseProcessDto

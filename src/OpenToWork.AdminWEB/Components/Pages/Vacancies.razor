@@ -170,6 +170,21 @@ else
                                             </ul>
                                             @if ((NegotiationStatus)n.Status == NegotiationStatus.Cerrada)
                                             {
+                                                @if (n.HiringDate == null)
+                                                {
+                                                    <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+                                                        <input type="date" class="admin-select" @bind="HiringDateByNegotiation[n.Id]" />
+                                                        <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@IsNegotiationBusy" @onclick="() => SetNegotiationHiringAsync(n.Id, v.Id)">
+                                                            @Lang.T("admin.negotiation.registerHiring")
+                                                        </button>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div style="font-size:0.85rem; margin-top:0.5rem;">
+                                                        <span>@Lang.T("admin.negotiation.hiredOn") @n.HiringDate.Value.ToString("dd/MM/yyyy")</span>
+                                                    </div>
+                                                }
                                                 @if (n.IncorporationDate == null)
                                                 {
                                                     <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
@@ -633,6 +648,7 @@ else
     private List<NegotiationDto> Negotiations { get; set; } = new();
     private Dictionary<Guid, string> SelectedWinnerByNegotiation { get; set; } = new();
     private Dictionary<Guid, DateTime> IncorporationDateByNegotiation { get; set; } = new();
+    private Dictionary<Guid, DateTime> HiringDateByNegotiation { get; set; } = new();
     private bool IsNegotiationBusy { get; set; }
 
     // Garantia de reposicion (paso 20): un solo formulario abierto a la vez, igual que el
@@ -752,6 +768,8 @@ else
                 SelectedWinnerByNegotiation[n.Id] = "";
             if (!IncorporationDateByNegotiation.ContainsKey(n.Id))
                 IncorporationDateByNegotiation[n.Id] = DateTime.Today;
+            if (!HiringDateByNegotiation.ContainsKey(n.Id))
+                HiringDateByNegotiation[n.Id] = DateTime.Today;
         }
     }
 
@@ -799,6 +817,17 @@ else
 
         IsNegotiationBusy = true;
         await AuthApi.SetNegotiationIncorporationDateAsync(negotiationId, date);
+        await LoadNegotiations(vacancyId);
+        IsNegotiationBusy = false;
+    }
+
+    private async Task SetNegotiationHiringAsync(Guid negotiationId, Guid vacancyId)
+    {
+        if (IsNegotiationBusy) return;
+        if (!HiringDateByNegotiation.TryGetValue(negotiationId, out var date)) return;
+
+        IsNegotiationBusy = true;
+        await AuthApi.SetNegotiationHiringDateAsync(negotiationId, date);
         await LoadNegotiations(vacancyId);
         IsNegotiationBusy = false;
     }

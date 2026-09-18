@@ -1124,6 +1124,21 @@ else
                             </div>
                             @if (d.Status == (int)DeliveryStatus.Hired)
                             {
+                                @if (d.HiringDate == null)
+                                {
+                                    <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+                                        <input type="date" class="admin-select" @bind="HiringDateByDelivery[d.Id]" />
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@IsDeliveryBusy" @onclick="() => SetDeliveryHiringAsync(d.Id)">
+                                            @Lang.T("admin.negotiation.registerHiring")
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="font-size:0.8rem; margin-top:0.5rem;">
+                                        <span>@Lang.T("admin.negotiation.hiredOn") @d.HiringDate.Value.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                }
                                 @if (d.IncorporationDate == null)
                                 {
                                     <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
@@ -1478,6 +1493,7 @@ else
     private bool ShowDeliverModal { get; set; }
     private List<DeliveryDto> Deliveries { get; set; } = new();
     private Dictionary<Guid, DateTime> IncorporationDateByDelivery { get; set; } = new();
+    private Dictionary<Guid, DateTime> HiringDateByDelivery { get; set; } = new();
     private bool IsDeliveryBusy { get; set; }
 
     // Garantia de reposicion (paso 20): un solo formulario abierto a la vez.
@@ -1629,8 +1645,12 @@ else
             VacancyOptions = await AuthApi.GetVacancyOptionsAsync();
             Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail.Id);
             foreach (var d in Deliveries)
+            {
                 if (!IncorporationDateByDelivery.ContainsKey(d.Id))
                     IncorporationDateByDelivery[d.Id] = DateTime.Today;
+                if (!HiringDateByDelivery.ContainsKey(d.Id))
+                    HiringDateByDelivery[d.Id] = DateTime.Today;
+            }
             SelectedVacancyId = Detail.VacancyId;
             if (Preferences != null)
             {
@@ -1956,6 +1976,17 @@ else
 
         IsDeliveryBusy = true;
         await AuthApi.SetDeliveryIncorporationDateAsync(deliveryId, date);
+        Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail!.Id);
+        IsDeliveryBusy = false;
+    }
+
+    private async Task SetDeliveryHiringAsync(Guid deliveryId)
+    {
+        if (IsDeliveryBusy) return;
+        if (!HiringDateByDelivery.TryGetValue(deliveryId, out var date)) return;
+
+        IsDeliveryBusy = true;
+        await AuthApi.SetDeliveryHiringDateAsync(deliveryId, date);
         Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail!.Id);
         IsDeliveryBusy = false;
     }

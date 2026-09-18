@@ -828,6 +828,14 @@ public class AdminAuthApiService
         return await response.Content.ReadFromJsonAsync<DeliveryDto>();
     }
 
+    public async Task<DeliveryDto?> SetDeliveryHiringDateAsync(Guid deliveryId, DateTime hiringDate)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment-deliveries/{deliveryId}/hiring-date", new SetHiringDateDto { HiringDate = hiringDate });
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<DeliveryDto>();
+    }
+
     public async Task<(WarrantyReplacementDto? Result, string? Error)> ActivateDeliveryWarrantyReplacementAsync(Guid deliveryId, ActivateWarrantyReplacementDto dto)
     {
         await SetAuthHeaderAsync();
@@ -1045,6 +1053,14 @@ public class AdminAuthApiService
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.PutAsJsonAsync($"api/admin/negotiations/{negotiationId}/incorporation", new SetIncorporationDateDto { IncorporationDate = incorporationDate });
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<NegotiationDto>();
+    }
+
+    public async Task<NegotiationDto?> SetNegotiationHiringDateAsync(Guid negotiationId, DateTime hiringDate)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/negotiations/{negotiationId}/hiring-date", new SetHiringDateDto { HiringDate = hiringDate });
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<NegotiationDto>();
     }

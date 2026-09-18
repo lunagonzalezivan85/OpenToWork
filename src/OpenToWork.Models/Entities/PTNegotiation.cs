@@ -34,6 +34,12 @@ public class PTNegotiation : BaseEntity
 
     public string? Notes { get; set; }
 
+    /// <summary>Paso 16 del flujo comercial: fecha en que la empresa contrata formalmente al
+    /// candidato (firma su contrato laboral). TD no formaliza ni gestiona ese contrato - es
+    /// exclusivamente entre la empresa y el candidato - pero registra la fecha como hito del
+    /// proceso. Independiente de IncorporationDate (que es el primer dia de trabajo).</summary>
+    public DateTime? HiringDate { get; set; }
+
     /// <summary>Fecha en que el candidato ganador inicio funciones en la empresa (paso 17 del
     /// flujo comercial). Solo tiene sentido cuando Status = Cerrada. La usa el calculo de
     /// garantia (WarrantyDays del contrato + esta fecha).</summary>

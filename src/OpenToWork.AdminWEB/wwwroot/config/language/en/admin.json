@@ -701,6 +701,8 @@
     "incorporationDate": "Incorporation date",
     "registerIncorporation": "Register incorporation",
     "incorporatedOn": "Incorporated on",
+    "registerHiring": "Register hiring date",
+    "hiredOn": "Hired on",
     "warrantyActive": "Warranty active",
     "warrantyExpiring": "Warranty expiring soon",
     "warrantyExpired": "Warranty expired",

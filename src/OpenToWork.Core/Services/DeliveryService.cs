@@ -181,6 +181,25 @@ public class DeliveryService : IDeliveryService
         return await GetDeliveryDtoAsync(deliveryId);
     }
 
+    public async Task<DeliveryDto?> SetHiringDateAsync(Guid deliveryId, DateTime hiringDate, Guid adminId)
+    {
+        var delivery = await _context.PT_CandidateDeliveries
+            .FirstOrDefaultAsync(d => d.Id == deliveryId && !d.IsDeleted);
+        if (delivery == null) return null;
+        if (delivery.Status != (int)DeliveryStatus.Hired)
+            throw new InvalidOperationException("Solo se puede registrar la fecha de contratacion de una entrega en estado Contratado.");
+
+        delivery.HiringDate = hiringDate;
+        delivery.UpdatedAt = DateTime.UtcNow;
+        delivery.UpdatedBy = adminId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(adminId, "SetDeliveryHiringDate", "PTCandidateDelivery", delivery.Id,
+            $"{{\"hiringDate\":\"{hiringDate:yyyy-MM-dd}\"}}", null);
+
+        return await GetDeliveryDtoAsync(deliveryId);
+    }
+
     public async Task<DeliveryDto?> CloseProcessAsync(Guid deliveryId, CloseProcessDto dto, Guid adminId)
     {
         var delivery = await _context.PT_CandidateDeliveries
@@ -301,6 +320,7 @@ public class DeliveryService : IDeliveryService
             OverallScore = verification.OverallScore,
             ProfileCompletionPercentage = verification.ProfileCompletionPercentage,
             IsVerifiedTD = verification.IsVerifiedTD,
+            HiringDate = d.HiringDate,
             IncorporationDate = d.IncorporationDate,
             WarrantyEndsAt = warrantyEndsAt,
             WarrantyStatus = (int?)warrantyStatus,

@@ -164,6 +164,24 @@ public class NegotiationService : INegotiationService
         return await ToDtoAsync(id);
     }
 
+    public async Task<NegotiationDto?> SetHiringDateAsync(Guid id, DateTime hiringDate, Guid staffId)
+    {
+        var negotiation = await _context.PT_Negotiations.FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
+        if (negotiation == null) return null;
+        if (negotiation.Status != (int)NegotiationStatus.Cerrada)
+            throw new InvalidOperationException("Solo se puede registrar la fecha de contratacion de una negociacion cerrada.");
+
+        negotiation.HiringDate = hiringDate;
+        negotiation.UpdatedAt = DateTime.UtcNow;
+        negotiation.UpdatedBy = staffId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(staffId, "SetNegotiationHiringDate", "PT_Negotiations", negotiation.Id,
+            $"{{\"hiringDate\":\"{hiringDate:yyyy-MM-dd}\"}}", null);
+
+        return await ToDtoAsync(id);
+    }
+
     public async Task<NegotiationDto?> CloseProcessAsync(Guid id, CloseProcessDto dto, Guid staffId)
     {
         var negotiation = await _context.PT_Negotiations.FirstOrDefaultAsync(n => n.Id == id && !n.IsDeleted);
@@ -268,6 +286,7 @@ public class NegotiationService : INegotiationService
             ClosedAt = negotiation.ClosedAt,
             WinningApplicationId = negotiation.WinningApplicationId,
             Notes = negotiation.Notes,
+            HiringDate = negotiation.HiringDate,
             IncorporationDate = negotiation.IncorporationDate,
             WarrantyEndsAt = warrantyEndsAt,
             WarrantyStatus = (int?)warrantyStatus,

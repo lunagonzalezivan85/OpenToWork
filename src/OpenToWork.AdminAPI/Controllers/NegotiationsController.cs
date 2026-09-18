@@ -67,6 +67,21 @@ public class NegotiationsController : AdminControllerBase
         }
     }
 
+    /// <summary>Paso 16: fecha en que la empresa contrata formalmente al candidato.</summary>
+    [HttpPut("{id}/hiring-date")]
+    public async Task<IActionResult> SetHiringDate(Guid id, [FromBody] SetHiringDateDto dto)
+    {
+        try
+        {
+            var result = await _negotiationService.SetHiringDateAsync(id, dto.HiringDate, AdminId);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     /// <summary>Activa una reposicion de garantia (paso 20) sobre esta negociacion cerrada.</summary>
     [HttpPost("{id}/warranty-replacement")]
     public async Task<IActionResult> ActivateWarrantyReplacement(Guid id, [FromBody] ActivateWarrantyReplacementDto dto)
