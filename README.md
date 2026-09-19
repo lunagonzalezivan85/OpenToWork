@@ -1595,6 +1595,18 @@ Durante la verificación se encontró (y no era un bug de este cambio) que el JW
 
 - Commit `46592a5` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
+### Sesión 2026-09-18 — Fix crítico: contrato con varias vacantes solo mostraba/guardaba una (Dsiezar)
+
+Darwin reportó: en un contrato con Bartender + Camarero, `/vacancies/{bartenderId}/contract` solo mostraba el precio del Bartender, sin rastro del Camarero.
+
+Causa raíz, con riesgo real de pérdida de datos: la página carga correctamente el contrato compartido de la empresa (un contrato cubre N vacantes, eso funciona bien), pero la sección "Condiciones económicas" y el botón Guardar solo consideraban la vacante de la URL actual — nunca las demás vacantes ya incluidas en el mismo contrato. Si un admin hubiera guardado desde ahí, `AdminContractService.SaveAsync` (que sincroniza borrando toda línea que no venga en el DTO) habría eliminado en silencio la línea del Camarero, dejando el contrato con un solo precio real por error.
+
+Fix: la página ahora carga y muestra **todas** las vacantes del contrato (`Contract.Vacancies`), cada una en su propia tarjeta con su precio/promo/override independiente, y el Guardar envía todas las líneas — no solo la de la URL actual. Se corrigió tanto el formulario de edición (Borrador) como la vista de solo lectura, que tenía el mismo problema (`FirstOrDefault()` en vez de recorrer todas las líneas).
+
+Verificado end-to-end contra el contrato real reportado (`TD-2026-0007`, Bartender 1.200€ + Camarero 450€, total 1.650€): ambas vacantes aparecen desde cualquiera de las 2 URLs, el total coincide con la BD, y tras Guardar ambas líneas siguen activas (antes del fix, Camarero se habría borrado).
+
+- Commit `906e8bc` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
 Pregunta de Darwin que destapó un hueco real: "¿en qué momento voy a ingresar la vacante que necesita la empresa, con sus requisitos?". Investigación: existían dos caminos para cargar una vacante (el wizard de "Captación" en `/companies/new`, que crea empresa+vacante+contrato de una vez; y "Ver Vacantes" en la ficha de una empresa ya existente, con botón "+ Nueva vacante") pero **ninguno de los dos estaba conectado al pipeline de ventas**. Llegar a "Cerrado Ganado" solo ofrecía "Generar Contrato" (que busca un contrato *ya existente* y falla si no hay ninguno) — nada en el flujo Lead→...→Cerrado Ganado le pedía al admin cargar la vacante.
