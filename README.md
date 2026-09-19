@@ -1491,6 +1491,29 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 
 ## Bitácora de Cambios
 
+### Sesión 2026-09-19 — Consola de Candidatos: score visible, badge Verificado y pipeline etapa 4 = "Verificado" (Iluna)
+
+**Alcance: únicamente se tocó el módulo de candidatos del AdminWEB** (`/candidates`, `/candidates/profile/{id}`, `/candidates/pipeline/{id}`) + el endpoint de candidatos del AdminAPI. No se tocó nada de empresas, vacantes, contratos, pagos ni el portal del postulante/empresa.
+
+**Lista de candidatos (`/candidates`):**
+- Círculo con `OverallScore` junto al nombre (azul ≥70, gris azulado ≥40, rojo <40, guion si no hay score).
+- Badge verde "Verificado" (círculo con check blanco, estilo TikTok/Facebook) junto al nombre.
+- **Fix crítico:** los lookups a `PT_CandidateScores`, `PT_Verifications`, `PT_CandidateReferences` y `PT_CandidateSkills` usaban `SCUser.Id` cuando esas tablas están keyed por `PTCandidate.Id` — el score, las skills y el badge nunca cargaban. Se agregó `CandidateId` al `CandidateConsoleDto` y todos los lookups ahora usan ese Id.
+- `IsVerifiedTD` ahora es `true` si el reclutamiento está en etapa 4 (Verificado manual) **O** si cumple los checks automáticos (4 gating verificados + score ≥70 + referencia verificada).
+
+**Perfil de candidato (`/candidates/profile/{id}`):**
+- Badge verde de verificado junto al nombre cuando `VerificationStatus.IsVerifiedTD` o el reclutamiento está en etapa 4.
+- `StateHasChanged()` en `RecalculateScoreAsync` y `SetVerification` — el score sí se guardaba en BD pero la UI no refrescaba.
+
+**Pipeline de candidato (`/candidates/pipeline/{id}`):**
+- Etapa 4 renombrada "Listo a Entregar" → "Verificado" (es/en: `stage4`, `statReadyToDeliver`, `deliverySummary`, `deliverError`).
+- Ya no se exige vacante vinculada para avanzar a Verificado — se eliminó el gate en `RecruitmentController.MoveStage`. Entregar a empresa sigue requiriendo vacante (son acciones distintas).
+- Botón "Avanzar etapa" movido al header junto a "Descartar" y "Volver".
+- Preferencias: "Horario concreto disponible" ahora son 2 inputs `type="time"` (inicio/fin) que se guardan como `"HH:mm - HH:mm"`.
+- Preferencias: checkbox "Todos" en Días disponibles marca L,M,X,J,V,S — Domingo queda manual.
+
+- Commit `56814b1` en `main`.
+
 ### Sesión 2026-09-18 — Paso 7 re-evaluado: ya estaba construido (Dsiezar)
 
 Cierra formalmente la **Auditoría del Ciclo Comercial completa** (25/25). No fue necesario escribir código nuevo — el paso llevaba semanas resuelto bajo un nombre distinto al que describía la evaluación anterior del gap-analysis.
