@@ -1512,7 +1512,19 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 - Preferencias: "Horario concreto disponible" ahora son 2 inputs `type="time"` (inicio/fin) que se guardan como `"HH:mm - HH:mm"`.
 - Preferencias: checkbox "Todos" en Días disponibles marca L,M,X,J,V,S — Domingo queda manual.
 
-- Commit `56814b1` en `main`.
+**Detalle de vacante (`/vacancies/{id}`) — candidatos verificados primero:**
+- `VerifiedCandidateHelper` (nuevo, `Core/Services`): regla única reutilizable de "Verificado" — reclutamiento en etapa 4 O checks automáticos (4 gating + score ≥70 + referencia verificada).
+- `AdminApplicationDto`/`JobMatchDto`: +`CandidateId` (PTCandidate Id) e `IsVerifiedTD`.
+- `GetByVacancyAsync` (postulantes) y `GetNonApplicantMatchesAsync`/`GenerateShortlist` (matches): verificados primero, luego por fecha/match %.
+- Badge verde con check junto al nombre en pestañas Postulantes y "Cumplen sin postularse".
+
+**Rediseño One UI — vacantes (`/vacancies` y detalle):**
+- Nuevas clases `admin-oneui-*` en `admin.css`: lista de cards estilo Samsung One UI — avatar squircle, título + badges, subtítulo con chips, meta a la derecha, chevron animado al hover, elevación suave.
+- `/vacancies`: la tabla pasa a lista de cards — avatar con inicial (verde activa/gris cerrada), título + badge de estado, subtítulo con empresa/ubicación/tipo/vistas, botones Aprobar/Cerrar + chevron. Click abre el detalle.
+- Postulantes: avatar con iniciales (verde si verificado), nombre + badge, subtítulo con email/salario/disponibilidad/fecha, badge de estado + chevron → perfil.
+- "Cumplen sin postularse": checkbox + "Seleccionar todo", avatar, nombre + badge, chips de Skills/Experiencia/Ubicación %, Match % grande a la derecha.
+
+- Commits `56814b1`, `06122cd` en `main`.
 
 ### Sesión 2026-09-18 — Paso 7 re-evaluado: ya estaba construido (Dsiezar)
 

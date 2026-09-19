@@ -144,25 +144,16 @@ else
             }
             else
             {
-                <table class="ot-table">
-                    <thead>
-                        <tr>
-                            <th>@Lang.T("admin.vacancies.candidateName")</th>
-                            <th>@Lang.T("admin.common.email")</th>
-                            <th>@Lang.T("admin.applications.columnStatus")</th>
-                            <th>@Lang.T("admin.vacancies.expectedSalary")</th>
-                            <th>@Lang.T("admin.vacancies.availableFrom")</th>
-                            <th>@Lang.T("admin.vacancies.appliedAt")</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var a in Applicants)
-                        {
-                            <tr>
-                                <td>
-                                    <button class="ot-btn ot-btn--link ot-btn--small" @onclick="() => OpenProfile(a.UserId)" style="padding: 0; text-decoration: underline;">
-                                        <strong>@a.CandidateName</strong>
-                                    </button>
+                <div class="admin-oneui-list">
+                    @foreach (var a in Applicants)
+                    {
+                        <div class="admin-oneui-item admin-oneui-item--clickable" @onclick="() => OpenProfile(a.UserId)">
+                            <div class="admin-oneui-avatar @(a.IsVerifiedTD ? "admin-oneui-avatar--success" : "")">
+                                @GetInitials(a.CandidateName)
+                            </div>
+                            <div class="admin-oneui-body">
+                                <div class="admin-oneui-title">
+                                    @a.CandidateName
                                     @if (a.IsVerifiedTD)
                                     {
                                         <span class="admin-verified-badge" title="Verificado">
@@ -171,16 +162,27 @@ else
                                             </svg>
                                         </span>
                                     }
-                                </td>
-                                <td>@a.CandidateEmail</td>
-                                <td>@ApplicationStatusLabel(a.Status)</td>
-                                <td>@(a.ExpectedSalary?.ToString("N0") ?? "-")</td>
-                                <td>@(a.AvailableFromDate?.ToString("yyyy-MM-dd") ?? "-")</td>
-                                <td>@a.CreatedAt.ToString("yyyy-MM-dd")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                </div>
+                                <div class="admin-oneui-subtitle">
+                                    <span>@a.CandidateEmail</span>
+                                    @if (a.ExpectedSalary.HasValue)
+                                    {
+                                        <span class="admin-oneui-chip">@a.ExpectedSalary.Value.ToString("N0") €</span>
+                                    }
+                                    @if (a.AvailableFromDate.HasValue)
+                                    {
+                                        <span>@Lang.T("admin.vacancies.availableFrom"): @a.AvailableFromDate.Value.ToString("yyyy-MM-dd")</span>
+                                    }
+                                    <span>@a.CreatedAt.ToString("yyyy-MM-dd")</span>
+                                </div>
+                            </div>
+                            <div class="admin-oneui-meta">
+                                <span class="admin-result-badge @ApplicationStatusBadgeClass(a.Status)">@ApplicationStatusLabel(a.Status)</span>
+                            </div>
+                            <svg class="admin-oneui-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="9 18 15 12 9 6" /></svg>
+                        </div>
+                    }
+                </div>
             }
         </div>
     }
@@ -216,25 +218,21 @@ else
             }
             else
             {
-                <table class="ot-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;"><input type="checkbox" checked="@(SelectedCandidates.Count > 0 && SelectedCandidates.Count == NonApplicantMatches.Count)" @onchange="ToggleSelectAll" /></th>
-                            <th>@Lang.T("admin.vacancies.candidateName")</th>
-                            <th>@Lang.T("admin.candidates.columnTitle")</th>
-                            <th>@Lang.T("admin.shortlist.matchPercentage")</th>
-                            <th>@Lang.T("admin.shortlist.skills")</th>
-                            <th>@Lang.T("admin.shortlist.experience")</th>
-                            <th>@Lang.T("admin.shortlist.location")</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var m in NonApplicantMatches)
-                        {
-                            <tr>
-                                <td><input type="checkbox" checked="@SelectedCandidates.Contains(m.CandidateId)" @onchange="e => ToggleCandidate(m.CandidateId, (bool)(e.Value ?? false))" /></td>
-                                <td>
-                                    <strong>@m.CandidateName</strong>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-muted);">
+                    <input type="checkbox" checked="@(SelectedCandidates.Count > 0 && SelectedCandidates.Count == NonApplicantMatches.Count)" @onchange="ToggleSelectAll" style="width: 16px; height: 16px; cursor: pointer;" />
+                    <span>@Lang.T("admin.candidates.selectAll")</span>
+                </div>
+                <div class="admin-oneui-list">
+                    @foreach (var m in NonApplicantMatches)
+                    {
+                        <div class="admin-oneui-item">
+                            <input type="checkbox" checked="@SelectedCandidates.Contains(m.CandidateId)" @onchange="e => ToggleCandidate(m.CandidateId, (bool)(e.Value ?? false))" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;" />
+                            <div class="admin-oneui-avatar @(m.IsVerifiedTD ? "admin-oneui-avatar--success" : "")">
+                                @GetInitials(m.CandidateName)
+                            </div>
+                            <div class="admin-oneui-body">
+                                <div class="admin-oneui-title">
+                                    @m.CandidateName
                                     @if (m.IsVerifiedTD)
                                     {
                                         <span class="admin-verified-badge" title="Verificado">
@@ -243,16 +241,24 @@ else
                                             </svg>
                                         </span>
                                     }
-                                </td>
-                                <td>@(m.CandidateTitle ?? "-")</td>
-                                <td><strong>@m.MatchPercentage%</strong></td>
-                                <td>@m.SkillsMatch%</td>
-                                <td>@m.ExperienceMatch%</td>
-                                <td>@m.LocationMatch%</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                </div>
+                                <div class="admin-oneui-subtitle">
+                                    @if (!string.IsNullOrEmpty(m.CandidateTitle))
+                                    {
+                                        <span>@m.CandidateTitle</span>
+                                    }
+                                    <span class="admin-oneui-chip">@Lang.T("admin.shortlist.skills") @m.SkillsMatch%</span>
+                                    <span class="admin-oneui-chip">@Lang.T("admin.shortlist.experience") @m.ExperienceMatch%</span>
+                                    <span class="admin-oneui-chip">@Lang.T("admin.shortlist.location") @m.LocationMatch%</span>
+                                </div>
+                            </div>
+                            <div class="admin-oneui-match">
+                                <div class="admin-oneui-match-value">@m.MatchPercentage%</div>
+                                <div class="admin-oneui-match-label">Match</div>
+                            </div>
+                        </div>
+                    }
+                </div>
             }
         </div>
     }
@@ -352,6 +358,24 @@ else
         ApplicationStatus.Rejected => Lang.T("admin.negotiation.appRejected"),
         _ => status.ToString()
     };
+
+    private static string ApplicationStatusBadgeClass(int status) => (ApplicationStatus)status switch
+    {
+        ApplicationStatus.Pending => "admin-result-badge--warning",
+        ApplicationStatus.InReview => "admin-result-badge--info",
+        ApplicationStatus.Accepted => "admin-result-badge--success",
+        ApplicationStatus.Rejected => "admin-result-badge--danger",
+        _ => "admin-result-badge--muted"
+    };
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[1][0]}".ToUpperInvariant()
+            : parts[0][0].ToString().ToUpperInvariant();
+    }
 
     private string StatusLabel(int status) => (VacancyStatus)status switch
     {

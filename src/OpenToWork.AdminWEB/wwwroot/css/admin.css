@@ -4647,3 +4647,150 @@ textarea.admin-input {
     width: 12px;
     height: 12px;
 }
+
+/* === One UI list (Samsung-style card rows) === */
+.admin-oneui-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.admin-oneui-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-fast);
+}
+
+.admin-oneui-item--clickable {
+    cursor: pointer;
+}
+
+.admin-oneui-item--clickable:hover {
+    border-color: var(--accent-soft);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.admin-oneui-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--accent-light);
+    color: var(--accent-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.admin-oneui-avatar--success {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.admin-oneui-avatar--muted {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+
+.admin-oneui-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-oneui-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.admin-oneui-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.admin-oneui-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.admin-oneui-chevron {
+    color: var(--text-muted);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.admin-oneui-item--clickable:hover .admin-oneui-chevron {
+    transform: translateX(3px);
+    color: var(--accent-primary);
+}
+
+.admin-oneui-match {
+    min-width: 56px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.admin-oneui-match-value {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--accent-primary);
+    line-height: 1.1;
+}
+
+.admin-oneui-match-label {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.admin-oneui-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-pill);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.admin-oneui-chip--accent {
+    background: var(--accent-light);
+    color: var(--accent-primary);
+}
+
+@media (max-width: 640px) {
+    .admin-oneui-item {
+        flex-wrap: wrap;
+        padding: 0.85rem 1rem;
+    }
+
+    .admin-oneui-meta {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
