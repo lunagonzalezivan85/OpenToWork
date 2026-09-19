@@ -1131,6 +1131,19 @@ El mismo patron exacto (mismo bug) existia en 3 archivos, los unicos del proyect
 
 Verificado en vivo en los tres: se disparo el debounce repetidamente (busqueda real, no solo el metodo del automatizador que a veces no dispara `keyup`/`input` — ver nota tecnica en la Bitácora) sin que el servidor se cayera, el filtro de busqueda funciono correctamente ("Hostal" → 1 resultado), y los logs del servidor quedaron sin errores.
 
+### 6. Pedido para Ivan: verificar el flujo del candidato (18-Sep)
+
+Darwin pidio avisarle a Ivan que revise el flujo del candidato — Claude no tiene un canal para notificarlo directamente (sin Slack/email conectado a esta sesion), asi que queda anotado aca para que Darwin se lo reenvie.
+
+Motivo: la sesion del 18-Sep toco varios archivos que tambien usa/toca el lado de Ivan (CRM de empresas, Embudo Ciego), sin que el sea quien programo el cambio:
+
+- **Fix del crash de AdminWEB** (punto 5 de arriba): `Companies/Pipeline.razor`, `Companies/Index.razor` (pantallas de Ivan) y `Candidates/Pipeline.razor`.
+- **Cola de Shortlist visible en vacantes cerradas** (`Vacancies.razor`) — cambia que negociaciones/candidatos son visibles segun el estado de la vacante.
+- **Sincronizacion automatica de etapa del pipeline con el contrato** (bitácora de hoy, mas abajo) — un contrato generado o aceptado ahora mueve `PTCompanyPipeline.CurrentStage` solo, sin que un admin lo haga a mano. Si Ivan tiene logica propia que asuma que las etapas solo cambian por accion manual del CRM, esto podria sorprenderlo.
+- **Filtros de Estabilidad/Confiabilidad/Evidencia/Compatibilidad en `/candidate-search`** (portal `OpenToWork.WEB`) — nuevo, pero comparte pagina/servicio con el resto del flujo de busqueda de candidatos que usa la empresa.
+
+Nada de esto se probo desde la perspectiva de Ivan (solo se verifico que Claude no rompio lo que ya existia) — pedirle que revise el flujo de candidato completo (Embudo Ciego, entregas, pipeline de reclutamiento) por las dudas.
+
 - Commit `aba82c7` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
 ---
