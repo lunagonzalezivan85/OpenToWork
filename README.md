@@ -1619,6 +1619,20 @@ Verificado end-to-end: formulario de edición (otro contrato en Borrador) pre-ca
 
 - Commit `993c7c0` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
+### Sesión 2026-09-18 — Sincroniza la etapa del pipeline con el ciclo de vida del contrato (Dsiezar)
+
+Darwin: "cuando el contrato de servicio sea creado en el pipeline debe estar en el estatus de Propuesta Enviada. Si el contrato es aceptado debe pasar a estatus Cerrado". Se confirmó investigando que **no existía ninguna relación automática** entre `PTVacancyContract` y `PTCompanyPipeline` — un contrato podía generarse, enviarse e incluso aceptarse sin que la etapa comercial de la empresa se moviera nunca, quedando el trato "atascado" en Lead pese a tener ya un contrato firmado (el caso real de "Gabei", detectado durante la verificación).
+
+Implementado en `AdminContractService`, reusando `ICompanyCrmService.MoveStageAsync` (el mismo servicio que ya usa la UI del pipeline para los avances manuales, sin gating server-side por etapa):
+- **Al generar el contrato** (`CreateAsync`): si la etapa actual es anterior a "Propuesta Enviada", avanza hasta ahí. Nunca retrocede un trato que ya está en Negociación o Cerrado (ganado o perdido).
+- **Al aceptar el contrato** (`DecideAsync`, `accepted=true`): fija la etapa en "Cerrado Ganado", salvo que ya esté ahí (evita duplicar el historial de etapas).
+
+Ambos casos toleran que la empresa no tenga un pipeline asociado (dato legacy/de prueba) sin lanzar error.
+
+Verificado end-to-end con una empresa de prueba (Tania Arguello, en Lead): crear una vacante + generar el contrato movió el pipeline a Propuesta Enviada (visible en `/companies/pipeline` y en `PT_CompanyStageLogs`); enviar y aceptar ese mismo contrato lo movió a Cerrado Ganado. Datos de prueba eliminados después. De paso, se corrigió retroactivamente el caso real de "Gabei" (contrato `TD-2026-0007` ya Enviado desde antes de este fix, pipeline atascado en Lead) — se movió a Propuesta Enviada con una entrada explícita en el historial de etapas aclarando que es una corrección retroactiva.
+
+- Commit `83149ab` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
 Pregunta de Darwin que destapó un hueco real: "¿en qué momento voy a ingresar la vacante que necesita la empresa, con sus requisitos?". Investigación: existían dos caminos para cargar una vacante (el wizard de "Captación" en `/companies/new`, que crea empresa+vacante+contrato de una vez; y "Ver Vacantes" en la ficha de una empresa ya existente, con botón "+ Nueva vacante") pero **ninguno de los dos estaba conectado al pipeline de ventas**. Llegar a "Cerrado Ganado" solo ofrecía "Generar Contrato" (que busca un contrato *ya existente* y falla si no hay ninguno) — nada en el flujo Lead→...→Cerrado Ganado le pedía al admin cargar la vacante.
