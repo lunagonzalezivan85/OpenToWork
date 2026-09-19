@@ -16,13 +16,14 @@ public class AdminApplicationService : IAdminApplicationService
 
     public async Task<List<AdminApplicationDto>> GetByVacancyAsync(Guid vacancyId)
     {
-        return await _context.PT_Applications
+        var items = await _context.PT_Applications
             .Where(a => a.PT_VacancyId == vacancyId && !a.IsDeleted)
             .OrderByDescending(a => a.CreatedAt)
             .Select(a => new AdminApplicationDto
             {
                 Id = a.Id,
                 UserId = a.Candidate.SCUserId,
+                CandidateId = a.PT_CandidateId,
                 CandidateName = a.Candidate.FirstName + " " + a.Candidate.LastName,
                 CandidateEmail = a.Candidate.User.Email,
                 VacancyTitle = a.Vacancy.Title,
@@ -32,6 +33,16 @@ public class AdminApplicationService : IAdminApplicationService
                 CreatedAt = a.CreatedAt
             })
             .ToListAsync();
+
+        var verifiedIds = await VerifiedCandidateHelper.GetVerifiedIdsAsync(
+            _context, items.Select(i => i.CandidateId).ToList());
+        foreach (var item in items)
+            item.IsVerifiedTD = verifiedIds.Contains(item.CandidateId);
+
+        // Verificados primero, luego por fecha de postulacion.
+        return items.OrderByDescending(i => i.IsVerifiedTD)
+            .ThenByDescending(i => i.CreatedAt)
+            .ToList();
     }
 
     public async Task<List<AdminApplicationDto>> GetApplicationsAsync(int page, int pageSize, int? status)

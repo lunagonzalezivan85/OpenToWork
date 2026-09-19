@@ -163,6 +163,14 @@ else
                                     <button class="ot-btn ot-btn--link ot-btn--small" @onclick="() => OpenProfile(a.UserId)" style="padding: 0; text-decoration: underline;">
                                         <strong>@a.CandidateName</strong>
                                     </button>
+                                    @if (a.IsVerifiedTD)
+                                    {
+                                        <span class="admin-verified-badge" title="Verificado">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                            </svg>
+                                        </span>
+                                    }
                                 </td>
                                 <td>@a.CandidateEmail</td>
                                 <td>@ApplicationStatusLabel(a.Status)</td>
@@ -225,7 +233,17 @@ else
                         {
                             <tr>
                                 <td><input type="checkbox" checked="@SelectedCandidates.Contains(m.CandidateId)" @onchange="e => ToggleCandidate(m.CandidateId, (bool)(e.Value ?? false))" /></td>
-                                <td><strong>@m.CandidateName</strong></td>
+                                <td>
+                                    <strong>@m.CandidateName</strong>
+                                    @if (m.IsVerifiedTD)
+                                    {
+                                        <span class="admin-verified-badge" title="Verificado">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                            </svg>
+                                        </span>
+                                    }
+                                </td>
                                 <td>@(m.CandidateTitle ?? "-")</td>
                                 <td><strong>@m.MatchPercentage%</strong></td>
                                 <td>@m.SkillsMatch%</td>

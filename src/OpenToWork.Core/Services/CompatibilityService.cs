@@ -124,7 +124,7 @@ public class CompatibilityService : ICompatibilityService
     {
         var take = limit is > 0 ? limit.Value : DefaultShortlistLimit;
 
-        return await _context.PT_JobMatchScores
+        var items = await _context.PT_JobMatchScores
             .Where(m => m.PT_VacancyId == vacancyId && !m.IsDeleted)
             .Include(m => m.Candidate)
             .OrderByDescending(m => m.MatchPercentage)
@@ -143,6 +143,11 @@ public class CompatibilityService : ICompatibilityService
                 CalculatedAt = m.CalculatedAt
             })
             .ToListAsync();
+
+        await SetVerifiedFlagsAsync(items);
+        return items.OrderByDescending(i => i.IsVerifiedTD)
+            .ThenByDescending(i => i.MatchPercentage)
+            .ToList();
     }
 
     public async Task<List<JobMatchDto>> GetNonApplicantMatchesAsync(Guid vacancyId, int? limit = null, int minPercentage = 0)
@@ -160,7 +165,7 @@ public class CompatibilityService : ICompatibilityService
         if (appliedCandidateIds.Count > 0)
             query = query.Where(m => !appliedCandidateIds.Contains(m.PT_CandidateId));
 
-        return await query
+        var items = await query
             .Include(m => m.Candidate)
             .OrderByDescending(m => m.MatchPercentage)
             .Take(take)
@@ -178,6 +183,20 @@ public class CompatibilityService : ICompatibilityService
                 CalculatedAt = m.CalculatedAt
             })
             .ToListAsync();
+
+        await SetVerifiedFlagsAsync(items);
+        return items.OrderByDescending(i => i.IsVerifiedTD)
+            .ThenByDescending(i => i.MatchPercentage)
+            .ToList();
+    }
+
+    /// <summary>Marca IsVerifiedTD en cada match usando la regla unica de VerifiedCandidateHelper.</summary>
+    private async Task SetVerifiedFlagsAsync(List<JobMatchDto> items)
+    {
+        var verifiedIds = await VerifiedCandidateHelper.GetVerifiedIdsAsync(
+            _context, items.Select(i => i.CandidateId).ToList());
+        foreach (var item in items)
+            item.IsVerifiedTD = verifiedIds.Contains(item.CandidateId);
     }
 
     private static int CalculateSkillsMatch(PTCandidate candidate, PTVacancy vacancy)

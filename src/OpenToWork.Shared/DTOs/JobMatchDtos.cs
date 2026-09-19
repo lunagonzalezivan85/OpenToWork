@@ -26,4 +26,6 @@ public class JobMatchDto
     public int EducationMatch { get; set; }
     public int LocationMatch { get; set; }
     public DateTime CalculatedAt { get; set; }
+    /// <summary>Verificado: reclutamiento en etapa 4 o checks automáticos completos (misma regla que la consola de candidatos).</summary>
+    public bool IsVerifiedTD { get; set; }
 }
