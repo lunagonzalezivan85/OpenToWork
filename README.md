@@ -1607,6 +1607,18 @@ Verificado end-to-end contra el contrato real reportado (`TD-2026-0007`, Bartend
 
 - Commit `906e8bc` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
+### Sesión 2026-09-18 — Fix: garantía individual por vacante, no compartida por contrato (Dsiezar)
+
+Darwin, sobre el mismo contrato del fix anterior: "el período de garantía tiene que ser individual por vacante". Mismo bug estructural que el precio, aplicado a `WarrantyDays`: era un solo valor en `PTVacancyContract` compartido por todas las vacantes del contrato, aunque cada una puede tener un nivel de puesto distinto con su propia garantía de referencia (Operativo 30d / Encargados y Técnicos 45d / Responsables 60d).
+
+Fix: `WarrantyDays` pasa a `PTContractVacancy` (por línea/vacante), con resolución automática desde `PTJobLevel.WarrantyDays` de esa vacante cuando el admin no fija un valor explícito — mismo patrón que "precio de lista vs. override manual". El formulario de edición ahora muestra un input de garantía por cada vacante, con un hint de la referencia según su nivel; el documento formal (Anexo I, sección 6) también quedó por vacante en vez de uno solo para todo el contrato.
+
+La migración hizo backfill del valor compartido anterior a cada línea, para no perder el dato ya cargado — pero eso significa que contratos multi-vacante existentes (como el de Bartender + Camarero) quedaron con el mismo número duplicado en ambas líneas, que es exactamente el dato incorrecto que había hoy. En el contrato real reportado, ya en estado Enviado (la UI de edición no deja tocarlo en ese estado), se corrigió a mano: Bartender (Encargados y Técnicos) → 45 días, Camarero (Personal Operativo) → 30 días.
+
+Verificado end-to-end: formulario de edición (otro contrato en Borrador) pre-carga el input con la referencia del nivel de esa vacante y el hint correspondiente; guardar persiste el valor específico de esa línea sin afectar otras; el documento formal (Anexo I) y la vista de solo lectura muestran cada vacante con su propia garantía.
+
+- Commit `993c7c0` en `dsiezar-fase-5`, merge fast-forward a `main`.
+
 ### Sesión 2026-09-17 — Exigir vacante registrada antes de avanzar a Propuesta Enviada (Dsiezar)
 
 Pregunta de Darwin que destapó un hueco real: "¿en qué momento voy a ingresar la vacante que necesita la empresa, con sus requisitos?". Investigación: existían dos caminos para cargar una vacante (el wizard de "Captación" en `/companies/new`, que crea empresa+vacante+contrato de una vez; y "Ver Vacantes" en la ficha de una empresa ya existente, con botón "+ Nueva vacante") pero **ninguno de los dos estaba conectado al pipeline de ventas**. Llegar a "Cerrado Ganado" solo ofrecía "Generar Contrato" (que busca un contrato *ya existente* y falla si no hay ninguno) — nada en el flujo Lead→...→Cerrado Ganado le pedía al admin cargar la vacante.
