@@ -274,6 +274,8 @@ public class AdminCandidateCertificationDto
 public class CandidateConsoleDto
 {
     public Guid Id { get; set; }
+    /// <summary>Id de PTCandidate (distinto de Id que es SCUser.Id) - necesario para lookups en PT_CandidateScores, PT_Verifications, etc.</summary>
+    public Guid? CandidateId { get; set; }
     public string Email { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string? Title { get; set; }
@@ -292,6 +294,8 @@ public class CandidateConsoleDto
     public int SkillCount { get; set; }
     public int ExperienceCount { get; set; }
     public int ApplicationCount { get; set; }
+    public int? OverallScore { get; set; }
+    public bool IsVerifiedTD { get; set; }
     public List<string> TopSkills { get; set; } = new();
 }
 

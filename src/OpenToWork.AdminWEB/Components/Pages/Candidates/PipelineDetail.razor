@@ -21,6 +21,12 @@
                 @Lang.T("admin.recruitment.dismiss")
             </button>
         }
+        @if (Detail?.Dismissal == null && Detail?.CurrentStage < 4)
+        {
+            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => MoveToNextStage()">
+                @Lang.T("admin.recruitment.moveToNext") → @GetStageName(Detail.CurrentStage + 1)
+            </button>
+        }
         <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.dashboard.backToDashboard")</button>
     </div>
 </div>
@@ -247,7 +253,11 @@ else
                 </div>
                 <div class="ot-input-group" style="grid-column: span 2;">
                     <label class="ot-input-label">Días disponibles</label>
-                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem; border: 1.5px solid var(--accent-primary); border-radius: var(--radius-md); cursor: pointer; font-size: 0.85rem; font-weight: 600; background: var(--accent-light); color: var(--accent-primary);">
+                            <input type="checkbox" checked="@AreAllNonSundayDaysSelected()" @onchange="@(e => ToggleAllDays(e.Value))" style="width: 16px; height: 16px; cursor: pointer;" />
+                            Todos
+                        </label>
                         @foreach (var day in AvailableDayOptions)
                         {
                             var dayCode = day.Key;
@@ -258,9 +268,13 @@ else
                         }
                     </div>
                 </div>
-                <div class="ot-input-group">
+                <div class="ot-input-group" style="grid-column: span 2;">
                     <label class="ot-input-label">Horario concreto disponible</label>
-                    <input type="text" @bind="PrefSchedule" class="ot-input-field" placeholder="Ej: 08:00 - 16:00" />
+                    <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.25rem;">
+                        <input type="time" @bind="PrefScheduleStart" class="ot-input-field" style="flex: 1; max-width: 140px;" />
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">hasta</span>
+                        <input type="time" @bind="PrefScheduleEnd" class="ot-input-field" style="flex: 1; max-width: 140px;" />
+                    </div>
                 </div>
                 <div class="ot-input-group">
                     <label class="ot-input-label">Disponible fines de semana</label>
@@ -468,16 +482,6 @@ else
     {
         <div class="admin-result-badge admin-result-badge--danger" style="margin-top: 1rem; display: block; padding: 0.75rem 1rem;">
             @MoveStageError
-        </div>
-    }
-
-    @* === Actions === *@
-    @if (Detail.Dismissal == null && Detail.CurrentStage < 4)
-    {
-        <div class="admin-recruitment-actions">
-            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="() => MoveToNextStage()">
-                @Lang.T("admin.recruitment.moveToNext") → @GetStageName(Detail.CurrentStage + 1)
-            </button>
         </div>
     }
 
@@ -1464,6 +1468,8 @@ else
     private bool? PrefWeekends { get; set; }
     private bool? PrefHolidays { get; set; }
     private string? PrefSchedule { get; set; }
+    private TimeOnly? PrefScheduleStart { get; set; }
+    private TimeOnly? PrefScheduleEnd { get; set; }
     private bool PrefSaving { get; set; }
     private List<string> SelectedDays { get; set; } = new();
     private List<DocumentTypeDto> DocumentTypes { get; set; } = new();
@@ -1665,6 +1671,14 @@ else
                 PrefWeekends = Preferences.AvailableWeekends;
                 PrefHolidays = Preferences.AvailableHolidays;
                 PrefSchedule = Preferences.AvailableSchedule;
+                if (!string.IsNullOrEmpty(PrefSchedule) && PrefSchedule.Contains(" - "))
+                {
+                    var parts = PrefSchedule.Split(" - ");
+                    if (TimeOnly.TryParse(parts[0], out var startTime))
+                        PrefScheduleStart = startTime;
+                    if (parts.Length > 1 && TimeOnly.TryParse(parts[1], out var endTime))
+                        PrefScheduleEnd = endTime;
+                }
             }
         }
         IsLoading = false;
@@ -1764,6 +1778,9 @@ else
         PrefSaving = true;
         StateHasChanged();
         PrefDays = SelectedDays.Count > 0 ? string.Join(",", SelectedDays) : null;
+        PrefSchedule = (PrefScheduleStart.HasValue && PrefScheduleEnd.HasValue)
+            ? $"{PrefScheduleStart.Value:HH:mm} - {PrefScheduleEnd.Value:HH:mm}"
+            : null;
         var dto = new UpdateRecruitmentPreferencesDto
         {
             PreferredWorkShift = PrefWorkShift > 0 ? PrefWorkShift : null,
@@ -1795,6 +1812,29 @@ else
         else
         {
             SelectedDays.Remove(dayCode);
+        }
+    }
+
+    private static readonly string[] NonSundayDays = { "L", "M", "X", "J", "V", "S" };
+
+    private bool AreAllNonSundayDaysSelected() => NonSundayDays.All(d => SelectedDays.Contains(d));
+
+    private void ToggleAllDays(object? checkedValue)
+    {
+        if (checkedValue is true)
+        {
+            foreach (var d in NonSundayDays)
+            {
+                if (!SelectedDays.Contains(d))
+                    SelectedDays.Add(d);
+            }
+        }
+        else
+        {
+            foreach (var d in NonSundayDays)
+            {
+                SelectedDays.Remove(d);
+            }
         }
     }
 

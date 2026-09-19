@@ -107,7 +107,17 @@ else
                     }
                 </div>
                 <div class="admin-profile-header-info">
-                    <h2>@(Profile.CandidateName ?? Profile.Email)</h2>
+                    <h2>
+                        @(Profile.CandidateName ?? Profile.Email)
+                        @if (IsCandidateVerified)
+                        {
+                            <span class="admin-verified-badge" title="Verificado">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </span>
+                        }
+                    </h2>
                     <p class="admin-profile-header-title">@(Profile.Title ?? "")</p>
                     <div class="admin-profile-header-badges">
                         @if (Profile.IsActive)
@@ -741,6 +751,8 @@ else
     private CandidateScoreDto? Score { get; set; }
     private List<VerificationResultDto> Verifications { get; set; } = new();
     private VerificationStatusDto? VerificationStatus { get; set; }
+    /// <summary>Verificado: por checks automáticos (IsVerifiedTD) o por reclutamiento en etapa 4 (Verificado manual).</summary>
+    private bool IsCandidateVerified => (VerificationStatus?.IsVerifiedTD == true) || (Recruitment?.CurrentStage == 4);
     private bool IsScoreBusy { get; set; }
     private bool ShowStageDetail { get; set; }
     private int StageDetailIndex { get; set; }
@@ -822,9 +834,11 @@ else
     {
         if (Profile?.CandidateId == null || IsScoreBusy) return;
         IsScoreBusy = true;
+        StateHasChanged();
         await AuthApi.RecalculateCandidateScoreAsync(Profile.CandidateId.Value);
         await LoadScoreDataAsync();
         IsScoreBusy = false;
+        StateHasChanged();
     }
 
     private async Task ApproveVerification(int type) => await SetVerification(type, 2);
@@ -834,9 +848,11 @@ else
     {
         if (Profile?.CandidateId == null || IsScoreBusy) return;
         IsScoreBusy = true;
+        StateHasChanged();
         await AuthApi.SetVerificationStatusAsync(Profile.CandidateId.Value, type, status);
         await LoadScoreDataAsync();
         IsScoreBusy = false;
+        StateHasChanged();
     }
 
     private string VerificationTypeLabel(int type) => type switch

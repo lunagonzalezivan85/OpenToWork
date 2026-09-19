@@ -4595,3 +4595,55 @@ textarea.admin-input {
 .cd-table--anexo tbody td {
     padding: 0.45rem 0.75rem;
 }
+
+/* Score circle (candidate table) */
+.admin-score-circle {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fff;
+    background: #778DA9;
+}
+
+.admin-score-circle--high {
+    background: #0066FF;
+}
+
+.admin-score-circle--mid {
+    background: #3A506B;
+}
+
+.admin-score-circle--low {
+    background: #B0413E;
+}
+
+.admin-score-circle--none {
+    background: #F1F5F9;
+    color: #778DA9;
+}
+
+/* Verified TD badge (TikTok/Facebook style) */
+.admin-verified-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #00C853;
+    color: #fff;
+    vertical-align: middle;
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
+.admin-verified-badge svg {
+    width: 12px;
+    height: 12px;
+}

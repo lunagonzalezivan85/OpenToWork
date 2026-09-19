@@ -505,7 +505,7 @@
     "noCandidates": "Sin candidatos",
     "statActiveCandidates": "Candidatos activos",
     "statInInvestigation": "En investigación",
-    "statReadyToDeliver": "Listos a entregar",
+    "statReadyToDeliver": "Verificados",
     "statDismissed": "Descartados",
     "noCity": "Sin ciudad",
     "notFound": "Registro no encontrado.",
@@ -553,7 +553,7 @@
     "stage1": "Investigación",
     "stage2": "Evaluación Técnica",
     "stage3": "Entrevista Cultural",
-    "stage4": "Listo a Entregar",
+    "stage4": "Verificado",
     "stage5": "Descartado",
     "invStep0": "Llamar al candidato",
     "invStep1": "Llamar a las referencias (mínimo 3)",
@@ -617,7 +617,7 @@
     "recRecommended": "Recomendado",
     "recNotRecommended": "No recomendado",
     "recUndecided": "Dudoso",
-    "deliverySummary": "Resumen para Entrega",
+    "deliverySummary": "Resumen de Verificación",
     "checklistProgress": "Checklist completado",
     "evaluationsCount": "Número de evaluaciones",
     "viewDetail": "Ver detalle",
@@ -646,7 +646,7 @@
     "adminNote": "Nota de presentación",
     "adminNotePlaceholder": "Nota opcional para la empresa (presentación del candidato)",
     "deliverConfirm": "Entregar",
-    "deliverError": "No se pudo entregar al candidato. Verifica que esté Verificado TD y en etapa Listo a Entregar."
+    "deliverError": "No se pudo entregar al candidato. Verifica que esté Verificado TD y en etapa Verificado."
   },
   "score": {
     "title": "Score del Candidato",

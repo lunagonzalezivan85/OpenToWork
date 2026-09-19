@@ -505,7 +505,7 @@
     "noCandidates": "No candidates",
     "statActiveCandidates": "Active candidates",
     "statInInvestigation": "In investigation",
-    "statReadyToDeliver": "Ready to deliver",
+    "statReadyToDeliver": "Verified",
     "statDismissed": "Dismissed",
     "noCity": "No city",
     "notFound": "Record not found.",
@@ -553,7 +553,7 @@
     "stage1": "Investigation",
     "stage2": "Technical Evaluation",
     "stage3": "Cultural Interview",
-    "stage4": "Ready to Deliver",
+    "stage4": "Verified",
     "stage5": "Dismissed",
     "invStep0": "Call candidate",
     "invStep1": "Call references (minimum 3)",
@@ -617,7 +617,7 @@
     "recRecommended": "Recommended",
     "recNotRecommended": "Not recommended",
     "recUndecided": "Undecided",
-    "deliverySummary": "Delivery Summary",
+    "deliverySummary": "Verification Summary",
     "checklistProgress": "Checklist completed",
     "evaluationsCount": "Number of evaluations",
     "viewDetail": "View detail",
@@ -646,7 +646,7 @@
     "adminNote": "Presentation note",
     "adminNotePlaceholder": "Optional note for the company (candidate presentation)",
     "deliverConfirm": "Deliver",
-    "deliverError": "Could not deliver the candidate. Verify they are Verified TD and at the Ready to Deliver stage."
+    "deliverError": "Could not deliver the candidate. Verify they are Verified TD and at the Verified stage."
   },
   "score": {
     "title": "Candidate Score",

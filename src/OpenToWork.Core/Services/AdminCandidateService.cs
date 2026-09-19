@@ -144,6 +144,7 @@ public class AdminCandidateService : IAdminCandidateService
             .Select(u => new CandidateConsoleDto
             {
                 Id = u.Id,
+                CandidateId = u.Candidate != null ? u.Candidate.Id : (Guid?)null,
                 Email = u.Email,
                 FullName = u.Candidate != null ? (u.Candidate.FirstName + " " + u.Candidate.LastName) : u.Email,
                 Title = u.Candidate != null ? u.Candidate.Title : null,
@@ -166,9 +167,55 @@ public class AdminCandidateService : IAdminCandidateService
             })
             .ToListAsync();
 
-        var candidateIds = items.Select(i => i.Id).ToList();
+        // PT_* tables are keyed by PTCandidate.Id, not SCUser.Id
+        var ptCandidateIds = items.Where(i => i.CandidateId.HasValue).Select(i => i.CandidateId!.Value).ToList();
+        var scoreData = await _context.PT_CandidateScores
+            .Where(s => ptCandidateIds.Contains(s.PT_CandidateId) && !s.IsDeleted)
+            .ToDictionaryAsync(s => s.PT_CandidateId, s => s.OverallScore);
+
+        foreach (var item in items)
+        {
+            if (item.CandidateId.HasValue && scoreData.TryGetValue(item.CandidateId.Value, out var score))
+                item.OverallScore = score;
+        }
+
+        // Verificado TD: reclutamiento en etapa 4 (Verificado) O (4 gating checks verificados + score >= 70 + referencia verificada)
+        var userIds = items.Select(i => i.Id).ToList();
+        var verifiedByStage = await _context.PT_CandidateRecruitments
+            .Where(r => userIds.Contains(r.SCUserId) && !r.IsDeleted && r.CurrentStage == 4)
+            .Select(r => r.SCUserId)
+            .ToListAsync();
+        var verifiedByStageSet = new HashSet<Guid>(verifiedByStage);
+
+        var gatingTypes = new List<int> { 1, 2, 3, 5 }; // LinkedIn, Portfolio, CvCoherence, Reference
+        var verifications = await _context.PT_Verifications
+            .Where(v => ptCandidateIds.Contains(v.PT_CandidateId) && !v.IsDeleted && gatingTypes.Contains(v.Type))
+            .ToListAsync();
+        var verifiedRefs = await _context.PT_CandidateReferences
+            .Where(r => ptCandidateIds.Contains(r.PT_CandidateId) && !r.IsDeleted && r.Status == 3)
+            .Select(r => r.PT_CandidateId)
+            .Distinct()
+            .ToListAsync();
+        var verifiedRefSet = new HashSet<Guid>(verifiedRefs);
+
+        foreach (var item in items)
+        {
+            if (verifiedByStageSet.Contains(item.Id))
+            {
+                item.IsVerifiedTD = true;
+                continue;
+            }
+            if (!item.CandidateId.HasValue) continue;
+            var candidateVerifs = verifications.Where(v => v.PT_CandidateId == item.CandidateId.Value).ToList();
+            var allGatingVerified = gatingTypes.All(gt => candidateVerifs.Any(v => v.Type == gt && v.Status == 2));
+            item.IsVerifiedTD = allGatingVerified
+                && item.OverallScore.HasValue
+                && item.OverallScore.Value >= 70
+                && verifiedRefSet.Contains(item.CandidateId.Value);
+        }
+
         var candidateSkillData = await _context.PT_CandidateSkills
-            .Where(cs => candidateIds.Contains(cs.PT_CandidateId) && !cs.IsDeleted)
+            .Where(cs => ptCandidateIds.Contains(cs.PT_CandidateId) && !cs.IsDeleted)
             .Include(cs => cs.Skill)
             .ToListAsync();
 
@@ -184,7 +231,7 @@ public class AdminCandidateService : IAdminCandidateService
 
         foreach (var item in items)
         {
-            if (skillsByCandidate.TryGetValue(item.Id, out var skills))
+            if (item.CandidateId.HasValue && skillsByCandidate.TryGetValue(item.CandidateId.Value, out var skills))
                 item.TopSkills = skills;
         }
 
@@ -270,6 +317,7 @@ public class AdminCandidateService : IAdminCandidateService
             .Select(u => new CandidateConsoleDto
             {
                 Id = u.Id,
+                CandidateId = u.Candidate != null ? u.Candidate.Id : (Guid?)null,
                 Email = u.Email,
                 FullName = u.Candidate != null ? (u.Candidate.FirstName + " " + u.Candidate.LastName) : u.Email,
                 Title = u.Candidate != null ? u.Candidate.Title : null,
@@ -292,7 +340,18 @@ public class AdminCandidateService : IAdminCandidateService
             })
             .ToListAsync();
 
-        var exportCandidateIds = candidates.Select(c => c.Id).ToList();
+        // PT_* tables are keyed by PTCandidate.Id, not SCUser.Id
+        var exportCandidateIds = candidates.Where(c => c.CandidateId.HasValue).Select(c => c.CandidateId!.Value).ToList();
+        var exportScoreData = await _context.PT_CandidateScores
+            .Where(s => exportCandidateIds.Contains(s.PT_CandidateId) && !s.IsDeleted)
+            .ToDictionaryAsync(s => s.PT_CandidateId, s => s.OverallScore);
+
+        foreach (var c in candidates)
+        {
+            if (c.CandidateId.HasValue && exportScoreData.TryGetValue(c.CandidateId.Value, out var score))
+                c.OverallScore = score;
+        }
+
         var exportSkillData = await _context.PT_CandidateSkills
             .Where(cs => exportCandidateIds.Contains(cs.PT_CandidateId) && !cs.IsDeleted)
             .Include(cs => cs.Skill)
@@ -310,7 +369,7 @@ public class AdminCandidateService : IAdminCandidateService
 
         foreach (var c in candidates)
         {
-            if (exportSkillsMap.TryGetValue(c.Id, out var skills))
+            if (c.CandidateId.HasValue && exportSkillsMap.TryGetValue(c.CandidateId.Value, out var skills))
                 c.TopSkills = skills;
         }
 

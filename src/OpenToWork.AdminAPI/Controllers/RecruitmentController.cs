@@ -60,13 +60,6 @@ public class RecruitmentController : AdminControllerBase
                 return BadRequest(new { error = "Debe completar las preferencias del candidato antes de avanzar la etapa." });
         }
 
-        if (dto.ToStage == 4)
-        {
-            var detail = await _recruitmentService.GetDetailAsync(id);
-            if (detail != null && !detail.VacancyId.HasValue)
-                return BadRequest(new { error = "Debe vincular el candidato a una vacante antes de marcarlo como Listo a Entregar." });
-        }
-
         var result = await _recruitmentService.MoveStageAsync(id, dto.ToStage, dto.Notes, AdminId, ClientIp);
         return result ? NoContent() : NotFound();
     }

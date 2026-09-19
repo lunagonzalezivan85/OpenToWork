@@ -138,9 +138,29 @@ else
                         </td>
                         <td>
                             <div class="admin-candidate-name" @onclick="() => ViewProfile(c.Id)">
+                                @if (c.OverallScore.HasValue)
+                                {
+                                    <div class="admin-score-circle @(c.OverallScore.Value >= 70 ? "admin-score-circle--high" : c.OverallScore.Value >= 40 ? "admin-score-circle--mid" : "admin-score-circle--low")">
+                                        @c.OverallScore.Value
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="admin-score-circle admin-score-circle--none">—</div>
+                                }
                                 <div class="admin-result-avatar">@(GetInitials(c.FullName))</div>
                                 <div>
-                                    <div class="admin-candidate-fullname">@c.FullName</div>
+                                    <div class="admin-candidate-fullname">
+                                        @c.FullName
+                                        @if (c.IsVerifiedTD)
+                                        {
+                                            <span class="admin-verified-badge" title="Verificado TD">
+                                                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                </svg>
+                                            </span>
+                                        }
+                                    </div>
                                     @if (c.WizardCompleted)
                                     {
                                         <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.filterEvaluated")</span>
