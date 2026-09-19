@@ -35,6 +35,10 @@ public class JobTypeDto
     public decimal? CurrentPrice { get; set; }
     public string Currency { get; set; } = "EUR";
     public DateTime? PriceEffectiveFrom { get; set; }
+
+    /// <summary>Referencia de garantia (dias naturales) del nivel al que pertenece este tipo de
+    /// puesto (PTJobLevel.WarrantyDays) - default sugerido al fijar la garantia de una vacante.</summary>
+    public int? LevelWarrantyDays { get; set; }
 }
 
 public class SaveJobTypeDto

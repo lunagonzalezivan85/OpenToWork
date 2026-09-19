@@ -15,9 +15,11 @@ public class WarrantyLookupService : IWarrantyLookupService
 
     public async Task<int?> GetWarrantyDaysForVacancyAsync(Guid vacancyId)
     {
+        // Garantia por vacante, no por contrato: un contrato puede agrupar vacantes de niveles
+        // distintos, cada una con su propio periodo (ver PTContractVacancy.WarrantyDays).
         return await _context.PT_ContractVacancies
             .Where(cv => cv.PT_VacancyId == vacancyId && !cv.IsDeleted)
-            .Select(cv => cv.Contract.WarrantyDays)
+            .Select(cv => cv.WarrantyDays)
             .FirstOrDefaultAsync();
     }
 }

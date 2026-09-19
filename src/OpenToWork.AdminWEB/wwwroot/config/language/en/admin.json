@@ -967,6 +967,8 @@
     "coverageRefHint": "Reference periods: Operational 10, Supervisors and Technicians 15, Business Managers 20, Qualified Profiles 30 business days.",
     "warrantyTitle": "Warranty",
     "warrantyDays": "Warranty period (calendar days)",
+    "warrantyReferenceHint": "Reference for its level:",
+    "warrantyReferenceDays": "days",
     "economicsTitle": "Economic conditions",
     "feeAmount": "Fee excluding VAT",
     "feeApplication": "Fee application",

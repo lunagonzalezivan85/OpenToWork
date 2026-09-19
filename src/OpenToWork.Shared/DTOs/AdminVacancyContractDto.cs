@@ -32,8 +32,7 @@ public class AdminVacancyContractDto
     public int JobTypeCategory { get; set; }
     public int? TargetCoverageDays { get; set; }
 
-    // 6. Garantia
-    public int? WarrantyDays { get; set; }
+    // 6. Garantia: ver WarrantyDays por linea en Vacancies (cada vacante tiene la suya).
 
     // 7. Condiciones economicas. FeeAmount es la suma de FinalPrice de cada linea (Vacancies) - no se edita directo.
     public decimal? FeeAmount { get; set; }
@@ -58,7 +57,6 @@ public class AdminSaveVacancyContractDto
     public int? TargetCandidates { get; set; }
     public int JobTypeCategory { get; set; }
     public int? TargetCoverageDays { get; set; }
-    public int? WarrantyDays { get; set; }
     public string? Currency { get; set; }
     public int FeeApplicationType { get; set; }
     public decimal PaymentOpeningPct { get; set; } = 30m;
@@ -79,6 +77,10 @@ public class ContractVacancyLineDto
     public decimal? ManualPrice { get; set; }
 
     public string? OverrideReason { get; set; }
+
+    /// <summary>Periodo de garantia en dias naturales para esta vacante. Si es null, el servidor
+    /// usa la referencia del nivel del tipo de puesto de la vacante (PTJobLevel.WarrantyDays).</summary>
+    public int? WarrantyDays { get; set; }
 }
 
 public class AdminContractDecisionDto
@@ -115,6 +117,9 @@ public class ContractVacancyItemDto
     public decimal? FinalPrice { get; set; }
     public bool IsManualOverride { get; set; }
     public string? OverrideReason { get; set; }
+
+    /// <summary>Periodo de garantia en dias naturales para esta vacante especifica.</summary>
+    public int? WarrantyDays { get; set; }
 }
 
 /// <summary>Tramo de pago del anexo (Apertura/Validacion/Consolidacion). Se generan los 3 al

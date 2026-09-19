@@ -77,10 +77,23 @@ else if (IsEditing)
 
     <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
         <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.warrantyTitle")</h3>
-        <div class="ot-input-group" style="max-width: 320px;">
-            <label class="ot-input-label">@Lang.T("admin.contract.warrantyDays")</label>
-            <input type="number" min="0" step="1" @bind="FormWarrantyDays" class="admin-modal-input" />
-        </div>
+        @foreach (var line in VacancyLines)
+        {
+            <div style="@(VacancyLines.Count > 1 ? "border: 1px solid var(--card-border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;" : "")">
+                @if (VacancyLines.Count > 1)
+                {
+                    <p style="font-weight: 600; margin: 0 0 0.5rem 0;">@line.Title</p>
+                }
+                <div class="ot-input-group" style="max-width: 320px;">
+                    <label class="ot-input-label">@Lang.T("admin.contract.warrantyDays")</label>
+                    <input type="number" min="0" step="1" @bind="line.FormWarrantyDays" class="admin-modal-input" />
+                </div>
+                @if (line.JobLevelWarrantyDays.HasValue)
+                {
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">@Lang.T("admin.contract.warrantyReferenceHint") @line.JobLevelWarrantyDays @Lang.T("admin.contract.warrantyReferenceDays") (@line.JobLevelName)</p>
+                }
+            </div>
+        }
     </div>
 
     <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
@@ -225,7 +238,14 @@ else if (Contract != null)
 
     <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
         <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.warrantyTitle")</h3>
-        <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.warrantyDays")</span><strong>@(Contract.WarrantyDays?.ToString() ?? "-")</strong></div>
+        @foreach (var line in Contract.Vacancies)
+        {
+            @if (Contract.Vacancies.Count > 1)
+            {
+                <div class="admin-recruitment-info-row"><span style="font-weight: 600;">@line.Title</span><span></span></div>
+            }
+            <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.warrantyDays")</span><strong>@(line.WarrantyDays?.ToString() ?? "-")</strong></div>
+        }
     </div>
 
     <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
@@ -451,7 +471,6 @@ else if (Contract != null)
     private int? FormTargetCandidates { get; set; }
     private int FormJobType { get; set; }
     private int? FormCoverageDays { get; set; }
-    private int? FormWarrantyDays { get; set; }
     private int FormFeeApplicationType { get; set; }
     private decimal FormOpeningPct { get; set; } = 30m;
     private decimal FormValidationPct { get; set; } = 50m;
@@ -476,6 +495,10 @@ else if (Contract != null)
         public bool ManualOverride { get; set; }
         public decimal? FormManualPrice { get; set; }
         public string? FormOverrideReason { get; set; }
+
+        // Garantia de esta vacante especifica (no del contrato).
+        public int? FormWarrantyDays { get; set; }
+        public int? JobLevelWarrantyDays { get; set; }
     }
 
     private List<VacancyLineForm> VacancyLines { get; set; } = new();
@@ -654,11 +677,14 @@ else if (Contract != null)
                 PromoCodeInput = !cv.IsManualOverride && !string.IsNullOrEmpty(cv.PromoCode) ? cv.PromoCode : "",
                 AppliedPromo = !cv.IsManualOverride && !string.IsNullOrEmpty(cv.PromoCode)
                     ? new PromoValidationResultDto { IsValid = true, Code = cv.PromoCode, DiscountAmount = cv.DiscountAmount, FinalAmount = cv.FinalPrice ?? 0 }
-                    : null
+                    : null,
+                FormWarrantyDays = cv.WarrantyDays,
+                JobLevelWarrantyDays = _jobTypes.FirstOrDefault(t => t.Id == cv.JobTypeId)?.LevelWarrantyDays
             }).ToList();
         }
         else if (Vacancy != null)
         {
+            var jobType = Vacancy.JobTypeId.HasValue ? _jobTypes.FirstOrDefault(t => t.Id == Vacancy.JobTypeId.Value) : null;
             VacancyLines = new List<VacancyLineForm>
             {
                 new()
@@ -667,7 +693,9 @@ else if (Contract != null)
                     Title = Vacancy.Title,
                     JobTypeName = Vacancy.JobTypeName,
                     JobLevelName = Vacancy.JobLevelName,
-                    ListPrice = Vacancy.JobTypeId.HasValue ? _jobTypes.FirstOrDefault(t => t.Id == Vacancy.JobTypeId.Value)?.CurrentPrice : null
+                    ListPrice = jobType?.CurrentPrice,
+                    FormWarrantyDays = jobType?.LevelWarrantyDays,
+                    JobLevelWarrantyDays = jobType?.LevelWarrantyDays
                 }
             };
         }
@@ -686,7 +714,6 @@ else if (Contract != null)
         FormTargetCandidates = Contract.TargetCandidates;
         FormJobType = Contract.JobTypeCategory;
         FormCoverageDays = Contract.TargetCoverageDays;
-        FormWarrantyDays = Contract.WarrantyDays;
         FormFeeApplicationType = Contract.FeeApplicationType;
         FormOpeningPct = Math.Round(Contract.PaymentOpeningPct, 2);
         FormValidationPct = Math.Round(Contract.PaymentValidationPct, 2);
@@ -757,13 +784,13 @@ else if (Contract != null)
                 VacancyId = l.VacancyId,
                 PromoCode = !l.ManualOverride && l.AppliedPromo is { IsValid: true } ? l.AppliedPromo.Code : null,
                 ManualPrice = l.ManualOverride ? l.FormManualPrice : null,
-                OverrideReason = l.ManualOverride ? l.FormOverrideReason : null
+                OverrideReason = l.ManualOverride ? l.FormOverrideReason : null,
+                WarrantyDays = l.FormWarrantyDays
             }).ToList(),
             ScopeServices = FormScope.ToList(),
             TargetCandidates = FormTargetCandidates,
             JobTypeCategory = FormJobType,
             TargetCoverageDays = FormCoverageDays,
-            WarrantyDays = FormWarrantyDays,
             Currency = "EUR",
             FeeApplicationType = FormFeeApplicationType,
             PaymentOpeningPct = FormOpeningPct,

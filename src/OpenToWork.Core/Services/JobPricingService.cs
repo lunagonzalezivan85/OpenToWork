@@ -137,7 +137,8 @@ public class JobPricingService : IJobPricingService
                 PriceEffectiveFrom = t.Prices
                     .Where(p => !p.IsDeleted && p.EffectiveFrom <= now && (p.EffectiveTo == null || p.EffectiveTo > now))
                     .Select(p => (DateTime?)p.EffectiveFrom)
-                    .FirstOrDefault()
+                    .FirstOrDefault(),
+                LevelWarrantyDays = t.JobLevel.WarrantyDays
             })
             .ToListAsync();
     }

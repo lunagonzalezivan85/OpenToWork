@@ -51,4 +51,10 @@ public class PTContractVacancy : BaseEntity
 
     [MaxLength(500)]
     public string? OverrideReason { get; set; }
+
+    /// <summary>Periodo de garantia en dias naturales para ESTA vacante (no el contrato entero -
+    /// un contrato puede agrupar vacantes de niveles distintos, cada uno con su propia garantia
+    /// de referencia: Operativo 30d / Encargados y Tecnicos 45d / Responsables 60d). Explicito si
+    /// el admin lo edita, o snapshot de PTJobLevel.WarrantyDays del tipo de puesto de la vacante.</summary>
+    public int? WarrantyDays { get; set; }
 }

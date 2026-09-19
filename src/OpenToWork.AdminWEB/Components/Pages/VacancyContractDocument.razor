@@ -348,11 +348,18 @@ else
 
             @* === 6. Garantía === *@
             <h4 class="cd-clause-title">6. Garantía</h4>
-            <table class="cd-table cd-table--anexo">
-                <tbody>
-                    <tr><td class="cd-table-label">Período de garantía</td><td>@(Contract.WarrantyDays?.ToString() ?? "[●]") días naturales</td></tr>
-                </tbody>
-            </table>
+            @foreach (var vacancy in Contract.Vacancies)
+            {
+                <table class="cd-table cd-table--anexo">
+                    <tbody>
+                        @if (Contract.Vacancies.Count > 1)
+                        {
+                            <tr><td class="cd-table-label">Puesto</td><td>@vacancy.Title</td></tr>
+                        }
+                        <tr><td class="cd-table-label">Período de garantía</td><td>@(vacancy.WarrantyDays?.ToString() ?? "[●]") días naturales</td></tr>
+                    </tbody>
+                </table>
+            }
 
             @* === 7. Condiciones económicas === *@
             <h4 class="cd-clause-title">7. Condiciones económicas</h4>

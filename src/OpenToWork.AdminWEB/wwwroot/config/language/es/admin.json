@@ -967,6 +967,8 @@
     "coverageRefHint": "Plazos de referencia: Operativo 10 · Encargados y Técnicos 15 · Responsables de Negocio 20 · Perfiles Cualificados 30 días hábiles.",
     "warrantyTitle": "Garantía",
     "warrantyDays": "Período de garantía (días naturales)",
+    "warrantyReferenceHint": "Referencia según su nivel:",
+    "warrantyReferenceDays": "días",
     "economicsTitle": "Condiciones económicas",
     "feeAmount": "Tarifa sin IVA",
     "feeApplication": "Aplicación de tarifa",

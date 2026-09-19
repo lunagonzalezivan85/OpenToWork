@@ -80,7 +80,8 @@ public class AdminContractService : IAdminContractService
                         DiscountAmount = cv.DiscountAmount,
                         FinalPrice = cv.FinalPrice,
                         IsManualOverride = cv.IsManualOverride,
-                        OverrideReason = cv.OverrideReason
+                        OverrideReason = cv.OverrideReason,
+                        WarrantyDays = cv.WarrantyDays
                     }).ToList(),
                 ScopeServices = c.ScopeServices == null
                     ? new List<string>()
@@ -88,7 +89,6 @@ public class AdminContractService : IAdminContractService
                 TargetCandidates = c.TargetCandidates,
                 JobTypeCategory = c.JobTypeCategory,
                 TargetCoverageDays = c.TargetCoverageDays,
-                WarrantyDays = c.WarrantyDays,
                 FeeAmount = c.FeeAmount,
                 Currency = c.Currency,
                 FeeApplicationType = c.FeeApplicationType,
@@ -225,6 +225,7 @@ public class AdminContractService : IAdminContractService
             ?? throw new InvalidOperationException("Una de las vacantes seleccionadas ya no existe.");
 
         cv.PT_JobTypeId = vacancy.PT_JobTypeId;
+        cv.WarrantyDays = await ResolveWarrantyDaysAsync(line, vacancy);
 
         if (line.ManualPrice.HasValue)
         {
@@ -275,6 +276,20 @@ public class AdminContractService : IAdminContractService
         }
     }
 
+    /// <summary>Garantia de esta vacante: explicita si el admin la fijo en la linea, si no la
+    /// referencia del nivel de su tipo de puesto (PTJobLevel.WarrantyDays) - null si la vacante
+    /// no tiene tipo de puesto asignado y tampoco se fijo un valor explicito.</summary>
+    private async Task<int?> ResolveWarrantyDaysAsync(ContractVacancyLineDto line, PTVacancy vacancy)
+    {
+        if (line.WarrantyDays.HasValue) return line.WarrantyDays;
+        if (vacancy.PT_JobTypeId == null) return null;
+
+        return await _context.PT_JobTypes
+            .Where(t => t.Id == vacancy.PT_JobTypeId.Value && !t.IsDeleted)
+            .Select(t => t.JobLevel.WarrantyDays)
+            .FirstOrDefaultAsync();
+    }
+
     private async Task RedeemPromosAsync(List<(Guid PromoCodeId, PTContractVacancy Line)> appliedPromos)
     {
         foreach (var (promoCodeId, line) in appliedPromos)
@@ -300,7 +315,8 @@ public class AdminContractService : IAdminContractService
         contract.TargetCandidates = dto.TargetCandidates;
         contract.JobTypeCategory = dto.JobTypeCategory;
         contract.TargetCoverageDays = dto.TargetCoverageDays;
-        contract.WarrantyDays = dto.WarrantyDays;
+        // WarrantyDays ya no es del contrato: es por vacante (ver PTContractVacancy.WarrantyDays,
+        // resuelto en ApplyPricingAsync/ResolveWarrantyDaysAsync).
         // FeeAmount ya no se recibe del formulario: se recalcula como suma de las lineas (ver CreateAsync/SaveAsync).
         contract.Currency = string.IsNullOrWhiteSpace(dto.Currency) ? "EUR" : dto.Currency.Trim().ToUpperInvariant();
         contract.FeeApplicationType = dto.FeeApplicationType;

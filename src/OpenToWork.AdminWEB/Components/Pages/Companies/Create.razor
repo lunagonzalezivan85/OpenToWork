@@ -578,15 +578,15 @@ else if (WizardStep == 4)
 
         var contractDto = new AdminSaveVacancyContractDto
         {
-            // Precio de cada vacante: automatico por su tipo de puesto (lista de precios).
-            // Si alguna no tiene tipo asignado, el servidor rechaza el guardado con el motivo
-            // exacto (ver AdminContractService.ApplyPricingAsync) en vez de usar un monto ficticio.
+            // Precio y garantia de cada vacante: automaticos por su tipo de puesto (lista de
+            // precios y PTJobLevel.WarrantyDays respectivamente). Si alguna no tiene tipo
+            // asignado, el servidor rechaza el guardado con el motivo exacto (ver
+            // AdminContractService.ApplyPricingAsync) en vez de usar un monto/plazo ficticio.
             VacancyLines = vacancyIds.Select(id => new ContractVacancyLineDto { VacancyId = id }).ToList(),
             ScopeServices = new List<string> { "publicacion", "busqueda", "screening", "entrevista", "evaluacion", "shortlist" },
             TargetCandidates = VacancyDtos.Sum(v => v.RequiredApplicants ?? 3),
             JobTypeCategory = (int)ContractJobType.Operational,
             TargetCoverageDays = 10,
-            WarrantyDays = 90,
             Currency = "EUR",
             FeeApplicationType = (int)FeeApplicationType.PerPosition,
             PaymentOpeningPct = 30m,
