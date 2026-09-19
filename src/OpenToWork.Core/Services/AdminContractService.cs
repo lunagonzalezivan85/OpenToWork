@@ -15,14 +15,16 @@ public class AdminContractService : IAdminContractService
     private readonly IJobPricingService _pricing;
     private readonly IPromoCodeService _promoCodes;
     private readonly IContractPaymentService _payments;
+    private readonly ICompanyCrmService _companyCrm;
 
-    public AdminContractService(AppDbContext context, IAuditLogService auditLog, IJobPricingService pricing, IPromoCodeService promoCodes, IContractPaymentService payments)
+    public AdminContractService(AppDbContext context, IAuditLogService auditLog, IJobPricingService pricing, IPromoCodeService promoCodes, IContractPaymentService payments, ICompanyCrmService companyCrm)
     {
         _context = context;
         _auditLog = auditLog;
         _pricing = pricing;
         _promoCodes = promoCodes;
         _payments = payments;
+        _companyCrm = companyCrm;
     }
 
     public async Task<AdminVacancyContractDto?> GetByIdAsync(Guid contractId)
@@ -138,6 +140,12 @@ public class AdminContractService : IAdminContractService
         await RedeemPromosAsync(appliedPromos);
         await _auditLog.LogAsync(adminId, "CreateContract",
             "PT_VacancyContracts", contract.Id, $"{{\"contractNumber\":\"{contract.ContractNumber}\"}}", ipAddress);
+
+        // Generar el contrato de servicio es, en terminos del pipeline comercial, presentarle una
+        // propuesta formal a la empresa - si el trato todavia no llego ahi, avanza la etapa. No
+        // retrocede un trato que ya esta en Negociacion/Cerrado (ganado o perdido).
+        await AdvancePipelineStageIfEarlierAsync(companyId, CompanyPipelineStage.PropuestaEnviada,
+            "Contrato de servicio generado.", adminId, ipAddress);
 
         return await GetByIdAsync(contract.Id);
     }
@@ -374,9 +382,47 @@ public class AdminContractService : IAdminContractService
             $"{{\"contractNumber\":\"{contract.ContractNumber}\",\"accepted\":{accepted.ToString().ToLower()}}}", ipAddress);
 
         if (accepted)
+        {
             await _payments.CreateTranchesForContractAsync(contract.Id);
 
+            // La aceptacion del contrato es la senal definitiva de que el trato se gano.
+            await SetPipelineStageAsync(contract.PT_CompanyId, CompanyPipelineStage.CerradoGanado,
+                "Contrato de servicio aceptado por la empresa.", adminId, ipAddress);
+        }
+
         return true;
+    }
+
+    /// <summary>Busca el pipeline comercial activo de la empresa (no hay FK directa entre
+    /// PTVacancyContract y PTCompanyPipeline, ambos cuelgan de PT_CompanyId). Devuelve null si
+    /// la empresa no tiene un pipeline (dato legacy/de prueba) - no es un error, solo no hay
+    /// nada que mover.</summary>
+    private async Task<PTCompanyPipeline?> GetActivePipelineAsync(Guid companyId)
+    {
+        return await _context.PT_CompanyPipelines
+            .Where(p => p.PT_CompanyId == companyId && !p.IsDeleted && !p.IsDismissed)
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefaultAsync();
+    }
+
+    /// <summary>Avanza el pipeline a targetStage solo si esta en una etapa anterior - nunca
+    /// retrocede un trato que ya esta en Negociacion o Cerrado (ganado o perdido).</summary>
+    private async Task AdvancePipelineStageIfEarlierAsync(Guid companyId, CompanyPipelineStage targetStage, string note, Guid adminId, string? ipAddress)
+    {
+        var pipeline = await GetActivePipelineAsync(companyId);
+        if (pipeline == null || pipeline.CurrentStage >= (int)targetStage) return;
+
+        await _companyCrm.MoveStageAsync(pipeline.Id, new CompanyMoveStageDto { ToStage = (int)targetStage, Notes = note }, adminId, ipAddress);
+    }
+
+    /// <summary>Fija el pipeline en targetStage sin importar en que etapa estaba (salvo que ya
+    /// este ahi, para no duplicar el registro en el historial de etapas).</summary>
+    private async Task SetPipelineStageAsync(Guid companyId, CompanyPipelineStage targetStage, string note, Guid adminId, string? ipAddress)
+    {
+        var pipeline = await GetActivePipelineAsync(companyId);
+        if (pipeline == null || pipeline.CurrentStage == (int)targetStage) return;
+
+        await _companyCrm.MoveStageAsync(pipeline.Id, new CompanyMoveStageDto { ToStage = (int)targetStage, Notes = note }, adminId, ipAddress);
     }
 
     private async Task<string> GenerateContractNumberAsync()
