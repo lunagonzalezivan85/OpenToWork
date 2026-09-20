@@ -10,18 +10,26 @@
 <div class="page-container">
     <!-- Bento Welcome Banner Card -->
     <div class="dash-banner-card">
-        <div class="dash-banner-avatar">@UserInitials</div>
+        <div class="dash-banner-avatar dash-banner-avatar--link" @onclick="GoToProfile" title="@Lang.T("common.nav.profile")">@UserInitials</div>
         <div class="dash-banner-info">
-            <h1 class="dash-banner-title">@Lang.T("dashboard.welcome"), @UserName 👋</h1>
+            <h1 class="dash-banner-title dash-banner-title--link" @onclick="GoToProfile">@Lang.T("dashboard.welcome"), @UserName 👋</h1>
             <p class="dash-banner-role">@(CandidateProfile?.Title ?? Lang.T("dashboard.sections.profileProgress"))</p>
         </div>
-        <button class="ot-btn ot-btn--outline ot-btn--small dash-banner-btn" @onclick="GoToProfile">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-            </svg>
-            @Lang.T("common.nav.profile")
-        </button>
+        <div class="dash-banner-actions">
+            <button class="ot-btn ot-btn--outline ot-btn--small dash-banner-btn" @onclick="GoToVerification">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M9 12l2 2 4-4" />
+                </svg>
+                @Lang.T("dashboard.actions.requestVerification")
+            </button>
+            <button class="ot-btn ot-btn--primary ot-btn--small dash-banner-btn dash-banner-btn--premium" @onclick="GoToPlans">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                @Lang.T("dashboard.actions.upgradePlan")
+            </button>
+        </div>
     </div>
 
     @if (ShowWizardPrompt)
@@ -450,6 +458,8 @@
 
     private void GoToWizard() => Nav.NavigateTo("/profile");
     private void GoToProfile() => Nav.NavigateTo("/profile");
+    private void GoToPlans() => Nav.NavigateTo("/plans");
+    private void GoToVerification() => Nav.NavigateTo("/verification-request");
     private void GoToVacancies() => Nav.NavigateTo("/vacancies");
     private void GoToCreateVacancy() => Nav.NavigateTo("/my-vacancies?action=create");
     private void GoToUploadCv() => Nav.NavigateTo("/profile");

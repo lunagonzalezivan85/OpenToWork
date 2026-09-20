@@ -5215,3 +5215,627 @@ textarea.admin-input {
         padding: 8px 10px;
     }
 }
+
+/* ============================================
+   Candidate Profile — Hero + Bento (LinkedIn style)
+   ============================================ */
+
+.admin-hero-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: var(--space-lg);
+    box-shadow: var(--shadow-xs);
+}
+
+.admin-hero-banner {
+    height: 150px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(120deg, #071E3D 0%, #0B3D6E 45%, #0B4F8A 100%);
+}
+
+.admin-hero-banner-deco {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.admin-hero-body {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-lg);
+    padding: 0 var(--space-lg) var(--space-lg);
+    flex-wrap: wrap;
+}
+
+.admin-hero-avatar-wrap {
+    position: relative;
+    margin-top: -48px;
+    flex-shrink: 0;
+}
+
+.admin-hero-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 3px solid var(--card-bg);
+    box-shadow: 0 0 0 4px #10B981;
+    background: var(--accent-primary);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: 700;
+    overflow: hidden;
+}
+
+.admin-hero-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-hero-check {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #10B981;
+    border: 2px solid var(--card-bg);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-hero-info {
+    flex: 1;
+    min-width: 240px;
+    padding-top: var(--space-sm);
+}
+
+.admin-hero-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-hero-title {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin: 0.15rem 0 0.5rem;
+}
+
+.admin-hero-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1.1rem;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
+
+.admin-hero-contact-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.admin-hero-chips {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.admin-hero-actions {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    padding-bottom: 0.25rem;
+}
+
+/* Pill buttons */
+.admin-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1.15rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.admin-pill-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.admin-pill-btn--primary {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #FFFFFF;
+}
+
+.admin-pill-btn--primary:hover {
+    color: #FFFFFF;
+    filter: brightness(1.1);
+}
+
+.admin-pill-btn--sm {
+    padding: 0.35rem 0.85rem;
+    font-size: 0.75rem;
+}
+
+.admin-pill-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Bento grid del perfil */
+.admin-profile-bento {
+    margin-bottom: var(--space-lg);
+}
+
+.admin-bento-header {
+    justify-content: space-between;
+    width: 100%;
+}
+
+.admin-bento-empty {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    margin: 0;
+}
+
+.admin-bento-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.admin-bento-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: auto;
+}
+
+/* Score radial + barras */
+.admin-bento-scores {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+}
+
+.admin-score-radial {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(var(--radial-color, var(--accent-primary)) calc(var(--radial-pct, 0) * 1%), var(--bg-tertiary) 0);
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+}
+
+.admin-score-radial:hover {
+    transform: scale(1.04);
+}
+
+.admin-score-radial-inner {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-score-radial-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.admin-score-radial-max {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+}
+
+.admin-score-bars {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.admin-score-bar-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.admin-score-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.admin-score-bar-track {
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-tertiary);
+    overflow: hidden;
+}
+
+.admin-score-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-pill);
+    transition: width var(--transition-slow);
+}
+
+/* Checklist de verificaciones */
+.admin-verify-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.admin-verify-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg-tertiary);
+}
+
+.admin-verify-name {
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.admin-verify-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.admin-icon-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    padding: 0;
+}
+
+.admin-icon-btn--success:hover {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.admin-icon-btn--danger:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.admin-icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Stepper compacto dentro de tarjeta bento */
+.admin-pipeline-stepper-inline--compact .admin-pipeline-step-label {
+    font-size: 0.62rem;
+}
+
+.admin-pipeline-stepper-inline--compact .admin-pipeline-step-circle {
+    width: 24px;
+    height: 24px;
+    font-size: 0.68rem;
+}
+
+.admin-pipeline-stepper-inline--compact .admin-pipeline-step-line {
+    width: 12px;
+}
+
+@media (max-width: 900px) {
+    .admin-profile-bento {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-profile-bento .bento-card--medium,
+    .admin-profile-bento .bento-card--small {
+        grid-column: span 1;
+    }
+
+    .admin-hero-body {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-hero-actions {
+        padding-bottom: 0;
+    }
+}
+
+/* Tab Vacantes del perfil */
+.admin-vacancy-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+}
+
+.admin-vacancy-meta {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.admin-match-pill {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-pill);
+    flex-shrink: 0;
+}
+
+/* === Perfil de empresa: barra superior === */
+.admin-detail-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    flex-wrap: wrap;
+}
+
+.admin-detail-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Pill destacar (ámbar) */
+.admin-pill-btn--featured {
+    background: var(--warning-light);
+    border-color: var(--warning-soft);
+    color: var(--warning);
+}
+
+.admin-pill-btn--featured:hover {
+    background: var(--warning-soft);
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+/* Dropdown de acciones */
+.admin-dropdown {
+    position: relative;
+}
+
+.admin-dropdown-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+}
+
+.admin-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 50;
+    min-width: 200px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 0.35rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    background: none;
+    border: none;
+    text-align: left;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.admin-dropdown-item:hover:not(:disabled) {
+    background: var(--bg-tertiary);
+}
+
+.admin-dropdown-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.admin-dropdown-item--danger {
+    color: var(--danger);
+}
+
+.admin-dropdown-item--danger:hover:not(:disabled) {
+    background: var(--danger-light);
+}
+
+/* === Perfil de empresa: hero === */
+.admin-hero-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.admin-company-hero-body {
+    align-items: center;
+    padding-top: var(--space-lg);
+}
+
+.admin-company-avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 26%;
+    background: var(--accent-light);
+    color: var(--accent-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* Estado: contrato firmado */
+.admin-hero-card--signed {
+    background: linear-gradient(135deg, var(--success-light) 0%, var(--card-bg) 70%);
+    border-color: var(--success-soft);
+}
+
+.admin-signed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--success);
+    color: #FFFFFF;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.7rem;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+}
+
+/* Pipeline integrado en el hero */
+.admin-hero-pipeline {
+    border-top: 1px solid var(--card-border);
+    padding: var(--space-md) var(--space-lg);
+}
+
+.admin-hero-pipeline-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-bottom: 0.55rem;
+}
+
+.admin-hero-pipeline-stage {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.admin-hero-pipeline-next {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.admin-hero-pipeline-pct {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--accent-primary);
+}
+
+.admin-hero-progress {
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+
+.admin-hero-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-soft));
+    border-radius: var(--radius-pill);
+    transition: width var(--transition-fast);
+}
+
+.admin-hero-pipeline-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+
+.admin-hero-pipeline-link:hover {
+    text-decoration: underline;
+}
+
+/* Variantes de color para admin-chip (display, no clicables) */
+.admin-chip--success {
+    background: var(--success-light);
+    border-color: var(--success-soft);
+    color: var(--success);
+    cursor: default;
+}
+
+.admin-chip--danger {
+    background: var(--danger-light);
+    border-color: var(--danger);
+    color: var(--danger);
+    cursor: default;
+}
+
+.admin-chip--warning {
+    background: var(--warning-light);
+    border-color: var(--warning-soft);
+    color: var(--warning);
+    cursor: default;
+}
+
+.admin-chip--info {
+    background: var(--accent-light);
+    border-color: var(--accent-soft);
+    color: var(--accent-primary);
+    cursor: default;
+}

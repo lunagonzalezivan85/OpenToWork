@@ -29,3 +29,17 @@ public class JobMatchDto
     /// <summary>Verificado: reclutamiento en etapa 4 o checks automáticos completos (misma regla que la consola de candidatos).</summary>
     public bool IsVerifiedTD { get; set; }
 }
+
+/// <summary>Match candidato-vacante visto desde el candidato (vacantes recomendadas en el perfil admin).</summary>
+public class CandidateMatchDto
+{
+    public Guid VacancyId { get; set; }
+    public string VacancyTitle { get; set; } = string.Empty;
+    public string? CompanyName { get; set; }
+    public string? Location { get; set; }
+    public int MatchPercentage { get; set; }
+    public int SkillsMatch { get; set; }
+    public int ExperienceMatch { get; set; }
+    public int LocationMatch { get; set; }
+    public DateTime CalculatedAt { get; set; }
+}

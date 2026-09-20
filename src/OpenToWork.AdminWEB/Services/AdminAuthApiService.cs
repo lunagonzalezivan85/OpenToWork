@@ -1013,6 +1013,22 @@ public class AdminAuthApiService
         return await response.Content.ReadFromJsonAsync<VerificationStatusDto>();
     }
 
+    public async Task<List<AdminApplicationDto>> GetCandidateApplicationsAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/candidates/{candidateId}/applications");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<AdminApplicationDto>>() ?? new();
+    }
+
+    public async Task<List<CandidateMatchDto>> GetCandidateMatchesAsync(Guid candidateId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/candidates/{candidateId}/matches");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<CandidateMatchDto>>() ?? new();
+    }
+
     public async Task<List<SkillTestAdminDto>> GetSkillTestsAsync()
     {
         await SetAuthHeaderAsync();

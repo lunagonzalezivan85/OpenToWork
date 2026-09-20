@@ -5,6 +5,7 @@
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
 @inject LocalStorageService LocalStorage
+@inject NavigationManager Nav
 
 <PageTitle>@Lang.T("profile.title")</PageTitle>
 
@@ -1004,6 +1005,20 @@
             await Lang.InitializeAsync();
 
         var token = await LocalStorage.GetItemAsync("opentowork-token");
+        if (string.IsNullOrEmpty(token))
+        {
+            Nav.NavigateTo("/login?returnUrl=/profile");
+            return;
+        }
+
+        // Los usuarios empresa no tienen perfil de candidato: van a su perfil de empresa.
+        var role = await LocalStorage.GetItemAsync("opentowork-role");
+        if (role == "1")
+        {
+            Nav.NavigateTo("/company-profile");
+            return;
+        }
+
         if (!string.IsNullOrEmpty(token))
         {
             try
@@ -1029,6 +1044,8 @@
         }
 
         ProfileData = await AuthApi.GetProfileAsync();
+        if (ProfileData == null)
+            Nav.NavigateTo("/login?returnUrl=/profile");
     }
 
     private void GoToStep(int step) => CurrentStep = step;

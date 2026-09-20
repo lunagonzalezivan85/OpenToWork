@@ -19,6 +19,8 @@ public class CandidatesController : AdminControllerBase
     private readonly IScoringService _scoringService;
     private readonly IValidationService _validationService;
     private readonly IVerificationStatusService _verificationStatusService;
+    private readonly IAdminApplicationService _applicationService;
+    private readonly ICompatibilityService _compatibilityService;
 
     public CandidatesController(
         IAdminCandidateService candidateService,
@@ -27,7 +29,9 @@ public class CandidatesController : AdminControllerBase
         IWebHostEnvironment env,
         IScoringService scoringService,
         IValidationService validationService,
-        IVerificationStatusService verificationStatusService)
+        IVerificationStatusService verificationStatusService,
+        IAdminApplicationService applicationService,
+        ICompatibilityService compatibilityService)
     {
         _candidateService = candidateService;
         _registrationService = registrationService;
@@ -36,6 +40,8 @@ public class CandidatesController : AdminControllerBase
         _scoringService = scoringService;
         _validationService = validationService;
         _verificationStatusService = verificationStatusService;
+        _applicationService = applicationService;
+        _compatibilityService = compatibilityService;
     }
 
     [HttpGet]
@@ -190,6 +196,22 @@ public class CandidatesController : AdminControllerBase
     public async Task<IActionResult> SetVerificationStatus(Guid candidateId, int type, [FromBody] SetVerificationStatusDto dto)
     {
         var result = await _validationService.SetVerificationStatusAsync(candidateId, type, dto.Status, AdminId);
+        return Ok(result);
+    }
+
+    /// <summary>Postulaciones del candidato (tab "Vacantes" del perfil admin).</summary>
+    [HttpGet("{candidateId}/applications")]
+    public async Task<IActionResult> GetApplications(Guid candidateId)
+    {
+        var result = await _applicationService.GetByCandidateAsync(candidateId);
+        return Ok(result);
+    }
+
+    /// <summary>Vacantes recomendadas por match calculado (tab "Vacantes" del perfil admin).</summary>
+    [HttpGet("{candidateId}/matches")]
+    public async Task<IActionResult> GetMatches(Guid candidateId)
+    {
+        var result = await _compatibilityService.GetMatchesByCandidateAsync(candidateId);
         return Ok(result);
     }
 }

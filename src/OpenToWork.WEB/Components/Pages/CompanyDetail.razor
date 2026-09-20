@@ -1,0 +1,160 @@
+@page "/companies/{CompanyId}"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>@(Company?.Name ?? "Empresa")</PageTitle>
+
+<div class="company-profile">
+    <div class="company-profile-container">
+        @if (IsLoading)
+        {
+            <div class="home-skeleton-card" style="height: 200px;"></div>
+        }
+        else if (Company == null)
+        {
+            <div class="home-vacancies-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                    <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+                </svg>
+                <p>@Lang.T("common.companies.notFound")</p>
+                <a href="/companies" class="ot-btn ot-btn--outline ot-btn--small">@Lang.T("common.companies.backToList")</a>
+            </div>
+        }
+        else
+        {
+            <a href="/companies" class="company-profile-back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                @Lang.T("common.companies.backToList")
+            </a>
+
+            @* === Hero === *@
+            <div class="company-profile-hero @(Company.IsFeatured ? "company-profile-hero--featured" : "")">
+                <div class="company-profile-logo">
+                    @if (!string.IsNullOrEmpty(Company.LogoUrl))
+                    {
+                        <img src="@Company.LogoUrl" alt="@Company.Name" />
+                    }
+                    else
+                    {
+                        <span>@GetInitials(Company.Name)</span>
+                    }
+                </div>
+                <div class="company-profile-info">
+                    <div class="company-profile-name-row">
+                        <h1 class="company-profile-name">@Company.Name</h1>
+                        @if (Company.IsVerified)
+                        {
+                            <span class="company-profile-verified" title="@Lang.T("common.companies.verified")">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1.06 13.54L7.4 12l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41-5.64 5.66z"/></svg>
+                            </span>
+                        }
+                        @if (Company.IsFeatured)
+                        {
+                            <span class="home-company-badge company-profile-badge">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                @Lang.T("common.home.featuredCompany")
+                            </span>
+                        }
+                    </div>
+                    <div class="company-profile-meta">
+                        @if (!string.IsNullOrEmpty(Company.Industry))
+                        {
+                            <span class="company-profile-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+                                @Company.Industry
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(Company.City) || !string.IsNullOrEmpty(Company.Country))
+                        {
+                            <span class="company-profile-meta-item">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                @Company.City@(string.IsNullOrEmpty(Company.City) || string.IsNullOrEmpty(Company.Country) ? "" : ", ")@Company.Country
+                            </span>
+                        }
+                        <span class="company-profile-meta-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                            @Company.ActiveVacancies @Lang.T("common.companies.activeVacancies")
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Company.Website) || !string.IsNullOrEmpty(Company.LinkedInUrl))
+                    {
+                        <div class="company-profile-links">
+                            @if (!string.IsNullOrEmpty(Company.Website))
+                            {
+                                <a href="@Company.Website" target="_blank" rel="noopener" class="company-profile-link">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                                    @Lang.T("common.companies.website")
+                                </a>
+                            }
+                            @if (!string.IsNullOrEmpty(Company.LinkedInUrl))
+                            {
+                                <a href="@Company.LinkedInUrl" target="_blank" rel="noopener" class="company-profile-link">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+                                    LinkedIn
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* === Descripción === *@
+            @if (!string.IsNullOrEmpty(Company.Description))
+            {
+                <div class="company-profile-section">
+                    <h2 class="company-profile-section-title">@Lang.T("common.companies.about")</h2>
+                    <p class="company-profile-description">@Company.Description</p>
+                </div>
+            }
+
+            @* === Vacantes === *@
+            <div class="company-profile-section">
+                <h2 class="company-profile-section-title">@Lang.T("common.companies.vacancies")</h2>
+                @if (!VacancyList.Any())
+                {
+                    <p class="company-profile-empty">@Lang.T("common.companies.noVacancies")</p>
+                }
+                else
+                {
+                    <div class="home-vacancies-grid">
+                        @foreach (var vacancy in VacancyList)
+                        {
+                            <VacancyCard Vacancy="vacancy" />
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string CompanyId { get; set; } = "";
+    private PublicCompanyDetailDto? Company;
+    private List<VacancyDto> VacancyList { get; set; } = new();
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        if (Guid.TryParse(CompanyId, out var id))
+        {
+            Company = await AuthApi.GetPublicCompanyAsync(id);
+            if (Company != null)
+                VacancyList = await AuthApi.GetCompanyVacanciesAsync(id);
+        }
+        IsLoading = false;
+    }
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "E";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
+}

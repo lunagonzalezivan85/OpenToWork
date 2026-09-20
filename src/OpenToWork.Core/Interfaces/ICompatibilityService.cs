@@ -24,4 +24,10 @@ public interface ICompatibilityService
     /// postulado (prospectos para outreach del reclutador).
     /// </summary>
     Task<List<JobMatchDto>> GetNonApplicantMatchesAsync(Guid vacancyId, int? limit = null, int minPercentage = 0);
+
+    /// <summary>
+    /// Vacantes con match calculado para un candidato (recomendadas en el perfil admin),
+    /// ordenadas por MatchPercentage descendente.
+    /// </summary>
+    Task<List<CandidateMatchDto>> GetMatchesByCandidateAsync(Guid candidateId, int? limit = null);
 }

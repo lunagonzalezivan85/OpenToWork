@@ -1,0 +1,602 @@
+@page "/verification-request"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject ApiAuthService AuthApi
+@inject NavigationManager Nav
+
+<PageTitle>Verificación de Identidad - Trato Directo</PageTitle>
+
+<div class="page-container verif-container">
+    <div class="verif-card">
+        @* ===== Paso 0: Bienvenida y consentimiento ===== *@
+        @if (Step == 0)
+        {
+            <div class="verif-header">
+                <div class="verif-header-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        <path d="M9 12l2 2 4-4" />
+                    </svg>
+                </div>
+                <h1 class="verif-title">Verificación de Identidad y Habilitación Laboral</h1>
+                <p class="verif-subtitle">Trato Directo</p>
+            </div>
+            <p class="verif-text">
+                Para poder postularte y avanzar en los procesos de selección, necesitamos verificar
+                que cumples con los requisitos legales para trabajar en España.
+            </p>
+
+            <details class="verif-legal">
+                <summary>Términos, Condiciones y Política de Protección de Datos</summary>
+                <div class="verif-legal-body">
+                    <h4>1. Responsable del tratamiento</h4>
+                    <p>El responsable del tratamiento de los datos personales recabados en este portal es [NOMBRE DE LA EMPRESA / RAZÓN SOCIAL], con NIF/CIF [NIF], con domicilio social en [DIRECCIÓN COMPLETA, ESPAÑA], y correo electrónico de contacto para cuestiones de privacidad: [EMAIL DE PRIVACIDAD] (en adelante, "TRATO DIRECTO").</p>
+                    <h4>2. Finalidad del tratamiento</h4>
+                    <p>Los datos personales facilitados (incluidos nombre, apellidos, teléfono, correo electrónico, identificadores DNI/NIE y las imágenes digitalizadas de dichos documentos) serán tratados con las siguientes finalidades:</p>
+                    <p>a) Comprobar la identidad del candidato y verificar el cumplimiento de los requisitos legales exigidos por la legislación española (Estatuto de los Trabajadores y Ley Orgánica 4/2000 sobre extranjería) para trabajar legalmente en España.</p>
+                    <p>b) Gestionar la intermediación laboral, la evaluación del perfil profesional y el contacto directo por parte del equipo de selección de TRATO DIRECTO para avanzar a las fases de entrevistas y contratación.</p>
+                    <p>c) Mantener una bolsa de candidatos para futuras ofertas de empleo acordes a las aptitudes del usuario, siempre que no manifieste su oposición.</p>
+                    <h4>3. Base jurídica del tratamiento</h4>
+                    <p>La legitimación para el tratamiento de sus datos se sustenta en: el consentimiento expreso del usuario al marcar la casilla de aceptación y subir voluntariamente la documentación solicitada (Art. 6.1.a del RGPD); la aplicación de medidas precontractuales a petición del candidato para participar en procesos de selección laboral (Art. 6.1.b del RGPD); y el cumplimiento de obligaciones legales aplicables a la intermediación laboral y contratación (Art. 6.1.c del RGPD).</p>
+                    <h4>4. Principio de minimización y tratamiento de documentos de identidad (DNI / NIE / TIE)</h4>
+                    <p>En estricto cumplimiento de las directrices de la Agencia Española de Protección de Datos (AEPD): las imágenes del DNI, NIE o TIE aportadas serán utilizadas exclusivamente para comprobar la autenticidad de la identidad y la vigencia de la habilitación laboral. No se utilizarán los documentos para ninguna finalidad publicitaria, comercial ni cesión indiscriminada a terceros. Las imágenes se conservarán en un entorno técnico seguro con cifrado tanto en tránsito (SSL/TLS) como en reposo.</p>
+                    <h4>5. Destinatarios y cesión de datos</h4>
+                    <p>Sus datos identificativos y de currículum únicamente se comunicarán a las empresas empleadoras o clientes finales que tengan vacantes activas en las que usted encaje como candidato preseleccionado, y siempre en el marco del proceso de reclutamiento. Los documentos de identidad (copias del DNI/TIE) no se cederán a terceros empleadores hasta que exista una fase formal de precontratación o formalización laboral, salvo requerimiento por imperativo legal. No se realizarán transferencias internacionales de datos sin las garantías adecuadas del RGPD.</p>
+                    <h4>6. Plazo de conservación</h4>
+                    <p>Los datos curriculares y de contacto se conservarán durante un período máximo de [INDICAR: 1 o 2 AÑOS] desde su última actualización o interacción con la plataforma, momento tras el cual serán suprimidos o anonimizados. Las copias de documentos de identidad de candidaturas descartadas se eliminarán de forma segura en un plazo no superior a [INDICAR: 30 DÍAS / 6 MESES] tras finalizar el proceso de validación.</p>
+                    <h4>7. Derechos del interesado</h4>
+                    <p>El usuario puede ejercer en cualquier momento sus derechos de acceso, rectificación, supresión ("olvido"), limitación del tratamiento, portabilidad y oposición, así como retirar el consentimiento otorgado, enviando una solicitud por escrito acompañada de una fotocopia o referencia de su documento de identidad a [EMAIL DE PRIVACIDAD] o a la dirección postal del Responsable. Asimismo, tiene derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (www.aepd.es) si considera vulnerados sus derechos.</p>
+                </div>
+            </details>
+
+            <label class="verif-consent">
+                <input type="checkbox" @bind="ConsentAccepted" />
+                <span>He leído y acepto los <strong>Términos y Condiciones de Uso</strong> y la <strong>Política de Protección de Datos</strong> para la verificación y reclutamiento laboral.</span>
+            </label>
+
+            <button class="ot-btn ot-btn--primary verif-btn" @onclick="() => GoToStep(1)" disabled="@(!ConsentAccepted)">
+                Comenzar Verificación
+            </button>
+        }
+
+        @* ===== Paso 1: Filtro principal ===== *@
+        @if (Step == 1)
+        {
+            <h2 class="verif-title">¿Cuentas con nacionalidad española?</h2>
+            <div class="verif-options">
+                <button class="verif-option" @onclick="() => SelectSpanishNationality(true)">
+                    <span class="verif-option-label">SÍ</span>
+                    <span class="verif-option-desc">Tengo DNI español</span>
+                </button>
+                <button class="verif-option" @onclick="() => SelectSpanishNationality(false)">
+                    <span class="verif-option-label">NO</span>
+                    <span class="verif-option-desc">Tengo otra nacionalidad</span>
+                </button>
+            </div>
+            <button class="verif-back" @onclick="() => GoToStep(0)">← Volver</button>
+        }
+
+        @* ===== Paso 2: Situación de extranjería ===== *@
+        @if (Step == 2)
+        {
+            <h2 class="verif-title">¿Cuál es tu situación administrativa en España?</h2>
+            <div class="verif-options">
+                <button class="verif-option" @onclick="() => SelectAdminSituation(1)">
+                    <span class="verif-option-label">Ciudadano comunitario</span>
+                    <span class="verif-option-desc">Soy ciudadano de la Unión Europea, EEE o Suiza</span>
+                </button>
+                <button class="verif-option" @onclick="() => SelectAdminSituation(2)">
+                    <span class="verif-option-label">Residencia y trabajo (TIE)</span>
+                    <span class="verif-option-desc">Soy de otro país y tengo permiso de residencia y trabajo en vigor</span>
+                </button>
+                <button class="verif-option" @onclick="() => SelectAdminSituation(3)">
+                    <span class="verif-option-label">Sin autorización de trabajo</span>
+                    <span class="verif-option-desc">No cuento actualmente con autorización / En trámite de asilo o regularización</span>
+                </button>
+            </div>
+            <button class="verif-back" @onclick="() => GoToStep(1)">← Volver</button>
+        }
+
+        @* ===== Rama 1: Nacionalidad española (DNI) ===== *@
+        @if (Step == 10)
+        {
+            <h2 class="verif-title">Datos de tu DNI</h2>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Nombre y Apellidos completos *</label>
+                <input class="ot-input-field" @bind="Form.FullName" placeholder="Como figura en el DNI" />
+            </div>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Número de DNI *</label>
+                <input class="ot-input-field" @bind="Form.DocumentNumber" placeholder="12345678Z" maxlength="9" />
+                <small class="verif-hint">8 dígitos + letra de control</small>
+            </div>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Fecha de caducidad del DNI *</label>
+                <input type="date" class="ot-input-field" @bind="Form.DocumentExpiry" />
+            </div>
+
+            <div class="verif-uploads">
+                <div class="ot-input-group">
+                    <label class="ot-input-label">DNI — Anverso *</label>
+                    <InputFile class="ot-input-field" OnChange="e => OnFileSelected(e, 0)" accept=".jpg,.jpeg,.png,.webp,.pdf" />
+                    @if (DocFront != null) { <small class="verif-hint">@DocFront.Name (@FormatSize(DocFront.Size))</small> }
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">DNI — Reverso *</label>
+                    <InputFile class="ot-input-field" OnChange="e => OnFileSelected(e, 1)" accept=".jpg,.jpeg,.png,.webp,.pdf" />
+                    @if (DocBack != null) { <small class="verif-hint">@DocBack.Name (@FormatSize(DocBack.Size))</small> }
+                </div>
+            </div>
+            <p class="verif-security">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Asegúrate de que la foto no tenga reflejos y todos los datos sean legibles. Los documentos se almacenan bajo cifrado seguro.
+            </p>
+
+            @ContactFields
+
+            @if (!string.IsNullOrEmpty(ErrorMessage)) { <div class="alert alert-error">@ErrorMessage</div> }
+            <div class="verif-actions">
+                <button class="verif-back" @onclick="() => GoToStep(1)">← Volver</button>
+                <button class="ot-btn ot-btn--primary verif-btn" @onclick="SubmitAsync" disabled="@IsSubmitting">
+                    @(IsSubmitting ? "Enviando..." : "Enviar Solicitud de Verificación")
+                </button>
+            </div>
+        }
+
+        @* ===== Rama 2: Ciudadano comunitario ===== *@
+        @if (Step == 20)
+        {
+            <h2 class="verif-title">Ciudadano UE / EEE / Suiza</h2>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Nombre y Apellidos completos *</label>
+                <input class="ot-input-field" @bind="Form.FullName" />
+            </div>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Nacionalidad *</label>
+                <select class="ot-input-field" @bind="Form.Nationality">
+                    <option value="">Selecciona tu país</option>
+                    @foreach (var c in EuCountries) { <option value="@c">@c</option> }
+                </select>
+            </div>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Número de NIE *</label>
+                <input class="ot-input-field" @bind="Form.DocumentNumber" placeholder="X1234567L" maxlength="9" />
+                <small class="verif-hint">Formato X/Y/Z + 7 dígitos + letra</small>
+            </div>
+
+            <div class="verif-uploads">
+                <div class="ot-input-group">
+                    <label class="ot-input-label">Pasaporte o documento de identidad de tu país *</label>
+                    <InputFile class="ot-input-field" OnChange="e => OnFileSelected(e, 2)" accept=".jpg,.jpeg,.png,.webp,.pdf" />
+                    @if (DocExtra1 != null) { <small class="verif-hint">@DocExtra1.Name (@FormatSize(DocExtra1.Size))</small> }
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">Certificado de Registro de Ciudadano de la Unión (hoja verde con NIE) *</label>
+                    <InputFile class="ot-input-field" OnChange="e => OnFileSelected(e, 3)" accept=".jpg,.jpeg,.png,.webp,.pdf" />
+                    @if (DocExtra2 != null) { <small class="verif-hint">@DocExtra2.Name (@FormatSize(DocExtra2.Size))</small> }
+                </div>
+            </div>
+            <p class="verif-security">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Asegúrate de que la foto no tenga reflejos y todos los datos sean legibles. Los documentos se almacenan bajo cifrado seguro.
+            </p>
+
+            @ContactFields
+
+            @if (!string.IsNullOrEmpty(ErrorMessage)) { <div class="alert alert-error">@ErrorMessage</div> }
+            <div class="verif-actions">
+                <button class="verif-back" @onclick="() => GoToStep(2)">← Volver</button>
+                <button class="ot-btn ot-btn--primary verif-btn" @onclick="SubmitAsync" disabled="@IsSubmitting">
+                    @(IsSubmitting ? "Enviando..." : "Enviar Solicitud de Verificación")
+                </button>
+            </div>
+        }
+
+        @* ===== Rama 3: Extracomunitario con TIE ===== *@
+        @if (Step == 30)
+        {
+            <h2 class="verif-title">Residencia y trabajo (TIE)</h2>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Nombre y Apellidos completos *</label>
+                <input class="ot-input-field" @bind="Form.FullName" />
+            </div>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Nacionalidad de origen *</label>
+                <select class="ot-input-field" @bind="Form.Nationality">
+                    <option value="">Selecciona tu país</option>
+                    @foreach (var c in OriginCountries) { <option value="@c">@c</option> }
+                </select>
+            </div>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Número de NIE / TIE *</label>
+                <input class="ot-input-field" @bind="Form.DocumentNumber" placeholder="X1234567L" maxlength="9" />
+                <small class="verif-hint">Formato X/Y/Z + 7 dígitos + letra</small>
+            </div>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Tipo de permiso *</label>
+                <select class="ot-input-field" @bind="Form.PermitType">
+                    <option value="-1">Selecciona</option>
+                    <option value="0">Cuenta Ajena</option>
+                    <option value="1">Cuenta Propia</option>
+                    <option value="2">Larga Duración</option>
+                    <option value="3">Comunitario</option>
+                </select>
+            </div>
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Fecha de caducidad de la TIE *</label>
+                <input type="date" class="ot-input-field" @bind="Form.DocumentExpiry" />
+            </div>
+
+            <div class="verif-uploads">
+                <div class="ot-input-group">
+                    <label class="ot-input-label">TIE — Anverso *</label>
+                    <InputFile class="ot-input-field" OnChange="e => OnFileSelected(e, 0)" accept=".jpg,.jpeg,.png,.webp,.pdf" />
+                    @if (DocFront != null) { <small class="verif-hint">@DocFront.Name (@FormatSize(DocFront.Size))</small> }
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">TIE — Reverso (donde especifique "Autoriza a trabajar") *</label>
+                    <InputFile class="ot-input-field" OnChange="e => OnFileSelected(e, 1)" accept=".jpg,.jpeg,.png,.webp,.pdf" />
+                    @if (DocBack != null) { <small class="verif-hint">@DocBack.Name (@FormatSize(DocBack.Size))</small> }
+                </div>
+            </div>
+            <p class="verif-security">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Asegúrate de que la foto no tenga reflejos y todos los datos sean legibles. Los documentos se almacenan bajo cifrado seguro.
+            </p>
+
+            @ContactFields
+
+            @if (!string.IsNullOrEmpty(ErrorMessage)) { <div class="alert alert-error">@ErrorMessage</div> }
+            <div class="verif-actions">
+                <button class="verif-back" @onclick="() => GoToStep(2)">← Volver</button>
+                <button class="ot-btn ot-btn--primary verif-btn" @onclick="SubmitAsync" disabled="@IsSubmitting">
+                    @(IsSubmitting ? "Enviando..." : "Enviar Solicitud de Verificación")
+                </button>
+            </div>
+        }
+
+        @* ===== Rama 4: Sin permiso de trabajo ===== *@
+        @if (Step == 40)
+        {
+            <div class="verif-header">
+                <div class="verif-header-icon verif-header-icon--info">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                </div>
+                <h2 class="verif-title">Situación actual</h2>
+            </div>
+            <p class="verif-text">
+                De acuerdo con la legislación laboral española (Ley Orgánica 4/2000 sobre derechos y
+                libertades de los extranjeros en España), para formalizar contratos de trabajo por
+                cuenta ajena es imprescindible contar con una autorización previa de residencia y trabajo.
+            </p>
+            <p class="verif-text">
+                Hemos guardado tu perfil básico. Un agente de Trato Directo podrá contactarte si surgen
+                programas formativos, asesoría de inserción o vacantes compatibles con tu situación.
+            </p>
+
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">Nombre y Apellidos completos *</label>
+                <input class="ot-input-field" @bind="Form.FullName" />
+            </div>
+            @ContactFields
+
+            @if (!string.IsNullOrEmpty(ErrorMessage)) { <div class="alert alert-error">@ErrorMessage</div> }
+            <div class="verif-actions">
+                <button class="verif-back" @onclick="() => GoToStep(2)">← Volver</button>
+                <button class="ot-btn ot-btn--primary verif-btn" @onclick="SubmitAsync" disabled="@IsSubmitting">
+                    @(IsSubmitting ? "Enviando..." : "Guardar mis datos de contacto")
+                </button>
+            </div>
+        }
+
+        @* ===== Paso final: Éxito ===== *@
+        @if (Step == 50)
+        {
+            <div class="verif-success">
+                <div class="verif-success-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="36" height="36">
+                        <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                </div>
+                <h2 class="verif-title">¡Solicitud enviada con éxito!</h2>
+                <p class="verif-text">
+                    Hemos recibido tus datos y documentos para validación interna.
+                    Un agente de Trato Directo se pondrá en contacto contigo a través de tu teléfono
+                    registrado para culminar la fase de verificación e incorporarte de manera oficial
+                    a los procesos de reclutamiento y selección.
+                </p>
+                <div class="verif-reference">
+                    Número de referencia de solicitud: <strong>#@ReferenceNumber</strong>
+                </div>
+                <button class="ot-btn ot-btn--primary verif-btn" @onclick="GoToDashboard">
+                    Volver al dashboard
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private const long MaxFileSize = 5 * 1024 * 1024;
+
+    // Steps: 0=Consent, 1=Filtro nacionalidad, 2=Situacion, 10=Rama1 DNI, 20=Rama2 UE, 30=Rama3 TIE, 40=Rama4 sin permiso, 50=Exito
+    private int Step { get; set; } = 0;
+    private bool ConsentAccepted { get; set; }
+    private SubmitVerificationRequestDto Form { get; set; } = new();
+    private IBrowserFile? DocFront { get; set; }
+    private IBrowserFile? DocBack { get; set; }
+    private IBrowserFile? DocExtra1 { get; set; }
+    private IBrowserFile? DocExtra2 { get; set; }
+    private string? ErrorMessage { get; set; }
+    private bool IsSubmitting { get; set; }
+    private string? ReferenceNumber { get; set; }
+
+    private static readonly string[] EuCountries =
+    {
+        "Alemania", "Austria", "Bélgica", "Bulgaria", "Chipre", "Croacia", "Dinamarca",
+        "Eslovaquia", "Eslovenia", "Estonia", "Finlandia", "Francia", "Grecia", "Hungría",
+        "Irlanda", "Italia", "Letonia", "Lituania", "Luxemburgo", "Malta", "Países Bajos",
+        "Polonia", "Portugal", "República Checa", "Rumanía", "Suecia",
+        "Islandia (EEE)", "Liechtenstein (EEE)", "Noruega (EEE)", "Suiza"
+    };
+
+    private static readonly string[] OriginCountries =
+    {
+        "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Cuba",
+        "Ecuador", "El Salvador", "Estados Unidos", "Guatemala", "Honduras", "Marruecos",
+        "México", "Nicaragua", "Panamá", "Paraguay", "Perú", "República Dominicana",
+        "Ucrania", "Uruguay", "Venezuela", "Otro"
+    };
+
+    private RenderFragment ContactFields => __builder =>
+    {
+        <div class="ot-input-group mb-md">
+            <label class="ot-input-label">Teléfono de contacto / WhatsApp *</label>
+            <div class="verif-phone">
+                <span class="verif-phone-prefix">+34</span>
+                <input class="ot-input-field" @bind="Form.Phone" placeholder="612345678" maxlength="9" inputmode="numeric" />
+            </div>
+            <small class="verif-hint">9 dígitos, sin espacios</small>
+        </div>
+        <div class="ot-input-group mb-md">
+            <label class="ot-input-label">Preferencia horaria de contacto *</label>
+            <select class="ot-input-field" @bind="Form.ContactTimePreference">
+                <option value="-1">Selecciona</option>
+                <option value="0">Mañana (09:00 - 14:00)</option>
+                <option value="1">Tarde (15:00 - 19:00)</option>
+            </select>
+        </div>
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await AuthApi.GetTokenAsync();
+        if (string.IsNullOrEmpty(token))
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        // Si ya tiene una solicitud pendiente/en revisión, mostrar referencia directamente.
+        var existing = await AuthApi.GetMyVerificationRequestAsync();
+        if (existing != null && existing.Status is 0 or 1)
+        {
+            ReferenceNumber = existing.ReferenceNumber;
+            Step = 50;
+        }
+    }
+
+    private void GoToStep(int step)
+    {
+        ErrorMessage = null;
+        Step = step;
+    }
+
+    private void SelectSpanishNationality(bool isSpanish)
+    {
+        Form.HasSpanishNationality = isSpanish;
+        if (isSpanish)
+        {
+            Form.AdminSituation = 0;
+            GoToStep(10);
+        }
+        else
+        {
+            GoToStep(2);
+        }
+    }
+
+    private void SelectAdminSituation(int situation)
+    {
+        Form.AdminSituation = situation;
+        GoToStep(situation switch { 1 => 20, 2 => 30, _ => 40 });
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e, int slot)
+    {
+        ErrorMessage = null;
+        var file = e.File;
+        if (file.Size > MaxFileSize)
+        {
+            ErrorMessage = $"El archivo {file.Name} supera el máximo de 5MB.";
+            return;
+        }
+        switch (slot)
+        {
+            case 0: DocFront = file; break;
+            case 1: DocBack = file; break;
+            case 2: DocExtra1 = file; break;
+            case 3: DocExtra2 = file; break;
+        }
+    }
+
+    private bool ValidateForm()
+    {
+        if (string.IsNullOrWhiteSpace(Form.FullName))
+        {
+            ErrorMessage = "Ingresa tu nombre y apellidos completos.";
+            return false;
+        }
+
+        if (Form.AdminSituation == 0)
+        {
+            if (!IsValidDni(Form.DocumentNumber))
+            {
+                ErrorMessage = "El DNI no es válido (8 dígitos + letra de control correcta).";
+                return false;
+            }
+            if (Form.DocumentExpiry == null)
+            {
+                ErrorMessage = "Indica la fecha de caducidad del DNI.";
+                return false;
+            }
+            if (DocFront == null || DocBack == null)
+            {
+                ErrorMessage = "Debes subir el anverso y el reverso del DNI.";
+                return false;
+            }
+        }
+        else if (Form.AdminSituation == 1)
+        {
+            if (string.IsNullOrWhiteSpace(Form.Nationality))
+            {
+                ErrorMessage = "Selecciona tu nacionalidad.";
+                return false;
+            }
+            if (!IsValidNie(Form.DocumentNumber))
+            {
+                ErrorMessage = "El NIE no es válido (formato X/Y/Z + 7 dígitos + letra).";
+                return false;
+            }
+            if (DocExtra1 == null || DocExtra2 == null)
+            {
+                ErrorMessage = "Debes subir el pasaporte/documento de identidad y el certificado de registro UE.";
+                return false;
+            }
+        }
+        else if (Form.AdminSituation == 2)
+        {
+            if (string.IsNullOrWhiteSpace(Form.Nationality))
+            {
+                ErrorMessage = "Selecciona tu nacionalidad de origen.";
+                return false;
+            }
+            if (!IsValidNie(Form.DocumentNumber))
+            {
+                ErrorMessage = "El NIE/TIE no es válido (formato X/Y/Z + 7 dígitos + letra).";
+                return false;
+            }
+            if (Form.PermitType is null or -1)
+            {
+                ErrorMessage = "Selecciona el tipo de permiso.";
+                return false;
+            }
+            if (Form.DocumentExpiry == null)
+            {
+                ErrorMessage = "Indica la fecha de caducidad de la TIE.";
+                return false;
+            }
+            if (DocFront == null || DocBack == null)
+            {
+                ErrorMessage = "Debes subir el anverso y el reverso de la TIE.";
+                return false;
+            }
+        }
+
+        if (!IsValidPhone(Form.Phone))
+        {
+            ErrorMessage = "El teléfono debe tener 9 dígitos válidos en España.";
+            return false;
+        }
+        if (Form.ContactTimePreference == null)
+        {
+            ErrorMessage = "Selecciona una preferencia horaria de contacto.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task SubmitAsync()
+    {
+        ErrorMessage = null;
+        if (!ValidateForm()) return;
+
+        IsSubmitting = true;
+        try
+        {
+            if (Form.PermitType == -1) Form.PermitType = null;
+            if (Form.ContactTimePreference == -1) Form.ContactTimePreference = null;
+            Form.Documents.Clear();
+            if (DocFront != null) Form.Documents.Add(await ToDocDto(DocFront, "front"));
+            if (DocBack != null) Form.Documents.Add(await ToDocDto(DocBack, "back"));
+            if (DocExtra1 != null) Form.Documents.Add(await ToDocDto(DocExtra1, "extra1"));
+            if (DocExtra2 != null) Form.Documents.Add(await ToDocDto(DocExtra2, "extra2"));
+
+            var result = await AuthApi.SubmitVerificationRequestAsync(Form);
+            if (result == null)
+            {
+                ErrorMessage = "No se pudo enviar la solicitud. Inténtalo de nuevo.";
+                return;
+            }
+
+            ReferenceNumber = result.ReferenceNumber;
+            Step = 50;
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private static async Task<VerificationDocumentDto> ToDocDto(IBrowserFile file, string slot)
+    {
+        using var stream = file.OpenReadStream(MaxFileSize);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        return new VerificationDocumentDto
+        {
+            Slot = slot,
+            FileName = file.Name,
+            ContentType = file.ContentType,
+            DataBase64 = Convert.ToBase64String(ms.ToArray())
+        };
+    }
+
+    private static bool IsValidDni(string? dni)
+    {
+        if (string.IsNullOrWhiteSpace(dni)) return false;
+        dni = dni.Trim().ToUpperInvariant();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(dni, @"^\d{8}[A-Z]$")) return false;
+        var number = int.Parse(dni[..8]);
+        return dni[8] == "TRWAGMYFPDXBNJZSQVHLCKE"[number % 23];
+    }
+
+    private static bool IsValidNie(string? nie)
+    {
+        if (string.IsNullOrWhiteSpace(nie)) return false;
+        nie = nie.Trim().ToUpperInvariant();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(nie, @"^[XYZ]\d{7}[A-Z]$")) return false;
+        var prefix = nie[0] switch { 'X' => 0, 'Y' => 1, 'Z' => 2, _ => 0 };
+        var number = int.Parse($"{prefix}{nie.Substring(1, 7)}");
+        return nie[8] == "TRWAGMYFPDXBNJZSQVHLCKE"[number % 23];
+    }
+
+    private static bool IsValidPhone(string? phone)
+        => !string.IsNullOrWhiteSpace(phone)
+           && System.Text.RegularExpressions.Regex.IsMatch(phone.Trim(), @"^[6789]\d{8}$");
+
+    private static string FormatSize(long bytes)
+        => bytes >= 1024 * 1024 ? $"{bytes / 1024.0 / 1024.0:F1} MB" : $"{bytes / 1024.0:F0} KB";
+
+    private void GoToDashboard() => Nav.NavigateTo("/dashboard");
+}

@@ -1,0 +1,259 @@
+@page "/company-profile"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject NavigationManager Nav
+
+<PageTitle>Perfil de Empresa</PageTitle>
+
+<div class="company-edit">
+    <div class="company-edit-container">
+        @if (IsLoading)
+        {
+            <div class="home-skeleton-card" style="height: 300px;"></div>
+        }
+        else if (Form == null)
+        {
+            <div class="home-vacancies-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                    <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+                </svg>
+                <p>No se encontró una empresa asociada a tu cuenta.</p>
+            </div>
+        }
+        else
+        {
+            @* === Hero === *@
+            <div class="company-edit-hero">
+                <div class="company-edit-hero-logo">
+                    @if (!string.IsNullOrEmpty(Form.LogoUrl))
+                    {
+                        <img src="@Form.LogoUrl" alt="@Form.Name" />
+                    }
+                    else
+                    {
+                        <span>@GetInitials(Form.Name)</span>
+                    }
+                </div>
+                <div class="company-edit-hero-info">
+                    <div class="company-edit-hero-name-row">
+                        <h1 class="company-edit-hero-name">@Form.Name</h1>
+                        @if (IsVerified)
+                        {
+                            <span class="company-edit-hero-verified">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1.06 13.54L7.4 12l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41-5.64 5.66z"/></svg>
+                                Empresa verificada
+                            </span>
+                        }
+                    </div>
+                    <div class="company-edit-hero-meta">
+                        @if (!string.IsNullOrEmpty(Form.Industry))
+                        {
+                            <span class="company-edit-hero-chip">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+                                @Form.Industry
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(Form.City) || !string.IsNullOrEmpty(Form.Country))
+                        {
+                            <span class="company-edit-hero-chip">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                @Form.City@(string.IsNullOrEmpty(Form.City) || string.IsNullOrEmpty(Form.Country) ? "" : ", ")@Form.Country
+                            </span>
+                        }
+                    </div>
+                </div>
+                @if (CompanyId != Guid.Empty)
+                {
+                    <a href="/companies/@CompanyId" class="ot-btn ot-btn--outline ot-btn--small company-edit-hero-public">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Ver perfil público
+                    </a>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(SaveMessage))
+            {
+                <div class="company-edit-alert @(SaveOk ? "company-edit-alert--ok" : "company-edit-alert--error")">@SaveMessage</div>
+            }
+
+            <div class="company-edit-section">
+                <h2 class="company-edit-section-title">Información general</h2>
+                <div class="company-edit-grid">
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Nombre comercial *</label>
+                        <input class="ot-input-field" @bind="Form.Name" />
+                    </div>
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Razón social</label>
+                        <input class="ot-input-field" @bind="Form.LegalName" />
+                    </div>
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">NIT / Tax ID</label>
+                        <input class="ot-input-field" @bind="Form.TaxId" />
+                    </div>
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Industria</label>
+                        <input class="ot-input-field" @bind="Form.Industry" />
+                    </div>
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Tamaño (empleados)</label>
+                        <input class="ot-input-field" type="number" @bind="Form.CompanySize" />
+                    </div>
+                </div>
+                <div class="company-edit-field">
+                    <label class="company-edit-label">Descripción</label>
+                    <textarea class="ot-input-field" rows="4" @bind="Form.Description"></textarea>
+                </div>
+            </div>
+
+            <div class="company-edit-section">
+                <h2 class="company-edit-section-title">Ubicación</h2>
+                <div class="company-edit-grid">
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">País</label>
+                        <input class="ot-input-field" @bind="Form.Country" />
+                    </div>
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Ciudad</label>
+                        <input class="ot-input-field" @bind="Form.City" />
+                    </div>
+                    <div class="company-edit-field company-edit-field--full">
+                        <label class="company-edit-label">Dirección</label>
+                        <input class="ot-input-field" @bind="Form.Address" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="company-edit-section">
+                <h2 class="company-edit-section-title">Presencia web</h2>
+                <div class="company-edit-grid">
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Sitio web</label>
+                        <input class="ot-input-field" placeholder="https://..." @bind="Form.Website" />
+                    </div>
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">LinkedIn</label>
+                        <input class="ot-input-field" placeholder="https://linkedin.com/company/..." @bind="Form.LinkedInUrl" />
+                    </div>
+                    <div class="company-edit-field company-edit-field--full">
+                        <label class="company-edit-label">URL del logo</label>
+                        <input class="ot-input-field" placeholder="https://..." @bind="Form.LogoUrl" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="company-edit-section">
+                <h2 class="company-edit-section-title">Contacto</h2>
+                <div class="company-edit-grid">
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Nombre de contacto</label>
+                        <input class="ot-input-field" @bind="Form.ContactName" />
+                    </div>
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Cargo</label>
+                        <input class="ot-input-field" @bind="Form.ContactPosition" />
+                    </div>
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Email de contacto</label>
+                        <input class="ot-input-field" type="email" @bind="Form.ContactEmail" />
+                    </div>
+                    <div class="company-edit-field">
+                        <label class="company-edit-label">Teléfono</label>
+                        <input class="ot-input-field" @bind="Form.ContactPhone" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="company-edit-actions">
+                <button class="ot-btn ot-btn--primary" @onclick="SaveAsync" disabled="@IsSaving">
+                    @(IsSaving ? "Guardando..." : "Guardar cambios")
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private UpdateMyCompanyProfileDto? Form { get; set; }
+    private Guid CompanyId { get; set; }
+    private bool IsVerified { get; set; }
+    private bool IsLoading { get; set; } = true;
+    private bool IsSaving { get; set; }
+    private string? SaveMessage { get; set; }
+    private bool SaveOk { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var token = await LocalStorage.GetItemAsync("opentowork-token");
+        if (string.IsNullOrEmpty(token))
+        {
+            Nav.NavigateTo("/login?returnUrl=/company-profile");
+            return;
+        }
+
+        var company = await AuthApi.GetMyCompanyAsync();
+        if (company == null)
+        {
+            IsLoading = false;
+            return;
+        }
+
+        IsVerified = company.IsVerified;
+        CompanyId = company.Id;
+        Form = new UpdateMyCompanyProfileDto
+        {
+            Name = company.Name,
+            LegalName = company.LegalName,
+            TaxId = company.TaxId,
+            Industry = company.Industry,
+            Website = company.Website,
+            Description = company.Description,
+            LogoUrl = company.LogoUrl,
+            Country = company.Country,
+            City = company.City,
+            Address = company.Address,
+            CompanySize = company.CompanySize,
+            ContactName = company.ContactName,
+            ContactEmail = company.ContactEmail,
+            ContactPhone = company.ContactPhone,
+            ContactPosition = company.ContactPosition,
+            LinkedInUrl = company.LinkedInUrl
+        };
+        IsLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (Form == null || string.IsNullOrWhiteSpace(Form.Name))
+        {
+            SaveOk = false;
+            SaveMessage = "El nombre comercial es obligatorio.";
+            return;
+        }
+
+        IsSaving = true;
+        SaveMessage = null;
+        var result = await AuthApi.UpdateMyCompanyAsync(Form);
+        IsSaving = false;
+
+        SaveOk = result != null;
+        SaveMessage = result != null
+            ? "Perfil actualizado correctamente."
+            : "No se pudo guardar el perfil. Intenta de nuevo.";
+    }
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "E";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
+}
+}

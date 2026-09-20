@@ -2,30 +2,52 @@
 
 <dialog id="components-reconnect-modal" data-nosnippet>
     <div class="components-reconnect-container">
-        <div class="components-rejoining-animation" aria-hidden="true">
-            <div></div>
-            <div></div>
+        @* Reconectando: pulso + texto *@
+        <div class="reconnect-pulse components-reconnect-first-attempt-visible components-reconnect-repeated-attempt-visible" aria-hidden="true">
+            <span class="reconnect-pulse-ring"></span>
+            <span class="reconnect-pulse-ring"></span>
+            <span class="reconnect-pulse-dot"></span>
         </div>
-        <p class="components-reconnect-first-attempt-visible">
-            Rejoining the server...
+        <p class="components-reconnect-first-attempt-visible reconnect-status">
+            Reconectando<span class="reconnect-dots"><i>.</i><i>.</i><i>.</i></span>
         </p>
-        <p class="components-reconnect-repeated-attempt-visible">
-            Rejoin failed... trying again in <span id="components-seconds-to-next-attempt"></span> seconds.
+        <p class="components-reconnect-repeated-attempt-visible reconnect-status">
+            Reconectando<span class="reconnect-dots"><i>.</i><i>.</i><i>.</i></span>
+            <small>Reintento en <span id="components-seconds-to-next-attempt"></span>s</small>
         </p>
-        <p class="components-reconnect-failed-visible">
-            Failed to rejoin.<br />Please retry or reload the page.
-        </p>
-        <button id="components-reconnect-button" class="components-reconnect-failed-visible">
-            Retry
-        </button>
-        <p class="components-pause-visible">
-            The session has been paused by the server.
-        </p>
-        <p class="components-resume-failed-visible">
-            Failed to resume the session.<br />Please retry or reload the page.
-        </p>
-        <button id="components-resume-button" class="components-pause-visible components-resume-failed-visible">
-            Resume
-        </button>
+
+        @* Error de reconexión *@
+        <div class="components-reconnect-failed-visible reconnect-card">
+            <div class="reconnect-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+                    <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+                    <path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
+                    <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                    <line x1="12" y1="20" x2="12.01" y2="20" />
+                </svg>
+            </div>
+            <p class="reconnect-card-title">No se pudo reconectar</p>
+            <p class="reconnect-card-text">Verifica tu conexión e inténtalo de nuevo.</p>
+            <button id="components-reconnect-button" class="reconnect-btn">Reintentar</button>
+        </div>
+
+        @* Sesión pausada / falló al reanudar *@
+        <div class="reconnect-card components-pause-visible components-resume-failed-visible">
+            <div class="reconnect-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="10" y1="15" x2="10" y2="9" />
+                    <line x1="14" y1="15" x2="14" y2="9" />
+                </svg>
+            </div>
+            <p class="reconnect-card-title components-pause-visible">Sesión pausada</p>
+            <p class="reconnect-card-text components-pause-visible">El servidor pausó tu sesión.</p>
+            <p class="reconnect-card-title components-resume-failed-visible">No se pudo reanudar</p>
+            <p class="reconnect-card-text components-resume-failed-visible">Intenta reanudar o recarga la página.</p>
+            <button id="components-resume-button" class="reconnect-btn">Reanudar</button>
+        </div>
     </div>
 </dialog>

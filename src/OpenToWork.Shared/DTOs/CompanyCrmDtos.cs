@@ -74,6 +74,73 @@ public class CompanyPipelineDto
     public string? DismissalReason { get; set; }
 }
 
+/// <summary>DTO público de empresa para la sección "Empresas que confían en nosotros" del portal.</summary>
+public class PublicCompanyDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? LogoUrl { get; set; }
+    public string? Industry { get; set; }
+    public string? City { get; set; }
+    public string? Country { get; set; }
+    public bool IsFeatured { get; set; }
+}
+
+/// <summary>Detalle público de empresa para su página de perfil en el portal.</summary>
+public class PublicCompanyDetailDto : PublicCompanyDto
+{
+    public string? Description { get; set; }
+    public string? Website { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public bool IsVerified { get; set; }
+    public int ActiveVacancies { get; set; }
+}
+
+/// <summary>Perfil de la empresa del usuario autenticado (portal empresa).</summary>
+public class MyCompanyProfileDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? LegalName { get; set; }
+    public string? TaxId { get; set; }
+    public string? Industry { get; set; }
+    public string? Website { get; set; }
+    public string? Description { get; set; }
+    public string? LogoUrl { get; set; }
+    public string? Country { get; set; }
+    public string? City { get; set; }
+    public string? Address { get; set; }
+    public int? CompanySize { get; set; }
+    public string? ContactName { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? ContactPhone { get; set; }
+    public string? ContactPosition { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public bool IsVerified { get; set; }
+    public bool IsFeatured { get; set; }
+}
+
+/// <summary>Datos editables del perfil de empresa (sin Status/IsFeatured/IsVerified — los gestiona el admin).</summary>
+public class UpdateMyCompanyProfileDto
+{
+    public string Name { get; set; } = string.Empty;
+    public string? LegalName { get; set; }
+    public string? TaxId { get; set; }
+    public string? Industry { get; set; }
+    public string? Website { get; set; }
+    public string? Description { get; set; }
+    public string? LogoUrl { get; set; }
+    public string? Country { get; set; }
+    public string? City { get; set; }
+    public string? Address { get; set; }
+    public int? CompanySize { get; set; }
+    public string? ContactName { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? ContactPhone { get; set; }
+    public string? ContactPosition { get; set; }
+    public string? LinkedInUrl { get; set; }
+}
+
 public class CompanyPipelineResultDto
 {
     public List<CompanyPipelineDto> Items { get; set; } = new();

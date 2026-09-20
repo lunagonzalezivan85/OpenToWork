@@ -117,7 +117,23 @@
         "noVacancies": "No vacancies found",
         "statsVacancies": "Vacancies",
         "statsCompanies": "Companies",
-        "statsFree": "Free Application"
+        "statsFree": "Free Application",
+        "trustedCompanies": "Companies that trust us",
+        "featuredCompany": "Featured",
+        "viewAllCompanies": "View all companies"
+    },
+    "companies": {
+        "title": "Companies",
+        "subtitle": "Discover the companies that trust us",
+        "empty": "No companies available",
+        "notFound": "Company not found",
+        "backToList": "Back to companies",
+        "verified": "Verified company",
+        "activeVacancies": "active vacancies",
+        "website": "Website",
+        "about": "About the company",
+        "vacancies": "Vacancies",
+        "noVacancies": "This company has no active vacancies"
     },
     "footer": {
         "menu": "Menu",

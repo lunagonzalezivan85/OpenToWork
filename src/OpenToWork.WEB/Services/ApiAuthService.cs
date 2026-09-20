@@ -193,6 +193,60 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<List<VacancyDto>>() ?? new();
     }
 
+    public async Task<List<PublicCompanyDto>> GetPublicCompaniesAsync(int? limit = null)
+    {
+        var url = limit is > 0 ? $"api/companies?limit={limit.Value}" : "api/companies";
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<PublicCompanyDto>>() ?? new();
+    }
+
+    public async Task<PublicCompanyDetailDto?> GetPublicCompanyAsync(Guid id)
+    {
+        var response = await _httpClient.GetAsync($"api/companies/{id}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<PublicCompanyDetailDto>();
+    }
+
+    public async Task<List<VacancyDto>> GetCompanyVacanciesAsync(Guid companyId)
+    {
+        var response = await _httpClient.GetAsync($"api/permanentvacancies/company/{companyId}");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<VacancyDto>>() ?? new();
+    }
+
+    public async Task<MyCompanyProfileDto?> GetMyCompanyAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/companies/me");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<MyCompanyProfileDto>();
+    }
+
+    public async Task<MyCompanyProfileDto?> UpdateMyCompanyAsync(UpdateMyCompanyProfileDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync("api/companies/me", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<MyCompanyProfileDto>();
+    }
+
+    public async Task<VerificationRequestResultDto?> GetMyVerificationRequestAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/verificationrequests/me");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<VerificationRequestResultDto>();
+    }
+
+    public async Task<VerificationRequestResultDto?> SubmitVerificationRequestAsync(SubmitVerificationRequestDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/verificationrequests", dto);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<VerificationRequestResultDto>();
+    }
+
     public async Task<List<JobTypeOptionDto>> GetJobTypesAsync()
     {
         await SetAuthHeaderAsync();

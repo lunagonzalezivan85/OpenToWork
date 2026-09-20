@@ -11,8 +11,7 @@
 
 <div class="admin-page-header">
     <div>
-        <h1>@(Profile?.CandidateName ?? Lang.T("admin.profile.title"))</h1>
-        <p class="admin-page-header-subtitle">@(Profile?.Title ?? "")</p>
+        <h1>@Lang.T("admin.profile.title")</h1>
     </div>
     <div class="admin-page-actions">
         <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.dashboard.backToDashboard")</button>
@@ -25,78 +24,43 @@
 }
 else
 {
-    @* === Pipeline stepper === *@
-    <div class="admin-candidate-pipeline-bar">
-        @if (Recruitment == null)
-        {
-            <div class="admin-pipeline-bar-empty">
-                <span>@Lang.T("admin.recruitment.noProcess")</span>
-                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="StartInvestigation">
-                    @Lang.T("admin.recruitment.investigate")
-                </button>
-            </div>
-        }
-        else if (Recruitment.Dismissal != null)
-        {
-            <div class="admin-pipeline-bar-dismissed">
-                <span class="admin-result-badge admin-result-badge--danger">@Lang.T("admin.recruitment.dismissed")</span>
-            </div>
-        }
-        else
-        {
-            <div class="admin-pipeline-stepper-inline">
-                @for (int i = 0; i <= 4; i++)
-                {
-                    var stageIndex = i;
-                    var stageClass = stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step--done" :
-                        stageIndex == Recruitment.CurrentStage ? "admin-pipeline-step--active" : "";
-                    <div class="admin-pipeline-step @stageClass">
-                        <div class="admin-pipeline-step-circle">
-                            @if (stageIndex < Recruitment.CurrentStage)
-                            {
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
-                            }
-                            else
-                            {
-                                @(stageIndex + 1)
-                            }
-                        </div>
-                        <span class="admin-pipeline-step-label">@GetStageName(stageIndex)</span>
-                        @if (stageIndex < Recruitment.CurrentStage && stageIndex > 0 && HasStageNotes(stageIndex))
-                        {
-                            <div class="admin-pipeline-step-note" @onclick="@(() => OpenStageDetail(stageIndex))">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                    <polyline points="14 2 14 8 20 8" />
-                                </svg>
-                            </div>
-                        }
-                    </div>
-                    @if (stageIndex < 4)
-                    {
-                        <div class="admin-pipeline-step-line @(stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step-line--done" : "")"></div>
-                    }
-                }
-            </div>
-            <div class="admin-pipeline-bar-actions">
-                @if (Recruitment.CurrentStage < 4)
-                {
-                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="MoveToNextStage">
-                        @Lang.T("admin.recruitment.moveToNext") → @GetStageName(Recruitment.CurrentStage + 1)
-                    </button>
-                }
-                <a href="/candidates/pipeline/@UserId" class="ot-btn ot-btn--outline ot-btn--small">
-                    @Lang.T("admin.recruitment.detailTitle")
-                </a>
-            </div>
-        }
-    </div>
+    @* === Hero card (bloque público) === *@
+    <div class="admin-hero-card">
+        <div class="admin-hero-banner">
+            <svg class="admin-hero-banner-deco" viewBox="0 0 1200 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                @* Bokeh ambiental *@
+                <circle cx="140" cy="45" r="55" fill="rgba(255,255,255,.05)" />
+                <circle cx="430" cy="95" r="35" fill="rgba(255,255,255,.04)" />
+                <circle cx="700" cy="35" r="70" fill="rgba(255,255,255,.05)" />
+                <circle cx="1020" cy="80" r="45" fill="rgba(255,255,255,.04)" />
 
-    <div class="admin-candidate-profile-split">
-        @* === Left panel 35% — Personal data === *@
-        <div class="admin-candidate-profile-left">
-            <div class="admin-profile-header-card">
-                <div class="admin-profile-avatar">
+                @* Guirnalda de luces (terraza) *@
+                <path d="M-20 18 Q300 70 620 30 T1240 42" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="1.5" />
+                <g fill="#FFD98E" opacity=".85">
+                    <circle cx="120" cy="38" r="3.5" />
+                    <circle cx="260" cy="48" r="3.5" />
+                    <circle cx="400" cy="47" r="3.5" />
+                    <circle cx="540" cy="38" r="3.5" />
+                    <circle cx="700" cy="30" r="3.5" />
+                    <circle cx="860" cy="33" r="3.5" />
+                    <circle cx="1020" cy="38" r="3.5" />
+                    <circle cx="1150" cy="42" r="3.5" />
+                </g>
+
+                @* Sombrilla de playa *@
+                <g transform="translate(1000,52) rotate(-8)" opacity=".22" fill="#FFFFFF">
+                    <path d="M0 34 Q44 -8 88 34 Q66 24 44 34 Q22 24 0 34 Z" />
+                    <rect x="41" y="30" width="5" height="58" rx="2" />
+                </g>
+
+                @* Olas *@
+                <path d="M0 108 Q150 84 300 108 T600 108 T900 108 T1200 108 L1200 150 L0 150 Z" fill="rgba(255,255,255,.07)" />
+                <path d="M0 122 Q200 102 400 122 T800 122 T1200 122 L1200 150 L0 150 Z" fill="rgba(255,255,255,.10)" />
+            </svg>
+        </div>
+        <div class="admin-hero-body">
+            <div class="admin-hero-avatar-wrap">
+                <div class="admin-hero-avatar">
                     @if (!string.IsNullOrEmpty(Profile.ProfilePictureUrl))
                     {
                         <img src="@Profile.ProfilePictureUrl" alt="avatar" />
@@ -106,40 +70,192 @@ else
                         <span>@AvatarText</span>
                     }
                 </div>
-                <div class="admin-profile-header-info">
-                    <h2>
-                        @(Profile.CandidateName ?? Profile.Email)
-                        @if (IsCandidateVerified)
-                        {
-                            <span class="admin-verified-badge" title="Verificado">
-                                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                </svg>
-                            </span>
-                        }
-                    </h2>
-                    <p class="admin-profile-header-title">@(Profile.Title ?? "")</p>
-                    <div class="admin-profile-header-badges">
-                        @if (Profile.IsActive)
-                        {
-                            <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.active")</span>
-                        }
-                        else
-                        {
-                            <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.inactive")</span>
-                        }
-                        @if (Profile.WizardCompleted == true)
-                        {
-                            <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.dashboard.evaluated")</span>
-                        }
-                        else
-                        {
-                            <span class="admin-result-badge admin-result-badge--warning">@Lang.T("admin.dashboard.pending")</span>
-                        }
-                    </div>
+                @if (IsCandidateVerified)
+                {
+                    <span class="admin-hero-check" title="@Lang.T("admin.profile.verified")">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" width="13" height="13"><polyline points="20 6 9 17 4 12" /></svg>
+                    </span>
+                }
+            </div>
+            <div class="admin-hero-info">
+                <h1 class="admin-hero-name">
+                    @(Profile.CandidateName ?? Profile.Email)
+                    @if (IsCandidateVerified)
+                    {
+                        <span class="admin-verified-badge" title="@Lang.T("admin.profile.verified")">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </span>
+                    }
+                </h1>
+                @if (!string.IsNullOrEmpty(Profile.Title))
+                {
+                    <p class="admin-hero-title">@Profile.Title</p>
+                }
+                <div class="admin-hero-contact">
+                    @if (!string.IsNullOrEmpty(Profile.City) || !string.IsNullOrEmpty(Profile.Country))
+                    {
+                        <span class="admin-hero-contact-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            @string.Join(", ", new[] { Profile.City, Profile.Country }.Where(s => !string.IsNullOrEmpty(s)))
+                        </span>
+                    }
+                    <span class="admin-hero-contact-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        @Profile.Email
+                    </span>
+                    @if (!string.IsNullOrEmpty(Profile.Phone))
+                    {
+                        <span class="admin-hero-contact-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            @Profile.Phone
+                        </span>
+                    }
+                </div>
+                <div class="admin-hero-chips">
+                    @if (Profile.IsActive)
+                    {
+                        <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.active")</span>
+                    }
+                    else
+                    {
+                        <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.inactive")</span>
+                    }
+                    @if (Profile.WizardCompleted == true)
+                    {
+                        <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.dashboard.evaluated")</span>
+                    }
+                    else
+                    {
+                        <span class="admin-result-badge admin-result-badge--warning">@Lang.T("admin.dashboard.pending")</span>
+                    }
                 </div>
             </div>
+            <div class="admin-hero-actions">
+                @if (!string.IsNullOrEmpty(Profile.CvUrl))
+                {
+                    <a href="@Profile.CvUrl" target="_blank" class="admin-pill-btn admin-pill-btn--primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        @Lang.T("admin.profile.downloadCv")
+                    </a>
+                }
+                <a href="mailto:@Profile.Email" class="admin-pill-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    @Lang.T("admin.profile.contact")
+                </a>
+            </div>
+        </div>
+    </div>
 
+    @* === Tabs === *@
+    <div class="admin-tabs">
+        <button class="admin-tab @(ActiveTab == "info" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("info")'>
+            @Lang.T("admin.profile.tabInfo")
+        </button>
+        <button class="admin-tab @(ActiveTab == "vacancies" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("vacancies")'>
+            @Lang.T("admin.profile.tabVacancies")
+        </button>
+    </div>
+
+    @if (ActiveTab == "info")
+    {
+    @* === Bento grid (bloque privado / auditoría) === *@
+    @if (Profile.CandidateId.HasValue)
+    {
+    <div class="bento-grid admin-profile-bento">
+            @* Tarjeta: Scores del candidato *@
+            <div class="bento-card bento-card--medium">
+                <div class="bento-card-header admin-bento-header">
+                    <span class="bento-card-title">@Lang.T("admin.score.title")</span>
+                    <button class="admin-pill-btn admin-pill-btn--sm" @onclick="RecalculateScoreAsync" disabled="@IsScoreBusy">
+                        @Lang.T("admin.score.recalculate")
+                    </button>
+                </div>
+                @if (Score != null)
+                {
+                    <div class="admin-bento-scores">
+                        <div class="admin-score-radial" style="--radial-pct: @Score.OverallScore; --radial-color: @ScoreColor(Score.OverallScore);" @onclick="OpenScoreModal" title="@Lang.T("admin.recruitment.scoreSummary")">
+                            <div class="admin-score-radial-inner">
+                                <span class="admin-score-radial-value">@Score.OverallScore</span>
+                                <span class="admin-score-radial-max">/100</span>
+                            </div>
+                        </div>
+                        <div class="admin-score-bars">
+                            <div class="admin-score-bar-row">
+                                <div class="admin-score-bar-label"><span>@Lang.T("admin.score.stability")</span><span>@Score.StabilityIndex%</span></div>
+                                <div class="admin-score-bar-track"><div class="admin-score-bar-fill" style="width: @Score.StabilityIndex%; background: @ScoreColor(Score.StabilityIndex);"></div></div>
+                            </div>
+                            <div class="admin-score-bar-row">
+                                <div class="admin-score-bar-label"><span>@Lang.T("admin.score.reliability")</span><span>@Score.ReliabilityIndex%</span></div>
+                                <div class="admin-score-bar-track"><div class="admin-score-bar-fill" style="width: @Score.ReliabilityIndex%; background: @ScoreColor(Score.ReliabilityIndex);"></div></div>
+                            </div>
+                            <div class="admin-score-bar-row">
+                                <div class="admin-score-bar-label"><span>@Lang.T("admin.score.evidence")</span><span>@Score.EvidenceIndex%</span></div>
+                                <div class="admin-score-bar-track"><div class="admin-score-bar-fill" style="width: @Score.EvidenceIndex%; background: @ScoreColor(Score.EvidenceIndex);"></div></div>
+                            </div>
+                            <div class="admin-score-bar-row">
+                                <div class="admin-score-bar-label"><span>@Lang.T("admin.score.compatibility")</span><span>@Score.CompatibilityIndex%</span></div>
+                                <div class="admin-score-bar-track"><div class="admin-score-bar-fill" style="width: @Score.CompatibilityIndex%; background: @ScoreColor(Score.CompatibilityIndex);"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="admin-bento-empty">@Lang.T("admin.common.loading")</p>
+                }
+            </div>
+
+            @* Tarjeta: Datos verificados *@
+            <div class="bento-card bento-card--medium">
+                <div class="bento-card-header admin-bento-header">
+                    <span class="bento-card-title">@Lang.T("admin.profile.verifiedData")</span>
+                    @if (VerificationStatus != null)
+                    {
+                        <span class="admin-result-badge @VerifiedTdBadgeClass(VerificationStatus.Status)">@VerifiedTdStatusLabel(VerificationStatus.Status)</span>
+                    }
+                </div>
+                @if (VerificationStatus != null && !VerificationStatus.IsVerifiedTD)
+                {
+                    <p class="admin-bento-hint">
+                        @Lang.T("admin.score.verifiedTdRequirements"):
+                        @Lang.T("admin.score.verifiedTdChecks") @VerificationStatus.GatingChecksVerified/4 ·
+                        @Lang.T("admin.score.verifiedTdScore") @VerificationStatus.OverallScore/70 ·
+                        @(VerificationStatus.HasVerifiedReference ? Lang.T("admin.score.verifiedTdReferenceYes") : Lang.T("admin.score.verifiedTdReferenceNo"))
+                    </p>
+                }
+                @if (Verifications.Count == 0)
+                {
+                    <p class="admin-bento-empty">@Lang.T("admin.score.noVerifications")</p>
+                }
+                else
+                {
+                    <div class="admin-verify-list">
+                        @foreach (var v in Verifications)
+                        {
+                            <div class="admin-verify-row">
+                                <span class="admin-verify-name">@VerificationTypeLabel(v.Type)</span>
+                                <div class="admin-verify-actions">
+                                    <span class="admin-result-badge @VerificationBadgeClass(v.Status)">@VerificationStatusLabel(v.Status)</span>
+                                    <button class="admin-icon-btn admin-icon-btn--success" title="@Lang.T("admin.score.approve")" @onclick="() => ApproveVerification(v.Type)" disabled="@IsScoreBusy">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12" /></svg>
+                                    </button>
+                                    <button class="admin-icon-btn admin-icon-btn--danger" title="@Lang.T("admin.score.reject")" @onclick="() => RejectVerification(v.Type)" disabled="@IsScoreBusy">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+    </div>
+    }
+
+    <div class="admin-candidate-profile-split">
+        @* === Left panel 35% — Personal data === *@
+        <div class="admin-candidate-profile-left">
             <div class="admin-profile-section">
                 <h3 class="admin-profile-section-title">@Lang.T("admin.profile.contactInfo")</h3>
                 <div class="admin-profile-info-list">
@@ -216,100 +332,10 @@ else
                 </div>
             </div>
 
-            @if (Recruitment != null && Recruitment.Dismissal == null && Recruitment.CurrentStage > 0)
-            {
-                <div class="admin-profile-section" @onclick="OpenScoreModal">
-                    <div class="admin-profile-score-circle @(OverallScore >= 70 ? "admin-profile-score-circle--pass" : "admin-profile-score-circle--fail")">
-                        <span class="admin-profile-score-circle-value">@OverallScore.ToString("0.#")</span>
-                        <span class="admin-profile-score-circle-max">/100</span>
-                    </div>
-                    <span class="admin-profile-score-circle-label">@Lang.T("admin.recruitment.overallScore")</span>
-                </div>
-            }
         </div>
 
         @* === Right panel 65% — Recruitment data === *@
         <div class="admin-candidate-profile-right">
-            @if (Profile.CandidateId.HasValue)
-            {
-                <div class="admin-profile-section">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3 class="admin-profile-section-title">@Lang.T("admin.score.title")</h3>
-                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="RecalculateScoreAsync" disabled="@IsScoreBusy">
-                            @Lang.T("admin.score.recalculate")
-                        </button>
-                    </div>
-                    @if (Score != null)
-                    {
-                        <div class="admin-profile-info-grid">
-                            <div class="admin-profile-info-item">
-                                <span class="admin-profile-info-label">@Lang.T("admin.score.overall")</span>
-                                <span class="admin-profile-info-value"><strong>@Score.OverallScore</strong></span>
-                            </div>
-                            <div class="admin-profile-info-item">
-                                <span class="admin-profile-info-label">@Lang.T("admin.score.stability")</span>
-                                <span class="admin-profile-info-value">@Score.StabilityIndex</span>
-                            </div>
-                            <div class="admin-profile-info-item">
-                                <span class="admin-profile-info-label">@Lang.T("admin.score.reliability")</span>
-                                <span class="admin-profile-info-value">@Score.ReliabilityIndex</span>
-                            </div>
-                            <div class="admin-profile-info-item">
-                                <span class="admin-profile-info-label">@Lang.T("admin.score.evidence")</span>
-                                <span class="admin-profile-info-value">@Score.EvidenceIndex</span>
-                            </div>
-                            <div class="admin-profile-info-item">
-                                <span class="admin-profile-info-label">@Lang.T("admin.score.compatibility")</span>
-                                <span class="admin-profile-info-value">@Score.CompatibilityIndex</span>
-                            </div>
-                        </div>
-                    }
-                </div>
-
-                <div class="admin-profile-section">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 0.5rem;">
-                        <h3 class="admin-profile-section-title" style="margin:0;">@Lang.T("admin.score.verifications")</h3>
-                        @if (VerificationStatus != null)
-                        {
-                            <span class="admin-result-badge @VerifiedTdBadgeClass(VerificationStatus.Status)">@VerifiedTdStatusLabel(VerificationStatus.Status)</span>
-                        }
-                    </div>
-                    @if (VerificationStatus != null && !VerificationStatus.IsVerifiedTD)
-                    {
-                        <p class="admin-profile-info-value" style="font-size: 0.78rem; color: var(--text-muted); margin: 0.35rem 0 0.75rem;">
-                            @Lang.T("admin.score.verifiedTdRequirements"):
-                            @Lang.T("admin.score.verifiedTdChecks") @VerificationStatus.GatingChecksVerified/4 ·
-                            @Lang.T("admin.score.verifiedTdScore") @VerificationStatus.OverallScore/70 ·
-                            @(VerificationStatus.HasVerifiedReference ? Lang.T("admin.score.verifiedTdReferenceYes") : Lang.T("admin.score.verifiedTdReferenceNo"))
-                        </p>
-                    }
-                    @if (Verifications.Count == 0)
-                    {
-                        <p class="admin-profile-info-value">@Lang.T("admin.score.noVerifications")</p>
-                    }
-                    else
-                    {
-                        <div class="admin-profile-info-list">
-                            @foreach (var v in Verifications)
-                            {
-                                <div class="admin-profile-info-row">
-                                    <span class="admin-profile-info-label">@VerificationTypeLabel(v.Type)</span>
-                                    <div style="display:flex; gap:6px; align-items:center;">
-                                        <span class="admin-result-badge @VerificationBadgeClass(v.Status)">@VerificationStatusLabel(v.Status)</span>
-                                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => ApproveVerification(v.Type)" disabled="@IsScoreBusy">
-                                            @Lang.T("admin.score.approve")
-                                        </button>
-                                        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => RejectVerification(v.Type)" disabled="@IsScoreBusy">
-                                            @Lang.T("admin.score.reject")
-                                        </button>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            }
-
             @if (!string.IsNullOrEmpty(Profile.Summary))
             {
                 <div class="admin-profile-section">
@@ -457,6 +483,81 @@ else
                     </div>
                 </div>
             }
+
+            @* === Pipeline y asignación === *@
+            <div class="bento-card">
+                <div class="bento-card-header admin-bento-header">
+                    <span class="bento-card-title">@Lang.T("admin.profile.pipelineTitle")</span>
+                    @if (Recruitment != null && Recruitment.Dismissal == null)
+                    {
+                        <span class="admin-result-badge admin-result-badge--info">@GetStageName(Recruitment.CurrentStage)</span>
+                    }
+                </div>
+                @if (Recruitment == null)
+                {
+                    <p class="admin-bento-empty">@Lang.T("admin.recruitment.noProcess")</p>
+                    <div class="admin-bento-actions">
+                        <button class="admin-pill-btn admin-pill-btn--primary admin-pill-btn--sm" @onclick="StartInvestigation">
+                            @Lang.T("admin.recruitment.investigate")
+                        </button>
+                        <button class="admin-pill-btn admin-pill-btn--sm" @onclick="StartInvestigation">
+                            @Lang.T("admin.recruitment.assignVacancy")
+                        </button>
+                    </div>
+                }
+                else if (Recruitment.Dismissal != null)
+                {
+                    <span class="admin-result-badge admin-result-badge--danger">@Lang.T("admin.recruitment.dismissed")</span>
+                }
+                else
+                {
+                    <div class="admin-pipeline-stepper-inline admin-pipeline-stepper-inline--compact">
+                        @for (int i = 0; i <= 4; i++)
+                        {
+                            var stageIndex = i;
+                            var stageClass = stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step--done" :
+                                stageIndex == Recruitment.CurrentStage ? "admin-pipeline-step--active" : "";
+                            <div class="admin-pipeline-step @stageClass">
+                                <div class="admin-pipeline-step-circle">
+                                    @if (stageIndex < Recruitment.CurrentStage)
+                                    {
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
+                                    }
+                                    else
+                                    {
+                                        @(stageIndex + 1)
+                                    }
+                                </div>
+                                <span class="admin-pipeline-step-label">@GetStageName(stageIndex)</span>
+                                @if (stageIndex < Recruitment.CurrentStage && stageIndex > 0 && HasStageNotes(stageIndex))
+                                {
+                                    <div class="admin-pipeline-step-note" @onclick="@(() => OpenStageDetail(stageIndex))">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                        </svg>
+                                    </div>
+                                }
+                            </div>
+                            @if (stageIndex < 4)
+                            {
+                                <div class="admin-pipeline-step-line @(stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step-line--done" : "")"></div>
+                            }
+                        }
+                    </div>
+                    <div class="admin-bento-actions">
+                        @if (Recruitment.CurrentStage < 4)
+                        {
+                            <button class="admin-pill-btn admin-pill-btn--primary admin-pill-btn--sm" @onclick="MoveToNextStage">
+                                @Lang.T("admin.recruitment.moveToNext") → @GetStageName(Recruitment.CurrentStage + 1)
+                            </button>
+                        }
+                        <a href="/candidates/pipeline/@UserId" class="admin-pill-btn admin-pill-btn--sm">
+                            @Lang.T("admin.recruitment.detailTitle")
+                        </a>
+                    </div>
+                }
+            </div>
         </div>
 
         @* === Investigation checklist (when in Investigation stage) === *@
@@ -511,6 +612,66 @@ else
             </div>
         }
     </div>
+    }
+    else
+    {
+        @* === Tab: Vacantes === *@
+        <div class="bento-grid admin-profile-bento">
+            @* Card: Vacantes postuladas *@
+            <div class="bento-card bento-card--medium">
+                <div class="bento-card-header admin-bento-header">
+                    <span class="bento-card-title">@Lang.T("admin.profile.appliedVacancies")</span>
+                    <span class="admin-result-badge admin-result-badge--info">@Applications.Count</span>
+                </div>
+                @if (Applications.Count == 0)
+                {
+                    <p class="admin-bento-empty">@Lang.T("admin.profile.noApplications")</p>
+                }
+                else
+                {
+                    <div class="admin-verify-list">
+                        @foreach (var app in Applications)
+                        {
+                            <div class="admin-verify-row">
+                                <div class="admin-vacancy-info">
+                                    <span class="admin-verify-name">@app.VacancyTitle</span>
+                                    <span class="admin-vacancy-meta">@app.CreatedAt.ToString("dd MMM yyyy")</span>
+                                </div>
+                                <span class="admin-result-badge @ApplicationBadgeClass(app.Status)">@ApplicationStatusLabel(app.Status)</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            @* Card: Vacantes recomendadas *@
+            <div class="bento-card bento-card--medium">
+                <div class="bento-card-header admin-bento-header">
+                    <span class="bento-card-title">@Lang.T("admin.profile.recommendedVacancies")</span>
+                    <span class="admin-result-badge admin-result-badge--info">@Matches.Count</span>
+                </div>
+                @if (Matches.Count == 0)
+                {
+                    <p class="admin-bento-empty">@Lang.T("admin.profile.noMatches")</p>
+                }
+                else
+                {
+                    <div class="admin-verify-list">
+                        @foreach (var m in Matches)
+                        {
+                            <div class="admin-verify-row">
+                                <div class="admin-vacancy-info">
+                                    <span class="admin-verify-name">@m.VacancyTitle</span>
+                                    <span class="admin-vacancy-meta">@m.CompanyName@(string.IsNullOrEmpty(m.Location) ? "" : " · " + m.Location)</span>
+                                </div>
+                                <span class="admin-match-pill" style="background: @ScoreColor(m.MatchPercentage);">@m.MatchPercentage%</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
 
     @* === Score summary modal === *@
     @if (ShowScoreModal && Recruitment != null)
@@ -758,6 +919,29 @@ else
     private int StageDetailIndex { get; set; }
     private bool ShowScoreModal { get; set; }
 
+    private string ActiveTab { get; set; } = "info";
+    private List<AdminApplicationDto> Applications { get; set; } = new();
+    private List<CandidateMatchDto> Matches { get; set; } = new();
+
+    private void SwitchTab(string tab) => ActiveTab = tab;
+
+    private string ApplicationStatusLabel(int status) => status switch
+    {
+        0 => Lang.T("admin.applications.statusPending"),
+        1 => Lang.T("admin.applications.statusInReview"),
+        2 => Lang.T("admin.applications.statusAccepted"),
+        3 => Lang.T("admin.applications.statusRejected"),
+        _ => "-"
+    };
+
+    private static string ApplicationBadgeClass(int status) => status switch
+    {
+        2 => "admin-result-badge--success",
+        3 => "admin-result-badge--danger",
+        1 => "admin-result-badge--warning",
+        _ => "admin-result-badge--muted"
+    };
+
     private decimal OverallScore
     {
         get
@@ -802,6 +986,8 @@ else
         if (Profile?.CandidateId != null)
         {
             await LoadScoreDataAsync();
+            Applications = await AuthApi.GetCandidateApplicationsAsync(Profile.CandidateId.Value);
+            Matches = await AuthApi.GetCandidateMatchesAsync(Profile.CandidateId.Value);
         }
     }
 
@@ -882,6 +1068,8 @@ else
         1 => "admin-result-badge--warning",
         _ => "admin-result-badge--muted"
     };
+
+    private static string ScoreColor(int v) => v >= 70 ? "var(--success)" : v >= 40 ? "var(--warning)" : "var(--danger)";
 
     private void GoBack() => Nav.NavigateTo("/candidates");
 

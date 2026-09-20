@@ -151,7 +151,7 @@
                                 {
                                     <a href="/my-applications" class="nav-user-dropdown-item">@Lang.T("common.nav.myApplications")</a>
                                 }
-                                <a href="/profile" class="nav-user-dropdown-item">@Lang.T("common.nav.profile")</a>
+                                <a href="@(IsCompany ? "/company-profile" : "/profile")" class="nav-user-dropdown-item">@Lang.T("common.nav.profile")</a>
                                 <!-- Settings inside dropdown (mobile) -->
                                 <div class="nav-user-dropdown-settings">
                                     <select @onchange="OnThemeChanged" class="nav-select">

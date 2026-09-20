@@ -1,0 +1,95 @@
+@page "/companies"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("common.companies.title")</PageTitle>
+
+<div class="companies-page">
+    <div class="companies-page-container">
+        <div class="companies-page-header">
+            <h1 class="companies-page-title">@Lang.T("common.companies.title")</h1>
+            <p class="companies-page-subtitle">@Lang.T("common.companies.subtitle")</p>
+        </div>
+
+        @if (IsLoading)
+        {
+            <div class="home-companies-grid">
+                <div class="home-skeleton-card"></div>
+                <div class="home-skeleton-card"></div>
+                <div class="home-skeleton-card"></div>
+                <div class="home-skeleton-card"></div>
+            </div>
+        }
+        else if (!CompanyList.Any())
+        {
+            <div class="home-vacancies-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                    <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" />
+                </svg>
+                <p>@Lang.T("common.companies.empty")</p>
+            </div>
+        }
+        else
+        {
+            <div class="home-companies-grid">
+                @foreach (var company in CompanyList)
+                {
+                    <div class="home-company-card @(company.IsFeatured ? "home-company-card--featured" : "")" @onclick='() => Nav.NavigateTo($"/companies/{company.Id}")'>
+                        @if (company.IsFeatured)
+                        {
+                            <span class="home-company-badge">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                @Lang.T("common.home.featuredCompany")
+                            </span>
+                        }
+                        <div class="home-company-logo">
+                            @if (!string.IsNullOrEmpty(company.LogoUrl))
+                            {
+                                <img src="@company.LogoUrl" alt="@company.Name" />
+                            }
+                            else
+                            {
+                                <span>@GetInitials(company.Name)</span>
+                            }
+                        </div>
+                        <div class="home-company-name">@company.Name</div>
+                        @if (!string.IsNullOrEmpty(company.Industry))
+                        {
+                            <div class="home-company-industry">@company.Industry</div>
+                        }
+                        @if (!string.IsNullOrEmpty(company.City) || !string.IsNullOrEmpty(company.Country))
+                        {
+                            <div class="home-company-location">
+                                @company.City@(string.IsNullOrEmpty(company.City) || string.IsNullOrEmpty(company.Country) ? "" : ", ")@company.Country
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<PublicCompanyDto> CompanyList { get; set; } = new();
+    private bool IsLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        CompanyList = await AuthApi.GetPublicCompaniesAsync();
+        IsLoading = false;
+    }
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "E";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1) return parts[0][..1].ToUpper();
+        return (parts[0][..1] + parts[1][..1]).ToUpper();
+    }
+}

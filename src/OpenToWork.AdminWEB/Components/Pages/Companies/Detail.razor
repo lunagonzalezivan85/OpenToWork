@@ -15,41 +15,122 @@
 }
 else
 {
-    <div class="admin-page-header">
-        <div>
-            <h1>@Company.Name</h1>
-            <p class="admin-page-header-subtitle">
-                @if (!string.IsNullOrEmpty(Company.Industry))
-                {
-                    <span class="admin-result-badge admin-result-badge--info" style="margin-right: 0.5rem;">@Company.Industry</span>
-                }
-                <span class="admin-result-badge @(Company.Status == (int)CompanyStatus.Activa ? "admin-result-badge--success" : Company.Status == (int)CompanyStatus.Inactiva ? "admin-result-badge--danger" : "admin-result-badge--warning")">
-                    @GetStatusName(Company.Status)
-                </span>
-                @if (Company.IsFeatured)
-                {
-                    <span class="admin-result-badge" style="background: var(--warning-light); color: var(--warning); margin-left: 0.5rem;">
-                        <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" style="margin-right: 3px; vertical-align: -1px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                        @Lang.T("admin.companies.featured")
-                    </span>
-                }
-            </p>
-        </div>
-        <div class="admin-page-actions">
-            <button class="ot-btn @(Company.IsFeatured ? "ot-btn--outline" : "ot-btn--primary") ot-btn--small" disabled="@IsTogglingFeatured" @onclick="ToggleFeatured" style="@(Company.IsFeatured ? "border-color: var(--warning); color: var(--warning);" : "")">
-                <svg viewBox="0 0 24 24" fill="@(Company.IsFeatured ? "currentColor" : "none")" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px; vertical-align: -2px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+    @* === Barra superior === *@
+    <div class="admin-detail-topbar">
+        <button class="admin-pill-btn" @onclick='() => Nav.NavigateTo("/companies")'>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            @Lang.T("admin.common.back")
+        </button>
+        <div class="admin-detail-topbar-actions">
+            <button class="admin-pill-btn admin-pill-btn--featured" disabled="@IsTogglingFeatured" @onclick="ToggleFeatured">
+                <svg viewBox="0 0 24 24" fill="@(Company.IsFeatured ? "currentColor" : "none")" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                 @(Company.IsFeatured ? Lang.T("admin.companies.unfeature") : Lang.T("admin.companies.feature"))
             </button>
-            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Company.Id}/vacancies"))">@Lang.T("admin.companies.viewVacancies")</button>
-            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsLoadingContract" @onclick="ViewContract">
-                @(IsLoadingContract ? Lang.T("admin.common.loading") : Lang.T("admin.contract.viewDocument"))
-            </button>
-            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Company.Id}/edit"))">@Lang.T("admin.common.edit")</button>
-            <button class="ot-btn ot-btn--danger ot-btn--small" disabled="@IsDeleting" @onclick="DeleteCompany">
-                @(IsDeleting ? Lang.T("admin.common.loading") : Lang.T("admin.companies.delete"))
-            </button>
-            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo("/companies"))">@Lang.T("admin.common.back")</button>
+            <div class="admin-dropdown">
+                <button class="admin-pill-btn" @onclick="ToggleActionsMenu">
+                    @Lang.T("admin.companies.actions")
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                @if (ShowActionsMenu)
+                {
+                    <div class="admin-dropdown-overlay" @onclick="CloseActionsMenu"></div>
+                    <div class="admin-dropdown-menu">
+                        <button class="admin-dropdown-item" @onclick='() => Nav.NavigateTo($"/companies/{Company.Id}/vacancies")'>
+                            @Lang.T("admin.companies.viewVacancies")
+                        </button>
+                        <button class="admin-dropdown-item" disabled="@IsLoadingContract" @onclick="ViewContract">
+                            @(IsLoadingContract ? Lang.T("admin.common.loading") : Lang.T("admin.contract.viewDocument"))
+                        </button>
+                        <button class="admin-dropdown-item" @onclick='() => Nav.NavigateTo($"/companies/{Company.Id}/edit")'>
+                            @Lang.T("admin.common.edit")
+                        </button>
+                        <button class="admin-dropdown-item admin-dropdown-item--danger" disabled="@IsDeleting" @onclick="DeleteCompany">
+                            @(IsDeleting ? Lang.T("admin.common.loading") : Lang.T("admin.companies.delete"))
+                        </button>
+                    </div>
+                }
+            </div>
         </div>
+    </div>
+
+    @* === Hero card === *@
+    <div class="admin-hero-card @(HasSignedContract ? "admin-hero-card--signed" : "")">
+        <div class="admin-hero-body admin-company-hero-body">
+            <div class="admin-company-avatar">
+                @(Company.Name.Length >= 2 ? Company.Name.Substring(0, 2).ToUpper() : Company.Name.ToUpper())
+            </div>
+            <div class="admin-hero-info">
+                <div class="admin-hero-name-row">
+                    <h1 class="admin-hero-name">@(Company.LegalName ?? Company.Name)</h1>
+                    @if (HasSignedContract)
+                    {
+                        <span class="admin-signed-badge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+                            @Lang.T("admin.companies.contractSigned")
+                        </span>
+                    }
+                </div>
+                <div class="admin-hero-chips">
+                    @if (!string.IsNullOrEmpty(Company.Industry))
+                    {
+                        <span class="admin-chip">@Company.Industry</span>
+                    }
+                    <span class="admin-chip @(Company.Status == (int)CompanyStatus.Activa ? "admin-chip--success" : Company.Status == (int)CompanyStatus.Inactiva ? "admin-chip--danger" : "admin-chip--warning")">
+                        @GetStatusName(Company.Status)
+                    </span>
+                    @if (Company.Pipeline != null)
+                    {
+                        <span class="admin-chip admin-chip--info">@GetStageName(Company.Pipeline.CurrentStage)</span>
+                    }
+                    @if (Company.IsFeatured)
+                    {
+                        <span class="admin-chip admin-chip--warning">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                            @Lang.T("admin.companies.featured")
+                        </span>
+                    }
+                </div>
+                <div class="admin-hero-contact">
+                    @if (!string.IsNullOrEmpty(Company.Country) || !string.IsNullOrEmpty(Company.City))
+                    {
+                        <span class="admin-hero-contact-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            @Company.City@(string.IsNullOrEmpty(Company.City) || string.IsNullOrEmpty(Company.Country) ? "" : ", ")@Company.Country
+                        </span>
+                    }
+                    @if (!string.IsNullOrEmpty(Company.Pipeline?.AssignedToName))
+                    {
+                        <span class="admin-hero-contact-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            @Company.Pipeline.AssignedToName
+                        </span>
+                    }
+                    @if (!string.IsNullOrEmpty(Company.ContactPhone))
+                    {
+                        <span class="admin-hero-contact-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            @Company.ContactPhone
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+        @if (Company.Pipeline != null)
+        {
+            <div class="admin-hero-pipeline">
+                <div class="admin-hero-pipeline-row">
+                    <span class="admin-hero-pipeline-stage">@GetStageName(Company.Pipeline.CurrentStage)</span>
+                    <span class="admin-hero-pipeline-next">@NextStepLabel</span>
+                    <span class="admin-hero-pipeline-pct">@PipelineProgress%</span>
+                </div>
+                <div class="admin-hero-progress">
+                    <div class="admin-hero-progress-fill" style="width: @(PipelineProgress)%"></div>
+                </div>
+                <a href="/companies/pipeline/@Company.Pipeline.Id" class="admin-hero-pipeline-link">
+                    @Lang.T("admin.companies.viewPipeline") →
+                </a>
+            </div>
+        }
     </div>
 
     <div class="admin-users-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 1.5rem;">
@@ -137,37 +218,7 @@ else
         </div>
     </div>
 
-    @if (Company.Pipeline != null)
-    {
-        <div class="admin-user-card" style="cursor: default;">
-            <div class="admin-user-card-header">
-                <div class="admin-user-card-avatar" style="background: #E8F1FF; color: #0066FF;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="6" height="18" rx="1" /><rect x="9" y="3" width="6" height="12" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" /></svg>
-                </div>
-                <div class="admin-user-card-info">
-                    <div class="admin-user-card-name">@Lang.T("admin.companies.pipelineInfo")</div>
-                    <div class="admin-user-card-email">@(Company.Pipeline.AssignedToName ?? Lang.T("admin.companies.unassigned"))</div>
-                </div>
-                <div class="admin-user-card-status admin-user-card-status--active">
-                    @GetStageName(Company.Pipeline.CurrentStage)
-                </div>
-            </div>
-            <div class="admin-user-card-body" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
-                @if (!string.IsNullOrEmpty(Company.Pipeline.Notes))
-                {
-                    <div style="padding: 0.5rem 0.75rem; background: #F1F5F9; border-radius: 10px; font-size: 0.85rem; color: #3A506B;">
-                        @Company.Pipeline.Notes
-                    </div>
-                }
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem;">
-                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/pipeline/{Company.Pipeline.Id}"))">
-                        @Lang.T("admin.companies.viewPipeline")
-                    </button>
-                </div>
-            </div>
-        </div>
-    }
-    else
+    @if (Company.Pipeline == null)
     {
         <div class="admin-user-card" style="cursor: default; border: 2px dashed #E8F1FF;">
             <div style="text-align: center; padding: 1.5rem 1rem;">
@@ -205,13 +256,40 @@ else
     private bool IsDeleting = false;
     private bool IsLoadingContract = false;
     private bool IsTogglingFeatured = false;
+    private bool ShowActionsMenu = false;
+    private AdminVacancyContractDto? Contract;
+
+    private bool HasSignedContract => Contract?.Status == (int)ContractStatus.Accepted;
+
+    private int PipelineProgress => Company?.Pipeline == null ? 0
+        : Company.Pipeline.CurrentStage == (int)CompanyPipelineStage.CerradoPerdido ? 0
+        : Math.Min(Company.Pipeline.CurrentStage, (int)CompanyPipelineStage.CerradoGanado) * 20;
+
+    private string NextStepLabel
+    {
+        get
+        {
+            if (Company?.Pipeline == null) return "";
+            var stage = Company.Pipeline.CurrentStage;
+            if (stage == (int)CompanyPipelineStage.CerradoGanado) return Lang.T("admin.companies.pipelineComplete");
+            if (stage == (int)CompanyPipelineStage.CerradoPerdido) return Lang.T("admin.companies.pipelineLost");
+            return $"{Lang.T("admin.companies.missingNext")} {GetStageName(stage + 1)}";
+        }
+    }
+
+    private void ToggleActionsMenu() => ShowActionsMenu = !ShowActionsMenu;
+    private void CloseActionsMenu() => ShowActionsMenu = false;
 
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
         if (Guid.TryParse(CompanyId, out var id))
+        {
             Company = await AuthApi.GetCompanyAsync(id);
+            if (Company != null)
+                Contract = await AuthApi.GetContractByCompanyAsync(Company.Id);
+        }
         AdminUsers = await AuthApi.GetUsersAsync(role: (int)UserRole.Admin);
         SelectedUserId = AdminUsers.FirstOrDefault()?.Id.ToString() ?? "";
     }

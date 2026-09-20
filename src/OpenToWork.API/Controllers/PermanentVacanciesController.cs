@@ -49,6 +49,7 @@ public class PermanentVacanciesController : ControllerBase
     }
 
     [HttpGet("company/{companyId}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetByCompany(Guid companyId)
     {
         var result = await _vacancyService.GetVacanciesByCompanyAsync(companyId);

@@ -117,7 +117,23 @@
         "noVacancies": "No se encontraron vacantes",
         "statsVacancies": "Vacantes",
         "statsCompanies": "Empresas",
-        "statsFree": "Postulación Gratuita"
+        "statsFree": "Postulación Gratuita",
+        "trustedCompanies": "Empresas que confían en nosotros",
+        "featuredCompany": "Destacada",
+        "viewAllCompanies": "Ver todas las empresas"
+    },
+    "companies": {
+        "title": "Empresas",
+        "subtitle": "Descubre las empresas que confían en nosotros",
+        "empty": "No hay empresas disponibles",
+        "notFound": "Empresa no encontrada",
+        "backToList": "Volver a empresas",
+        "verified": "Empresa verificada",
+        "activeVacancies": "vacantes activas",
+        "website": "Sitio web",
+        "about": "Sobre la empresa",
+        "vacancies": "Vacantes",
+        "noVacancies": "Esta empresa no tiene vacantes activas"
     },
     "footer": {
         "menu": "Menú",

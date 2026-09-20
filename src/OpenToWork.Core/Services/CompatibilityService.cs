@@ -293,4 +293,29 @@ public class CompatibilityService : ICompatibilityService
 
     private static string SerializeWeights((double skills, double experience, double location) weights)
         => JsonSerializer.Serialize(new { skills = weights.skills, experience = weights.experience, location = weights.location });
+
+    public async Task<List<CandidateMatchDto>> GetMatchesByCandidateAsync(Guid candidateId, int? limit = null)
+    {
+        var take = limit is > 0 ? limit.Value : DefaultShortlistLimit;
+
+        return await _context.PT_JobMatchScores
+            .Where(m => m.PT_CandidateId == candidateId && !m.IsDeleted && !m.Vacancy.IsDeleted)
+            .Include(m => m.Vacancy)
+                .ThenInclude(v => v.Company)
+            .OrderByDescending(m => m.MatchPercentage)
+            .Take(take)
+            .Select(m => new CandidateMatchDto
+            {
+                VacancyId = m.PT_VacancyId,
+                VacancyTitle = m.Vacancy.Title,
+                CompanyName = m.Vacancy.Company.Name,
+                Location = m.Vacancy.Location,
+                MatchPercentage = m.MatchPercentage,
+                SkillsMatch = m.SkillsMatch,
+                ExperienceMatch = m.ExperienceMatch,
+                LocationMatch = m.LocationMatch,
+                CalculatedAt = m.CalculatedAt
+            })
+            .ToListAsync();
+    }
 }

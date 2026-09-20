@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICandidateService, CandidateService>();
         services.AddScoped<IVacancyService, VacancyService>();
         services.AddScoped<IPermanentVacancyService, PermanentVacancyService>();
+        services.AddScoped<ICompanyService, CompanyService>();
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IAlertService, AlertService>();
@@ -28,6 +29,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReferenceService, ReferenceService>();
         services.AddScoped<ISkillTestService, SkillTestService>();
         services.AddScoped<IVerificationStatusService, VerificationStatusService>();
+        services.AddScoped<IVerificationRequestService, VerificationRequestService>();
         services.AddScoped<ICandidateSearchService, CandidateSearchService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IDeliveryService, DeliveryService>();

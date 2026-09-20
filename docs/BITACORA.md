@@ -206,3 +206,79 @@ Nueva seccion de cartera comercial (`/portfolio`) que muestra las empresas asign
 | `Portfolio.razor` | Vista de cartera comercial con grid y modal asignacion |
 | `PortfolioDetail.razor` | Detalle de cartera por comercial |
 | `Payments.razor` | Vista centralizada de tramos de pago |
+
+---
+
+## Sesión: 20 Septiembre 2026
+
+### IMPORTANTE - Nota sobre Migraciones
+
+> **RECUERDA SIEMPRE:** Antes de ejecutar el proyecto después de un pull o merge, aplica las migraciones de Entity Framework Core — esta sesión agregó la tabla `PT_VerificationRequests`.
+>
+> ```bash
+> dotnet ef database update -p src/OpenToWork.Models -s src/OpenToWork.Models
+> ```
+>
+> Migraciones nuevas en esta sesión:
+> - `VerificationRequests` - Tabla `PT_VerificationRequests` (solicitudes de verificación de identidad del candidato)
+
+### IMPORTANTE - Datos de prueba
+
+> Si la base de datos no tiene candidatos/empresas, usa las credenciales de `docs/credenciales-ejemplo.md` (seed `docs/seed-hosteleria.sql`):
+> - **Candidatos**: `ana.martinez@gmail.com`, `luis.fernandez@hotmail.com`, `sofia.torres@outlook.com`, `javier.moreno@outlook.com` — password `Empresa123!`
+> - **Empresas**: `rrhh@hotelsolcaribe.com`, `rrhh@lapaella.com`, `rrhh@cateringdelmar.com` — password `Empresa123!`
+> - **Admin**: `admin@opentowork.com` / `Admin123!`
+
+### Cambios Realizados
+
+#### 1. Wizard de Verificación de Identidad (`/verification-request`)
+- **Flujo completo** según spec legal (España): Paso 0 consentimiento con T&C/RGPD expandible → Paso 1 filtro "¿Nacionalidad española?" → Paso 2 situación administrativa → Ramas:
+  - **Rama 1 (española)**: nombre, DNI con validación de letra de control (módulo 23), caducidad, anverso+reverso, teléfono +34, horario
+  - **Rama 2 (UE/EEE/Suiza)**: nacionalidad (dropdown), NIE (X/Y/Z + 7 dígitos + letra), pasaporte + certificado registro UE
+  - **Rama 3 (TIE)**: nacionalidad, NIE/TIE, tipo de permiso, caducidad, anverso+reverso
+  - **Rama 4 (sin permiso)**: pantalla informativa Ley Orgánica 4/2000 + solo datos de contacto (minimización RGPD)
+  - **Éxito**: check verde + referencia `#TD-XXXXXXXX`
+- **Backend**: entidad `PTVerificationRequest` (con traza de consentimiento: IP, fecha, versión de términos), `VerificationRequestService`, `VerificationRequestsController` (`POST /api/verificationrequests`, `GET /api/verificationrequests/me`)
+- **Uploads**: `InputFile` → base64 → API guarda en `uploads/verification/{id}/` (jpg/png/webp/pdf, máx 5MB)
+- **DTOs**: `SubmitVerificationRequestDto`, `VerificationDocumentDto`, `VerificationRequestResultDto`
+- Si el candidato ya tiene solicitud pendiente/en revisión, el wizard muestra su referencia directamente
+
+#### 2. Dashboard candidato (`/dashboard`)
+- Avatar y nombre clickeables → `/profile` (eliminado botón "Ver perfil")
+- Botón **"Solicitar verificación"** → `/verification-request`
+- Botón **"Mejorar plan"** → `/plans`
+- i18n: `dashboard.actions.requestVerification` + `dashboard.actions.upgradePlan` (es/en)
+
+#### 3. Perfil de empresa (`/company-profile`)
+- **API**: `GET/PUT /api/companies/me` + DTOs `MyCompanyProfileDto`/`UpdateMyCompanyProfileDto` + `CompanyService.GetMyCompanyAsync`/`UpdateMyCompanyAsync`
+- **Página editable** con hero: logo grande, nombre, badge "Empresa verificada" prominente, chips de industria/ubicación, link a perfil público
+- **Fix**: `/profile` redirigía empresas al login (API devolvía null) — ahora `MainLayout` linkea a `/company-profile` para rol empresa y `Profile.razor` redirige empresas
+
+#### 4. Dashboard empresa (`/company-dashboard`)
+- Botón **"Mejorar plan"** → `/plans`
+- **Página `/plans`**: 3 tiers (Gratis, Pro, Premium) con estilos propios
+
+#### 5. Empresas públicas
+- `/companies` (listado) y `/companies/{id}` (detalle con vacantes activas)
+
+#### 6. Modal de reconexión Blazor rediseñado
+- Pulso blanco centrado + "Reconectando..." sobre backdrop oscuro con blur (reemplaza template default en inglés)
+- Cards en español para estados failed/paused/resume-failed
+- **Nota técnica**: los estilos están en `base.css` (no en `ReconnectModal.razor.css`) porque `App.razor` no enlaza el bundle de CSS isolation `OpenToWork.WEB.styles.css`
+
+### Archivos Nuevos
+
+| Archivo | Descripción |
+|---------|-------------|
+| `PTVerificationRequest.cs` | Entidad solicitud de verificación |
+| `VerificationRequestDtos.cs` | DTOs submit/documento/resultado |
+| `IVerificationRequestService.cs` + `VerificationRequestService.cs` | Lógica de solicitudes + guardado de docs |
+| `VerificationRequestsController.cs` | API endpoints de verificación |
+| `VerificationRequest.razor` | Wizard de verificación (6 pasos/ramas) |
+| `CompanyProfile.razor` | Perfil de empresa editable con hero |
+| `CompaniesController.cs` + `ICompanyService.cs` + `CompanyService.cs` | API/servicio de empresas |
+| `Plans.razor` | Página de planes |
+| `Companies.razor` + `CompanyDetail.razor` | Empresas públicas |
+| `20260920231100_VerificationRequests.cs` | Migración (limpiada: sin churn de seeds) |
+
+> **Nota**: el commit también incluye cambios pendientes de AdminAPI/AdminWEB de la sesión anterior (perfil de candidato admin, detalle de empresa, etc.).

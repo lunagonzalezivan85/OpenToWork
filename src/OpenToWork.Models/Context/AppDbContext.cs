@@ -37,6 +37,7 @@ public class AppDbContext : DbContext
     public DbSet<PTCandidateScore> PT_CandidateScores => Set<PTCandidateScore>();
     public DbSet<PTJobMatchScore> PT_JobMatchScores => Set<PTJobMatchScore>();
     public DbSet<PTVerification> PT_Verifications => Set<PTVerification>();
+    public DbSet<PTVerificationRequest> PT_VerificationRequests => Set<PTVerificationRequest>();
     public DbSet<PTCandidateReference> PT_CandidateReferences => Set<PTCandidateReference>();
     public DbSet<PTSkillTest> PT_SkillTests => Set<PTSkillTest>();
     public DbSet<PTCandidateTestResult> PT_CandidateTestResults => Set<PTCandidateTestResult>();
@@ -492,6 +493,15 @@ public class AppDbContext : DbContext
             e.ToTable("PT_Verifications");
             e.HasIndex(v => new { v.PT_CandidateId, v.Type, v.IsDeleted }).IsUnique();
             e.HasIndex(v => new { v.Status, v.IsDeleted });
+        });
+
+        modelBuilder.Entity<PTVerificationRequest>(e =>
+        {
+            e.ToTable("PT_VerificationRequests");
+            e.HasIndex(r => r.ReferenceNumber).IsUnique();
+            e.HasIndex(r => new { r.PT_CandidateId, r.IsDeleted });
+            e.HasIndex(r => new { r.Status, r.IsDeleted });
+            e.Property(r => r.Status).HasDefaultValue(0);
         });
 
         modelBuilder.Entity<PTCandidateReference>(e =>

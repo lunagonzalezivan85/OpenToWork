@@ -28,7 +28,9 @@
         "recordVideo": "Improve presentation",
         "recordVideoDesc": "Record a presentation video",
         "findJob": "Find your next job",
-        "findJobDesc": "Explore vacancies that match you"
+        "findJobDesc": "Explore vacancies that match you",
+        "requestVerification": "Request verification",
+        "upgradePlan": "Upgrade plan"
     },
     "wizardPrompt": {
         "title": "Complete your profile",

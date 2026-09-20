@@ -1,157 +1,207 @@
-.components-reconnect-first-attempt-visible,
-.components-reconnect-repeated-attempt-visible,
-.components-reconnect-failed-visible,
-.components-pause-visible,
-.components-resume-failed-visible,
-.components-rejoining-animation {
-    display: none;
-}
-
-#components-reconnect-modal.components-reconnect-show .components-reconnect-first-attempt-visible,
-#components-reconnect-modal.components-reconnect-show .components-rejoining-animation,
-#components-reconnect-modal.components-reconnect-paused .components-pause-visible,
-#components-reconnect-modal.components-reconnect-resume-failed .components-resume-failed-visible,
-#components-reconnect-modal.components-reconnect-retrying,
-#components-reconnect-modal.components-reconnect-retrying .components-reconnect-repeated-attempt-visible,
-#components-reconnect-modal.components-reconnect-retrying .components-rejoining-animation,
-#components-reconnect-modal.components-reconnect-failed,
-#components-reconnect-modal.components-reconnect-failed .components-reconnect-failed-visible {
-    display: block;
-}
-
+/* NOTA: Los estilos de este modal viven en wwwroot/css/base.css.
+   Este archivo scoped no se aplica porque App.razor no enlaza
+   OpenToWork.WEB.styles.css (bundle de CSS isolation). */
 
 #components-reconnect-modal {
-    background-color: white;
-    width: 20rem;
-    margin: 20vh auto;
-    padding: 2rem;
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+    padding: 0;
     border: 0;
-    border-radius: 0.5rem;
-    box-shadow: 0 3px 6px 2px rgba(0, 0, 0, 0.3);
-    opacity: 0;
-    transition: display 0.5s allow-discrete, overlay 0.5s allow-discrete;
-    animation: components-reconnect-modal-fadeOutOpacity 0.5s both;
-    &[open]
-
-{
-    animation: components-reconnect-modal-slideUp 1.5s cubic-bezier(.05, .89, .25, 1.02) 0.3s, components-reconnect-modal-fadeInOpacity 0.5s ease-in-out 0.3s;
-    animation-fill-mode: both;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
 }
 
+#components-reconnect-modal[open] {
+    animation: reconnect-fade-in 0.3s ease-out;
 }
 
 #components-reconnect-modal::backdrop {
-    background-color: rgba(0, 0, 0, 0.4);
-    animation: components-reconnect-modal-fadeInOpacity 0.5s ease-in-out;
-    opacity: 1;
-}
-
-@keyframes components-reconnect-modal-slideUp {
-    0% {
-        transform: translateY(30px) scale(0.95);
-    }
-
-    100% {
-        transform: translateY(0);
-    }
-}
-
-@keyframes components-reconnect-modal-fadeInOpacity {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
-@keyframes components-reconnect-modal-fadeOutOpacity {
-    0% {
-        opacity: 1;
-    }
-
-    100% {
-        opacity: 0;
-    }
+    background: rgba(10, 15, 25, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .components-reconnect-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: 1.25rem;
+    padding: 2rem;
 }
 
-#components-reconnect-modal p {
-    margin: 0;
-    text-align: center;
-}
-
-#components-reconnect-modal button {
-    border: 0;
-    background-color: #6b9ed2;
-    color: white;
-    padding: 4px 24px;
-    border-radius: 4px;
-}
-
-    #components-reconnect-modal button:hover {
-        background-color: #3b6ea2;
-    }
-
-    #components-reconnect-modal button:active {
-        background-color: #6b9ed2;
-    }
-
-.components-rejoining-animation {
+/* --- Pulso --- */
+.reconnect-pulse {
     position: relative;
-    width: 80px;
-    height: 80px;
+    width: 72px;
+    height: 72px;
 }
 
-    .components-rejoining-animation div {
-        position: absolute;
-        border: 3px solid #0087ff;
-        opacity: 1;
-        border-radius: 50%;
-        animation: components-rejoining-animation 1.5s cubic-bezier(0, 0.2, 0.8, 1) infinite;
-    }
+.reconnect-pulse-ring {
+    position: absolute;
+    inset: 0;
+    border: 3px solid #FFFFFF;
+    border-radius: 50%;
+    opacity: 0;
+    animation: reconnect-pulse-ring 1.8s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+}
 
-        .components-rejoining-animation div:nth-child(2) {
-            animation-delay: -0.5s;
-        }
+.reconnect-pulse-ring:nth-child(2) {
+    animation-delay: 0.9s;
+}
 
-@keyframes components-rejoining-animation {
+.reconnect-pulse-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    background: #FFFFFF;
+    border-radius: 50%;
+    animation: reconnect-pulse-dot 1.8s ease-in-out infinite;
+}
+
+@keyframes reconnect-pulse-ring {
     0% {
-        top: 40px;
-        left: 40px;
-        width: 0;
-        height: 0;
+        transform: scale(0.25);
+        opacity: 0.9;
+    }
+    100% {
+        transform: scale(1);
         opacity: 0;
     }
+}
 
-    4.9% {
-        top: 40px;
-        left: 40px;
-        width: 0;
-        height: 0;
-        opacity: 0;
-    }
-
-    5% {
-        top: 40px;
-        left: 40px;
-        width: 0;
-        height: 0;
+@keyframes reconnect-pulse-dot {
+    0%, 100% {
+        transform: scale(1);
         opacity: 1;
     }
+    50% {
+        transform: scale(0.75);
+        opacity: 0.75;
+    }
+}
 
-    100% {
-        top: 0px;
-        left: 0px;
-        width: 80px;
-        height: 80px;
+/* --- Texto "Reconectando..." --- */
+.reconnect-status {
+    margin: 0;
+    color: #FFFFFF;
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-align: center;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.reconnect-status small {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.85;
+}
+
+.reconnect-dots i {
+    font-style: normal;
+    animation: reconnect-dot-blink 1.4s infinite;
+}
+
+.reconnect-dots i:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.reconnect-dots i:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes reconnect-dot-blink {
+    0%, 60%, 100% {
+        opacity: 0.25;
+    }
+    30% {
+        opacity: 1;
+    }
+}
+
+/* --- Cards de error / pausa --- */
+.reconnect-card {
+    background: var(--card-bg, #FFFFFF);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    min-width: 260px;
+}
+
+.reconnect-card-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 0.75rem;
+    border-radius: 50%;
+    background: var(--accent-light, #E8F0F7);
+    color: var(--accent-primary, #0B4F8A);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reconnect-card-title {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary, #101828);
+}
+
+.reconnect-card-text {
+    margin: 0 0 1.1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #475467);
+}
+
+.reconnect-btn {
+    display: block;
+    margin: 0 auto;
+    border: 0;
+    background: var(--accent-primary, #0B4F8A);
+    color: #FFFFFF;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.55rem 1.6rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.reconnect-btn:hover {
+    background: var(--accent-hover, #093D6C);
+}
+
+@keyframes reconnect-fade-in {
+    from {
         opacity: 0;
     }
+    to {
+        opacity: 1;
+    }
+}
+
+/* === Visibilidad por estado (clases que aplica blazor.web.js) === */
+#components-reconnect-modal .components-reconnect-first-attempt-visible,
+#components-reconnect-modal .components-reconnect-repeated-attempt-visible,
+#components-reconnect-modal .components-reconnect-failed-visible,
+#components-reconnect-modal .components-pause-visible,
+#components-reconnect-modal .components-resume-failed-visible {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-show .components-reconnect-first-attempt-visible,
+#components-reconnect-modal.components-reconnect-retrying .components-reconnect-repeated-attempt-visible,
+#components-reconnect-modal.components-reconnect-failed .components-reconnect-failed-visible,
+#components-reconnect-modal.components-reconnect-paused .components-pause-visible,
+#components-reconnect-modal.components-reconnect-resume-failed .components-resume-failed-visible {
+    display: block;
 }

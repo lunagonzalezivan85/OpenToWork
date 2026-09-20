@@ -15,12 +15,20 @@
             <h1 class="dash-banner-title">Hola, @UserName</h1>
             <p class="dash-banner-role">Portal de Empresa</p>
         </div>
-        <button class="ot-btn ot-btn--outline ot-btn--small dash-banner-btn" @onclick="GoToCreateVacancy">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <path d="M12 5v14M5 12h14" />
-            </svg>
-            Publicar vacante
-        </button>
+        <div class="dash-banner-actions">
+            <button class="ot-btn ot-btn--outline ot-btn--small dash-banner-btn" @onclick="GoToCreateVacancy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Publicar vacante
+            </button>
+            <button class="ot-btn ot-btn--primary ot-btn--small dash-banner-btn dash-banner-btn--premium" @onclick="GoToPlans">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                Mejorar plan
+            </button>
+        </div>
     </div>
 
     <!-- Command IA Bar -->
@@ -335,6 +343,7 @@
     };
 
     private void GoToCreateVacancy() => Nav.NavigateTo("/my-vacancies?action=create");
+    private void GoToPlans() => Nav.NavigateTo("/plans");
     private void GoToMyVacancies() => Nav.NavigateTo("/my-vacancies");
     private void GoToVerifiedApplicants() => Nav.NavigateTo("/verified-applicants");
     private void GoToApplicantProfile(Guid candidateId) => Nav.NavigateTo($"/applicant-profile/{candidateId}");

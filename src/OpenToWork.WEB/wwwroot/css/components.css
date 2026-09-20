@@ -1560,6 +1560,26 @@
     flex-shrink: 0;
 }
 
+/* Avatar y nombre clickeables → perfil */
+.dash-banner-avatar--link {
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.dash-banner-avatar--link:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-md);
+}
+
+.dash-banner-title--link {
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.dash-banner-title--link:hover {
+    color: var(--accent-primary);
+}
+
 .dash-header {
     margin-bottom: var(--space-xl);
 }

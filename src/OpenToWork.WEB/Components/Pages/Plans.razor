@@ -1,0 +1,93 @@
+@page "/plans"
+@using OpenToWork.WEB.Services
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>Planes</PageTitle>
+
+<div class="plans-page">
+    <div class="plans-container">
+        <div class="plans-header">
+            <h1 class="plans-title">Mejora tu plan</h1>
+            <p class="plans-subtitle">Elige el plan que mejor se adapte a las necesidades de tu empresa</p>
+        </div>
+
+        <div class="plans-grid">
+            @* === Gratis === *@
+            <div class="plan-card">
+                <div class="plan-card-header">
+                    <h2 class="plan-name">Gratis</h2>
+                    <div class="plan-price">
+                        <span class="plan-price-amount">$0</span>
+                        <span class="plan-price-period">/mes</span>
+                    </div>
+                    <p class="plan-desc">Para empezar a publicar</p>
+                </div>
+                <ul class="plan-features">
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Hasta 3 vacantes activas</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Postulantes con perfil básico</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Mensajería con candidatos</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Soporte por email</li>
+                </ul>
+                <button class="ot-btn ot-btn--outline ot-btn--full-width" disabled>Tu plan actual</button>
+            </div>
+
+            @* === Pro (recomendado) === *@
+            <div class="plan-card plan-card--featured">
+                <span class="plan-badge">Recomendado</span>
+                <div class="plan-card-header">
+                    <h2 class="plan-name">Pro</h2>
+                    <div class="plan-price">
+                        <span class="plan-price-amount">$49</span>
+                        <span class="plan-price-period">/mes</span>
+                    </div>
+                    <p class="plan-desc">Para empresas en crecimiento</p>
+                </div>
+                <ul class="plan-features">
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Vacantes ilimitadas</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Matching con IA</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Postulantes verificados</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Estadísticas avanzadas</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Soporte prioritario</li>
+                </ul>
+                <button class="ot-btn ot-btn--primary ot-btn--full-width" @onclick="ContactSales">Elegir Pro</button>
+            </div>
+
+            @* === Premium === *@
+            <div class="plan-card">
+                <div class="plan-card-header">
+                    <h2 class="plan-name">Premium</h2>
+                    <div class="plan-price">
+                        <span class="plan-price-amount">$129</span>
+                        <span class="plan-price-period">/mes</span>
+                    </div>
+                    <p class="plan-desc">Para grandes operaciones</p>
+                </div>
+                <ul class="plan-features">
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Todo lo de Pro</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Empresa destacada (borde dorado)</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Logo y perfil personalizado</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Prioridad en búsquedas</li>
+                    <li><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><path d="M20 6L9 17l-5-5"/></svg> Account manager dedicado</li>
+                </ul>
+                <button class="ot-btn ot-btn--secondary ot-btn--full-width" @onclick="ContactSales">Elegir Premium</button>
+            </div>
+        </div>
+
+        <p class="plans-note">¿Necesitas algo a medida? <a href="/about">Contáctanos</a></p>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+    }
+
+    private void ContactSales()
+    {
+        // Placeholder: flujo de upgrade pendiente de integración de pagos.
+        Nav.NavigateTo("/about");
+    }
+}
