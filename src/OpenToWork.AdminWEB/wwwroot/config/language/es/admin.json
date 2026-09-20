@@ -18,6 +18,7 @@
     "settings": "Configuración",
     "companyProfile": "Datos de la Empresa",
     "plans": "Planes",
+    "emailSettings": "Notificaciones Email",
     "createUsers": "Crear usuarios",
     "security": "Seguridad",
     "auditLog": "Auditoría",
@@ -1113,5 +1114,26 @@
     "sortOrder": "Orden",
     "isActive": "Estado",
     "deleteError": "No se pudo eliminar el plan. Intenta de nuevo."
+  },
+  "email": {
+    "title": "Notificaciones por Email",
+    "subtitle": "Configuracion SMTP para enviar contratos y notificaciones a empresas. Apagado por defecto hasta que lo configures y actives.",
+    "saved": "Configuracion guardada correctamente.",
+    "sectionServer": "Servidor",
+    "sectionCredentials": "Credenciales y remitente",
+    "sectionTest": "Probar envio",
+    "enabled": "Envio de correos habilitado",
+    "host": "Servidor SMTP",
+    "port": "Puerto",
+    "useSsl": "Usar TLS/SSL",
+    "username": "Usuario",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Dejar en blanco para no cambiarla",
+    "fromAddress": "Correo remitente",
+    "fromName": "Nombre remitente",
+    "testHint": "Guarda la configuracion primero. Luego envia un correo de prueba para confirmar que las credenciales funcionan.",
+    "testRecipient": "Enviar prueba a",
+    "sendTest": "Enviar correo de prueba",
+    "testSuccess": "Correo de prueba enviado correctamente."
   }
 }

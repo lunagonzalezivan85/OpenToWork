@@ -1,0 +1,159 @@
+@page "/settings/email"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+
+<PageTitle>@Lang.T("admin.email.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.email.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.email.subtitle")</p>
+    </div>
+</div>
+
+@if (!IsSuperAdmin)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.staff.notAuthorized")</div>
+    </div>
+}
+else if (IsLoading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else
+{
+    @if (SavedMessage)
+    {
+        <p style="color: var(--success); font-size: 0.85rem;">@Lang.T("admin.email.saved")</p>
+    }
+    @if (Error != null)
+    {
+        <p style="color: var(--danger); font-size: 0.85rem;">@Error</p>
+    }
+
+    <EditForm Model="Form" OnValidSubmit="Save">
+        <div class="admin-chart-grid">
+            <div class="admin-chart-card">
+                <span class="admin-chart-card-title">@Lang.T("admin.email.sectionServer")</span>
+                <label style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: var(--space-sm);">
+                    <input type="checkbox" @bind="Form.Enabled" /> @Lang.T("admin.email.enabled")
+                </label>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.email.host")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.Host" placeholder="smtp.gmail.com" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.email.port")</label>
+                    <InputNumber class="ot-input-field" @bind-Value="Form.Port" />
+                </div>
+                <label style="display: flex; align-items: center; gap: 0.4rem;">
+                    <input type="checkbox" @bind="Form.UseSsl" /> @Lang.T("admin.email.useSsl")
+                </label>
+            </div>
+            <div class="admin-chart-card">
+                <span class="admin-chart-card-title">@Lang.T("admin.email.sectionCredentials")</span>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.email.username")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.Username" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.email.password")</label>
+                    <InputText type="password" class="ot-input-field" @bind-Value="Form.Password" placeholder="@Lang.T("admin.email.passwordPlaceholder")" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.email.fromAddress")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.FromAddress" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.email.fromName")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.FromName" />
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium" style="margin-top: var(--space-md);" disabled="@IsSaving">@Lang.T("admin.common.save")</button>
+    </EditForm>
+
+    <div class="admin-chart-card" style="margin-top: var(--space-md); max-width: 480px;">
+        <span class="admin-chart-card-title">@Lang.T("admin.email.sectionTest")</span>
+        <p class="admin-page-header-subtitle" style="margin: 0 0 var(--space-sm) 0;">@Lang.T("admin.email.testHint")</p>
+        <div class="ot-input-group">
+            <label class="ot-input-label">@Lang.T("admin.email.testRecipient")</label>
+            <input class="ot-input-field" type="email" @bind="TestRecipient" placeholder="tu@correo.com" />
+        </div>
+        <button class="ot-btn ot-btn--outline ot-btn--medium" @onclick="SendTest" disabled="@IsSendingTest">@Lang.T("admin.email.sendTest")</button>
+        @if (TestResult != null)
+        {
+            <p style="font-size: 0.85rem; margin-top: var(--space-sm); color: @(TestSuccess ? "var(--success)" : "var(--danger)");">@TestResult</p>
+        }
+    </div>
+}
+
+@code {
+    private bool IsSuperAdmin;
+    private bool IsLoading = true;
+    private bool IsSaving;
+    private bool IsSendingTest;
+    private bool SavedMessage;
+    private bool TestSuccess;
+    private string? Error;
+    private string? TestResult;
+    private string TestRecipient = string.Empty;
+
+    private SmtpSettingsDto Form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var staffRoleRaw = await LocalStorage.GetItemAsync("otwadmin-staff-role");
+        IsSuperAdmin = int.TryParse(staffRoleRaw, out var role) && role == (int)AdminStaffRole.SuperAdmin;
+
+        if (IsSuperAdmin)
+            await LoadAsync();
+
+        IsLoading = false;
+    }
+
+    private async Task LoadAsync()
+    {
+        Form = await AuthApi.GetSmtpSettingsAsync() ?? new SmtpSettingsDto();
+    }
+
+    private async Task Save()
+    {
+        Error = null;
+        SavedMessage = false;
+        IsSaving = true;
+
+        var (result, error) = await AuthApi.UpdateSmtpSettingsAsync(Form);
+        IsSaving = false;
+
+        if (result == null)
+        {
+            Error = error ?? Lang.T("admin.common.errorGeneric");
+            return;
+        }
+
+        Form = result;
+        SavedMessage = true;
+    }
+
+    private async Task SendTest()
+    {
+        TestResult = null;
+        if (string.IsNullOrWhiteSpace(TestRecipient)) return;
+
+        IsSendingTest = true;
+        var (success, error) = await AuthApi.SendTestEmailAsync(TestRecipient);
+        IsSendingTest = false;
+
+        TestSuccess = success;
+        TestResult = success ? Lang.T("admin.email.testSuccess") : (error ?? Lang.T("admin.common.errorGeneric"));
+    }
+}

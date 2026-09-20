@@ -418,6 +418,39 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    // ===== SMTP / Notificaciones por Email =====
+
+    public async Task<SmtpSettingsDto?> GetSmtpSettingsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/email/settings");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<SmtpSettingsDto>();
+    }
+
+    public async Task<(SmtpSettingsDto? Result, string? Error)> UpdateSmtpSettingsAsync(SmtpSettingsDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync("api/admin/email/settings", dto);
+        return await ReadResultAsync<SmtpSettingsDto>(response);
+    }
+
+    public async Task<(bool Success, string? Error)> SendTestEmailAsync(string toEmail)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/email/test", new SendTestEmailDto { ToEmail = toEmail });
+        if (response.IsSuccessStatusCode) return (true, null);
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorResponse>();
+            return (false, error?.Error ?? "No se pudo enviar el correo de prueba.");
+        }
+        catch
+        {
+            return (false, "No se pudo enviar el correo de prueba.");
+        }
+    }
+
     private static async Task<(T? Result, string? Error)> ReadResultAsync<T>(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

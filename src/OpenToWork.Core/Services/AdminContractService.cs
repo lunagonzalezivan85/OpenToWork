@@ -16,8 +16,9 @@ public class AdminContractService : IAdminContractService
     private readonly IPromoCodeService _promoCodes;
     private readonly IContractPaymentService _payments;
     private readonly ICompanyCrmService _companyCrm;
+    private readonly IEmailService _email;
 
-    public AdminContractService(AppDbContext context, IAuditLogService auditLog, IJobPricingService pricing, IPromoCodeService promoCodes, IContractPaymentService payments, ICompanyCrmService companyCrm)
+    public AdminContractService(AppDbContext context, IAuditLogService auditLog, IJobPricingService pricing, IPromoCodeService promoCodes, IContractPaymentService payments, ICompanyCrmService companyCrm, IEmailService email)
     {
         _context = context;
         _auditLog = auditLog;
@@ -25,6 +26,7 @@ public class AdminContractService : IAdminContractService
         _promoCodes = promoCodes;
         _payments = payments;
         _companyCrm = companyCrm;
+        _email = email;
     }
 
     public async Task<AdminVacancyContractDto?> GetByIdAsync(Guid contractId)
@@ -336,7 +338,10 @@ public class AdminContractService : IAdminContractService
         contract.UpdatedBy = adminId;
     }
 
-    /// <summary>Marca el anexo como enviado a la empresa (Draft -> Sent). Solo desde borrador.</summary>
+    /// <summary>Marca el anexo como enviado a la empresa (Draft -> Sent) y, si SMTP esta
+    /// configurado y habilitado, notifica por correo al contacto de la empresa. El envio de
+    /// correo nunca bloquea el cambio de estado: si falla, queda igual marcado como Sent
+    /// (la fuente de verdad es el estado en BD, no la entrega del correo).</summary>
     public async Task<bool> SendAsync(Guid contractId, Guid adminId, string? ipAddress)
     {
         var contract = await _context.PT_VacancyContracts
@@ -350,7 +355,32 @@ public class AdminContractService : IAdminContractService
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "SendContract", "PT_VacancyContracts", contract.Id,
             $"{{\"contractNumber\":\"{contract.ContractNumber}\"}}", ipAddress);
+
+        await NotifyCompanyContractSentAsync(contract, adminId, ipAddress);
         return true;
+    }
+
+    private async Task NotifyCompanyContractSentAsync(PTVacancyContract contract, Guid adminId, string? ipAddress)
+    {
+        var company = await _context.PT_Companies
+            .FirstOrDefaultAsync(c => c.Id == contract.PT_CompanyId && !c.IsDeleted);
+        if (company == null || string.IsNullOrWhiteSpace(company.ContactEmail))
+            return;
+
+        var subject = $"Contrato de servicio Trato Directo - {contract.ContractNumber}";
+        var feeText = contract.FeeAmount.HasValue ? $"{contract.FeeAmount.Value:0.00} EUR" : "a confirmar";
+        var html = $@"
+            <p>Hola {System.Net.WebUtility.HtmlEncode(company.ContactName ?? company.Name)},</p>
+            <p>El contrato de servicio <strong>{System.Net.WebUtility.HtmlEncode(contract.ContractNumber)}</strong>
+            con <strong>Trato Directo</strong> para <strong>{System.Net.WebUtility.HtmlEncode(company.Name)}</strong>
+            ya esta listo. Importe: <strong>{feeText}</strong>.</p>
+            <p>Tu ejecutivo de cuenta se pondra en contacto para los siguientes pasos.</p>
+            <p>Saludos,<br/>Trato Directo</p>";
+
+        var (success, error) = await _email.SendAsync(company.ContactEmail, company.ContactName, subject, html);
+        await _auditLog.LogAsync(adminId, success ? "ContractEmailSent" : "ContractEmailFailed",
+            "PT_VacancyContracts", contract.Id,
+            success ? null : $"{{\"error\":\"{error?.Replace("\"", "'")}\"}}", ipAddress);
     }
 
     public async Task<bool> DecideAsync(Guid contractId, bool accepted, string? reason, Guid adminId, string? ipAddress)

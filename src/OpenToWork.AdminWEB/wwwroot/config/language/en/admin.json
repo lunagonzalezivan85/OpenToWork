@@ -18,6 +18,7 @@
     "settings": "Settings",
     "companyProfile": "Company Profile",
     "plans": "Plans",
+    "emailSettings": "Email Notifications",
     "createUsers": "Create users",
     "security": "Security",
     "auditLog": "Audit Log",
@@ -1113,5 +1114,26 @@
     "sortOrder": "Order",
     "isActive": "Status",
     "deleteError": "Could not delete the plan. Please try again."
+  },
+  "email": {
+    "title": "Email Notifications",
+    "subtitle": "SMTP configuration to send contracts and notifications to companies. Off by default until you configure and enable it.",
+    "saved": "Settings saved successfully.",
+    "sectionServer": "Server",
+    "sectionCredentials": "Credentials and sender",
+    "sectionTest": "Test sending",
+    "enabled": "Email sending enabled",
+    "host": "SMTP server",
+    "port": "Port",
+    "useSsl": "Use TLS/SSL",
+    "username": "Username",
+    "password": "Password",
+    "passwordPlaceholder": "Leave blank to keep it unchanged",
+    "fromAddress": "From address",
+    "fromName": "From name",
+    "testHint": "Save the settings first. Then send a test email to confirm the credentials work.",
+    "testRecipient": "Send test to",
+    "sendTest": "Send test email",
+    "testSuccess": "Test email sent successfully."
   }
 }

@@ -75,6 +75,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IWarrantyLookupService, WarrantyLookupService>();
         services.AddScoped<IWarrantyReplacementService, WarrantyReplacementService>();
         services.AddScoped<ISystemConfigService, SystemConfigService>();
+        services.AddScoped<IEmailService, EmailService>();
 
         return services;
     }
