@@ -6,15 +6,40 @@
 @inject LocalStorageService LocalStorage
 @inject AdminAuthApiService AuthApi
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>@Lang.T("admin.dashboard.title")</PageTitle>
 
 @if (IsAuthenticated)
 {
-    <div class="admin-page-header">
-        <div>
-            <h1>@Lang.T("admin.dashboard.title")</h1>
-            <p class="admin-page-header-subtitle">@Lang.T("admin.dashboard.welcome")</p>
+    @* === Cabecera conversacional === *@
+    <div class="admin-hero">
+        <h1 class="admin-hero-greeting">@Greeting</h1>
+        <p class="admin-hero-subtitle">@Lang.T("admin.dashboard.welcome")</p>
+
+        <div class="admin-cmd-bar">
+            <span class="admin-cmd-icon">✨</span>
+            <input class="admin-cmd-input"
+                   placeholder="@Lang.T("admin.dashboard.promptPlaceholder")"
+                   @bind="Prompt" @bind:event="oninput"
+                   @onkeydown="OnPromptKeyDown" />
+            <button class="admin-cmd-suggest" @onclick="OpenSuggestions">
+                ✨ @Lang.T("admin.dashboard.aiSuggestions")
+                @if (Insights.Count > 0)
+                {
+                    <span class="admin-cmd-suggest-count">@Insights.Count</span>
+                }
+            </button>
+            <button class="admin-cmd-send" @onclick="SubmitPrompt" aria-label="@Lang.T("admin.dashboard.promptSend")">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+            </button>
+        </div>
+
+        <div class="admin-chip-row">
+            <button class="admin-chip" @onclick="GoPending">@Lang.T("admin.dashboard.chipPendingCandidates")</button>
+            <button class="admin-chip" @onclick="GoToCompanyPipeline">@Lang.T("admin.dashboard.chipStalled")</button>
+            <button class="admin-chip" @onclick="GoToVacancies">@Lang.T("admin.dashboard.chipOpenVacancies")</button>
+            <button class="admin-chip" @onclick="GoToPayments">@Lang.T("admin.dashboard.chipPendingPayments")</button>
         </div>
     </div>
 
@@ -38,40 +63,58 @@
             var bm = BusinessMetrics;
             <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionBusiness")</h2>
             <div class="admin-stat-grid admin-stat-grid--3col" style="margin-bottom: var(--space-lg);">
-                <div class="admin-stat-card admin-stat-card--success admin-clickable" @onclick="GoToPayments">
-                    <span class="admin-stat-label">@Lang.T("admin.dashboard.revenueCollected")</span>
-                    <span class="admin-stat-value">@FormatEur(bm.RevenueCollected)</span>
-                    <span class="admin-stat-detail">@Lang.T("admin.dashboard.revenuePending"): @FormatEur(bm.RevenuePending)</span>
+                <div class="admin-stat-v2 admin-clickable" @onclick="GoToPayments">
+                    <div class="admin-stat-v2-top">
+                        <span class="admin-stat-label">@Lang.T("admin.dashboard.revenueCollected")</span>
+                        <span class="admin-stat-v2-icon admin-stat-v2-icon--emerald">💶</span>
+                    </div>
+                    <span class="admin-stat-v2-value">@FormatEur(bm.RevenueCollected)</span>
+                    <span class="admin-stat-v2-badge">@Lang.T("admin.dashboard.revenuePending"): @FormatEur(bm.RevenuePending)</span>
                 </div>
-                <div class="admin-stat-card admin-stat-card--info admin-clickable" @onclick="GoToCompanyPipeline">
-                    <span class="admin-stat-label">@Lang.T("admin.dashboard.winRate")</span>
-                    <span class="admin-stat-value">@bm.WinRatePercentage.ToString("F0")%</span>
-                    <span class="admin-stat-detail">@bm.DealsWon @Lang.T("admin.dashboard.won") / @bm.DealsLost @Lang.T("admin.dashboard.lost")</span>
+                <div class="admin-stat-v2 admin-clickable" @onclick="GoToCompanyPipeline">
+                    <div class="admin-stat-v2-top">
+                        <span class="admin-stat-label">@Lang.T("admin.dashboard.winRate")</span>
+                        <span class="admin-stat-v2-icon admin-stat-v2-icon--blue">📈</span>
+                    </div>
+                    <span class="admin-stat-v2-value">@bm.WinRatePercentage.ToString("F0")%</span>
+                    <span class="admin-stat-v2-badge">@bm.DealsWon @Lang.T("admin.dashboard.won") / @bm.DealsLost @Lang.T("admin.dashboard.lost")</span>
                 </div>
-                <div class="admin-stat-card admin-clickable" @onclick="GoToVacancies">
-                    <span class="admin-stat-label">@Lang.T("admin.dashboard.timeToHire")</span>
-                    <span class="admin-stat-value">@(bm.AverageTimeToHireDays.HasValue ? bm.AverageTimeToHireDays.Value.ToString("F0") : "-")</span>
-                    <span class="admin-stat-detail">@bm.TimeToHireSampleSize @Lang.T("admin.dashboard.timeToHireDetail")</span>
+                <div class="admin-stat-v2 admin-clickable" @onclick="GoToVacancies">
+                    <div class="admin-stat-v2-top">
+                        <span class="admin-stat-label">@Lang.T("admin.dashboard.timeToHire")</span>
+                        <span class="admin-stat-v2-icon admin-stat-v2-icon--purple">⏱️</span>
+                    </div>
+                    <span class="admin-stat-v2-value">@(bm.AverageTimeToHireDays.HasValue ? bm.AverageTimeToHireDays.Value.ToString("F0") : "-")</span>
+                    <span class="admin-stat-v2-badge">@bm.TimeToHireSampleSize @Lang.T("admin.dashboard.timeToHireDetail")</span>
                 </div>
-                <div class="admin-stat-card admin-stat-card--@(bm.PlacementSuccessRatePercentage >= 90 ? "success" : bm.PlacementSuccessRatePercentage >= 75 ? "warning" : "danger")">
-                    <span class="admin-stat-label">@Lang.T("admin.dashboard.placementSuccessRate")</span>
-                    <span class="admin-stat-value">@bm.PlacementSuccessRatePercentage.ToString("F0")%</span>
-                    <span class="admin-stat-detail">@bm.PlacementsWithWarrantyIssue / @bm.TotalHires @Lang.T("admin.dashboard.placementSuccessDetail")</span>
+                <div class="admin-stat-v2 admin-clickable" @onclick="GoToVacancies">
+                    <div class="admin-stat-v2-top">
+                        <span class="admin-stat-label">@Lang.T("admin.dashboard.placementSuccessRate")</span>
+                        <span class="admin-stat-v2-icon admin-stat-v2-icon--emerald">🎯</span>
+                    </div>
+                    <span class="admin-stat-v2-value">@bm.PlacementSuccessRatePercentage.ToString("F0")%</span>
+                    <span class="admin-stat-v2-badge @(bm.PlacementSuccessRatePercentage >= 90 ? "admin-stat-v2-badge--success" : bm.PlacementSuccessRatePercentage >= 75 ? "admin-stat-v2-badge--warning" : "admin-stat-v2-badge--danger")">@bm.PlacementsWithWarrantyIssue / @bm.TotalHires @Lang.T("admin.dashboard.placementSuccessDetail")</span>
                 </div>
-                <div class="admin-stat-card admin-stat-card--warning admin-clickable" @onclick="GoToCompanyPipeline">
-                    <span class="admin-stat-label">@Lang.T("admin.dashboard.openPipelineValue")</span>
-                    <span class="admin-stat-value">@FormatEur(bm.OpenPipelineValue)</span>
-                    <span class="admin-stat-detail">@bm.OpenContractsCount @Lang.T("admin.dashboard.openContractsDetail")</span>
+                <div class="admin-stat-v2 admin-clickable" @onclick="GoToCompanyPipeline">
+                    <div class="admin-stat-v2-top">
+                        <span class="admin-stat-label">@Lang.T("admin.dashboard.openPipelineValue")</span>
+                        <span class="admin-stat-v2-icon admin-stat-v2-icon--amber">💼</span>
+                    </div>
+                    <span class="admin-stat-v2-value">@FormatEur(bm.OpenPipelineValue)</span>
+                    <span class="admin-stat-v2-badge">@bm.OpenContractsCount @Lang.T("admin.dashboard.openContractsDetail")</span>
                 </div>
-                <div class="admin-stat-card admin-stat-card--danger admin-clickable" @onclick="GoToCompanyPipeline">
-                    <span class="admin-stat-label">@Lang.T("admin.dashboard.stalledCompanies")</span>
-                    <span class="admin-stat-value">@bm.StalledCompaniesCount</span>
-                    <span class="admin-stat-detail">@Lang.T("admin.dashboard.stalledCompaniesDetail")</span>
+                <div class="admin-stat-v2 admin-clickable" @onclick="GoToCompanyPipeline">
+                    <div class="admin-stat-v2-top">
+                        <span class="admin-stat-label">@Lang.T("admin.dashboard.stalledCompanies")</span>
+                        <span class="admin-stat-v2-icon admin-stat-v2-icon--red">⚠️</span>
+                    </div>
+                    <span class="admin-stat-v2-value">@bm.StalledCompaniesCount</span>
+                    <span class="admin-stat-v2-badge @(bm.StalledCompaniesCount > 0 ? "admin-stat-v2-badge--danger" : "admin-stat-v2-badge--success")">@Lang.T("admin.dashboard.stalledCompaniesDetail")</span>
                 </div>
             </div>
         }
 
-        @* === Sección 1: Perfiles *@
+        @* === Sección 1: Perfiles === *@
         <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionProfiles")</h2>
         <div class="admin-chart-grid">
             <!-- Progress: Perfiles evaluados -->
@@ -250,12 +293,57 @@
     {
         <div class="admin-loading">@Lang.T("admin.common.loading")</div>
     }
+
+    @* === Modal: Sugerencias de la IA === *@
+    @if (ShowSuggestions)
+    {
+        <div class="admin-modal-overlay" @onclick="CloseSuggestions">
+            <div class="admin-modal admin-ai-modal" @onclick:stopPropagation="true">
+                <div class="admin-ai-header">
+                    <span class="admin-ai-icon">✨</span>
+                    <span class="admin-modal-title" style="margin-bottom: 0;">@Lang.T("admin.dashboard.aiSuggestions")</span>
+                </div>
+                <div class="admin-ai-list" style="margin-top: var(--space-md);">
+                    @if (Insights.Count == 0)
+                    {
+                        <span class="admin-ai-empty">@Lang.T("admin.dashboard.aiEmpty")</span>
+                    }
+                    @foreach (var insight in Insights)
+                    {
+                        <div class="admin-ai-item">
+                            <span>@insight.Text</span>
+                            <button class="admin-ai-action" @onclick="() => RunInsight(insight)">@insight.ActionLabel</button>
+                        </div>
+                    }
+                </div>
+                <div class="admin-modal-actions" style="margin-top: var(--space-md);">
+                    <button class="admin-ai-action" @onclick="CloseSuggestions">@Lang.T("admin.dashboard.aiClose")</button>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
     private bool IsAuthenticated { get; set; }
     private DashboardMetricsDto? Metrics { get; set; }
     private BusinessMetricsDto? BusinessMetrics { get; set; }
+    private string Prompt { get; set; } = string.Empty;
+    private string? UserName { get; set; }
+    private bool ShowSuggestions { get; set; }
+    private List<AiInsight> Insights { get; set; } = new();
+
+    private string Greeting
+    {
+        get
+        {
+            var hour = DateTime.Now.Hour;
+            var key = hour < 12 ? "admin.dashboard.greetingMorning"
+                    : hour < 19 ? "admin.dashboard.greetingAfternoon"
+                    : "admin.dashboard.greetingEvening";
+            return string.IsNullOrEmpty(UserName) ? Lang.T(key) : $"{Lang.T(key)}, {UserName}";
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -266,7 +354,85 @@
 
         Metrics = await AuthApi.GetMetricsAsync();
         BusinessMetrics = await AuthApi.GetBusinessMetricsAsync();
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var email = authState.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                 ?? authState.User.FindFirst("email")?.Value;
+        if (!string.IsNullOrEmpty(email))
+        {
+            var raw = email.Split('@')[0];
+            UserName = char.ToUpperInvariant(raw[0]) + raw[1..];
+        }
+
+        BuildInsights();
     }
+
+    private void BuildInsights()
+    {
+        Insights.Clear();
+        if (Metrics == null) return;
+
+        if (Metrics.PendingProfiles > 0)
+            Insights.Add(new AiInsight(
+                string.Format(Lang.T("admin.dashboard.insightPendingProfiles"), Metrics.PendingProfiles),
+                Lang.T("admin.dashboard.actionView"), GoPending));
+
+        if (BusinessMetrics != null)
+        {
+            if (BusinessMetrics.StalledCompaniesCount > 0)
+                Insights.Add(new AiInsight(
+                    string.Format(Lang.T("admin.dashboard.insightStalled"), BusinessMetrics.StalledCompaniesCount),
+                    Lang.T("admin.dashboard.actionReview"), GoToCompanyPipeline));
+            if (BusinessMetrics.OpenContractsCount > 0)
+                Insights.Add(new AiInsight(
+                    string.Format(Lang.T("admin.dashboard.insightContracts"), BusinessMetrics.OpenContractsCount),
+                    Lang.T("admin.dashboard.actionView"), GoToCompanyPipeline));
+            if (BusinessMetrics.RevenuePending > 0)
+                Insights.Add(new AiInsight(
+                    string.Format(Lang.T("admin.dashboard.insightRevenue"), FormatEur(BusinessMetrics.RevenuePending)),
+                    Lang.T("admin.dashboard.actionView"), GoToPayments));
+        }
+
+        if (Metrics.DraftVacancies > 0)
+            Insights.Add(new AiInsight(
+                string.Format(Lang.T("admin.dashboard.insightDrafts"), Metrics.DraftVacancies),
+                Lang.T("admin.dashboard.actionReview"), GoToVacancies));
+    }
+
+    private void SubmitPrompt()
+    {
+        var q = Prompt.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(q)) return;
+
+        if (q.Contains("candidat") || q.Contains("perfil") || q.Contains("profile"))
+            GoToResults("candidate");
+        else if (q.Contains("empresa") || q.Contains("compan") || q.Contains("pipeline"))
+            GoToCompanyPipeline();
+        else if (q.Contains("vacant") || q.Contains("vacanc") || q.Contains("job"))
+            GoToVacancies();
+        else if (q.Contains("pago") || q.Contains("payment") || q.Contains("ingreso") || q.Contains("revenue"))
+            GoToPayments();
+        else
+            GoToResults();
+
+        Prompt = string.Empty;
+    }
+
+    private void OnPromptKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") SubmitPrompt();
+    }
+
+    private void OpenSuggestions() => ShowSuggestions = true;
+    private void CloseSuggestions() => ShowSuggestions = false;
+
+    private void RunInsight(AiInsight insight)
+    {
+        ShowSuggestions = false;
+        insight.OnAction();
+    }
+
+    private sealed record AiInsight(string Text, string ActionLabel, Action OnAction);
 
     private string FormatEur(decimal amount) => $"{amount:N2} EUR";
 

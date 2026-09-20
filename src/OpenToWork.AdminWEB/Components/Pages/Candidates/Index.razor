@@ -60,8 +60,27 @@
 </div>
 
 <div class="admin-users-toolbar">
-    <div class="admin-users-search">
-        <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder="@Lang.T("admin.candidates.searchPlaceholder")" />
+    <div class="admin-users-toolbar-row">
+        <div class="admin-users-search">
+            <input type="text" @bind="SearchTerm" @bind:event="oninput" @onkeyup="OnSearchKeyUp" placeholder="@Lang.T("admin.candidates.searchPlaceholder")" />
+        </div>
+        <label class="admin-select-all">
+            <input type="checkbox" @onchange="ToggleSelectAll" checked="@IsAllSelected" />
+            @Lang.T("admin.candidates.selectAll")
+        </label>
+        <div class="admin-sort-controls">
+            <select class="admin-sort-select" @bind="SortColumn" @bind:after="LoadData">
+                <option value="date">@Lang.T("admin.candidates.sortDate")</option>
+                <option value="name">@Lang.T("admin.candidates.sortName")</option>
+                <option value="email">@Lang.T("admin.candidates.sortEmail")</option>
+                <option value="skills">@Lang.T("admin.candidates.sortSkills")</option>
+                <option value="experience">@Lang.T("admin.candidates.sortExperience")</option>
+                <option value="applications">@Lang.T("admin.candidates.sortApplications")</option>
+            </select>
+            <button type="button" class="admin-sort-dir" @onclick="ToggleSortDirection" title="@Lang.T("admin.candidates.sortBy")">
+                @(SortDesc ? "↓" : "↑")
+            </button>
+        </div>
     </div>
 </div>
 
@@ -93,144 +112,118 @@ else if (Result == null || Result.Items.Count == 0)
 }
 else
 {
-    <div class="admin-candidates-table-wrapper">
-        <table class="admin-candidates-table">
-            <thead>
-                <tr>
-                    <th class="col-check">
-                        <input type="checkbox" @onchange="ToggleSelectAll" checked="@IsAllSelected" />
-                    </th>
-                    <th @onclick='() => SortBy("name")' class="sortable">
-                        @Lang.T("admin.candidates.columnName")
-                        @(SortColumn == "name" ? (SortDesc ? " ↓" : " ↑") : "")
-                    </th>
-                    <th @onclick='() => SortBy("email")' class="sortable">
-                        @Lang.T("admin.candidates.columnEmail")
-                        @(SortColumn == "email" ? (SortDesc ? " ↓" : " ↑") : "")
-                    </th>
-                    <th>@Lang.T("admin.candidates.columnTitle")</th>
-                    <th>@Lang.T("admin.candidates.columnStatus")</th>
-                    <th @onclick='() => SortBy("skills")' class="sortable">
-                        @Lang.T("admin.candidates.columnSkills")
-                        @(SortColumn == "skills" ? (SortDesc ? " ↓" : " ↑") : "")
-                    </th>
-                    <th @onclick='() => SortBy("experience")' class="sortable">
-                        @Lang.T("admin.candidates.columnExperience")
-                        @(SortColumn == "experience" ? (SortDesc ? " ↓" : " ↑") : "")
-                    </th>
-                    <th @onclick='() => SortBy("applications")' class="sortable">
-                        @Lang.T("admin.candidates.columnApplications")
-                        @(SortColumn == "applications" ? (SortDesc ? " ↓" : " ↑") : "")
-                    </th>
-                    <th>LinkedIn</th>
-                    <th>Portfolio</th>
-                    <th>CV</th>
-                    <th>@Lang.T("admin.candidates.columnCreated")</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var c in Result.Items)
+    <div class="admin-oneui-list">
+        @foreach (var c in Result.Items)
+        {
+            <div class="admin-oneui-item @(c.IsActive ? "" : "admin-oneui-item--inactive")">
+                <input type="checkbox" class="admin-candidate-check" checked="@SelectedIds.Contains(c.Id)" @onchange="() => ToggleSelect(c.Id)" />
+
+                @if (c.OverallScore.HasValue)
                 {
-                    <tr class="@(c.IsActive ? "" : "row-inactive")">
-                        <td class="col-check">
-                            <input type="checkbox" checked="@SelectedIds.Contains(c.Id)" @onchange="() => ToggleSelect(c.Id)" />
-                        </td>
-                        <td>
-                            <div class="admin-candidate-name" @onclick="() => ViewProfile(c.Id)">
-                                @if (c.OverallScore.HasValue)
-                                {
-                                    <div class="admin-score-circle @(c.OverallScore.Value >= 70 ? "admin-score-circle--high" : c.OverallScore.Value >= 40 ? "admin-score-circle--mid" : "admin-score-circle--low")">
-                                        @c.OverallScore.Value
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="admin-score-circle admin-score-circle--none">—</div>
-                                }
-                                <div class="admin-result-avatar">@(GetInitials(c.FullName))</div>
-                                <div>
-                                    <div class="admin-candidate-fullname">
-                                        @c.FullName
-                                        @if (c.IsVerifiedTD)
-                                        {
-                                            <span class="admin-verified-badge" title="Verificado TD">
-                                                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                                </svg>
-                                            </span>
-                                        }
-                                    </div>
-                                    @if (c.WizardCompleted)
-                                    {
-                                        <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.filterEvaluated")</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.filterPending")</span>
-                                    }
-                                </div>
-                            </div>
-                        </td>
-                        <td>@c.Email</td>
-                        <td>@(c.Title ?? "—")</td>
-                        <td>
-                            @if (c.IsActive)
-                            {
-                                <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.active")</span>
-                            }
-                            else
-                            {
-                                <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.inactive")</span>
-                            }
-                        </td>
-                        <td>
-                            <span class="admin-skill-count">@c.SkillCount</span>
-                            @if (c.TopSkills.Any())
-                            {
-                                <div class="admin-skill-tags">
-                                    @foreach (var skill in c.TopSkills)
-                                    {
-                                        <span class="admin-skill-tag">@skill</span>
-                                    }
-                                </div>
-                            }
-                        </td>
-                        <td>@c.ExperienceCount</td>
-                        <td>@c.ApplicationCount</td>
-                        <td>@(c.HasLinkedIn ? "✓" : "—")</td>
-                        <td>@(c.HasPortfolio ? "✓" : "—")</td>
-                        <td>@(c.HasCV ? "✓" : "—")</td>
-                        <td class="col-date">@c.CreatedAt.ToString("yyyy-MM-dd")</td>
-                        <td>
-                            <div class="admin-row-actions">
-                                @if (ActiveTab == "notStarted")
-                                {
-                                    <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.recruitment.assignCandidate")" @onclick="() => ShowAssignModal(c.Id, c.FullName)">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
-                                        </svg>
-                                    </button>
-                                }
-                                @if (ActiveTab == "inProcess" || ActiveTab == "finished")
-                                {
-                                    <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.recruitment.detailTitle")" @onclick="() => ViewPipeline(c.Id)">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                            <rect x="3" y="3" width="6" height="18" rx="1" /><rect x="9" y="3" width="6" height="12" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" />
-                                        </svg>
-                                    </button>
-                                }
-                                <button class="admin-row-btn" title="@Lang.T("admin.candidates.viewProfile")" @onclick="() => ViewProfile(c.Id)">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                    <div class="admin-score-circle @(c.OverallScore.Value >= 70 ? "admin-score-circle--high" : c.OverallScore.Value >= 40 ? "admin-score-circle--mid" : "admin-score-circle--low")">
+                        @c.OverallScore.Value
+                    </div>
                 }
-            </tbody>
-        </table>
+                else
+                {
+                    <div class="admin-score-circle admin-score-circle--none">—</div>
+                }
+
+                <div class="admin-oneui-avatar">@(GetInitials(c.FullName))</div>
+
+                <div class="admin-oneui-body">
+                    <div class="admin-oneui-title">
+                        <span class="admin-candidate-link" @onclick="() => ViewProfile(c.Id)">@c.FullName</span>
+                        @if (c.IsVerifiedTD)
+                        {
+                            <span class="admin-verified-badge" title="Verificado TD">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                </svg>
+                            </span>
+                        }
+                        @if (c.WizardCompleted)
+                        {
+                            <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.candidates.filterEvaluated")</span>
+                        }
+                        else
+                        {
+                            <span class="admin-result-badge admin-result-badge--muted">@Lang.T("admin.candidates.filterPending")</span>
+                        }
+                        @if (!c.IsActive)
+                        {
+                            <span class="admin-result-badge admin-result-badge--danger">@Lang.T("admin.candidates.inactive")</span>
+                        }
+                    </div>
+                    <div class="admin-oneui-subtitle">
+                        <span>@c.Email</span>
+                        @if (!string.IsNullOrEmpty(c.Title))
+                        {
+                            <span>· @c.Title</span>
+                        }
+                        <span>· @c.CreatedAt.ToString("yyyy-MM-dd")</span>
+                    </div>
+                    @if (c.TopSkills.Any())
+                    {
+                        <div class="admin-skill-tags">
+                            @foreach (var skill in c.TopSkills)
+                            {
+                                <span class="admin-skill-tag">@skill</span>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="admin-oneui-meta">
+                    <div class="admin-candidate-stat">
+                        <span class="admin-candidate-stat-value">@c.SkillCount</span>
+                        <span class="admin-candidate-stat-label">@Lang.T("admin.candidates.columnSkills")</span>
+                    </div>
+                    <div class="admin-candidate-stat">
+                        <span class="admin-candidate-stat-value">@c.ExperienceCount</span>
+                        <span class="admin-candidate-stat-label">@Lang.T("admin.candidates.columnExperience")</span>
+                    </div>
+                    <div class="admin-candidate-stat">
+                        <span class="admin-candidate-stat-value">@c.ApplicationCount</span>
+                        <span class="admin-candidate-stat-label">@Lang.T("admin.candidates.columnApplications")</span>
+                    </div>
+                    <div class="admin-candidate-docs">
+                        <span class="admin-candidate-doc @(c.HasLinkedIn ? "admin-candidate-doc--on" : "")" title="LinkedIn">
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.22 8.09h4.56V24H.22V8.09zM8.34 8.09h4.37v2.18h.06c.61-1.15 2.1-2.37 4.32-2.37 4.62 0 5.47 3.04 5.47 7v9.1h-4.55v-8.07c0-1.93-.04-4.41-2.69-4.41-2.69 0-3.1 2.1-3.1 4.27V24H8.34V8.09z"/></svg>
+                        </span>
+                        <span class="admin-candidate-doc @(c.HasPortfolio ? "admin-candidate-doc--on" : "")" title="Portfolio">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                        </span>
+                        <span class="admin-candidate-doc @(c.HasCV ? "admin-candidate-doc--on" : "")" title="CV">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </span>
+                    </div>
+                    <div class="admin-row-actions">
+                        @if (ActiveTab == "notStarted")
+                        {
+                            <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.recruitment.assignCandidate")" @onclick="() => ShowAssignModal(c.Id, c.FullName)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="19" y1="8" x2="19" y2="14" /><line x1="22" y1="11" x2="16" y2="11" />
+                                </svg>
+                            </button>
+                        }
+                        @if (ActiveTab == "inProcess" || ActiveTab == "finished")
+                        {
+                            <button class="admin-row-btn admin-row-btn--primary" title="@Lang.T("admin.recruitment.detailTitle")" @onclick="() => ViewPipeline(c.Id)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <rect x="3" y="3" width="6" height="18" rx="1" /><rect x="9" y="3" width="6" height="12" rx="1" /><rect x="15" y="3" width="6" height="6" rx="1" />
+                                </svg>
+                            </button>
+                        }
+                        <button class="admin-row-btn" title="@Lang.T("admin.candidates.viewProfile")" @onclick="() => ViewProfile(c.Id)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 
     @if (Result.TotalPages > 1)
@@ -369,6 +362,12 @@ else
     }
 
     private void SortBy(string column) => _ = SortByColumn(column);
+
+    private async Task ToggleSortDirection()
+    {
+        SortDesc = !SortDesc;
+        await LoadData();
+    }
 
     private async Task PrevPage()
     {
