@@ -60,6 +60,7 @@ public class CompanyCrmService : ICompanyCrmService
                 ContactPhone = c.ContactPhone,
                 Status = c.Status,
                 IsVerified = c.IsVerified,
+                IsFeatured = c.IsFeatured,
                 CreatedAt = c.CreatedAt,
                 VacancyCount = c.Vacancies.Count(v => !v.IsDeleted),
                 CurrentStage = c.Pipelines.Where(p => !p.IsDeleted && !p.IsDismissed).Select(p => (int?)p.CurrentStage).FirstOrDefault(),
@@ -104,6 +105,7 @@ public class CompanyCrmService : ICompanyCrmService
             LinkedInUrl = company.LinkedInUrl,
             Status = company.Status,
             IsVerified = company.IsVerified,
+            IsFeatured = company.IsFeatured,
             CreatedAt = company.CreatedAt,
             SCUserId = company.SCUserId,
             Pipeline = pipeline != null ? new CompanyPipelineDto
@@ -203,6 +205,20 @@ public class CompanyCrmService : ICompanyCrmService
         await _auditLog.LogAsync(adminId, "CompanyCrm.Update", "PTCompany", id, $"Empresa actualizada: {company.Name}", ipAddress);
 
         return await GetCompanyAsync(id);
+    }
+
+    public async Task<bool> SetFeaturedAsync(Guid id, bool featured, Guid adminId, string? ipAddress)
+    {
+        var company = await _db.PT_Companies.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        if (company == null) return false;
+
+        company.IsFeatured = featured;
+        company.UpdatedAt = DateTime.UtcNow;
+        company.UpdatedBy = adminId;
+
+        await _db.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "CompanyCrm.SetFeatured", "PTCompany", id, $"Empresa {(featured ? "destacada" : "sin destacar")}: {company.Name}", ipAddress);
+        return true;
     }
 
     public async Task<bool> DeleteCompanyAsync(Guid id, Guid adminId, string? ipAddress)

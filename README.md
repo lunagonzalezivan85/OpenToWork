@@ -1511,6 +1511,20 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 
 - Commits `8236589`, `ea78bff`, mergeados a `main`.
 
+### Sesión 2026-09-20 — Destacar empresa + rediseño One UI de vacantes (Iluna)
+
+**Alcance: módulo de empresas y vacantes del AdminWEB** (`/companies/{id}`, `/vacancies`, `/vacancies/{id}`) + endpoints del AdminAPI. No se tocó candidatos, contratos, pagos ni el portal del postulante/empresa.
+
+**Destacar empresa (`/companies/{id}`):**
+- `PTCompany.IsFeatured` (nueva columna) + migración `CompanyIsFeatured` idempotente — verifica `information_schema` antes de crear la columna (una corrida parcial ya la había agregado y el scaffold de EF traía re-seed de `SY_DocumentTypes`/`SY_WizardSteps` que rompía el índice único `IX_SY_DocumentTypes_Name_IsDeleted`; se limpió para tocar solo `PT_Companies`).
+- `CompanyListDto`/`CompanyDetailDto`: +`IsFeatured`, poblado en `GetCompaniesAsync` y `GetCompanyAsync`.
+- `CompanyCrmService.SetFeaturedAsync` con audit log `CompanyCrm.SetFeatured`; endpoint `PUT api/admin/company-crm/companies/{id}/featured`; cliente `AdminAuthApiService.SetCompanyFeaturedAsync`.
+- UI: botón Destacar/Quitar destacado con estrella (llena cuando está activa) en el header + badge ámbar "Destacada" junto al estado. Traducciones es/en.
+
+**Rediseño One UI — vacantes (subido en commit anterior `6c17701`):**
+- `/vacancies`: tabla → lista de cards One UI (avatar inicial, badge estado, empresa/ubicación/tipo/vistas, acciones, chevron).
+- Postulantes y "Cumplen sin postularse": cards con avatar iniciales, badge verificado, chips de match y % grande.
+
 ### Sesión 2026-09-19 — Consola de Candidatos: score visible, badge Verificado y pipeline etapa 4 = "Verificado" (Iluna)
 
 **Alcance: únicamente se tocó el módulo de candidatos del AdminWEB** (`/candidates`, `/candidates/profile/{id}`, `/candidates/pipeline/{id}`) + el endpoint de candidatos del AdminAPI. No se tocó nada de empresas, vacantes, contratos, pagos ni el portal del postulante/empresa.

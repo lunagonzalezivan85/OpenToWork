@@ -26,9 +26,20 @@ else
                 <span class="admin-result-badge @(Company.Status == (int)CompanyStatus.Activa ? "admin-result-badge--success" : Company.Status == (int)CompanyStatus.Inactiva ? "admin-result-badge--danger" : "admin-result-badge--warning")">
                     @GetStatusName(Company.Status)
                 </span>
+                @if (Company.IsFeatured)
+                {
+                    <span class="admin-result-badge" style="background: var(--warning-light); color: var(--warning); margin-left: 0.5rem;">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" style="margin-right: 3px; vertical-align: -1px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                        @Lang.T("admin.companies.featured")
+                    </span>
+                }
             </p>
         </div>
         <div class="admin-page-actions">
+            <button class="ot-btn @(Company.IsFeatured ? "ot-btn--outline" : "ot-btn--primary") ot-btn--small" disabled="@IsTogglingFeatured" @onclick="ToggleFeatured" style="@(Company.IsFeatured ? "border-color: var(--warning); color: var(--warning);" : "")">
+                <svg viewBox="0 0 24 24" fill="@(Company.IsFeatured ? "currentColor" : "none")" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right: 4px; vertical-align: -2px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                @(Company.IsFeatured ? Lang.T("admin.companies.unfeature") : Lang.T("admin.companies.feature"))
+            </button>
             <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="@(() => Nav.NavigateTo($"/companies/{Company.Id}/vacancies"))">@Lang.T("admin.companies.viewVacancies")</button>
             <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsLoadingContract" @onclick="ViewContract">
                 @(IsLoadingContract ? Lang.T("admin.common.loading") : Lang.T("admin.contract.viewDocument"))
@@ -193,6 +204,7 @@ else
     private bool IsAssigning = false;
     private bool IsDeleting = false;
     private bool IsLoadingContract = false;
+    private bool IsTogglingFeatured = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -228,6 +240,16 @@ else
         {
             Company = await AuthApi.GetCompanyAsync(Company.Id);
         }
+    }
+
+    private async Task ToggleFeatured()
+    {
+        if (Company == null) return;
+        IsTogglingFeatured = true;
+        var success = await AuthApi.SetCompanyFeaturedAsync(Company.Id, !Company.IsFeatured);
+        IsTogglingFeatured = false;
+        if (success)
+            Company.IsFeatured = !Company.IsFeatured;
     }
 
     private async Task DeleteCompany()

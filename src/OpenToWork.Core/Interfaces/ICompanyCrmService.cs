@@ -9,6 +9,7 @@ public interface ICompanyCrmService
     Task<CompanyDetailDto?> CreateCompanyAsync(CreateCompanyDto dto, Guid adminId, string? ipAddress);
     Task<CompanyDetailDto?> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto, Guid adminId, string? ipAddress);
     Task<bool> DeleteCompanyAsync(Guid id, Guid adminId, string? ipAddress);
+    Task<bool> SetFeaturedAsync(Guid id, bool featured, Guid adminId, string? ipAddress);
 
     Task<CompanyPipelineResultDto> GetPipelineAsync(int page, int pageSize, int? stage = null, Guid? assignedTo = null, string? search = null);
     Task<CompanyPipelineDetailDto?> GetPipelineDetailAsync(Guid pipelineId);

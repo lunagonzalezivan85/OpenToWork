@@ -65,6 +65,9 @@ public class PTCompany : BaseEntity
 
     public bool IsVerified { get; set; } = false;
 
+    // Empresa destacada por el admin (badge en listados/detalle)
+    public bool IsFeatured { get; set; } = false;
+
     public int Status { get; set; } = (int)OpenToWork.Shared.Enums.CompanyStatus.Prospecto;
 
     public virtual ICollection<PTVacancy> Vacancies { get; set; } = new List<PTVacancy>();

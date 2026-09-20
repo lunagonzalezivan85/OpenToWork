@@ -55,6 +55,13 @@ public class CompanyCrmController : AdminControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    [HttpPut("companies/{id}/featured")]
+    public async Task<IActionResult> SetFeatured(Guid id, [FromBody] SetFeaturedDto dto)
+    {
+        var result = await _crmService.SetFeaturedAsync(id, dto.Featured, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpGet("pipeline")]
     public async Task<IActionResult> GetPipeline(
         [FromQuery] int page = 1,
@@ -166,4 +173,9 @@ public class CompanyCrmController : AdminControllerBase
 public class ReassignCompanyDto
 {
     public Guid NewUserId { get; set; }
+}
+
+public class SetFeaturedDto
+{
+    public bool Featured { get; set; }
 }

@@ -1234,6 +1234,13 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> SetCompanyFeaturedAsync(Guid id, bool featured)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/company-crm/companies/{id}/featured", new { featured });
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<CompanyPipelineResultDto> GetCompanyPipelineAsync(int page = 1, int pageSize = 50, int? stage = null, Guid? assignedTo = null, string? search = null)
     {
         await SetAuthHeaderAsync();

@@ -17,6 +17,7 @@ public class CompanyListDto
     public string? ContactPhone { get; set; }
     public int Status { get; set; }
     public bool IsVerified { get; set; }
+    public bool IsFeatured { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? AssignedToName { get; set; }
     public Guid? AssignedToUserId { get; set; }
@@ -46,6 +47,7 @@ public class CompanyDetailDto
     public string? LinkedInUrl { get; set; }
     public int Status { get; set; }
     public bool IsVerified { get; set; }
+    public bool IsFeatured { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid? SCUserId { get; set; }
     public CompanyPipelineDto? Pipeline { get; set; }
