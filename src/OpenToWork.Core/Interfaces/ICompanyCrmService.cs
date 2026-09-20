@@ -20,4 +20,8 @@ public interface ICompanyCrmService
     Task<bool> ReassignAsync(Guid pipelineId, Guid newUserId, Guid adminId, string? ipAddress);
     Task<bool> UpdateNotesAsync(Guid pipelineId, UpdatePipelineNotesDto dto, Guid adminId, string? ipAddress);
     Task<List<PlanDto>> GetPlansAsync();
+    Task<List<PlanDto>> GetAllPlansAsync();
+    Task<PlanDto> CreatePlanAsync(SavePlanDto dto, Guid adminId, string? ipAddress);
+    Task<PlanDto?> UpdatePlanAsync(Guid id, SavePlanDto dto, Guid adminId, string? ipAddress);
+    Task<bool> DeletePlanAsync(Guid id, Guid adminId, string? ipAddress);
 }

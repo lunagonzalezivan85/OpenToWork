@@ -569,18 +569,89 @@ public class CompanyCrmService : ICompanyCrmService
 
     public async Task<List<PlanDto>> GetPlansAsync()
     {
-        return await _db.PT_Plans
+        var plans = await _db.PT_Plans
             .Where(p => p.IsActive && !p.IsDeleted)
             .OrderBy(p => p.SortOrder)
-            .Select(p => new PlanDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Price = p.Price,
-                Currency = p.Currency,
-                SortOrder = p.SortOrder
-            })
             .ToListAsync();
+
+        return plans.Select(ToPlanDto).ToList();
     }
+
+    public async Task<List<PlanDto>> GetAllPlansAsync()
+    {
+        var plans = await _db.PT_Plans
+            .Where(p => !p.IsDeleted)
+            .OrderBy(p => p.SortOrder)
+            .ToListAsync();
+
+        return plans.Select(ToPlanDto).ToList();
+    }
+
+    public async Task<PlanDto> CreatePlanAsync(SavePlanDto dto, Guid adminId, string? ipAddress)
+    {
+        var plan = new PTPlan
+        {
+            Name = dto.Name.Trim(),
+            Description = dto.Description?.Trim(),
+            Price = dto.Price,
+            Currency = dto.Currency.Trim(),
+            SortOrder = dto.SortOrder,
+            IsActive = dto.IsActive,
+            CreatedBy = adminId
+        };
+
+        _db.PT_Plans.Add(plan);
+        await _db.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "CreatePlan", "PT_Plans", plan.Id, $"{{\"name\":\"{plan.Name}\"}}", ipAddress);
+
+        return ToPlanDto(plan);
+    }
+
+    public async Task<PlanDto?> UpdatePlanAsync(Guid id, SavePlanDto dto, Guid adminId, string? ipAddress)
+    {
+        var plan = await _db.PT_Plans.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+        if (plan == null)
+            return null;
+
+        plan.Name = dto.Name.Trim();
+        plan.Description = dto.Description?.Trim();
+        plan.Price = dto.Price;
+        plan.Currency = dto.Currency.Trim();
+        plan.SortOrder = dto.SortOrder;
+        plan.IsActive = dto.IsActive;
+        plan.UpdatedAt = DateTime.UtcNow;
+        plan.UpdatedBy = adminId;
+
+        await _db.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "UpdatePlan", "PT_Plans", plan.Id, $"{{\"name\":\"{plan.Name}\"}}", ipAddress);
+
+        return ToPlanDto(plan);
+    }
+
+    public async Task<bool> DeletePlanAsync(Guid id, Guid adminId, string? ipAddress)
+    {
+        var plan = await _db.PT_Plans.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+        if (plan == null)
+            return false;
+
+        plan.IsDeleted = true;
+        plan.DeletedAt = DateTime.UtcNow;
+        plan.DeletedBy = adminId;
+
+        await _db.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "DeletePlan", "PT_Plans", plan.Id, null, ipAddress);
+
+        return true;
+    }
+
+    private static PlanDto ToPlanDto(PTPlan p) => new()
+    {
+        Id = p.Id,
+        Name = p.Name,
+        Description = p.Description,
+        Price = p.Price,
+        Currency = p.Currency,
+        SortOrder = p.SortOrder,
+        IsActive = p.IsActive
+    };
 }

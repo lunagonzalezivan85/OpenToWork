@@ -17,6 +17,7 @@
     "staff": "Personal",
     "settings": "Configuración",
     "companyProfile": "Datos de la Empresa",
+    "plans": "Planes",
     "createUsers": "Crear usuarios",
     "security": "Seguridad",
     "auditLog": "Auditoría",
@@ -1099,5 +1100,18 @@
     "promoRequired": "Completa el código y un valor de descuento mayor a cero.",
     "deleteLevelError": "No se pudo eliminar: revisa que no tenga tipos de puesto asignados.",
     "saveError": "No se pudo guardar. Intenta de nuevo."
+  },
+  "plans": {
+    "title": "Planes",
+    "subtitle": "Catálogo de planes (Basic/Premium/Platinum) para la autogestión de empresas a futuro.",
+    "empty": "Todavía no hay planes.",
+    "name": "Nombre",
+    "namePlaceholder": "Ej: Premium",
+    "description": "Descripción",
+    "price": "Precio",
+    "currency": "Moneda",
+    "sortOrder": "Orden",
+    "isActive": "Estado",
+    "deleteError": "No se pudo eliminar el plan. Intenta de nuevo."
   }
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using OpenToWork.AdminAPI.Authorization;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
 
@@ -127,6 +128,38 @@ public class CompanyCrmController : AdminControllerBase
     {
         var result = await _crmService.GetPlansAsync();
         return Ok(result);
+    }
+
+    [HttpGet("plans/all")]
+    [RequireStaffRole]
+    public async Task<IActionResult> GetAllPlans()
+    {
+        var result = await _crmService.GetAllPlansAsync();
+        return Ok(result);
+    }
+
+    [HttpPost("plans")]
+    [RequireStaffRole]
+    public async Task<IActionResult> CreatePlan([FromBody] SavePlanDto dto)
+    {
+        var result = await _crmService.CreatePlanAsync(dto, AdminId, ClientIp);
+        return Ok(result);
+    }
+
+    [HttpPut("plans/{id:guid}")]
+    [RequireStaffRole]
+    public async Task<IActionResult> UpdatePlan(Guid id, [FromBody] SavePlanDto dto)
+    {
+        var result = await _crmService.UpdatePlanAsync(id, dto, AdminId, ClientIp);
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpDelete("plans/{id:guid}")]
+    [RequireStaffRole]
+    public async Task<IActionResult> DeletePlan(Guid id)
+    {
+        var result = await _crmService.DeletePlanAsync(id, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
     }
 }
 

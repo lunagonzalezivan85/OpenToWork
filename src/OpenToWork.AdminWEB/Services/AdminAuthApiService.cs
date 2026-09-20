@@ -387,6 +387,37 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    // ===== Planes (catalogo PT_Plans, gestion SuperAdmin) =====
+
+    public async Task<List<PlanDto>> GetAllPlansAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/company-crm/plans/all");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<PlanDto>>() ?? new();
+    }
+
+    public async Task<(PlanDto? Result, string? Error)> CreatePlanAsync(SavePlanDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/company-crm/plans", dto);
+        return await ReadResultAsync<PlanDto>(response);
+    }
+
+    public async Task<(PlanDto? Result, string? Error)> UpdatePlanAsync(Guid id, SavePlanDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/company-crm/plans/{id}", dto);
+        return await ReadResultAsync<PlanDto>(response);
+    }
+
+    public async Task<bool> DeletePlanAsync(Guid id)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync($"api/admin/company-crm/plans/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
     private static async Task<(T? Result, string? Error)> ReadResultAsync<T>(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

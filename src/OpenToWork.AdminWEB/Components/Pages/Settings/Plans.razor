@@ -1,0 +1,182 @@
+@page "/settings/plans"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+
+<PageTitle>@Lang.T("admin.plans.title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@Lang.T("admin.plans.title")</h1>
+        <p class="admin-page-header-subtitle">@Lang.T("admin.plans.subtitle")</p>
+    </div>
+</div>
+
+@if (!IsSuperAdmin)
+{
+    <div class="admin-empty">
+        <div class="admin-empty-text">@Lang.T("admin.staff.notAuthorized")</div>
+    </div>
+}
+else
+{
+    @if (Error != null)
+    {
+        <p style="color: var(--danger); font-size: 0.85rem;">@Error</p>
+    }
+
+    <EditForm Model="Form" OnValidSubmit="Save" class="admin-inline-form">
+        <div class="ot-input-group">
+            <label class="ot-input-label">@Lang.T("admin.plans.name")</label>
+            <InputText class="ot-input-field" @bind-Value="Form.Name" placeholder="@Lang.T("admin.plans.namePlaceholder")" />
+        </div>
+        <div class="ot-input-group">
+            <label class="ot-input-label">@Lang.T("admin.plans.description")</label>
+            <InputText class="ot-input-field" @bind-Value="Form.Description" />
+        </div>
+        <div class="ot-input-group">
+            <label class="ot-input-label">@Lang.T("admin.plans.price")</label>
+            <InputNumber class="ot-input-field" @bind-Value="Form.Price" />
+        </div>
+        <div class="ot-input-group">
+            <label class="ot-input-label">@Lang.T("admin.plans.currency")</label>
+            <InputText class="ot-input-field" @bind-Value="Form.Currency" />
+        </div>
+        <div class="ot-input-group">
+            <label class="ot-input-label">@Lang.T("admin.plans.sortOrder")</label>
+            <InputNumber class="ot-input-field" @bind-Value="Form.SortOrder" />
+        </div>
+        <label style="display: flex; align-items: center; gap: 0.4rem;">
+            <input type="checkbox" @bind="Form.IsActive" /> @Lang.T("admin.common.active")
+        </label>
+        <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium">
+            @(EditingId == null ? Lang.T("admin.pricing.add") : Lang.T("admin.common.save"))
+        </button>
+        @if (EditingId != null)
+        {
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--medium" @onclick="CancelEdit">@Lang.T("admin.common.cancel")</button>
+        }
+    </EditForm>
+
+    @if (PlanList == null)
+    {
+        <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+    }
+    else if (PlanList.Count == 0)
+    {
+        <div class="admin-empty">
+            <div class="admin-empty-icon">&#9632;</div>
+            <div class="admin-empty-text">@Lang.T("admin.plans.empty")</div>
+        </div>
+    }
+    else
+    {
+        <table class="ot-table">
+            <thead>
+                <tr>
+                    <th>@Lang.T("admin.plans.name")</th>
+                    <th>@Lang.T("admin.plans.description")</th>
+                    <th>@Lang.T("admin.plans.price")</th>
+                    <th>@Lang.T("admin.plans.sortOrder")</th>
+                    <th>@Lang.T("admin.plans.isActive")</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var plan in PlanList)
+                {
+                    <tr>
+                        <td>@plan.Name</td>
+                        <td>@(plan.Description ?? "-")</td>
+                        <td>@plan.Price.ToString("0.00") @plan.Currency</td>
+                        <td>@plan.SortOrder</td>
+                        <td>@(plan.IsActive ? Lang.T("admin.common.active") : Lang.T("admin.common.inactive"))</td>
+                        <td>
+                            <div class="admin-table-actions">
+                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Edit(plan)">@Lang.T("admin.common.edit")</button>
+                                <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => Delete(plan.Id)">@Lang.T("admin.common.delete")</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private bool IsSuperAdmin;
+    private List<PlanDto>? PlanList;
+    private SavePlanDto Form { get; set; } = new();
+    private Guid? EditingId;
+    private string? Error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var staffRoleRaw = await LocalStorage.GetItemAsync("otwadmin-staff-role");
+        IsSuperAdmin = int.TryParse(staffRoleRaw, out var role) && role == (int)AdminStaffRole.SuperAdmin;
+
+        if (IsSuperAdmin)
+            await Load();
+    }
+
+    private async Task Load()
+    {
+        PlanList = await AuthApi.GetAllPlansAsync();
+    }
+
+    private void Edit(PlanDto plan)
+    {
+        EditingId = plan.Id;
+        Form = new SavePlanDto
+        {
+            Name = plan.Name,
+            Description = plan.Description,
+            Price = plan.Price,
+            Currency = plan.Currency,
+            SortOrder = plan.SortOrder,
+            IsActive = plan.IsActive
+        };
+    }
+
+    private void CancelEdit()
+    {
+        EditingId = null;
+        Form = new SavePlanDto();
+    }
+
+    private async Task Save()
+    {
+        Error = null;
+        if (string.IsNullOrWhiteSpace(Form.Name)) return;
+
+        var (result, error) = EditingId == null
+            ? await AuthApi.CreatePlanAsync(Form)
+            : await AuthApi.UpdatePlanAsync(EditingId.Value, Form);
+
+        if (result == null)
+        {
+            Error = error ?? Lang.T("admin.pricing.saveError");
+            return;
+        }
+        CancelEdit();
+        await Load();
+    }
+
+    private async Task Delete(Guid id)
+    {
+        var ok = await AuthApi.DeletePlanAsync(id);
+        if (!ok)
+        {
+            Error = Lang.T("admin.plans.deleteError");
+            return;
+        }
+        await Load();
+    }
+}

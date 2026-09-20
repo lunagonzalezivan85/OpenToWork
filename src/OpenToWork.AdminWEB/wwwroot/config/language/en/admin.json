@@ -17,6 +17,7 @@
     "staff": "Staff",
     "settings": "Settings",
     "companyProfile": "Company Profile",
+    "plans": "Plans",
     "createUsers": "Create users",
     "security": "Security",
     "auditLog": "Audit Log",
@@ -1099,5 +1100,18 @@
     "promoRequired": "Fill in the code and a discount value greater than zero.",
     "deleteLevelError": "Could not delete: check it has no job types assigned.",
     "saveError": "Could not save. Please try again."
+  },
+  "plans": {
+    "title": "Plans",
+    "subtitle": "Catalog of plans (Basic/Premium/Platinum) for future company self-service.",
+    "empty": "There are no plans yet.",
+    "name": "Name",
+    "namePlaceholder": "E.g: Premium",
+    "description": "Description",
+    "price": "Price",
+    "currency": "Currency",
+    "sortOrder": "Order",
+    "isActive": "Status",
+    "deleteError": "Could not delete the plan. Please try again."
   }
 }
