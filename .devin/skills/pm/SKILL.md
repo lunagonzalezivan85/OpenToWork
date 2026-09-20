@@ -1,5 +1,6 @@
 ---
-description: "PM - Project Manager. Administrador del proyecto OpenToWork. Controla el flujo, coordina agentes, gestiona fases y riesgos."
+name: pm
+description: PM - Project Manager. Administrador del proyecto OpenToWork. Controla el flujo, coordina agentes, gestiona fases y riesgos.
 ---
 
 # Agente: PM (Project Manager)

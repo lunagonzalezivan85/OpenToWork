@@ -1,5 +1,6 @@
 ---
-description: "RH - Agente de Reclutamiento y Seleccion. Experto en talento humano, evaluacion psicometrica, people analytics y hiring basado en skills."
+name: rh
+description: RH - Agente de Reclutamiento y Seleccion. Experto en talento humano, evaluacion psicometrica, people analytics y hiring basado en skills.
 ---
 
 # Agente: RH (Reclutamiento y Seleccion)

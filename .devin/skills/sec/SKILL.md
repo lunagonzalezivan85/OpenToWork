@@ -1,5 +1,6 @@
 ---
-description: "SEC - Security Specialist. Audita vulnerabilidades, JWT, encriptacion, validacion de inputs y dependencias del proyecto OpenToWork."
+name: sec
+description: SEC - Security Specialist. Audita vulnerabilidades, JWT, encriptacion, validacion de inputs y dependencias del proyecto OpenToWork.
 ---
 
 # Agente: SEC (Security Specialist)

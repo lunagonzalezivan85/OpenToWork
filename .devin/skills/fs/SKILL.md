@@ -1,5 +1,6 @@
 ---
-description: "FS - Full Stack Developer. Experto en Blazor, C#, CSS, JS, HTML. Frontend y backend del proyecto OpenToWork."
+name: fs
+description: FS - Full Stack Developer. Experto en Blazor, C#, CSS, JS, HTML. Frontend y backend del proyecto OpenToWork.
 ---
 
 # Agente: FS (Full Stack Developer)

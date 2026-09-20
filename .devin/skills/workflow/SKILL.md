@@ -1,5 +1,6 @@
 ---
-description: "Flujo de trabajo por fase del proyecto OpenToWork. 8 etapas: identidad, planificacion, diseno, implementacion, pruebas, seguridad, correcciones, cierre."
+name: workflow
+description: 'Flujo de trabajo por fase del proyecto OpenToWork. 8 etapas: identidad, planificacion, diseno, implementacion, pruebas, seguridad, correcciones, cierre.'
 ---
 
 # OpenToWork - Flujo de Trabajo por Fase

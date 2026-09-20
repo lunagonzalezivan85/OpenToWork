@@ -1,5 +1,6 @@
 ---
-description: "QA - Quality Assurance. Tester del aplicativo OpenToWork. Valida diseno, funcionalidad, calidad de informacion e i18n."
+name: qa
+description: QA - Quality Assurance. Tester del aplicativo OpenToWork. Valida diseno, funcionalidad, calidad de informacion e i18n.
 ---
 
 # Agente: QA (Quality Assurance)
