@@ -833,11 +833,11 @@ Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-f
 - [ ] Integraciones con sistemas de RRHH (API endpoints externos)
 - [ ] Analytics avanzados de reclutamiento
 
-### Fase 7: Integraciones Externas - Pendiente
+### Fase 7: Integraciones Externas - Parcial (Notificaciones por email, Dsiezar 20-Sep)
 
 - [ ] LinkedIn API (validacion real de perfiles)
 - [ ] Pasarela de pagos (Stripe/PayPal para suscripciones)
-- [ ] Notificaciones por email (SMTP)
+- [x] Notificaciones por email (SMTP) — **construido 20-Sep**: MailKit + configuracion SMTP en `SY_SystemConfig` (categoria "Smtp"), editable sin redeploy desde `/settings/email` (SuperAdmin), apagado por defecto hasta activarlo. Un solo disparador conectado por ahora: al marcar un contrato como "Enviado" se notifica por correo al `ContactEmail` de la empresa (no bloquea el cambio de estado si el correo falla). Faltan mas disparadores (candidato entregado, negociacion presentada, etc.) — ver Bitacora
 - [ ] Notificaciones push
 
 ### Fase 8: Pruebas y Despliegue - Pendiente
@@ -858,7 +858,7 @@ Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-f
 | **Fase 1-4** | 0 tareas — COMPLETADAS | — |
 | **Fase 5** | 8 tareas (suscripciones, entidades CO, busqueda por score, checkmarks, reportes) — estructura base + shortlist/scorecard ya existen | Fase 6 |
 | **Fase 6** | 4 tareas (servicios premium) | — |
-| **Fase 7** | 4 tareas (integraciones externas) | — |
+| **Fase 7** | 3 tareas (LinkedIn, pagos, push) — notificaciones por email ya construidas (20-Sep) | — |
 | **Fase 8** | 4 tareas (pruebas, despliegue) — sigue sin cobertura automatizada mas alla de `OpenToWork.Tests` (Fase 1) | — |
 
 **Bugs resueltos en main:**
@@ -993,18 +993,18 @@ Antes de marcar cualquier fase como completada, se debe validar:
 - **Fase 3 (Motor de Evaluacion y Scoring):** COMPLETADA (Dsiezar, 01-Sep-2026) — las 8 sub-fases del plan obligatorio de Iluna. Mergeada a `main` el 07-Sep. El **Pipeline de Reclutamiento manual** de Iluna (21-Ago) sigue activo en paralelo, ver nota en la seccion "Fases del Proyecto"
 - **Fase 4 (Portal Administrativo):** COMPLETADA — Dsiezar (roles + deuda tecnica, 29-Ago; verificaciones manuales, 01-Sep) + Pipeline de Reclutamiento completo (Iluna, 21-Ago) + CRM de Captacion de Empresas (Iluna, 06-Sep: pipeline comercial, planes, contratos, mapa interactivo) + RBAC de Personal Administrativo y flujo de Cierre de Negociaciones (Dsiezar, 05-Sep: roles SuperAdmin/Reclutador/Comercial con enforcement real, pantalla "Personal Administrativo", presentar candidatos a la empresa y cerrar negociacion). Todo mergeado a `main` el 07-Sep, con 5 bugs de integracion encontrados y corregidos en QA (ver bitacora 07-Sep)
 - **Fase 5 (Portal Corporativo):** Parcial — estructura base + shortlist/scorecard (Fase 3) + busqueda avanzada por score (Dsiezar) ya funcionan; categorias de vacante migradas al rubro de hosteleria y gate de login/registro en detalle de vacante (Dsiezar, 05-Sep); **Embudo Ciego** operativo (Iluna, 08-Sep: la empresa solo ve conteos, TD entrega personal verificado via `PTCandidateDelivery`); falta suscripciones
-- **Fases 6-8:** Pendientes
-- **`main` esta al dia** con todo lo anterior, incluida la rama `iluna-embudo-ciego` (ya integrada de punta a punta). Ultimos merges: mejoras del documento contractual + ContactDniNie + pagina de edicion de empresa (Iluna, 10-Sep), fix de la columna huerfana `PT_VacancyContracts.PT_VacancyId` que rompia "Generar contrato" siempre (Dsiezar, 11-Sep), **precios B2B por tipo de puesto + codigos promocionales** (Dsiezar, 12-Sep, ver detalle abajo)
+- **Fase 6 y 8:** Pendientes. **Fase 7:** Parcial — notificaciones por email via SMTP construidas (Dsiezar, 20-Sep), falta LinkedIn API, pasarela de pagos y push
+- **`main` esta al dia** con todo lo anterior, incluida la rama `iluna-embudo-ciego` (ya integrada de punta a punta). Ultimos merges: consola de candidatos con score/badge Verificado y rediseño One UI en vacantes (Iluna, 19-Sep), **CRUD de Planes y Notificaciones por Email via SMTP** (Dsiezar, 20-Sep, ver detalle en Bitacora)
 
 ### Nota para Darwin (Dsiezar) — Que falta para empezar a operar
 
 Darwin, el portal administrativo esta funcional con CRM de empresas, pipeline de reclutamiento, embudo ciego, documento contractual y ahora precios reales por tipo de puesto. Para que Trato Directo pueda **iniciar operaciones reales de reclutamiento**, falta:
 
 1. **Sistema de suscripciones (Fase 5)** — las empresas necesitan poder contratar un plan (Basic/Premium/Platinum) para acceder al servicio. Hoy los planes existen como seed data pero no hay flujo de pago/seleccion. **No confundir con el modulo de precios nuevo**: los planes son la suscripcion de la empresa al servicio; el modulo de precios (12-Sep) es la tarifa que TD cobra por cada vacante que gestiona.
-2. **Notificaciones por email (Fase 7)** — el flujo de envio de contratos y notificaciones a empresas requiere SMTP configurado. Hoy los contratos se generan pero no se envian por email.
+2. ~~Notificaciones por email (Fase 7)~~ — **construido 20-Sep**: SMTP configurable desde `/settings/email`, apagado por defecto. Conectado al envio de contratos (notifica a la empresa al marcar "Enviado"). Faltan mas disparadores (candidato entregado, negociacion presentada) para cubrir el resto de "comunicacion con candidatos/empresas" que menciona este punto originalmente.
 3. **Claves i18n de las clausulas del contrato** — las 23 clausulas del Contrato Marco estan hardcoded en espanol en `VacancyContractDocument.razor`. Falta migrar a claves i18n para soportar ingles.
 4. ~~Integrar rama `iluna-embudo-ciego`~~ — ya mergeada a `main`.
-5. **CRUD de Planes** — admin necesita poder gestionar los planes (Basic/Premium/Platinum, suscripcion de empresa) desde el portal (crear, editar, desactivar). Sigue pendiente.
+5. ~~CRUD de Planes~~ — **construido 20-Sep**: `/settings/plans` (SuperAdmin), CRUD completo sobre `PT_Plans`. Retoma el pedido original de Iluna del 06-Sep, que se habia dejado sin construir el 17-Sep al mover el CRM a venta directa por posicion; se retoma ahora como base para la futura autogestion de empresas via planes.
 6. **Precios reales** — los 9 precios base sembrados en `docs/seed-job-pricing.sql` son placeholder (calcados proporcionalmente del dummy de 1500 EUR que existia antes). Hay que reemplazarlos por la tarifa real de Trato Directo desde `/pricing/job-types`.
 
 ### Consulta a RH (@rh) — Que falta para empezar a andar
@@ -1490,6 +1490,26 @@ Si ambos estan trabajando en paralelo, cada uno debe poder avanzar sin bloquear 
 ---
 
 ## Bitácora de Cambios
+
+### Sesión 2026-09-20 — CRUD de Planes + Notificaciones por Email via SMTP (Dsiezar)
+
+**CRUD de Planes (`PT_Plans`):**
+- Retoma el pedido original de Iluna (06-Sep) que se habia dejado sin construir el 17-Sep al mover el CRM de empresas a venta directa por posicion (catalogo de Precios y Niveles en vez de planes de suscripcion). Se retoma ahora como base para la futura autogestion de empresas via planes.
+- `SavePlanDto` + `IsActive` en `PlanDto`; `CompanyCrmService`: `GetAllPlansAsync`/`CreatePlanAsync`/`UpdatePlanAsync`/`DeletePlanAsync` (soft delete + audit log).
+- `CompanyCrmController`: nuevos `POST/PUT/DELETE` + `GET /plans/all`, gateados `[RequireStaffRole]` (solo SuperAdmin) — el `GET /plans` original (usado por el CRM) queda igual, sin gate.
+- Pagina `/settings/plans` (mismo patron que `JobLevels.razor`), entrada nueva en el menu Configuracion.
+
+**Notificaciones por Email (SMTP) — Fase 7:**
+- Resuelve el bloqueante documentado en "Nota para Darwin" punto 2 y la consulta a RH punto 2: hoy los contratos se generaban pero no se enviaban por correo, todo manual.
+- MailKit como cliente SMTP (nueva dependencia en `OpenToWork.Core`). `IEmailService`/`EmailService`: lee la configuracion en vivo desde `SY_SystemConfig` en cada envio (sin redeploy); si esta deshabilitado o falta configuracion, no intenta conectar y devuelve el motivo sin lanzar excepcion.
+- `SystemConfigService`: nuevas claves categoria `"Smtp"` (host, puerto, usuario, contraseña, TLS, remitente, habilitado) con upsert propio — no depende de un seed SQL manual, las filas se crean solas al guardar por primera vez. La contraseña nunca se devuelve al cliente.
+- `EmailController` (AdminAPI): `GET/PUT settings` + `POST test`, gateados `[RequireStaffRole]` (solo SuperAdmin). Pagina `/settings/email` (AdminWEB) con seccion de correo de prueba.
+- `AdminContractService.SendAsync` ahora notifica por correo al `ContactEmail` de la empresa al marcar el contrato como "Enviado". El envio de correo nunca bloquea el cambio de estado (try/catch, audit log `ContractEmailSent`/`ContractEmailFailed`) — la fuente de verdad es el estado en BD, no la entrega del correo.
+- **Apagado por defecto** hasta que un SuperAdmin lo configure y active. Alcance acotado a un solo disparador por ahora (envio de contrato); quedan pendientes candidato entregado, negociacion presentada, etc.
+- Verificado en vivo end-to-end con un servidor SMTP real (mailtrap.io): conexion TLS real, credenciales invalidas de prueba y el error de MailKit ("5.7.0 Invalid credentials") propagado limpio a la UI sin crashear.
+- Construido en rama separada `dsiezar-feature-smtp-email` (mergeada a `main` junto con el CRUD de Planes) para poder revertirse facilmente si no se aprobaba el enfoque.
+
+- Commits `8236589`, `ea78bff`, mergeados a `main`.
 
 ### Sesión 2026-09-19 — Consola de Candidatos: score visible, badge Verificado y pipeline etapa 4 = "Verificado" (Iluna)
 
