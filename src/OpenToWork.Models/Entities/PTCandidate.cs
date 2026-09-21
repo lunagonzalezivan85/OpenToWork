@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.Models.Entities;
 
@@ -7,6 +8,9 @@ public class PTCandidate : BaseEntity
 {
     [Required]
     public Guid SCUserId { get; set; }
+
+    /// <summary>Nivel del plan de mejora (Free/Basic/Premium). Asignado manualmente por un admin - no hay checkout todavia.</summary>
+    public CandidatePlanTier PlanTier { get; set; } = CandidatePlanTier.Free;
 
     [ForeignKey("SCUserId")]
     public virtual SCUser User { get; set; } = null!;

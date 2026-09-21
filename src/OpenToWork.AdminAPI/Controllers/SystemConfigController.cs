@@ -29,4 +29,37 @@ public class SystemConfigController : AdminControllerBase
         await _configService.UpdateBulkAsync(dto, AdminId);
         return Ok();
     }
+
+    [HttpGet("candidate-priority-plan")]
+    public async Task<IActionResult> GetCandidatePriorityPlanEnabled()
+    {
+        var enabled = await _configService.GetCandidatePriorityPlanEnabledAsync();
+        return Ok(new { enabled });
+    }
+
+    [HttpPut("candidate-priority-plan")]
+    public async Task<IActionResult> SetCandidatePriorityPlanEnabled([FromBody] SetFeatureFlagDto dto)
+    {
+        await _configService.SetCandidatePriorityPlanEnabledAsync(dto.Enabled, AdminId);
+        return Ok();
+    }
+
+    [HttpGet("company-plans")]
+    public async Task<IActionResult> GetCompanyPlansEnabled()
+    {
+        var enabled = await _configService.GetCompanyPlansEnabledAsync();
+        return Ok(new { enabled });
+    }
+
+    [HttpPut("company-plans")]
+    public async Task<IActionResult> SetCompanyPlansEnabled([FromBody] SetFeatureFlagDto dto)
+    {
+        await _configService.SetCompanyPlansEnabledAsync(dto.Enabled, AdminId);
+        return Ok();
+    }
+}
+
+public class SetFeatureFlagDto
+{
+    public bool Enabled { get; set; }
 }

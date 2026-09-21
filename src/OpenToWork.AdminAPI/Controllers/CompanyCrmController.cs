@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenToWork.AdminAPI.Authorization;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.AdminAPI.Controllers;
 
@@ -131,17 +132,17 @@ public class CompanyCrmController : AdminControllerBase
     }
 
     [HttpGet("plans")]
-    public async Task<IActionResult> GetPlans()
+    public async Task<IActionResult> GetPlans([FromQuery] PlanAudience audience = PlanAudience.Company)
     {
-        var result = await _crmService.GetPlansAsync();
+        var result = await _crmService.GetPlansAsync(audience);
         return Ok(result);
     }
 
     [HttpGet("plans/all")]
     [RequireStaffRole]
-    public async Task<IActionResult> GetAllPlans()
+    public async Task<IActionResult> GetAllPlans([FromQuery] PlanAudience? audience = null)
     {
-        var result = await _crmService.GetAllPlansAsync();
+        var result = await _crmService.GetAllPlansAsync(audience);
         return Ok(result);
     }
 

@@ -28,6 +28,8 @@ public class JobMatchDto
     public DateTime CalculatedAt { get; set; }
     /// <summary>Verificado: reclutamiento en etapa 4 o checks automáticos completos (misma regla que la consola de candidatos).</summary>
     public bool IsVerifiedTD { get; set; }
+    /// <summary>Plan Basic/Premium del candidato Y flag feature_candidate_priority_plan_enabled encendido. Sube al candidato en el orden del shortlist/matches.</summary>
+    public bool HasPriorityPlan { get; set; }
 }
 
 /// <summary>Match candidato-vacante visto desde el candidato (vacantes recomendadas en el perfil admin).</summary>

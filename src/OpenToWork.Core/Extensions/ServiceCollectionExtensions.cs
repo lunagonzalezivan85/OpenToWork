@@ -37,6 +37,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IWarrantyLookupService, WarrantyLookupService>();
         services.AddScoped<IJobPricingService, JobPricingService>();
         services.AddScoped<IAdminSkillService, AdminSkillService>();
+        services.AddScoped<ICompanyCrmService, CompanyCrmService>();
+        services.AddScoped<ISystemConfigService, SystemConfigService>();
 
         return services;
     }

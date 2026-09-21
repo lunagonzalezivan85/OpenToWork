@@ -35,9 +35,12 @@ public class CompatibilityService : ICompatibilityService
 
     private const int DefaultShortlistLimit = 20; // mismo default que AdminVacancyService.GetVacanciesAsync.
 
-    public CompatibilityService(AppDbContext context)
+    private readonly ISystemConfigService _configService;
+
+    public CompatibilityService(AppDbContext context, ISystemConfigService configService)
     {
         _context = context;
+        _configService = configService;
     }
 
     public async Task<JobMatchDto> CalculateJobMatch(Guid candidateId, Guid vacancyId)
@@ -145,7 +148,9 @@ public class CompatibilityService : ICompatibilityService
             .ToListAsync();
 
         await SetVerifiedFlagsAsync(items);
-        return items.OrderByDescending(i => i.IsVerifiedTD)
+        await SetPlanPriorityAsync(items);
+        return items.OrderByDescending(i => i.HasPriorityPlan)
+            .ThenByDescending(i => i.IsVerifiedTD)
             .ThenByDescending(i => i.MatchPercentage)
             .ToList();
     }
@@ -185,9 +190,27 @@ public class CompatibilityService : ICompatibilityService
             .ToListAsync();
 
         await SetVerifiedFlagsAsync(items);
-        return items.OrderByDescending(i => i.IsVerifiedTD)
+        await SetPlanPriorityAsync(items);
+        return items.OrderByDescending(i => i.HasPriorityPlan)
+            .ThenByDescending(i => i.IsVerifiedTD)
             .ThenByDescending(i => i.MatchPercentage)
             .ToList();
+    }
+
+    /// <summary>Marca HasPriorityPlan cuando el candidato tiene plan Basic/Premium Y el flag
+    /// feature_candidate_priority_plan_enabled esta encendido - apagado por defecto (ver [[future_monetization_features]]).</summary>
+    private async Task SetPlanPriorityAsync(List<JobMatchDto> items)
+    {
+        if (items.Count == 0 || !await _configService.GetCandidatePriorityPlanEnabledAsync())
+            return;
+
+        var candidateIds = items.Select(i => i.CandidateId).ToList();
+        var tiers = await _context.PT_Candidates
+            .Where(c => candidateIds.Contains(c.Id) && !c.IsDeleted)
+            .ToDictionaryAsync(c => c.Id, c => c.PlanTier);
+
+        foreach (var item in items)
+            item.HasPriorityPlan = tiers.TryGetValue(item.CandidateId, out var tier) && tier != CandidatePlanTier.Free;
     }
 
     /// <summary>Marca IsVerifiedTD en cada match usando la regla unica de VerifiedCandidateHelper.</summary>

@@ -1,4 +1,5 @@
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.Core.Interfaces;
 
@@ -20,8 +21,8 @@ public interface ICompanyCrmService
     Task<bool> RestoreCompanyAsync(Guid pipelineId, Guid adminId, string? ipAddress);
     Task<bool> ReassignAsync(Guid pipelineId, Guid newUserId, Guid adminId, string? ipAddress);
     Task<bool> UpdateNotesAsync(Guid pipelineId, UpdatePipelineNotesDto dto, Guid adminId, string? ipAddress);
-    Task<List<PlanDto>> GetPlansAsync();
-    Task<List<PlanDto>> GetAllPlansAsync();
+    Task<List<PlanDto>> GetPlansAsync(PlanAudience audience = PlanAudience.Company);
+    Task<List<PlanDto>> GetAllPlansAsync(PlanAudience? audience = null);
     Task<PlanDto> CreatePlanAsync(SavePlanDto dto, Guid adminId, string? ipAddress);
     Task<PlanDto?> UpdatePlanAsync(Guid id, SavePlanDto dto, Guid adminId, string? ipAddress);
     Task<bool> DeletePlanAsync(Guid id, Guid adminId, string? ipAddress);

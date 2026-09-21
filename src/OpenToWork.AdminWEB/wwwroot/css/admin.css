@@ -591,6 +591,12 @@ textarea.admin-input {
     flex: 1;
 }
 
+.admin-plans-features-input {
+    resize: vertical;
+    line-height: 1.5;
+    min-height: 130px;
+}
+
 /* ============================================
    Admin Empty State
    ============================================ */
@@ -644,20 +650,40 @@ textarea.admin-input {
    ============================================ */
 
 .auth-layout {
+    position: relative;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     background: var(--bg-primary);
+    overflow: hidden;
+}
+
+.auth-bg-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+.auth-bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(160deg, rgba(11, 79, 138, 0.88) 0%, rgba(9, 61, 108, 0.85) 50%, rgba(7, 46, 84, 0.9) 100%);
+    z-index: 1;
 }
 
 .auth-top-bar {
+    position: relative;
+    z-index: 2;
     height: 56px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 var(--space-lg);
-    background: var(--nav-bg);
-    color: var(--nav-text);
+    background: transparent;
+    color: #FFFFFF;
 }
 
 .auth-top-bar .nav-brand {
@@ -670,7 +696,7 @@ textarea.admin-input {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
-    color: var(--nav-text);
+    color: #FFFFFF;
     font-weight: 700;
     font-size: 1rem;
 }
@@ -692,11 +718,15 @@ textarea.admin-input {
 }
 
 .auth-container {
+    position: relative;
+    z-index: 2;
     flex: 1;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: var(--space-2xl) var(--space-lg);
+    background: transparent;
 }
 
 .auth-card {
@@ -5335,6 +5365,25 @@ textarea.admin-input {
     gap: 0.5rem;
     margin-top: 0.6rem;
     flex-wrap: wrap;
+    align-items: center;
+}
+
+.admin-plan-tier-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.admin-plan-tier-picker select {
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--card-border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    cursor: pointer;
 }
 
 .admin-hero-actions {

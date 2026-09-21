@@ -1,3 +1,5 @@
+using OpenToWork.Shared.Enums;
+
 namespace OpenToWork.Shared.DTOs;
 
 public class AdminUserDto
@@ -215,6 +217,7 @@ public class AdminUserProfileDto
     public int? WorkAuthorization { get; set; }
     public bool? IsProfilePublic { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public CandidatePlanTier? PlanTier { get; set; }
     public List<AdminCandidateSkillDto> Skills { get; set; } = new();
     public List<AdminCandidateExperienceDto> Experiences { get; set; } = new();
     public List<AdminCandidateEducationDto> Educations { get; set; } = new();

@@ -38,6 +38,13 @@ public class UsersController : AdminControllerBase
         return profile == null ? NotFound() : Ok(profile);
     }
 
+    [HttpPut("{id}/plan-tier")]
+    public async Task<IActionResult> SetCandidatePlanTier(Guid id, [FromBody] SetCandidatePlanTierDto dto)
+    {
+        var result = await _userService.SetCandidatePlanTierAsync(id, dto.Tier, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpPut("{id}/activate")]
     public async Task<IActionResult> Activate(Guid id)
     {
@@ -89,4 +96,9 @@ public class UsersController : AdminControllerBase
             return BadRequest(new { message = "No se pudo crear el usuario (email ya registrado)" });
         return Ok(result);
     }
+}
+
+public class SetCandidatePlanTierDto
+{
+    public CandidatePlanTier Tier { get; set; }
 }

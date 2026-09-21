@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 using OpenToWork.SharedUI.Services;
 
 namespace OpenToWork.AdminWEB.Services;
@@ -202,6 +203,50 @@ public class AdminAuthApiService
         await SetAuthHeaderAsync();
         var response = await _httpClient.PutAsJsonAsync("api/admin/system-config", dto);
         return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> GetCandidatePriorityPlanEnabledAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/system-config/candidate-priority-plan");
+        if (!response.IsSuccessStatusCode) return false;
+        var result = await response.Content.ReadFromJsonAsync<FeatureFlagResponse>();
+        return result?.Enabled ?? false;
+    }
+
+    public async Task<bool> SetCandidatePriorityPlanEnabledAsync(bool enabled)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync("api/admin/system-config/candidate-priority-plan", new { Enabled = enabled });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> GetCompanyPlansEnabledAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/system-config/company-plans");
+        if (!response.IsSuccessStatusCode) return true;
+        var result = await response.Content.ReadFromJsonAsync<FeatureFlagResponse>();
+        return result?.Enabled ?? true;
+    }
+
+    public async Task<bool> SetCompanyPlansEnabledAsync(bool enabled)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync("api/admin/system-config/company-plans", new { Enabled = enabled });
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> SetCandidatePlanTierAsync(Guid scUserId, CandidatePlanTier tier)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/users/{scUserId}/plan-tier", new { Tier = tier });
+        return response.IsSuccessStatusCode;
+    }
+
+    private class FeatureFlagResponse
+    {
+        public bool Enabled { get; set; }
     }
 
     public async Task<CompanyIdentityDto?> GetCompanyIdentityAsync()

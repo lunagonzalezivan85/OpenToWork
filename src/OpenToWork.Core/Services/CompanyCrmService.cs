@@ -583,21 +583,24 @@ public class CompanyCrmService : ICompanyCrmService
         return true;
     }
 
-    public async Task<List<PlanDto>> GetPlansAsync()
+    public async Task<List<PlanDto>> GetPlansAsync(PlanAudience audience = PlanAudience.Company)
     {
         var plans = await _db.PT_Plans
-            .Where(p => p.IsActive && !p.IsDeleted)
+            .Where(p => p.IsActive && !p.IsDeleted && p.Audience == audience)
             .OrderBy(p => p.SortOrder)
             .ToListAsync();
 
         return plans.Select(ToPlanDto).ToList();
     }
 
-    public async Task<List<PlanDto>> GetAllPlansAsync()
+    public async Task<List<PlanDto>> GetAllPlansAsync(PlanAudience? audience = null)
     {
-        var plans = await _db.PT_Plans
-            .Where(p => !p.IsDeleted)
-            .OrderBy(p => p.SortOrder)
+        var query = _db.PT_Plans.Where(p => !p.IsDeleted);
+        if (audience.HasValue)
+            query = query.Where(p => p.Audience == audience.Value);
+
+        var plans = await query
+            .OrderBy(p => p.Audience).ThenBy(p => p.SortOrder)
             .ToListAsync();
 
         return plans.Select(ToPlanDto).ToList();
@@ -607,12 +610,15 @@ public class CompanyCrmService : ICompanyCrmService
     {
         var plan = new PTPlan
         {
+            Audience = dto.Audience,
             Name = dto.Name.Trim(),
             Description = dto.Description?.Trim(),
             Price = dto.Price,
             Currency = dto.Currency.Trim(),
             SortOrder = dto.SortOrder,
             IsActive = dto.IsActive,
+            IsFeatured = dto.IsFeatured,
+            Features = dto.Features?.Trim(),
             CreatedBy = adminId
         };
 
@@ -629,12 +635,15 @@ public class CompanyCrmService : ICompanyCrmService
         if (plan == null)
             return null;
 
+        plan.Audience = dto.Audience;
         plan.Name = dto.Name.Trim();
         plan.Description = dto.Description?.Trim();
         plan.Price = dto.Price;
         plan.Currency = dto.Currency.Trim();
         plan.SortOrder = dto.SortOrder;
         plan.IsActive = dto.IsActive;
+        plan.IsFeatured = dto.IsFeatured;
+        plan.Features = dto.Features?.Trim();
         plan.UpdatedAt = DateTime.UtcNow;
         plan.UpdatedBy = adminId;
 
@@ -663,11 +672,14 @@ public class CompanyCrmService : ICompanyCrmService
     private static PlanDto ToPlanDto(PTPlan p) => new()
     {
         Id = p.Id,
+        Audience = p.Audience,
         Name = p.Name,
         Description = p.Description,
         Price = p.Price,
         Currency = p.Currency,
         SortOrder = p.SortOrder,
-        IsActive = p.IsActive
+        IsActive = p.IsActive,
+        IsFeatured = p.IsFeatured,
+        Features = p.Features
     };
 }

@@ -6,6 +6,7 @@
 @inject AdminAuthStateProvider AuthProvider
 @inject LanguageService Lang
 @inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
 
 <PageTitle>@Lang.T("admin.login.title")</PageTitle>
 
@@ -22,7 +23,7 @@
         <EditForm Model="LoginModel" OnValidSubmit="HandleLogin">
             <div class="ot-input-group mb-md">
                 <label class="ot-input-label">@Lang.T("admin.common.email")</label>
-                <InputText class="ot-input-field" @bind-Value="LoginModel.Email" placeholder="@Lang.T("admin.login.emailPlaceholder")" />
+                <InputText id="admin-login-email" class="ot-input-field" @bind-Value="LoginModel.Email" placeholder="@Lang.T("admin.login.emailPlaceholder")" />
                 <ValidationMessage For="@(() => LoginModel.Email)" class="ot-input-error" />
             </div>
 
@@ -48,6 +49,12 @@
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await JS.InvokeVoidAsync("focusElement", "admin-login-email");
     }
 
     private async Task HandleLogin()

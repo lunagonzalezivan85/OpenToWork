@@ -265,20 +265,26 @@ public class UpdatePipelineNotesDto
 public class PlanDto
 {
     public Guid Id { get; set; }
+    public PlanAudience Audience { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal Price { get; set; }
     public string Currency { get; set; } = "EUR";
     public int SortOrder { get; set; }
     public bool IsActive { get; set; }
+    public bool IsFeatured { get; set; }
+    public string? Features { get; set; }
 }
 
 public class SavePlanDto
 {
+    public PlanAudience Audience { get; set; } = PlanAudience.Company;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal Price { get; set; }
     public string Currency { get; set; } = "EUR";
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsFeatured { get; set; }
+    public string? Features { get; set; }
 }

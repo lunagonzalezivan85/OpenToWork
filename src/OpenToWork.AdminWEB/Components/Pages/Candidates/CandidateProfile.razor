@@ -130,6 +130,14 @@ else
                     {
                         <span class="admin-result-badge admin-result-badge--warning">@Lang.T("admin.dashboard.pending")</span>
                     }
+                    <label class="admin-plan-tier-picker" title="@Lang.T("admin.candidates.planTierHint")">
+                        @Lang.T("admin.candidates.planTier"):
+                        <select class="nav-select" value="@((int)(Profile.PlanTier ?? CandidatePlanTier.Free))" @onchange="OnPlanTierChanged">
+                            <option value="@((int)CandidatePlanTier.Free)">Free</option>
+                            <option value="@((int)CandidatePlanTier.Basic)">Basic</option>
+                            <option value="@((int)CandidatePlanTier.Premium)">Premium</option>
+                        </select>
+                    </label>
                 </div>
             </div>
             <div class="admin-hero-actions">
@@ -989,6 +997,14 @@ else
             Applications = await AuthApi.GetCandidateApplicationsAsync(Profile.CandidateId.Value);
             Matches = await AuthApi.GetCandidateMatchesAsync(Profile.CandidateId.Value);
         }
+    }
+
+    private async Task OnPlanTierChanged(ChangeEventArgs e)
+    {
+        if (Profile == null || !int.TryParse(e.Value?.ToString(), out var raw)) return;
+        var tier = (CandidatePlanTier)raw;
+        var ok = await AuthApi.SetCandidatePlanTierAsync(UserId, tier);
+        if (ok) Profile.PlanTier = tier;
     }
 
     private async Task LoadScoreDataAsync()

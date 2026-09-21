@@ -30,6 +30,10 @@ public class SystemConfigService : ISystemConfigService
     public const string SmtpFromName = "smtp_from_name";
     public const string SmtpEnabled = "smtp_enabled";
 
+    public const string FeaturesCategory = "Features";
+    public const string CandidatePriorityPlanEnabled = "feature_candidate_priority_plan_enabled";
+    public const string CompanyPlansEnabled = "feature_company_plans_enabled";
+
     public SystemConfigService(AppDbContext context, IAuditLogService auditLog)
     {
         _context = context;
@@ -162,5 +166,81 @@ public class SystemConfigService : ISystemConfigService
 
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(staffId, "UpdateSmtpSettings", "SY_SystemConfig", null, null, null);
+    }
+
+    public async Task<bool> GetCandidatePriorityPlanEnabledAsync()
+    {
+        var config = await _context.SY_SystemConfig
+            .FirstOrDefaultAsync(c => !c.IsDeleted && c.Key == CandidatePriorityPlanEnabled);
+
+        return config != null && bool.TryParse(config.Value, out var enabled) && enabled;
+    }
+
+    /// <summary>Independiente del flag de candidatos. Los planes de empresa ya estaban visibles antes
+    /// de que este flag existiera, asi que si la fila todavia no existe se asume encendido (true) para
+    /// no romper el comportamiento actual - a diferencia del flag de candidatos, que por defecto es false.</summary>
+    public async Task<bool> GetCompanyPlansEnabledAsync()
+    {
+        var config = await _context.SY_SystemConfig
+            .FirstOrDefaultAsync(c => !c.IsDeleted && c.Key == CompanyPlansEnabled);
+
+        if (config == null) return true;
+        return bool.TryParse(config.Value, out var enabled) && enabled;
+    }
+
+    public async Task SetCompanyPlansEnabledAsync(bool enabled, Guid staffId)
+    {
+        var config = await _context.SY_SystemConfig
+            .FirstOrDefaultAsync(c => !c.IsDeleted && c.Key == CompanyPlansEnabled);
+
+        if (config == null)
+        {
+            _context.SY_SystemConfig.Add(new SYSystemConfig
+            {
+                Key = CompanyPlansEnabled,
+                Value = enabled.ToString(),
+                Category = FeaturesCategory,
+                Description = "Muestra los planes de mejora (Basic/Premium/Platinum) a las empresas. Encendido por defecto (ya estaban visibles antes de que existiera este flag).",
+                IsActive = true,
+                CreatedBy = staffId
+            });
+        }
+        else
+        {
+            config.Value = enabled.ToString();
+            config.UpdatedAt = DateTime.UtcNow;
+            config.UpdatedBy = staffId;
+        }
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(staffId, "SetCompanyPlansEnabled", "SY_SystemConfig", null, enabled.ToString(), null);
+    }
+
+    public async Task SetCandidatePriorityPlanEnabledAsync(bool enabled, Guid staffId)
+    {
+        var config = await _context.SY_SystemConfig
+            .FirstOrDefaultAsync(c => !c.IsDeleted && c.Key == CandidatePriorityPlanEnabled);
+
+        if (config == null)
+        {
+            _context.SY_SystemConfig.Add(new SYSystemConfig
+            {
+                Key = CandidatePriorityPlanEnabled,
+                Value = enabled.ToString(),
+                Category = FeaturesCategory,
+                Description = "Muestra los planes de mejora (Free/Basic/Premium) a los candidatos y activa la prioridad en el matching para Basic/Premium.",
+                IsActive = true,
+                CreatedBy = staffId
+            });
+        }
+        else
+        {
+            config.Value = enabled.ToString();
+            config.UpdatedAt = DateTime.UtcNow;
+            config.UpdatedBy = staffId;
+        }
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(staffId, "SetCandidatePriorityPlanEnabled", "SY_SystemConfig", null, enabled.ToString(), null);
     }
 }

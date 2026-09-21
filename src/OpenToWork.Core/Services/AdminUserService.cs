@@ -110,6 +110,7 @@ public class AdminUserService : IAdminUserService
             dto.WorkAuthorization = c.WorkAuthorization;
             dto.IsProfilePublic = c.IsProfilePublic;
             dto.CompletedAt = c.CompletedAt;
+            dto.PlanTier = c.PlanTier;
             dto.Skills = c.CandidateSkills?.Select(cs => new AdminCandidateSkillDto
             {
                 Name = cs.Skill?.Name ?? "",
@@ -179,6 +180,20 @@ public class AdminUserService : IAdminUserService
         await _context.SaveChangesAsync();
 
         await _auditLog.LogAsync(adminId, "ActivateUser", "SC_Users", id, null, ipAddress);
+        return true;
+    }
+
+    public async Task<bool> SetCandidatePlanTierAsync(Guid scUserId, CandidatePlanTier tier, Guid adminId, string? ipAddress)
+    {
+        var candidate = await _context.PT_Candidates.FirstOrDefaultAsync(c => c.SCUserId == scUserId && !c.IsDeleted);
+        if (candidate == null) return false;
+
+        candidate.PlanTier = tier;
+        candidate.UpdatedAt = DateTime.UtcNow;
+        candidate.UpdatedBy = adminId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(adminId, "SetCandidatePlanTier", "PT_Candidates", candidate.Id, tier.ToString(), ipAddress);
         return true;
     }
 

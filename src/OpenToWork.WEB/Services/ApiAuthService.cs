@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components.Forms;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 using OpenToWork.SharedUI.Services;
 
 namespace OpenToWork.WEB.Services;
@@ -191,6 +192,34 @@ public class ApiAuthService
         var response = await _httpClient.GetAsync("api/permanentvacancies/my-company");
         if (!response.IsSuccessStatusCode) return new();
         return await response.Content.ReadFromJsonAsync<List<VacancyDto>>() ?? new();
+    }
+
+    public async Task<List<PlanDto>> GetPlansAsync(PlanAudience audience = PlanAudience.Company)
+    {
+        var response = await _httpClient.GetAsync($"api/plans?audience={audience}");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<PlanDto>>() ?? new();
+    }
+
+    public async Task<bool> GetCandidatePlanFeatureEnabledAsync()
+    {
+        var response = await _httpClient.GetAsync("api/plans/candidate-enabled");
+        if (!response.IsSuccessStatusCode) return false;
+        var result = await response.Content.ReadFromJsonAsync<CandidatePlanFeatureResponse>();
+        return result?.Enabled ?? false;
+    }
+
+    public async Task<bool> GetCompanyPlanFeatureEnabledAsync()
+    {
+        var response = await _httpClient.GetAsync("api/plans/company-enabled");
+        if (!response.IsSuccessStatusCode) return true;
+        var result = await response.Content.ReadFromJsonAsync<CandidatePlanFeatureResponse>();
+        return result?.Enabled ?? true;
+    }
+
+    private class CandidatePlanFeatureResponse
+    {
+        public bool Enabled { get; set; }
     }
 
     public async Task<List<PublicCompanyDto>> GetPublicCompaniesAsync(int? limit = null)

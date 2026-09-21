@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OpenToWork.Models.Entities;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.Models.Context;
 
@@ -593,6 +594,7 @@ public class AppDbContext : DbContext
         {
             e.ToTable("PT_Plans");
             e.HasIndex(p => new { p.IsActive, p.IsDeleted });
+            e.Property(p => p.Price).HasPrecision(10, 2);
         });
 
         modelBuilder.Entity<PTCompanyStageLog>(e =>
@@ -645,9 +647,47 @@ public class AppDbContext : DbContext
     {
         var plans = new[]
         {
-            new PTPlan { Id = Guid.Parse("a1111111-1111-1111-1111-111111111111"), Name = "Basic", Description = "Plan básico con funcionalidades esenciales para empezar.", Price = 49.00m, Currency = "EUR", SortOrder = 1, IsActive = true },
-            new PTPlan { Id = Guid.Parse("a2222222-2222-2222-2222-222222222222"), Name = "Premium", Description = "Plan premium con herramientas avanzadas de gestión y soporte prioritario.", Price = 99.00m, Currency = "EUR", SortOrder = 2, IsActive = true },
-            new PTPlan { Id = Guid.Parse("a3333333-3333-3333-3333-333333333333"), Name = "Platinum", Description = "Plan platinum con todas las funcionalidades, soporte dedicado y personalización total.", Price = 199.00m, Currency = "EUR", SortOrder = 3, IsActive = true }
+            new PTPlan { Id = Guid.Parse("a1111111-1111-1111-1111-111111111111"), Audience = PlanAudience.Company, Name = "Basic", Description = "Plan básico con funcionalidades esenciales para empezar.", Price = 49.00m, Currency = "EUR", SortOrder = 1, IsActive = true },
+            new PTPlan { Id = Guid.Parse("a2222222-2222-2222-2222-222222222222"), Audience = PlanAudience.Company, Name = "Premium", Description = "Plan premium con herramientas avanzadas de gestión y soporte prioritario.", Price = 99.00m, Currency = "EUR", SortOrder = 2, IsActive = true },
+            new PTPlan { Id = Guid.Parse("a3333333-3333-3333-3333-333333333333"), Audience = PlanAudience.Company, Name = "Platinum", Description = "Plan platinum con todas las funcionalidades, soporte dedicado y personalización total.", Price = 199.00m, Currency = "EUR", SortOrder = 3, IsActive = true },
+
+            new PTPlan
+            {
+                Id = Guid.Parse("b1111111-1111-1111-1111-111111111111"),
+                Audience = PlanAudience.Candidate,
+                Name = "Free",
+                Description = "Lo que ya tiene cualquier candidato al registrarse.",
+                Price = 0.00m,
+                Currency = "EUR",
+                SortOrder = 1,
+                IsActive = true,
+                Features = "Postulación ilimitada a vacantes\nPerfil profesional visible para empresas\nMensajería con empresas"
+            },
+            new PTPlan
+            {
+                Id = Guid.Parse("b2222222-2222-2222-2222-222222222222"),
+                Audience = PlanAudience.Candidate,
+                Name = "Basic",
+                Description = "Más visibilidad frente a las empresas.",
+                Price = 5.99m,
+                Currency = "EUR",
+                SortOrder = 2,
+                IsActive = true,
+                IsFeatured = true,
+                Features = "Todo lo del plan Free\nMayor prioridad en el matching\nVerificación por Trato Directo"
+            },
+            new PTPlan
+            {
+                Id = Guid.Parse("b3333333-3333-3333-3333-333333333333"),
+                Audience = PlanAudience.Candidate,
+                Name = "Premium",
+                Description = "Acompañamiento experto para destacar.",
+                Price = 9.99m,
+                Currency = "EUR",
+                SortOrder = 3,
+                IsActive = true,
+                Features = "Todo lo del plan Basic\nAsesoría en construcción de CV con un especialista"
+            }
         };
 
         modelBuilder.Entity<PTPlan>().HasData(plans);

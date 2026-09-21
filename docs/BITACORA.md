@@ -281,4 +281,61 @@ Nueva seccion de cartera comercial (`/portfolio`) que muestra las empresas asign
 | `Companies.razor` + `CompanyDetail.razor` | Empresas públicas |
 | `20260920231100_VerificationRequests.cs` | Migración (limpiada: sin churn de seeds) |
 
+---
+
+## Sesión: 21 Septiembre 2026
+
+### IMPORTANTE - Migraciones
+
+> Migraciones nuevas en esta sesión (todas limpiadas a mano: el scaffold automático de `dotnet ef migrations add` sigue arrastrando un bug preexistente en `AppDbContext.SeedWizardSteps`/`SeedDocumentTypes` — usan `Guid.NewGuid()` en el seed, así que cada `migrations add` genera IDs nuevos y EF quiere borrar/reinsertar esas filas sin motivo. Se recorta manualmente cada vez para que la migración solo toque lo relevante):
+> - `PlanFeaturesAndFeatured` — columnas `Features`/`IsFeatured` en `PT_Plans`
+> - `CandidatePlanTierAndPlanAudience` — columna `Audience` en `PT_Plans`, columna `PlanTier` en `PT_Candidates`, seed de 3 planes de candidato (Free/Basic/Premium)
+> - `PlanPricePrecision` — `PT_Plans.Price` de `decimal(65,30)` (default de Pomelo, sin precisión declarada) a `decimal(10,2)`
+
+### Cambios Realizados
+
+#### 1. Conexión de `/plans` (WEB) a la base de datos real
+- Antes: `Plans.razor` tenía 3 tarjetas (Gratis/Pro/Premium) con HTML fijo, sin relación con `PT_Plans`.
+- Ahora: endpoint público `GET /api/plans` (nuevo `PlansController` en `OpenToWork.API`) sirve el catálogo real; `Plans.razor` itera sobre la respuesta.
+- `PTPlan` ganó `IsFeatured` (bool) y `Features` (string, un beneficio por línea) para que el admin controle qué se destaca y qué lista de beneficios se muestra — antes esos datos no existían en el modelo.
+- CRUD de `/settings/plans` (AdminWEB) actualizado con los campos nuevos.
+
+#### 2. Plan de mejora para candidatos (Free/Basic/Premium) — nuevo
+- **Decisión de Darwin (21-Sep):** retoma la idea documentada el 18-Sep ("Plan de Prioridad para Candidatos") pero con 3 niveles en vez de uno solo, mismo patrón que empresas.
+  - **Free**: lo que ya tiene cualquier candidato.
+  - **Basic** (5.99€, destacado): + prioridad en el matching + "Verificación por Trato Directo".
+  - **Premium** (9.99€): todo Basic + "Asesoría en construcción de CV con un especialista".
+  - Los dos beneficios de Basic/Premium que dependen de un humano (verificación, asesoría de CV) son compromisos operativos — el código solo los muestra como texto del plan, no dispara ninguna automatización nueva.
+- **Modelo**: `PTPlan.Audience` (enum `Company`/`Candidate`) distingue el catálogo por audiencia; `PTCandidate.PlanTier` (enum `Free`/`Basic`/`Premium`, default `Free`) guarda el nivel del candidato — asignado manualmente por un admin desde `/candidates/profile/{id}` (no hay checkout, no hay pasarela de pagos integrada).
+- **Prioridad real en matching**: `CompatibilityService.GenerateShortlist`/`GetNonApplicantMatchesAsync` ordenan primero por `HasPriorityPlan` (Basic/Premium), luego por `IsVerifiedTD`, luego por `MatchPercentage` — pero **solo si el flag de candidatos está encendido**; si está apagado, el orden es idéntico al de antes de este cambio.
+- **Flags independientes por audiencia** (pedido de Darwin tras ver que solo había un flag): `feature_company_plans_enabled` (encendido por defecto — los planes de empresa ya eran visibles antes de este flag) y `feature_candidate_priority_plan_enabled` (apagado por defecto). Se pueden prender/apagar por separado desde `/settings/plans` (dos checkboxes independientes). Ambos viven en `SY_SystemConfig`, categoría `Features`.
+- El botón "Mejorar plan" de `/dashboard` (candidato) y `/company-dashboard` (empresa) ahora solo se muestra si el flag de su audiencia está encendido — antes el de candidato apuntaba (sin ningún control) a los planes de empresa por error.
+
+#### 3. Fix: decimales del precio de los planes
+`PT_Plans.Price` no tenía precisión declarada en el modelo, así que Pomelo/MySQL usaba el default `decimal(65,30)` — cada precio arrastraba hasta 30 ceros decimales (visible en el JSON crudo de la API y en el campo de edición del formulario admin, aunque la tabla y `/plans` público ya lo recortaban con formato). Se agregó `HasPrecision(10, 2)` en `AppDbContext` y se migró la columna; ahora `Price` es `decimal(10,2)` real en MySQL, no hay forma de que vuelvan a aparecer decimales de más en ningún punto.
+
+#### 4. UI del formulario de Planes (AdminWEB) rediseñada
+El formulario original metía Nombre/Descripción/Precio/Moneda/Orden/Beneficios en una sola fila flex (`admin-inline-form`) — el textarea de Beneficios quedaba apretado al mismo ancho angosto que los demás campos. Se rediseñó con el mismo patrón de tarjetas (`admin-chart-grid`/`admin-chart-card`) que usa `/settings/company-profile`: una tarjeta "Datos del plan" y otra "Presentación" con el textarea a ancho completo.
+
+#### 5. Video de fondo en el login de AdminWEB
+`LoginLayout.razor` ahora tiene el mismo video de fondo (`v01.mp4`) + overlay degradado azul que ya usaba el login/registro de WEB (`AuthLayout.razor`). De paso se corrigió un bug preexistente: `components.css` tenía una regla `.auth-container` duplicada con fondo opaco que tapaba el video — se sobreescribió en `admin.css` (que carga después).
+
+#### 6. Autofocus en el campo de correo del login (AdminWEB)
+El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` de la página después de cada navegación (`<FocusOnNavigate Selector="h1" />` en `Routes.razor`, para accesibilidad). Se agregó `focus-helper.js` + una llamada JS en `OnAfterRenderAsync(firstRender)` que gana esa carrera.
+
+### Archivos Nuevos
+
+| Archivo | Descripción |
+|---------|-------------|
+| `PlansController.cs` (OpenToWork.API) | Endpoint público `GET /api/plans` (con `audience`) y `GET /api/plans/{company,candidate}-enabled` |
+| `PlanAudience.cs` + `CandidatePlanTier.cs` | Enums nuevos en `OpenToWork.Shared.Enums` |
+| `focus-helper.js` (AdminWEB) | Helper JS para enfocar un input por id tras el render |
+| `20260921050843_PlanFeaturesAndFeatured.cs` | Migración: `Features`/`IsFeatured` en `PT_Plans` |
+| `20260921224421_CandidatePlanTierAndPlanAudience.cs` | Migración: `Audience`, `PlanTier`, seed de planes de candidato |
+| `20260921231018_PlanPricePrecision.cs` | Migración: `Price` a `decimal(10,2)` |
+
+### Pendiente
+
+- **Terminar el flujo del candidato en el panel administrativo** (pedido de Darwin, 21-Sep) — sin alcance definido todavía, queda para la próxima sesión.
+
 > **Nota**: el commit también incluye cambios pendientes de AdminAPI/AdminWEB de la sesión anterior (perfil de candidato admin, detalle de empresa, etc.).

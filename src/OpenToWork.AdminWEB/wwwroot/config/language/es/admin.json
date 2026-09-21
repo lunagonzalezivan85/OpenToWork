@@ -464,6 +464,8 @@
     "columnAssignedDate": "Fecha asignación"
   },
   "candidates": {
+    "planTier": "Plan",
+    "planTierHint": "Nivel del plan de mejora del candidato (Free/Basic/Premium). Asignación manual - no hay checkout todavía. Basic y Premium solo dan prioridad real en el matching si el flag de Configuración > Planes está encendido.",
     "title": "Consola de candidatos",
     "subtitle": "Gestiona y evalúa candidatos",
     "exportCsv": "Exportar CSV",
@@ -1141,7 +1143,7 @@
   },
   "plans": {
     "title": "Planes",
-    "subtitle": "Catálogo de planes (Basic/Premium/Platinum) para la autogestión de empresas a futuro.",
+    "subtitle": "Catálogo de planes que se muestra en /plans del portal de empresas y candidatos.",
     "empty": "Todavía no hay planes.",
     "name": "Nombre",
     "namePlaceholder": "Ej: Premium",
@@ -1150,7 +1152,18 @@
     "currency": "Moneda",
     "sortOrder": "Orden",
     "isActive": "Estado",
-    "deleteError": "No se pudo eliminar el plan. Intenta de nuevo."
+    "featured": "Destacado",
+    "features": "Beneficios (uno por línea)",
+    "featuresPlaceholder": "Vacantes ilimitadas\nMatching con IA\nSoporte prioritario",
+    "deleteError": "No se pudo eliminar el plan. Intenta de nuevo.",
+    "audienceCompany": "Empresas",
+    "audienceCandidate": "Candidatos",
+    "sectionBasics": "Datos del plan",
+    "sectionPresentation": "Presentación",
+    "companyFeatureToggle": "Activar planes para empresas",
+    "companyFeatureHint": "Encendido por defecto (ya estaban visibles). Apagalo para ocultar los planes de empresa sin afectar a los de candidatos.",
+    "candidateFeatureToggle": "Activar planes de mejora para candidatos",
+    "candidateFeatureHint": "Apagado por defecto: mientras esté apagado, los candidatos no ven ningún plan ni obtienen prioridad en el matching, sin importar el nivel que tengan asignado."
   },
   "email": {
     "title": "Notificaciones por Email",

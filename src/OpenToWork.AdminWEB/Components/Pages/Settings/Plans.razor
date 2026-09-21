@@ -23,49 +23,93 @@
 }
 else
 {
+    <div class="admin-chart-grid" style="margin-bottom: var(--space-lg);">
+        <div class="admin-chart-card" style="min-height: 0;">
+            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" checked="@CompanyFeatureEnabled" @onchange="ToggleCompanyFeature" />
+                @Lang.T("admin.plans.companyFeatureToggle")
+            </label>
+            <p class="admin-page-header-subtitle" style="margin: 0;">@Lang.T("admin.plans.companyFeatureHint")</p>
+        </div>
+        <div class="admin-chart-card" style="min-height: 0;">
+            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" checked="@CandidateFeatureEnabled" @onchange="ToggleCandidateFeature" />
+                @Lang.T("admin.plans.candidateFeatureToggle")
+            </label>
+            <p class="admin-page-header-subtitle" style="margin: 0;">@Lang.T("admin.plans.candidateFeatureHint")</p>
+        </div>
+    </div>
+
+    <div class="admin-tabs" style="margin-bottom: var(--space-md); display: flex; gap: 0.5rem;">
+        <button class="ot-btn ot-btn--small @(ActiveAudience == PlanAudience.Company ? "ot-btn--primary" : "ot-btn--outline")" @onclick="() => SwitchAudience(PlanAudience.Company)">@Lang.T("admin.plans.audienceCompany")</button>
+        <button class="ot-btn ot-btn--small @(ActiveAudience == PlanAudience.Candidate ? "ot-btn--primary" : "ot-btn--outline")" @onclick="() => SwitchAudience(PlanAudience.Candidate)">@Lang.T("admin.plans.audienceCandidate")</button>
+    </div>
+
     @if (Error != null)
     {
         <p style="color: var(--danger); font-size: 0.85rem;">@Error</p>
     }
 
-    <EditForm Model="Form" OnValidSubmit="Save" class="admin-inline-form">
-        <div class="ot-input-group">
-            <label class="ot-input-label">@Lang.T("admin.plans.name")</label>
-            <InputText class="ot-input-field" @bind-Value="Form.Name" placeholder="@Lang.T("admin.plans.namePlaceholder")" />
+    <EditForm Model="Form" OnValidSubmit="Save">
+        <div class="admin-chart-grid" style="align-items: start;">
+            <div class="admin-chart-card">
+                <span class="admin-chart-card-title">@Lang.T("admin.plans.sectionBasics")</span>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.plans.name")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.Name" placeholder="@Lang.T("admin.plans.namePlaceholder")" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.plans.description")</label>
+                    <InputText class="ot-input-field" @bind-Value="Form.Description" />
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm);">
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">@Lang.T("admin.plans.price")</label>
+                        <InputNumber class="ot-input-field" @bind-Value="Form.Price" />
+                    </div>
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">@Lang.T("admin.plans.currency")</label>
+                        <InputText class="ot-input-field" @bind-Value="Form.Currency" />
+                    </div>
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.plans.sortOrder")</label>
+                    <InputNumber class="ot-input-field" @bind-Value="Form.SortOrder" />
+                </div>
+            </div>
+
+            <div class="admin-chart-card">
+                <span class="admin-chart-card-title">@Lang.T("admin.plans.sectionPresentation")</span>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.plans.features")</label>
+                    <InputTextArea class="ot-input-field admin-plans-features-input" rows="6" @bind-Value="Form.Features" placeholder="@Lang.T("admin.plans.featuresPlaceholder")" />
+                </div>
+                <div style="display: flex; gap: var(--space-lg);">
+                    <label style="display: flex; align-items: center; gap: 0.4rem;">
+                        <input type="checkbox" @bind="Form.IsActive" /> @Lang.T("admin.common.active")
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.4rem;">
+                        <input type="checkbox" @bind="Form.IsFeatured" /> @Lang.T("admin.plans.featured")
+                    </label>
+                </div>
+                <div style="display: flex; gap: var(--space-sm); margin-top: auto;">
+                    <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium">
+                        @(EditingId == null ? Lang.T("admin.pricing.add") : Lang.T("admin.common.save"))
+                    </button>
+                    @if (EditingId != null)
+                    {
+                        <button type="button" class="ot-btn ot-btn--outline ot-btn--medium" @onclick="CancelEdit">@Lang.T("admin.common.cancel")</button>
+                    }
+                </div>
+            </div>
         </div>
-        <div class="ot-input-group">
-            <label class="ot-input-label">@Lang.T("admin.plans.description")</label>
-            <InputText class="ot-input-field" @bind-Value="Form.Description" />
-        </div>
-        <div class="ot-input-group">
-            <label class="ot-input-label">@Lang.T("admin.plans.price")</label>
-            <InputNumber class="ot-input-field" @bind-Value="Form.Price" />
-        </div>
-        <div class="ot-input-group">
-            <label class="ot-input-label">@Lang.T("admin.plans.currency")</label>
-            <InputText class="ot-input-field" @bind-Value="Form.Currency" />
-        </div>
-        <div class="ot-input-group">
-            <label class="ot-input-label">@Lang.T("admin.plans.sortOrder")</label>
-            <InputNumber class="ot-input-field" @bind-Value="Form.SortOrder" />
-        </div>
-        <label style="display: flex; align-items: center; gap: 0.4rem;">
-            <input type="checkbox" @bind="Form.IsActive" /> @Lang.T("admin.common.active")
-        </label>
-        <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium">
-            @(EditingId == null ? Lang.T("admin.pricing.add") : Lang.T("admin.common.save"))
-        </button>
-        @if (EditingId != null)
-        {
-            <button type="button" class="ot-btn ot-btn--outline ot-btn--medium" @onclick="CancelEdit">@Lang.T("admin.common.cancel")</button>
-        }
     </EditForm>
 
     @if (PlanList == null)
     {
         <div class="admin-loading">@Lang.T("admin.common.loading")</div>
     }
-    else if (PlanList.Count == 0)
+    else if (VisiblePlans.Count == 0)
     {
         <div class="admin-empty">
             <div class="admin-empty-icon">&#9632;</div>
@@ -82,11 +126,12 @@ else
                     <th>@Lang.T("admin.plans.price")</th>
                     <th>@Lang.T("admin.plans.sortOrder")</th>
                     <th>@Lang.T("admin.plans.isActive")</th>
+                    <th>@Lang.T("admin.plans.featured")</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var plan in PlanList)
+                @foreach (var plan in VisiblePlans)
                 {
                     <tr>
                         <td>@plan.Name</td>
@@ -94,6 +139,7 @@ else
                         <td>@plan.Price.ToString("0.00") @plan.Currency</td>
                         <td>@plan.SortOrder</td>
                         <td>@(plan.IsActive ? Lang.T("admin.common.active") : Lang.T("admin.common.inactive"))</td>
+                        <td>@(plan.IsFeatured ? "★" : "-")</td>
                         <td>
                             <div class="admin-table-actions">
                                 <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => Edit(plan)">@Lang.T("admin.common.edit")</button>
@@ -109,7 +155,11 @@ else
 
 @code {
     private bool IsSuperAdmin;
+    private bool CandidateFeatureEnabled;
+    private bool CompanyFeatureEnabled = true;
+    private PlanAudience ActiveAudience = PlanAudience.Company;
     private List<PlanDto>? PlanList;
+    private List<PlanDto> VisiblePlans => (PlanList ?? new()).Where(p => p.Audience == ActiveAudience).ToList();
     private SavePlanDto Form { get; set; } = new();
     private Guid? EditingId;
     private string? Error;
@@ -123,7 +173,11 @@ else
         IsSuperAdmin = int.TryParse(staffRoleRaw, out var role) && role == (int)AdminStaffRole.SuperAdmin;
 
         if (IsSuperAdmin)
+        {
+            CandidateFeatureEnabled = await AuthApi.GetCandidatePriorityPlanEnabledAsync();
+            CompanyFeatureEnabled = await AuthApi.GetCompanyPlansEnabledAsync();
             await Load();
+        }
     }
 
     private async Task Load()
@@ -131,30 +185,61 @@ else
         PlanList = await AuthApi.GetAllPlansAsync();
     }
 
+    private void SwitchAudience(PlanAudience audience)
+    {
+        ActiveAudience = audience;
+        CancelEdit();
+    }
+
+    private async Task ToggleCandidateFeature(ChangeEventArgs e)
+    {
+        var enabled = e.Value is bool b && b;
+        var ok = await AuthApi.SetCandidatePriorityPlanEnabledAsync(enabled);
+        if (ok)
+            CandidateFeatureEnabled = enabled;
+        else
+            Error = Lang.T("admin.common.errorGeneric");
+    }
+
+    private async Task ToggleCompanyFeature(ChangeEventArgs e)
+    {
+        var enabled = e.Value is bool b && b;
+        var ok = await AuthApi.SetCompanyPlansEnabledAsync(enabled);
+        if (ok)
+            CompanyFeatureEnabled = enabled;
+        else
+            Error = Lang.T("admin.common.errorGeneric");
+    }
+
     private void Edit(PlanDto plan)
     {
         EditingId = plan.Id;
         Form = new SavePlanDto
         {
+            Audience = plan.Audience,
             Name = plan.Name,
             Description = plan.Description,
             Price = plan.Price,
             Currency = plan.Currency,
             SortOrder = plan.SortOrder,
-            IsActive = plan.IsActive
+            IsActive = plan.IsActive,
+            IsFeatured = plan.IsFeatured,
+            Features = plan.Features
         };
     }
 
     private void CancelEdit()
     {
         EditingId = null;
-        Form = new SavePlanDto();
+        Form = new SavePlanDto { Audience = ActiveAudience };
     }
 
     private async Task Save()
     {
         Error = null;
         if (string.IsNullOrWhiteSpace(Form.Name)) return;
+
+        Form.Audience = EditingId == null ? ActiveAudience : Form.Audience;
 
         var (result, error) = EditingId == null
             ? await AuthApi.CreatePlanAsync(Form)
