@@ -162,6 +162,45 @@ public class DeliveryService : IDeliveryService
         return await MapToDtoAsync(delivery);
     }
 
+    /// <summary>Registra la respuesta de la empresa (Interesado/Contratado/Descartado) en su nombre,
+    /// cuando la da por telefono/WhatsApp en vez de desde su portal. Queda en el audit log quien la
+    /// cargo. No permite salir de Contratado si ya hay fechas de contratacion/incorporacion o el
+    /// proceso esta cerrado, para no dejar garantia/cierre colgando de una entrega no contratada.</summary>
+    public async Task<DeliveryDto?> RecordCompanyResponseByAdminAsync(Guid deliveryId, int status, string? feedback, Guid adminId, string? ipAddress)
+    {
+        var delivery = await _context.PT_CandidateDeliveries
+            .FirstOrDefaultAsync(d => d.Id == deliveryId && !d.IsDeleted);
+        if (delivery == null) return null;
+
+        var allowed = new[] { (int)DeliveryStatus.Interested, (int)DeliveryStatus.Hired, (int)DeliveryStatus.RejectedByCompany };
+        if (!allowed.Contains(status))
+            throw new InvalidOperationException("Estado no permitido.");
+
+        if (delivery.ProcessClosedAt != null)
+            throw new InvalidOperationException("El proceso ya esta cerrado, no se puede cambiar la respuesta.");
+
+        if (delivery.Status == (int)DeliveryStatus.Hired && status != (int)DeliveryStatus.Hired
+            && (delivery.HiringDate != null || delivery.IncorporationDate != null))
+            throw new InvalidOperationException("La entrega ya tiene fecha de contratacion o incorporacion registrada, no se puede sacar de Contratado.");
+
+        var previousStatus = delivery.Status;
+        if (delivery.ViewedAt == null)
+            delivery.ViewedAt = DateTime.UtcNow;
+
+        delivery.Status = status;
+        if (feedback != null)
+            delivery.CompanyFeedback = feedback;
+        delivery.RespondedAt = DateTime.UtcNow;
+        delivery.UpdatedAt = DateTime.UtcNow;
+        delivery.UpdatedBy = adminId;
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(adminId, "Recruitment.RecordCompanyResponse", "PTCandidateDelivery", delivery.Id,
+            $"{{\"from\":{previousStatus},\"to\":{status},\"source\":\"admin\"}}", ipAddress);
+
+        return await GetDeliveryDtoAsync(deliveryId);
+    }
+
     public async Task<DeliveryDto?> SetIncorporationDateAsync(Guid deliveryId, DateTime incorporationDate, Guid adminId)
     {
         var delivery = await _context.PT_CandidateDeliveries

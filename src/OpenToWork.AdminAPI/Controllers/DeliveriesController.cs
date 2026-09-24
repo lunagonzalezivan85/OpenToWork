@@ -40,6 +40,22 @@ public class DeliveriesController : AdminControllerBase
         return Ok(result);
     }
 
+    /// <summary>Registra la respuesta de la empresa (Interesado/Contratado/Descartado) en su nombre,
+    /// cuando la empresa responde fuera del portal (telefono, WhatsApp, correo).</summary>
+    [HttpPut("{id}/company-response")]
+    public async Task<IActionResult> RecordCompanyResponse(Guid id, [FromBody] RespondDeliveryDto dto)
+    {
+        try
+        {
+            var result = await _deliveryService.RecordCompanyResponseByAdminAsync(id, dto.Status, dto.Feedback, AdminId, ClientIp);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     /// <summary>Registra la fecha de incorporacion del candidato (paso 17). Solo permitido cuando
     /// la entrega esta en estado Contratado; habilita el calculo de garantia (paso 19).</summary>
     [HttpPut("{id}/incorporation")]

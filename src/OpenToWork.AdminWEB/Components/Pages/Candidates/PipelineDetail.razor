@@ -1126,6 +1126,42 @@ else
                                 </div>
                                 <span class="admin-result-badge @GetDeliveryBadgeClass(d.Status)">@GetDeliveryStatusLabel(d.Status)</span>
                             </div>
+                            @if (!string.IsNullOrEmpty(d.CompanyFeedback))
+                            {
+                                <div style="font-size:0.8rem; margin-top:0.35rem; color: var(--text-muted);">
+                                    @Lang.T("admin.recruitment.companyFeedback"): @d.CompanyFeedback
+                                </div>
+                            }
+                            @if (CanRecordCompanyResponse(d))
+                            {
+                                @if (RecordingResponseForId == d.Id)
+                                {
+                                    <div style="margin-top:0.5rem; padding:0.5rem; border:1px solid var(--input-border); border-radius:8px;">
+                                        <select class="admin-select" style="width:100%;" @bind="ResponseStatus">
+                                            <option value="@((int)DeliveryStatus.Interested)">@GetDeliveryStatusLabel((int)DeliveryStatus.Interested)</option>
+                                            <option value="@((int)DeliveryStatus.Hired)">@GetDeliveryStatusLabel((int)DeliveryStatus.Hired)</option>
+                                            <option value="@((int)DeliveryStatus.RejectedByCompany)">@GetDeliveryStatusLabel((int)DeliveryStatus.RejectedByCompany)</option>
+                                        </select>
+                                        <textarea class="admin-input" rows="2" style="width:100%; margin-top:0.35rem;" @bind="ResponseFeedback" placeholder="@Lang.T("admin.recruitment.companyResponsePlaceholder")"></textarea>
+                                        @if (!string.IsNullOrEmpty(ResponseError))
+                                        {
+                                            <p style="color: var(--danger); font-size: 0.75rem; margin: 0.35rem 0;">@ResponseError</p>
+                                        }
+                                        <div style="display:flex; gap:0.4rem; margin-top:0.35rem;">
+                                            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsDeliveryBusy" @onclick="() => ConfirmCompanyResponseAsync(d.Id)">@Lang.T("admin.common.confirm")</button>
+                                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { RecordingResponseForId = null; ResponseError = null; }">@Lang.T("admin.common.cancel")</button>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div style="margin-top:0.5rem;">
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => StartCompanyResponse(d)">
+                                            @Lang.T("admin.recruitment.recordCompanyResponse")
+                                        </button>
+                                    </div>
+                                }
+                            }
                             @if (d.Status == (int)DeliveryStatus.Hired)
                             {
                                 @if (d.HiringDate == null)
@@ -1518,6 +1554,53 @@ else
     private int FeedbackRating { get; set; } = 5;
     private string? FeedbackComments { get; set; }
     private string? FeedbackError { get; set; }
+
+    // Respuesta de la empresa cargada por el admin (cuando responde fuera del portal).
+    private Guid? RecordingResponseForId { get; set; }
+    private int ResponseStatus { get; set; }
+    private string? ResponseFeedback { get; set; }
+    private string? ResponseError { get; set; }
+
+    // Misma regla que DeliveryService.RecordCompanyResponseByAdminAsync: una vez contratado con
+    // fechas cargadas (o proceso cerrado) la respuesta ya no se puede cambiar.
+    private static bool CanRecordCompanyResponse(DeliveryDto d) =>
+        d.ProcessClosedAt == null
+        && !(d.Status == (int)DeliveryStatus.Hired && (d.HiringDate != null || d.IncorporationDate != null));
+
+    private void StartCompanyResponse(DeliveryDto d)
+    {
+        RecordingResponseForId = d.Id;
+        ResponseStatus = d.Status is (int)DeliveryStatus.Interested or (int)DeliveryStatus.Hired or (int)DeliveryStatus.RejectedByCompany
+            ? d.Status
+            : (int)DeliveryStatus.Interested;
+        ResponseFeedback = d.CompanyFeedback;
+        ResponseError = null;
+    }
+
+    private async Task ConfirmCompanyResponseAsync(Guid deliveryId)
+    {
+        if (IsDeliveryBusy) return;
+        IsDeliveryBusy = true;
+        ResponseError = null;
+
+        var dto = new RespondDeliveryDto { Status = ResponseStatus, Feedback = ResponseFeedback };
+        var (result, error) = await AuthApi.RecordDeliveryCompanyResponseAsync(deliveryId, dto);
+        if (result != null)
+        {
+            RecordingResponseForId = null;
+            Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail!.Id);
+            foreach (var d in Deliveries)
+            {
+                IncorporationDateByDelivery.TryAdd(d.Id, DateTime.Today);
+                HiringDateByDelivery.TryAdd(d.Id, DateTime.Today);
+            }
+        }
+        else
+        {
+            ResponseError = error ?? "No se pudo registrar la respuesta.";
+        }
+        IsDeliveryBusy = false;
+    }
 
     private static bool IsExclusionReason(int reason) => ((WarrantyReplacementReason)reason).IsExclusion();
 

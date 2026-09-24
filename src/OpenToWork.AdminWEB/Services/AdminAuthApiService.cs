@@ -983,6 +983,13 @@ public class AdminAuthApiService
         return await ReadResultAsync<WarrantyReplacementDto>(response);
     }
 
+    public async Task<(DeliveryDto? Result, string? Error)> RecordDeliveryCompanyResponseAsync(Guid deliveryId, RespondDeliveryDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/recruitment-deliveries/{deliveryId}/company-response", dto);
+        return await ReadResultAsync<DeliveryDto>(response);
+    }
+
     public async Task<(DeliveryDto? Result, string? Error)> CloseDeliveryProcessAsync(Guid deliveryId, CloseProcessDto dto)
     {
         await SetAuthHeaderAsync();
