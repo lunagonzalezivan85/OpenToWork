@@ -10,7 +10,8 @@ namespace OpenToWork.Core.Services;
 /// (sin columna ni etapa nueva en la base): un candidato esta Colocado si tiene una entrega en
 /// Contratado, o gano una negociacion Cerrada, sin una reposicion de garantia activa sobre ella
 /// (una reposicion EnCurso/Completada/Excluida significa que el candidato ya no esta en ese puesto;
-/// una Cancelada no cuenta). Si deja el puesto vuelve a estar disponible para otra entrega.
+/// una Cancelada no cuenta) ni una liberacion manual (PlacementEndedAt, "Liberar candidato"). Si deja
+/// el puesto vuelve a estar disponible para otra entrega.
 /// </summary>
 internal static class CandidatePlacementHelper
 {
@@ -36,6 +37,7 @@ internal static class CandidatePlacementHelper
                 d.PT_CandidateId,
                 d.Status,
                 d.DeliveredAt,
+                d.PlacementEndedAt,
                 CompanyName = d.Company.Name,
                 VacancyTitle = d.Vacancy.Title
             })
@@ -43,7 +45,7 @@ internal static class CandidatePlacementHelper
 
         var hiredNegotiations = await context.PT_Negotiations
             .Where(n => !n.IsDeleted && n.Status == (int)NegotiationStatus.Cerrada
-                && n.WinningApplication != null && candidateIds.Contains(n.WinningApplication.PT_CandidateId))
+                && n.WinningApplication != null && n.PlacementEndedAt == null && candidateIds.Contains(n.WinningApplication.PT_CandidateId))
             .Select(n => new
             {
                 n.Id,
@@ -68,7 +70,7 @@ internal static class CandidatePlacementHelper
         {
             var own = deliveries.Where(d => d.PT_CandidateId == candidateId).OrderByDescending(d => d.DeliveredAt).ToList();
             var placements = own
-                .Where(d => d.Status == (int)DeliveryStatus.Hired && !replacedSet.Contains(d.Id))
+                .Where(d => d.Status == (int)DeliveryStatus.Hired && d.PlacementEndedAt == null && !replacedSet.Contains(d.Id))
                 .Select(d => (d.DeliveredAt, d.CompanyName, d.VacancyTitle))
                 .Concat(hiredNegotiations
                     .Where(n => n.CandidateId == candidateId && !replacedSet.Contains(n.Id))
@@ -89,7 +91,9 @@ internal static class CandidatePlacementHelper
                 RejectedCount = own.Count(d => d.Status == (int)DeliveryStatus.RejectedByCompany),
                 LastDeliveryStatus = last?.Status,
                 LastDeliveryCompanyName = last?.CompanyName,
-                LastDeliveredAt = last?.DeliveredAt
+                LastDeliveredAt = last?.DeliveredAt,
+                LastDeliveryLeft = last != null && last.Status == (int)DeliveryStatus.Hired
+                    && (last.PlacementEndedAt != null || replacedSet.Contains(last.Id))
             };
         }
 
@@ -105,13 +109,13 @@ internal static class CandidatePlacementHelper
             .Where(w => !w.IsDeleted && w.Status != (int)WarrantyReplacementStatus.Cancelada);
 
         var fromDeliveries = context.PT_CandidateDeliveries
-            .Where(d => !d.IsDeleted && d.Status == (int)DeliveryStatus.Hired
+            .Where(d => !d.IsDeleted && d.Status == (int)DeliveryStatus.Hired && d.PlacementEndedAt == null
                 && (exceptVacancyId == null || d.PT_VacancyId != exceptVacancyId)
                 && !activeReplacements.Any(w => w.OriginalDeliveryId == d.Id))
             .Select(d => d.PT_CandidateId);
 
         var fromNegotiations = context.PT_Negotiations
-            .Where(n => !n.IsDeleted && n.Status == (int)NegotiationStatus.Cerrada && n.WinningApplicationId != null
+            .Where(n => !n.IsDeleted && n.Status == (int)NegotiationStatus.Cerrada && n.WinningApplicationId != null && n.PlacementEndedAt == null
                 && (exceptVacancyId == null || n.PT_VacancyId != exceptVacancyId)
                 && !activeReplacements.Any(w => w.OriginalNegotiationId == n.Id))
             .Select(n => n.WinningApplication!.PT_CandidateId);
@@ -124,5 +128,5 @@ internal static class CandidatePlacementHelper
         PlacedCandidateIds(context, exceptVacancyId).AnyAsync(id => id == ptCandidateId);
 
     public const string PlacedErrorMessage =
-        "El candidato ya esta Colocado (contratado en otra empresa). Solo vuelve a estar disponible si deja ese puesto (reposicion de garantia).";
+        "El candidato ya esta Colocado (contratado en otra empresa). Vuelve a estar disponible si deja ese puesto (reposicion de garantia o \"Liberar candidato\" en el admin).";
 }

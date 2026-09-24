@@ -60,6 +60,11 @@ public class DeliveryDto
     public string? FeedbackComments { get; set; }
     public DateTime? FeedbackRecordedAt { get; set; }
     public bool CanRecordFeedback { get; set; }
+
+    /// <summary>"Liberar candidato": el candidato dejo este puesto fuera de garantia.</summary>
+    public DateTime? PlacementEndedAt { get; set; }
+    public int? PlacementEndReason { get; set; }
+    public string? PlacementEndNotes { get; set; }
 }
 
 public class VacancyApplicantSummaryDto
@@ -88,4 +93,13 @@ public class CandidatePlacementSummaryDto
     public int? LastDeliveryStatus { get; set; }
     public string? LastDeliveryCompanyName { get; set; }
     public DateTime? LastDeliveredAt { get; set; }
+    /// <summary>La ultima entrega fue Contratado pero el candidato ya dejo el puesto (reposicion o liberado).</summary>
+    public bool LastDeliveryLeft { get; set; }
+}
+
+public class ReleaseCandidateDto
+{
+    /// <summary>PlacementEndReason.</summary>
+    public int Reason { get; set; }
+    public string? Notes { get; set; }
 }

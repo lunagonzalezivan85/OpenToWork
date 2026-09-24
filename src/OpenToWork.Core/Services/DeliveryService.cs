@@ -182,6 +182,9 @@ public class DeliveryService : IDeliveryService
         if (delivery.ProcessClosedAt != null)
             throw new InvalidOperationException("El proceso ya esta cerrado, no se puede cambiar la respuesta.");
 
+        if (delivery.PlacementEndedAt != null)
+            throw new InvalidOperationException("El candidato ya dejo este puesto (liberado), no se puede cambiar la respuesta.");
+
         if (delivery.Status == (int)DeliveryStatus.Hired && status != (int)DeliveryStatus.Hired
             && (delivery.HiringDate != null || delivery.IncorporationDate != null))
             throw new InvalidOperationException("La entrega ya tiene fecha de contratacion o incorporacion registrada, no se puede sacar de Contratado.");
@@ -202,6 +205,73 @@ public class DeliveryService : IDeliveryService
             $"{{\"from\":{previousStatus},\"to\":{status},\"source\":\"admin\"}}", ipAddress);
 
         return await GetDeliveryDtoAsync(deliveryId);
+    }
+
+    public async Task<int> ReleaseCandidateAsync(Guid userId, ReleaseCandidateDto dto, Guid adminId, string? ipAddress)
+    {
+        if (!Enum.IsDefined(typeof(PlacementEndReason), dto.Reason))
+            throw new InvalidOperationException("Motivo no valido.");
+        if (dto.Reason == (int)PlacementEndReason.Otro && string.IsNullOrWhiteSpace(dto.Notes))
+            throw new InvalidOperationException("Indica el motivo en las notas.");
+
+        var candidateId = await _context.PT_Candidates
+            .Where(c => c.SCUserId == userId && !c.IsDeleted)
+            .Select(c => (Guid?)c.Id)
+            .FirstOrDefaultAsync();
+        if (candidateId == null) throw new InvalidOperationException("Perfil de candidato no encontrado.");
+
+        var activeReplacements = _context.PT_WarrantyReplacements
+            .Where(w => !w.IsDeleted && w.Status != (int)WarrantyReplacementStatus.Cancelada);
+
+        // Mismas condiciones que CandidatePlacementHelper.PlacedCandidateIds (colocaciones activas).
+        var deliveries = await _context.PT_CandidateDeliveries
+            .Where(d => d.PT_CandidateId == candidateId && !d.IsDeleted && d.Status == (int)DeliveryStatus.Hired
+                && d.PlacementEndedAt == null && !activeReplacements.Any(w => w.OriginalDeliveryId == d.Id))
+            .ToListAsync();
+        var negotiations = await _context.PT_Negotiations
+            .Where(n => !n.IsDeleted && n.Status == (int)NegotiationStatus.Cerrada && n.PlacementEndedAt == null
+                && n.WinningApplication != null && n.WinningApplication.PT_CandidateId == candidateId
+                && !activeReplacements.Any(w => w.OriginalNegotiationId == n.Id))
+            .ToListAsync();
+
+        if (deliveries.Count == 0 && negotiations.Count == 0)
+            throw new InvalidOperationException("El candidato no esta Colocado.");
+
+        // Dentro de la garantia la salida se gestiona con una reposicion (la empresa tiene derecho
+        // a un reemplazo); liberar solo aplica fuera de garantia o sin garantia definida.
+        foreach (var (vacancyId, incorporation) in deliveries.Select(d => (d.PT_VacancyId, d.IncorporationDate))
+                     .Concat(negotiations.Select(n => (n.PT_VacancyId, n.IncorporationDate))))
+        {
+            var (_, status) = WarrantyCalculator.Calculate(incorporation, await _warranty.GetWarrantyDaysForVacancyAsync(vacancyId));
+            if (status is WarrantyStatus.Activa or WarrantyStatus.PorVencer)
+                throw new InvalidOperationException("La garantia sigue vigente: registra la salida como reposicion de garantia, no como liberacion.");
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var d in deliveries)
+        {
+            d.PlacementEndedAt = now;
+            d.PlacementEndReason = dto.Reason;
+            d.PlacementEndNotes = dto.Notes;
+            d.PlacementEndedByUserId = adminId;
+            d.UpdatedAt = now;
+            d.UpdatedBy = adminId;
+        }
+        foreach (var n in negotiations)
+        {
+            n.PlacementEndedAt = now;
+            n.PlacementEndReason = dto.Reason;
+            n.PlacementEndNotes = dto.Notes;
+            n.PlacementEndedByUserId = adminId;
+            n.UpdatedAt = now;
+            n.UpdatedBy = adminId;
+        }
+        await _context.SaveChangesAsync();
+
+        await _auditLog.LogAsync(adminId, "Recruitment.ReleaseCandidate", "PTCandidate", candidateId.Value,
+            $"{{\"reason\":{dto.Reason},\"deliveries\":{deliveries.Count},\"negotiations\":{negotiations.Count}}}", ipAddress);
+
+        return deliveries.Count + negotiations.Count;
     }
 
     public async Task<DeliveryDto?> SetIncorporationDateAsync(Guid deliveryId, DateTime incorporationDate, Guid adminId)
@@ -374,7 +444,10 @@ public class DeliveryService : IDeliveryService
             FeedbackRating = d.FeedbackRating,
             FeedbackComments = d.FeedbackComments,
             FeedbackRecordedAt = d.FeedbackRecordedAt,
-            CanRecordFeedback = canRecordFeedback
+            CanRecordFeedback = canRecordFeedback,
+            PlacementEndedAt = d.PlacementEndedAt,
+            PlacementEndReason = d.PlacementEndReason,
+            PlacementEndNotes = d.PlacementEndNotes
         };
     }
 }

@@ -983,6 +983,15 @@ public class AdminAuthApiService
         return await ReadResultAsync<WarrantyReplacementDto>(response);
     }
 
+    public async Task<(bool Ok, string? Error)> ReleaseCandidateAsync(Guid userId, ReleaseCandidateDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment-deliveries/release-candidate/{userId}", dto);
+        if (response.IsSuccessStatusCode) return (true, null);
+        var (_, error) = await ReadResultAsync<object>(response);
+        return (false, error);
+    }
+
     public async Task<(DeliveryDto? Result, string? Error)> RecordDeliveryCompanyResponseAsync(Guid deliveryId, RespondDeliveryDto dto)
     {
         await SetAuthHeaderAsync();

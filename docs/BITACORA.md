@@ -348,6 +348,7 @@ El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` 
 
 > - `PlanSubscriptionFields` — `PlanExpiresAt` + `StripeCustomerId`/`StripeSubscriptionId` en `PT_Candidates` y `PT_Companies`, `PlanTier` en `PT_Companies`. **Rellena `PlanExpiresAt` (+1 mes) para candidatos que ya tenian plan de pago**; si la migracion se aplico antes de ese arreglo (commit `292f6ad`), correr a mano:
 >   `UPDATE PT_Candidates SET PlanExpiresAt = DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 1 MONTH) WHERE PlanTier <> 0 AND PlanExpiresAt IS NULL;`
+> - `CandidatePlacementRelease` — `PlacementEndedAt`/`PlacementEndReason`/`PlacementEndNotes`/`PlacementEndedByUserId` en `PT_CandidateDeliveries` y `PT_Negotiations` ("Liberar candidato"). Recortada a mano (ruido de seed de `SY_DocumentTypes`/`SY_WizardSteps`/`PT_Plans`).
 > - "Colocado" y la respuesta de la empresa desde el admin **no agregan migraciones**.
 
 ### Cambios Realizados
@@ -369,6 +370,7 @@ El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` 
 - Componente `PlacementBadge.razor` ("Colocado en X" / "Entregado · X (N entregas)" / "Descartado · X") en el pipeline, la consola de candidatos, el perfil y el detalle del pipeline (donde ademas se desactiva "Entregar a empresa").
 - Nota: con los datos de prueba actuales, algunos candidatos (p. ej. Donald, Juan Perez) salen Colocados por negociaciones Cerradas de pruebas anteriores — la regla es correcta, son datos de test.
 - **Un candidato Colocado no esta disponible para otra plaza** (`CandidatePlacementHelper.PlacedCandidateIds`, filtro en SQL): no puede postularse desde su portal (ve el motivo en la vacante), no se puede presentar en una negociacion ni elegir como ganador, no aparece en el Ranking por Compatibilidad, en "Cumplen sin postularse", en la busqueda de candidatos (`/candidate-search`) ni en el calculo de matches de vacantes nuevas. Excepcion: la vacante donde fue contratado no cuenta como "otra plaza".
+- **Liberar candidato** (detalle del pipeline, visible solo si esta Colocado): cuando deja el puesto **fuera de garantia** (renuncia, despido, fin de contrato, otro + notas) se registra el fin de todas sus colocaciones activas (entregas y negociaciones) y vuelve a estar disponible. Dentro de la garantia se rechaza: esa salida se gestiona con una reposicion de garantia. Queda en el audit log (`Recruitment.ReleaseCandidate`) y la entrega muestra "Dejo el puesto el X · motivo".
 
 ### Pendiente
 

@@ -15,7 +15,7 @@
     else if (Placement.DeliveriesCount > 0)
     {
         <span class="admin-result-badge @LastStatusClass" title="@Lang.T("admin.recruitment.deliveriesCountHint")">
-            @StatusLabel(Placement.LastDeliveryStatus) · @Placement.LastDeliveryCompanyName
+            @(Placement.LastDeliveryLeft ? Lang.T("admin.recruitment.leftJob") : StatusLabel(Placement.LastDeliveryStatus)) · @Placement.LastDeliveryCompanyName
             @if (Placement.DeliveriesCount > 1)
             {
                 <text> (@Placement.DeliveriesCount @Lang.T("admin.recruitment.deliveriesShort"))</text>
@@ -27,7 +27,7 @@
 @code {
     [Parameter] public CandidatePlacementSummaryDto? Placement { get; set; }
 
-    private string LastStatusClass => Placement?.LastDeliveryStatus switch
+    private string LastStatusClass => Placement?.LastDeliveryLeft == true ? "admin-result-badge--muted" : Placement?.LastDeliveryStatus switch
     {
         (int)DeliveryStatus.Interested => "admin-result-badge--info",
         (int)DeliveryStatus.RejectedByCompany => "admin-result-badge--danger",

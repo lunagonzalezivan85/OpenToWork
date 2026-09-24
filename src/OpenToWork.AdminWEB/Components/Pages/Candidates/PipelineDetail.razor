@@ -1113,6 +1113,35 @@ else
             @if (Detail.Placement?.IsPlaced == true)
             {
                 <p style="color: var(--text-muted); font-size: 0.85rem;">@Lang.T("admin.recruitment.placedBlocksDelivery")</p>
+                @if (IsReleaseFormOpen)
+                {
+                    <div style="margin-bottom:0.75rem; padding:0.5rem; border:1px solid var(--input-border); border-radius:8px;">
+                        <p style="font-size:0.8rem; margin:0 0 0.35rem;">@Lang.T("admin.recruitment.releaseHint")</p>
+                        <select class="admin-select" style="width:100%;" @bind="ReleaseReason">
+                            <option value="@((int)PlacementEndReason.RenunciaVoluntaria)">@Lang.T("admin.recruitment.releaseReasonResignation")</option>
+                            <option value="@((int)PlacementEndReason.Despido)">@Lang.T("admin.recruitment.releaseReasonDismissal")</option>
+                            <option value="@((int)PlacementEndReason.FinDeContrato)">@Lang.T("admin.recruitment.releaseReasonContractEnd")</option>
+                            <option value="@((int)PlacementEndReason.Otro)">@Lang.T("admin.recruitment.releaseReasonOther")</option>
+                        </select>
+                        <textarea class="admin-input" rows="2" style="width:100%; margin-top:0.35rem;" @bind="ReleaseNotes" placeholder="@Lang.T("admin.recruitment.releaseNotesPlaceholder")"></textarea>
+                        @if (!string.IsNullOrEmpty(ReleaseError))
+                        {
+                            <p style="color: var(--danger); font-size: 0.75rem; margin: 0.35rem 0;">@ReleaseError</p>
+                        }
+                        <div style="display:flex; gap:0.4rem; margin-top:0.35rem;">
+                            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsDeliveryBusy" @onclick="ConfirmReleaseCandidateAsync">@Lang.T("admin.common.confirm")</button>
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { IsReleaseFormOpen = false; ReleaseError = null; }">@Lang.T("admin.common.cancel")</button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div style="margin-bottom:0.75rem;">
+                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { IsReleaseFormOpen = true; ReleaseReason = 0; ReleaseNotes = null; ReleaseError = null; }">
+                            @Lang.T("admin.recruitment.releaseCandidate")
+                        </button>
+                    </div>
+                }
             }
             else if (Detail.VacancyId == null)
             {
@@ -1135,6 +1164,14 @@ else
                             {
                                 <div style="font-size:0.8rem; margin-top:0.35rem; color: var(--text-muted);">
                                     @Lang.T("admin.recruitment.companyFeedback"): @d.CompanyFeedback
+                                </div>
+                            }
+                            @if (d.PlacementEndedAt.HasValue)
+                            {
+                                <div style="margin-top:0.35rem;">
+                                    <span class="admin-result-badge admin-result-badge--muted" title="@d.PlacementEndNotes">
+                                        @Lang.T("admin.recruitment.leftJobOn") @d.PlacementEndedAt.Value.ToLocalTime().ToString("dd/MM/yyyy") · @ReleaseReasonLabel(d.PlacementEndReason)
+                                    </span>
                                 </div>
                             }
                             @if (CanRecordCompanyResponse(d))
@@ -1569,8 +1606,42 @@ else
     // Misma regla que DeliveryService.RecordCompanyResponseByAdminAsync: una vez contratado con
     // fechas cargadas (o proceso cerrado) la respuesta ya no se puede cambiar.
     private static bool CanRecordCompanyResponse(DeliveryDto d) =>
-        d.ProcessClosedAt == null
+        d.ProcessClosedAt == null && d.PlacementEndedAt == null
         && !(d.Status == (int)DeliveryStatus.Hired && (d.HiringDate != null || d.IncorporationDate != null));
+
+    // "Liberar candidato": dejo el puesto fuera de garantia, vuelve a estar disponible.
+    private bool IsReleaseFormOpen { get; set; }
+    private int ReleaseReason { get; set; }
+    private string? ReleaseNotes { get; set; }
+    private string? ReleaseError { get; set; }
+
+    private async Task ConfirmReleaseCandidateAsync()
+    {
+        if (IsDeliveryBusy) return;
+        IsDeliveryBusy = true;
+        ReleaseError = null;
+
+        var (ok, error) = await AuthApi.ReleaseCandidateAsync(UserId, new ReleaseCandidateDto { Reason = ReleaseReason, Notes = ReleaseNotes });
+        if (ok)
+        {
+            IsReleaseFormOpen = false;
+            Detail = await AuthApi.GetRecruitmentByUserAsync(UserId) ?? Detail;
+            Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail!.Id);
+        }
+        else
+        {
+            ReleaseError = error ?? "No se pudo liberar al candidato.";
+        }
+        IsDeliveryBusy = false;
+    }
+
+    private string ReleaseReasonLabel(int? reason) => reason switch
+    {
+        (int)PlacementEndReason.RenunciaVoluntaria => Lang.T("admin.recruitment.releaseReasonResignation"),
+        (int)PlacementEndReason.Despido => Lang.T("admin.recruitment.releaseReasonDismissal"),
+        (int)PlacementEndReason.FinDeContrato => Lang.T("admin.recruitment.releaseReasonContractEnd"),
+        _ => Lang.T("admin.recruitment.releaseReasonOther")
+    };
 
     private void StartCompanyResponse(DeliveryDto d)
     {

@@ -56,6 +56,22 @@ public class DeliveriesController : AdminControllerBase
         }
     }
 
+    /// <summary>"Liberar candidato": el candidato dejo su puesto fuera de garantia (renuncia,
+    /// despido, fin de contrato) y vuelve a estar disponible para otras plazas.</summary>
+    [HttpPost("release-candidate/{userId}")]
+    public async Task<IActionResult> ReleaseCandidate(Guid userId, [FromBody] ReleaseCandidateDto dto)
+    {
+        try
+        {
+            var released = await _deliveryService.ReleaseCandidateAsync(userId, dto, AdminId, ClientIp);
+            return Ok(new { released });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     /// <summary>Registra la fecha de incorporacion del candidato (paso 17). Solo permitido cuando
     /// la entrega esta en estado Contratado; habilita el calculo de garantia (paso 19).</summary>
     [HttpPut("{id}/incorporation")]

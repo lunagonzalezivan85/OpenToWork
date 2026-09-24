@@ -84,4 +84,17 @@ public class PTCandidateDelivery : BaseEntity
 
     [ForeignKey("FeedbackRecordedByUserId")]
     public virtual SCUser? FeedbackRecordedByUser { get; set; }
+    /// <summary>Fin de la colocacion registrado por un admin ("Liberar candidato") cuando el
+    /// candidato deja el puesto fuera de garantia (renuncia, despido, fin de contrato). Con esto
+    /// deja de contar como Colocado (CandidatePlacementHelper) y vuelve a estar disponible. Null =
+    /// sigue en el puesto (salvo que haya una reposicion de garantia).</summary>
+    public DateTime? PlacementEndedAt { get; set; }
+
+    /// <summary>PlacementEndReason.</summary>
+    public int? PlacementEndReason { get; set; }
+
+    [MaxLength(1000)]
+    public string? PlacementEndNotes { get; set; }
+
+    public Guid? PlacementEndedByUserId { get; set; }
 }
