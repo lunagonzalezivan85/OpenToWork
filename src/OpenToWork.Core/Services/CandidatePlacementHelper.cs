@@ -96,9 +96,33 @@ internal static class CandidatePlacementHelper
         return result;
     }
 
-    public static async Task<bool> IsPlacedAsync(AppDbContext context, Guid userId)
+    /// <summary>Misma regla que GetSummariesAsync pero como IQueryable de PTCandidate.Id, para
+    /// filtrar en SQL (ranking, busqueda, postulaciones). Con exceptVacancyId no cuenta como
+    /// "colocado en otra plaza" al que fue contratado justamente en esa vacante.</summary>
+    public static IQueryable<Guid> PlacedCandidateIds(AppDbContext context, Guid? exceptVacancyId = null)
     {
-        var summaries = await GetSummariesAsync(context, new[] { userId });
-        return summaries.TryGetValue(userId, out var s) && s.IsPlaced;
+        var activeReplacements = context.PT_WarrantyReplacements
+            .Where(w => !w.IsDeleted && w.Status != (int)WarrantyReplacementStatus.Cancelada);
+
+        var fromDeliveries = context.PT_CandidateDeliveries
+            .Where(d => !d.IsDeleted && d.Status == (int)DeliveryStatus.Hired
+                && (exceptVacancyId == null || d.PT_VacancyId != exceptVacancyId)
+                && !activeReplacements.Any(w => w.OriginalDeliveryId == d.Id))
+            .Select(d => d.PT_CandidateId);
+
+        var fromNegotiations = context.PT_Negotiations
+            .Where(n => !n.IsDeleted && n.Status == (int)NegotiationStatus.Cerrada && n.WinningApplicationId != null
+                && (exceptVacancyId == null || n.PT_VacancyId != exceptVacancyId)
+                && !activeReplacements.Any(w => w.OriginalNegotiationId == n.Id))
+            .Select(n => n.WinningApplication!.PT_CandidateId);
+
+        return fromDeliveries.Concat(fromNegotiations);
     }
+
+    /// <summary>Por PTCandidate.Id. Para validar una accion puntual (postularse, negociar).</summary>
+    public static Task<bool> IsCandidatePlacedAsync(AppDbContext context, Guid ptCandidateId, Guid? exceptVacancyId = null) =>
+        PlacedCandidateIds(context, exceptVacancyId).AnyAsync(id => id == ptCandidateId);
+
+    public const string PlacedErrorMessage =
+        "El candidato ya esta Colocado (contratado en otra empresa). Solo vuelve a estar disponible si deja ese puesto (reposicion de garantia).";
 }

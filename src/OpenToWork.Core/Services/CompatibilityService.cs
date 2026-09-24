@@ -110,8 +110,11 @@ public class CompatibilityService : ICompatibilityService
 
         // Candidatos elegibles: perfil publico + wizard completo (mismo criterio que
         // AlertService para decidir que candidatos son visibles/notificables).
+        // Un candidato Colocado en otra plaza no esta disponible (CandidatePlacementHelper).
+        var placedIds = CandidatePlacementHelper.PlacedCandidateIds(_context, vacancyId);
         var candidateIds = await _context.PT_Candidates
             .Where(c => !c.IsDeleted && c.IsProfilePublic && c.WizardCompleted)
+            .Where(c => !placedIds.Contains(c.Id))
             .Select(c => c.Id)
             .ToListAsync();
 
@@ -127,8 +130,10 @@ public class CompatibilityService : ICompatibilityService
     {
         var take = limit is > 0 ? limit.Value : DefaultShortlistLimit;
 
+        var placedIds = CandidatePlacementHelper.PlacedCandidateIds(_context, vacancyId);
         var items = await _context.PT_JobMatchScores
             .Where(m => m.PT_VacancyId == vacancyId && !m.IsDeleted)
+            .Where(m => !placedIds.Contains(m.PT_CandidateId))
             .Include(m => m.Candidate)
             .OrderByDescending(m => m.MatchPercentage)
             .Take(take)
@@ -166,6 +171,9 @@ public class CompatibilityService : ICompatibilityService
 
         var query = _context.PT_JobMatchScores
             .Where(m => m.PT_VacancyId == vacancyId && !m.IsDeleted && m.MatchPercentage >= minPercentage);
+
+        var placedIds = CandidatePlacementHelper.PlacedCandidateIds(_context, vacancyId);
+        query = query.Where(m => !placedIds.Contains(m.PT_CandidateId));
 
         if (appliedCandidateIds.Count > 0)
             query = query.Where(m => !appliedCandidateIds.Contains(m.PT_CandidateId));

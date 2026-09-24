@@ -23,8 +23,11 @@ public class CandidateSearchService : ICandidateSearchService
 
     public async Task<CandidateSearchResultPageDto> SearchAsync(CandidateSearchFilterDto filter)
     {
+        // Los candidatos Colocados no aparecen como disponibles (CandidatePlacementHelper).
+        var placedIds = CandidatePlacementHelper.PlacedCandidateIds(_context);
         var query = _context.PT_Candidates
-            .Where(c => !c.IsDeleted && c.IsProfilePublic && c.WizardCompleted);
+            .Where(c => !c.IsDeleted && c.IsProfilePublic && c.WizardCompleted)
+            .Where(c => !placedIds.Contains(c.Id));
 
         if (filter.SkillId.HasValue)
         {

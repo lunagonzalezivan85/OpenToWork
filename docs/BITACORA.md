@@ -368,6 +368,7 @@ El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` 
 - Pipeline (`/candidates/pipeline`): columna virtual "Colocado" (sale de "Verificado"), tarjeta de estadistica "Colocados", y cada tarjeta muestra su estado de entrega.
 - Componente `PlacementBadge.razor` ("Colocado en X" / "Entregado · X (N entregas)" / "Descartado · X") en el pipeline, la consola de candidatos, el perfil y el detalle del pipeline (donde ademas se desactiva "Entregar a empresa").
 - Nota: con los datos de prueba actuales, algunos candidatos (p. ej. Donald, Juan Perez) salen Colocados por negociaciones Cerradas de pruebas anteriores — la regla es correcta, son datos de test.
+- **Un candidato Colocado no esta disponible para otra plaza** (`CandidatePlacementHelper.PlacedCandidateIds`, filtro en SQL): no puede postularse desde su portal (ve el motivo en la vacante), no se puede presentar en una negociacion ni elegir como ganador, no aparece en el Ranking por Compatibilidad, en "Cumplen sin postularse", en la busqueda de candidatos (`/candidate-search`) ni en el calculo de matches de vacantes nuevas. Excepcion: la vacante donde fue contratado no cuenta como "otra plaza".
 
 ### Pendiente
 

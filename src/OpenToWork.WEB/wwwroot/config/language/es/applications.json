@@ -4,6 +4,7 @@
     "noApplications": "No hay solicitudes recibidas",
     "noMyApplications": "No has aplicado a ninguna vacante",
     "applyTitle": "Aplicar a esta vacante",
+    "applyFailed": "No se pudo enviar la postulacion. Intenta de nuevo.",
     "apply": "Enviar solicitud",
     "coverLetter": "Carta de presentación",
     "expectedSalary": "Salario esperado",

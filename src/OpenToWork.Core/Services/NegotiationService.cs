@@ -33,6 +33,14 @@ public class NegotiationService : INegotiationService
             .ToListAsync();
         if (validCandidateIds.Count == 0) return null;
 
+        var placedIds = CandidatePlacementHelper.PlacedCandidateIds(_context, dto.VacancyId);
+        var placedNames = await _context.PT_Candidates
+            .Where(c => validCandidateIds.Contains(c.Id) && placedIds.Contains(c.Id))
+            .Select(c => (c.FirstName + " " + c.LastName).Trim())
+            .ToListAsync();
+        if (placedNames.Count > 0)
+            throw new InvalidOperationException($"No se puede presentar: ya estan Colocados en otra empresa: {string.Join(", ", placedNames)}.");
+
         // El shortlist (compatibilidad calculada, Fase 3) no exige que el candidato haya
         // aplicado antes — Trato Directo cura y presenta candidatos directamente. Se reutiliza
         // la PT_Application existente si ya aplico, o se crea una nueva (AdminCurated) si no.
@@ -117,6 +125,11 @@ public class NegotiationService : INegotiationService
         var applications = await _context.PT_Applications
             .Where(a => candidateApplicationIds.Contains(a.Id))
             .ToListAsync();
+
+        // El ganador pudo haber sido colocado en otra empresa mientras esta negociacion seguia abierta.
+        var winnerCandidateId = applications.First(a => a.Id == winningApplicationId).PT_CandidateId;
+        if (await CandidatePlacementHelper.IsCandidatePlacedAsync(_context, winnerCandidateId, negotiation.PT_VacancyId))
+            throw new InvalidOperationException(CandidatePlacementHelper.PlacedErrorMessage);
 
         foreach (var application in applications)
         {

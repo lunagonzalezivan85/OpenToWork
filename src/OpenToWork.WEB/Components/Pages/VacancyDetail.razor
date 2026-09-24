@@ -150,6 +150,10 @@
                     <input class="ot-input-field" type="number" placeholder="@Lang.T("applications.expectedSalary")" @bind="ExpectedSalary" />
                     <input class="ot-input-field" type="date" placeholder="@Lang.T("applications.availableFrom")" @bind="AvailableFromDate" />
                 </div>
+                @if (!string.IsNullOrEmpty(ApplyError))
+                {
+                    <p class="mb-md" style="color: var(--danger);">@ApplyError</p>
+                }
                 <button class="ot-btn ot-btn--primary" @onclick="ApplyToVacancy">@Lang.T("applications.apply")</button>
             </div>
         </div>
@@ -161,6 +165,7 @@
     private VacancyDto? Vacancy { get; set; }
     private bool LoadFailed { get; set; }
     private string CoverLetter { get; set; } = "";
+    private string? ApplyError { get; set; }
     private decimal? ExpectedSalary { get; set; }
     private DateTime? AvailableFromDate { get; set; }
 
@@ -196,10 +201,15 @@
             ExpectedSalary = ExpectedSalary,
             AvailableFromDate = AvailableFromDate
         };
-        var result = await AuthApi.ApplyAsync(dto);
+        ApplyError = null;
+        var (result, error) = await AuthApi.ApplyAsync(dto);
         if (result != null)
         {
             NavManager.NavigateTo("/my-applications");
+        }
+        else
+        {
+            ApplyError = string.IsNullOrWhiteSpace(error) ? Lang.T("applications.applyFailed") : error;
         }
     }
 

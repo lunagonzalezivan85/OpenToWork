@@ -375,12 +375,14 @@ public class ApiAuthService
 
     // === Phase 2: Applications ===
 
-    public async Task<ApplicationDto?> ApplyAsync(CreateApplicationDto dto)
+    /// <summary>Error = mensaje del servidor cuando no se pudo postular (ya postulado, candidato Colocado, etc.).</summary>
+    public async Task<(ApplicationDto? Result, string? Error)> ApplyAsync(CreateApplicationDto dto)
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.PostAsJsonAsync("api/applications", dto);
-        if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<ApplicationDto>();
+        if (!response.IsSuccessStatusCode)
+            return (null, (await response.Content.ReadAsStringAsync()).Trim('"'));
+        return (await response.Content.ReadFromJsonAsync<ApplicationDto>(), null);
     }
 
     public async Task<List<ApplicationDto>> GetMyApplicationsAsync()

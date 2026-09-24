@@ -39,8 +39,15 @@ public class ApplicationsController : ControllerBase
         if (await _applicationService.HasAlreadyAppliedAsync(candidateId.Value, dto.VacancyId))
             return Conflict("You have already applied to this vacancy");
 
-        var result = await _applicationService.ApplyAsync(candidateId.Value, dto);
-        return CreatedAtAction(nameof(GetMyApplications), new { id = result.Id }, result);
+        try
+        {
+            var result = await _applicationService.ApplyAsync(candidateId.Value, dto);
+            return CreatedAtAction(nameof(GetMyApplications), new { id = result.Id }, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
     }
 
     [HttpGet("my")]

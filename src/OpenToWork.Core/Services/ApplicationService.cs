@@ -17,6 +17,9 @@ public class ApplicationService : IApplicationService
 
     public async Task<ApplicationDto> ApplyAsync(Guid candidateId, CreateApplicationDto dto)
     {
+        if (await CandidatePlacementHelper.IsCandidatePlacedAsync(_context, candidateId, dto.VacancyId))
+            throw new InvalidOperationException("Ya estas colocado en un puesto a traves de Trato Directo, por eso no puedes postularte a otras vacantes por ahora.");
+
         var application = new PTApplication
         {
             PT_CandidateId = candidateId,

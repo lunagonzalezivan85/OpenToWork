@@ -22,10 +22,17 @@ public class NegotiationsController : AdminControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateNegotiationDto dto)
     {
-        var result = await _negotiationService.CreateAsync(dto, AdminId);
-        if (result == null)
-            return BadRequest(new { message = "No se pudo presentar la negociación (vacante o postulaciones inválidas)" });
-        return Ok(result);
+        try
+        {
+            var result = await _negotiationService.CreateAsync(dto, AdminId);
+            if (result == null)
+                return BadRequest(new { message = "No se pudo presentar la negociación (vacante o postulaciones inválidas)" });
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message, error = ex.Message });
+        }
     }
 
     [HttpPut("{id}/status")]
@@ -38,10 +45,17 @@ public class NegotiationsController : AdminControllerBase
     [HttpPut("{id}/close")]
     public async Task<IActionResult> Close(Guid id, [FromBody] CloseNegotiationDto dto)
     {
-        var result = await _negotiationService.CloseAsync(id, dto.WinningApplicationId, AdminId, ClientIp);
-        if (result == null)
-            return BadRequest(new { message = "No se pudo cerrar la negociación (postulación ganadora inválida)" });
-        return Ok(result);
+        try
+        {
+            var result = await _negotiationService.CloseAsync(id, dto.WinningApplicationId, AdminId, ClientIp);
+            if (result == null)
+                return BadRequest(new { message = "No se pudo cerrar la negociación (postulación ganadora inválida)" });
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message, error = ex.Message });
+        }
     }
 
     [HttpGet("vacancy/{vacancyId}")]

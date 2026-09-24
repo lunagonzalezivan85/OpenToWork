@@ -4,6 +4,7 @@
     "noApplications": "No applications received",
     "noMyApplications": "You haven't applied to any vacancy",
     "applyTitle": "Apply to this vacancy",
+    "applyFailed": "Your application could not be sent. Please try again.",
     "apply": "Submit application",
     "coverLetter": "Cover letter",
     "expectedSalary": "Expected salary",

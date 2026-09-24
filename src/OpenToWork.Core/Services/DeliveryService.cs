@@ -36,8 +36,8 @@ public class DeliveryService : IDeliveryService
             .FirstOrDefaultAsync(c => c.SCUserId == recruitment.SCUserId && !c.IsDeleted);
         if (candidate == null) throw new InvalidOperationException("Perfil de candidato no encontrado.");
 
-        if (await CandidatePlacementHelper.IsPlacedAsync(_context, recruitment.SCUserId))
-            throw new InvalidOperationException("El candidato ya esta Colocado (contratado en otra empresa). Solo vuelve a estar disponible si deja ese puesto (reposicion de garantia).");
+        if (await CandidatePlacementHelper.IsCandidatePlacedAsync(_context, candidate.Id))
+            throw new InvalidOperationException(CandidatePlacementHelper.PlacedErrorMessage);
 
         var verification = await _verificationStatus.GetVerificationStatusAsync(candidate.Id);
         if (!verification.IsVerifiedTD)
