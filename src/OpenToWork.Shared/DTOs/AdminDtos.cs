@@ -302,6 +302,7 @@ public class CandidateConsoleDto
     public int? OverallScore { get; set; }
     public bool IsVerifiedTD { get; set; }
     public List<string> TopSkills { get; set; } = new();
+    public CandidatePlacementSummaryDto? Placement { get; set; }
 }
 
 public class CandidateConsoleResultDto

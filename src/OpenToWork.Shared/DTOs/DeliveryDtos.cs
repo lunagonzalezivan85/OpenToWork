@@ -75,3 +75,17 @@ public class RespondDeliveryDto
     public int Status { get; set; }
     public string? Feedback { get; set; }
 }
+
+/// <summary>Resumen de entregas de un candidato para las listas del admin (pipeline, consola,
+/// perfil). Calculado por CandidatePlacementHelper - ver ahi la regla de "Colocado".</summary>
+public class CandidatePlacementSummaryDto
+{
+    public bool IsPlaced { get; set; }
+    public string? PlacedCompanyName { get; set; }
+    public string? PlacedVacancyTitle { get; set; }
+    public int DeliveriesCount { get; set; }
+    public int RejectedCount { get; set; }
+    public int? LastDeliveryStatus { get; set; }
+    public string? LastDeliveryCompanyName { get; set; }
+    public DateTime? LastDeliveredAt { get; set; }
+}

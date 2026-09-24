@@ -1105,11 +1105,16 @@ else
         <div class="admin-recruitment-card" style="margin-top: 1rem;">
             <h3 class="admin-recruitment-card-title">
                 @Lang.T("admin.recruitment.deliverToCompany")
-                <button class="ot-btn ot-btn--primary ot-btn--small" style="margin-left: 0.75rem;" @onclick="OpenDeliverModal" disabled="@(Detail.VacancyId == null)">
+                <button class="ot-btn ot-btn--primary ot-btn--small" style="margin-left: 0.75rem;" @onclick="OpenDeliverModal" disabled="@(Detail.VacancyId == null || Detail.Placement?.IsPlaced == true)">
                     @Lang.T("admin.recruitment.deliverButton")
                 </button>
+                <PlacementBadge Placement="Detail.Placement" />
             </h3>
-            @if (Detail.VacancyId == null)
+            @if (Detail.Placement?.IsPlaced == true)
+            {
+                <p style="color: var(--text-muted); font-size: 0.85rem;">@Lang.T("admin.recruitment.placedBlocksDelivery")</p>
+            }
+            else if (Detail.VacancyId == null)
             {
                 <p style="color: var(--text-muted); font-size: 0.85rem;">@Lang.T("admin.recruitment.deliverRequiresVacancy")</p>
             }
@@ -1588,6 +1593,8 @@ else
         if (result != null)
         {
             RecordingResponseForId = null;
+            // Recargar el detalle: marcar Contratado cambia el estado Colocado del candidato.
+            Detail = await AuthApi.GetRecruitmentByUserAsync(UserId) ?? Detail;
             Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail!.Id);
             foreach (var d in Deliveries)
             {
@@ -1629,6 +1636,8 @@ else
         if (result != null)
         {
             ActivatingReplacementForId = null;
+            // La reposicion saca al candidato del puesto: deja de estar Colocado.
+            Detail = await AuthApi.GetRecruitmentByUserAsync(UserId) ?? Detail;
             Deliveries = await AuthApi.GetDeliveriesByRecruitmentAsync(Detail!.Id);
         }
         else

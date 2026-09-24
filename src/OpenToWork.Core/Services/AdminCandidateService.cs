@@ -229,10 +229,13 @@ public class AdminCandidateService : IAdminCandidateService
                       .ToList()
             );
 
+        var placements = await CandidatePlacementHelper.GetSummariesAsync(_context, userIds);
+
         foreach (var item in items)
         {
             if (item.CandidateId.HasValue && skillsByCandidate.TryGetValue(item.CandidateId.Value, out var skills))
                 item.TopSkills = skills;
+            item.Placement = placements.GetValueOrDefault(item.Id);
         }
 
         var allCandidates = _context.SC_Users

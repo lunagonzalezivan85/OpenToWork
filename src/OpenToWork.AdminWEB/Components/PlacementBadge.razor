@@ -1,0 +1,46 @@
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+
+@* Estado del candidato despues de la entrega (Colocado / ultima entrega). Regla en CandidatePlacementHelper. *@
+@if (Placement != null)
+{
+    @if (Placement.IsPlaced)
+    {
+        <span class="admin-result-badge admin-result-badge--success" title="@Placement.PlacedVacancyTitle">
+            @Lang.T("admin.recruitment.placedAt") @Placement.PlacedCompanyName
+        </span>
+    }
+    else if (Placement.DeliveriesCount > 0)
+    {
+        <span class="admin-result-badge @LastStatusClass" title="@Lang.T("admin.recruitment.deliveriesCountHint")">
+            @StatusLabel(Placement.LastDeliveryStatus) · @Placement.LastDeliveryCompanyName
+            @if (Placement.DeliveriesCount > 1)
+            {
+                <text> (@Placement.DeliveriesCount @Lang.T("admin.recruitment.deliveriesShort"))</text>
+            }
+        </span>
+    }
+}
+
+@code {
+    [Parameter] public CandidatePlacementSummaryDto? Placement { get; set; }
+
+    private string LastStatusClass => Placement?.LastDeliveryStatus switch
+    {
+        (int)DeliveryStatus.Interested => "admin-result-badge--info",
+        (int)DeliveryStatus.RejectedByCompany => "admin-result-badge--danger",
+        _ => "admin-result-badge--warning"
+    };
+
+    private string StatusLabel(int? status) => status switch
+    {
+        (int)DeliveryStatus.Delivered => Lang.T("admin.recruitment.deliveryDelivered"),
+        (int)DeliveryStatus.ViewedByCompany => Lang.T("admin.recruitment.deliveryViewed"),
+        (int)DeliveryStatus.Interested => Lang.T("admin.recruitment.deliveryInterested"),
+        (int)DeliveryStatus.Hired => Lang.T("admin.recruitment.deliveryHired"),
+        (int)DeliveryStatus.RejectedByCompany => Lang.T("admin.recruitment.deliveryRejected"),
+        _ => "-"
+    };
+}

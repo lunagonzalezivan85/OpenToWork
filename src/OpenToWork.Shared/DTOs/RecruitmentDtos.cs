@@ -18,6 +18,7 @@ public class RecruitmentPipelineDto
     public int InvestigationCompleted { get; set; }
     public int InvestigationTotal { get; set; }
     public DismissalInfoDto? Dismissal { get; set; }
+    public CandidatePlacementSummaryDto? Placement { get; set; }
 }
 
 public class RecruitmentDetailDto
@@ -56,6 +57,7 @@ public class RecruitmentDetailDto
     public List<TechnicalEvaluationDto> TechnicalEvaluations { get; set; } = new();
     public List<TechnicalEvaluationDto> CulturalInterviews { get; set; } = new();
     public DismissalInfoDto? Dismissal { get; set; }
+    public CandidatePlacementSummaryDto? Placement { get; set; }
 }
 
 public class StageLogDto
@@ -208,6 +210,8 @@ public class RecruitmentPipelineResultDto
     public int PageSize { get; set; }
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
     public Dictionary<int, int> CountByStage { get; set; } = new();
+    /// <summary>Candidatos en etapa Verificado que ya estan Colocados (ver CandidatePlacementHelper).</summary>
+    public int PlacedCount { get; set; }
 }
 
 public class VacancyOptionDto

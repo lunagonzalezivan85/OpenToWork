@@ -144,6 +144,7 @@ else
                             @(Profile.PlanIsActive ? Lang.T("admin.candidates.planActiveUntil") : Lang.T("admin.candidates.planExpiredOn")) @Profile.PlanExpiresAt.Value.ToLocalTime().ToString("dd MMM yyyy")
                         </span>
                     }
+                    <PlacementBadge Placement="Recruitment?.Placement" />
                 </div>
             </div>
             <div class="admin-hero-actions">

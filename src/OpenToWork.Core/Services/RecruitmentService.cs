@@ -3,6 +3,7 @@ using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
 using OpenToWork.Models.Entities;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.Core.Services;
 
@@ -86,13 +87,27 @@ public class RecruitmentService : IRecruitmentService
             .Select(g => new { Stage = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Stage, x => x.Count);
 
+        var placements = await CandidatePlacementHelper.GetSummariesAsync(_context, items.Select(i => i.UserId));
+        foreach (var item in items)
+            item.Placement = placements.GetValueOrDefault(item.UserId);
+
+        // Colocados sobre todo el pipeline (no solo la pagina), para que la tarjeta de
+        // "Listo para entregar" no cuente a quien ya esta trabajando.
+        var verifiedUserIds = await _context.PT_CandidateRecruitments
+            .Where(r => !r.IsDeleted && r.CurrentStage == (int)RecruitmentStage.ReadyToDeliver)
+            .Select(r => r.SCUserId)
+            .ToListAsync();
+        var placedCount = (await CandidatePlacementHelper.GetSummariesAsync(_context, verifiedUserIds))
+            .Count(p => p.Value.IsPlaced);
+
         return new RecruitmentPipelineResultDto
         {
             Items = items,
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize,
-            CountByStage = countByStage
+            CountByStage = countByStage,
+            PlacedCount = placedCount
         };
     }
 
@@ -243,7 +258,8 @@ public class RecruitmentService : IRecruitmentService
                 Notes = recruitment.Dismissal.Notes,
                 DismissedByName = recruitment.Dismissal.DismissedByUser?.Email ?? "",
                 CreatedAt = recruitment.Dismissal.CreatedAt
-            } : null
+            } : null,
+            Placement = (await CandidatePlacementHelper.GetSummariesAsync(_context, new[] { recruitment.SCUserId })).GetValueOrDefault(recruitment.SCUserId)
         };
     }
 
@@ -394,7 +410,8 @@ public class RecruitmentService : IRecruitmentService
                 Notes = recruitment.Dismissal.Notes,
                 DismissedByName = recruitment.Dismissal.DismissedByUser?.Email ?? "",
                 CreatedAt = recruitment.Dismissal.CreatedAt
-            } : null
+            } : null,
+            Placement = (await CandidatePlacementHelper.GetSummariesAsync(_context, new[] { recruitment.SCUserId })).GetValueOrDefault(recruitment.SCUserId)
         };
     }
 

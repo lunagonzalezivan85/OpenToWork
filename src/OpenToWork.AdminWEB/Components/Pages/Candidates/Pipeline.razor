@@ -35,6 +35,10 @@ else
             <span class="admin-stat-label">@Lang.T("admin.recruitment.statReadyToDeliver")</span>
             <span class="admin-stat-value">@ReadyToDeliverCount</span>
         </div>
+        <div class="admin-stat-card admin-stat-card--success">
+            <span class="admin-stat-label">@Lang.T("admin.recruitment.statPlaced")</span>
+            <span class="admin-stat-value">@PlacedCount</span>
+        </div>
         <div class="admin-stat-card admin-stat-card--danger">
             <span class="admin-stat-label">@Lang.T("admin.recruitment.statDismissed")</span>
             <span class="admin-stat-value">@DismissedCount</span>
@@ -97,7 +101,7 @@ else
                         <td>@item.Email</td>
                         <td>@(item.Title ?? "-")</td>
                         <td>@(item.City ?? "-")</td>
-                        <td>@Stages.GetValueOrDefault(item.CurrentStage, "-")</td>
+                        <td>@Stages.GetValueOrDefault(EffectiveStage(item), "-") <PlacementBadge Placement="item.Placement" /></td>
                         <td>@(item.AssignedToName ?? "-")</td>
                         <td>@item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
                     </tr>
@@ -111,7 +115,7 @@ else
         <div class="admin-pipeline-kanban">
             @foreach (var stage in Stages)
             {
-                var stageItems = FilteredItems.Where(i => i.CurrentStage == stage.Key).ToList();
+                var stageItems = FilteredItems.Where(i => EffectiveStage(i) == stage.Key).ToList();
                 <div class="admin-kanban-column @StageAccentClass(stage.Key)">
                     <div class="admin-kanban-column-header">
                         <span class="admin-kanban-column-title">@stage.Value</span>
@@ -152,6 +156,10 @@ else
                                         </div>
                                         <span class="admin-kanban-progress-text">@item.InvestigationCompleted/@item.InvestigationTotal</span>
                                     </div>
+                                }
+                                @if (item.Placement != null)
+                                {
+                                    <div style="margin-top: 0.35rem;"><PlacementBadge Placement="item.Placement" /></div>
                                 }
                                 @if (item.Dismissal != null)
                                 {
@@ -198,6 +206,7 @@ else
         { 2, Lang.T("admin.recruitment.stage2") },
         { 3, Lang.T("admin.recruitment.stage3") },
         { 4, Lang.T("admin.recruitment.stage4") },
+        { PlacedColumn, Lang.T("admin.recruitment.stagePlaced") },
         { 5, Lang.T("admin.recruitment.stage5") }
     };
 
@@ -219,7 +228,14 @@ else
 
     private int ActiveCandidatesCount => (PipelineData?.Items ?? new()).Count(i => i.CurrentStage != 5);
     private int InInvestigationCount => PipelineData?.CountByStage.GetValueOrDefault(1, 0) ?? 0;
-    private int ReadyToDeliverCount => PipelineData?.CountByStage.GetValueOrDefault(4, 0) ?? 0;
+    private int ReadyToDeliverCount => (PipelineData?.CountByStage.GetValueOrDefault(4, 0) ?? 0) - PlacedCount;
+    private int PlacedCount => PipelineData?.PlacedCount ?? 0;
+
+    // Columna virtual (no es una etapa en la base): un candidato Verificado que ya esta Colocado
+    // (ver CandidatePlacementHelper) sale de "Listo para entregar" y se muestra aparte.
+    private const int PlacedColumn = 6;
+    private static int EffectiveStage(RecruitmentPipelineDto i) =>
+        i.CurrentStage == 4 && i.Placement?.IsPlaced == true ? PlacedColumn : i.CurrentStage;
     private int DismissedCount => PipelineData?.CountByStage.GetValueOrDefault(5, 0) ?? 0;
 
     // Progresion neutro -> frio -> marca -> calido -> ganado (mismo criterio que el pipeline de
@@ -231,6 +247,7 @@ else
         2 => "admin-kanban-column--primary",
         3 => "admin-kanban-column--accent",
         4 => "admin-kanban-column--success",
+        PlacedColumn => "admin-kanban-column--success",
         5 => "admin-kanban-column--danger",
         _ => ""
     };

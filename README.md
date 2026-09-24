@@ -819,7 +819,7 @@ Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-f
 - [x] Vidriera de planes Basic/Premium/Platinum (`PT_Plans`, `Audience=Company`) conectada a `/plans` — **construido 21-Sep**, detras de flag `feature_company_plans_enabled` (encendido por defecto). Sigue faltando el checkout real (el CRM sigue vendiendo por posicion via Precios y Niveles de Precio, no por suscripcion) — ver "Observaciones para Darwin / Dsiezar" punto 4
 - [x] Plan de Prioridad para Candidatos — **construido 21-Sep** como 3 niveles (Free/Basic 5.99€/Premium 9.99€, `PTCandidate.PlanTier`), con boost real en el ranking de matching, detras de flag `feature_candidate_priority_plan_enabled` (apagado por defecto). Nivel asignado a mano por un admin (no hay checkout) — ver "Observaciones para Darwin / Dsiezar" punto 4
 - [ ] Checkout/pasarela de pagos real para ambos planes de arriba — sigue sin existir (Fase 7)
-- [ ] Terminar el flujo del candidato en el panel administrativo — pedido de Darwin (21-Sep), alcance todavia sin definir
+- [ ] Terminar el flujo del candidato en el panel administrativo — pedido de Darwin (21-Sep). **Avance 24-Sep**: respuesta de la empresa registrable desde el admin, estado "Colocado" (bloquea re-entregas, columna propia en el pipeline) y estado de entregas visible en pipeline/consola/perfil — ver `docs/BITACORA.md`, sesion 22-24 Sep. Falta: vista del proceso y del plan en el portal del candidato, avisos por correo al candidato
 - [ ] Entidad `COSubscription` — CompanyId, Plan, Status, StartDate, EndDate, MonthlyFee
 - [ ] Entidad `COSearchHistory` — CompanyId, Filters, ResultCount, SearchedAt
 - [ ] Entidad `COCandidateView` — CompanyId, CandidateId, ScoreSnapshot, ViewedAt

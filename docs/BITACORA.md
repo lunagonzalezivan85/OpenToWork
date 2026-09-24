@@ -339,3 +339,36 @@ El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` 
 - **Terminar el flujo del candidato en el panel administrativo** (pedido de Darwin, 21-Sep) — sin alcance definido todavía, queda para la próxima sesión.
 
 > **Nota**: el commit también incluye cambios pendientes de AdminAPI/AdminWEB de la sesión anterior (perfil de candidato admin, detalle de empresa, etc.).
+
+---
+
+## Sesión: 22-24 Septiembre 2026
+
+### IMPORTANTE - Migraciones
+
+> - `PlanSubscriptionFields` — `PlanExpiresAt` + `StripeCustomerId`/`StripeSubscriptionId` en `PT_Candidates` y `PT_Companies`, `PlanTier` en `PT_Companies`. **Rellena `PlanExpiresAt` (+1 mes) para candidatos que ya tenian plan de pago**; si la migracion se aplico antes de ese arreglo (commit `292f6ad`), correr a mano:
+>   `UPDATE PT_Candidates SET PlanExpiresAt = DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 1 MONTH) WHERE PlanTier <> 0 AND PlanExpiresAt IS NULL;`
+> - "Colocado" y la respuesta de la empresa desde el admin **no agregan migraciones**.
+
+### Cambios Realizados
+
+#### 1. Vencimiento de planes (candidato y empresa) — commit `292f6ad`
+- `PlanCalculator`: un plan asignado a mano vale 1 mes; si vencio se ignora (misma idea que `WarrantyCalculator`, sin BackgroundService). La prioridad en el ranking de `CompatibilityService` solo cuenta si el plan esta vigente.
+- Selector de plan de empresa (None/Basic/Premium/Platinum) en `Companies/Detail.razor` (pantalla de Iluna) + badge vigente/vencido en empresa y candidato. El plan de empresa todavia no desbloquea nada — solo se registra.
+- Campos de Stripe listos para cuando exista el checkout (Fase 7).
+
+#### 2. Respuesta de la empresa registrada desde el admin — commit `60e9c86` (inicio de "Terminar el flujo del candidato en el panel administrativo")
+- Antes solo la empresa, desde su portal, podia marcar una entrega como Interesado/Contratado/Descartado. Si respondia por telefono o WhatsApp el flujo quedaba trabado (contratacion, incorporacion, garantia y cierre exigen Contratado).
+- `PUT api/admin/recruitment-deliveries/{id}/company-response` + boton "Registrar respuesta de la empresa" en la tarjeta de cada entrega (`Candidates/PipelineDetail.razor`), con nota. Queda en el audit log (`Recruitment.RecordCompanyResponse`, `source=admin`).
+- No se puede cambiar con el proceso cerrado ni sacar de Contratado si ya hay fecha de contratacion/incorporacion (misma regla en servidor y UI).
+
+#### 3. Estado "Colocado" + estado de entregas visible
+- `CandidatePlacementHelper` (regla unica, calculada en vivo, sin columna nueva): un candidato esta **Colocado** si tiene una entrega en Contratado o gano una negociacion Cerrada, sin reposicion de garantia activa sobre ella (una Cancelada no cuenta). Si deja el puesto vuelve a estar disponible.
+- `DeliveryService.DeliverCandidateAsync` rechaza entregar a un candidato Colocado.
+- Pipeline (`/candidates/pipeline`): columna virtual "Colocado" (sale de "Verificado"), tarjeta de estadistica "Colocados", y cada tarjeta muestra su estado de entrega.
+- Componente `PlacementBadge.razor` ("Colocado en X" / "Entregado · X (N entregas)" / "Descartado · X") en el pipeline, la consola de candidatos, el perfil y el detalle del pipeline (donde ademas se desactiva "Entregar a empresa").
+- Nota: con los datos de prueba actuales, algunos candidatos (p. ej. Donald, Juan Perez) salen Colocados por negociaciones Cerradas de pruebas anteriores — la regla es correcta, son datos de test.
+
+### Pendiente
+
+- Resto de "Terminar el flujo del candidato": que el candidato vea su proceso en su portal, que vea su plan/vencimiento, avisos por correo al candidato (entregado/contratado), documentos pedidos por el reclutador desde el portal del candidato.
