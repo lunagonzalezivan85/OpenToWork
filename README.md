@@ -1149,6 +1149,30 @@ Nada de esto se probo desde la perspectiva de Ivan (solo se verifico que Claude 
 
 - Commit `aba82c7` en `dsiezar-fase-5`, merge fast-forward a `main`.
 
+### 7. Aviso para Ivan: migraciones nuevas y cambios en el flujo del candidato (24-Sep)
+
+**Hay que aplicar 2 migraciones nuevas a mano** (no hay auto-migrate; si faltan, AdminWEB/API fallan con `Unknown column` en las pantallas de candidatos, entregas y empresas):
+
+```bash
+dotnet ef database update --project src/OpenToWork.Models --startup-project src/OpenToWork.Models
+```
+
+- `20260922174748_PlanSubscriptionFields` — vencimiento de planes (`PlanExpiresAt`) + campos de Stripe en candidatos y empresas, y `PlanTier` en empresas. Si esta migracion ya se habia aplicado **antes** del commit `292f6ad`, correr ademas este relleno para que los candidatos con plan de pago no pierdan la prioridad:
+  ```sql
+  UPDATE PT_Candidates SET PlanExpiresAt = DATE_ADD(UTC_TIMESTAMP(6), INTERVAL 1 MONTH) WHERE PlanTier <> 0 AND PlanExpiresAt IS NULL;
+  ```
+- `20260924211416_CandidatePlacementRelease` — campos de "Liberar candidato" (`PlacementEndedAt`, `PlacementEndReason`, `PlacementEndNotes`, `PlacementEndedByUserId`) en `PT_CandidateDeliveries` y `PT_Negotiations`.
+
+**Cambios que tocan pantallas/flujos de Ivan** (detalle en `docs/BITACORA.md`, sesion 22-24 Sep):
+
+- **`Companies/Detail.razor`** (pantalla de Ivan): nuevo selector de plan de empresa (Sin plan/Basic/Premium/Platinum) con badge vigente/vencido.
+- **Entregas (Embudo Ciego)**: el reclutador puede registrar desde el admin la respuesta de la empresa (Interesado/Contratado/Descartado) cuando responde fuera del portal.
+- **Estado "Colocado"**: un candidato contratado (entrega en Contratado o negociacion ganada, sin reposicion de garantia ni liberacion) **ya no esta disponible para otras plazas**: no se le puede entregar, no puede postularse, no se puede presentar en negociaciones y no aparece en el Ranking por Compatibilidad, "Cumplen sin postularse", la busqueda de candidatos ni el calculo de matches. Vuelve a estar disponible con una reposicion de garantia o con "Liberar candidato" (fuera de garantia).
+- **Pipeline de reclutamiento**: columna nueva "Colocado" y tarjeta "Colocados"; "Verificados" ya no cuenta a los colocados.
+- Ojo con los datos de prueba: varios candidatos (p. ej. Donald, Juan Perez) salen Colocados por negociaciones Cerradas de pruebas anteriores, por eso ya no aparecen en rankings ni busquedas.
+
+Commits en `main`: `292f6ad`, `60e9c86`, `8709492`, `11c0668`, `cbb6fba`.
+
 ---
 
 ## Datos de prueba (Seed Data)
