@@ -9,8 +9,19 @@ public class PTCandidate : BaseEntity
     [Required]
     public Guid SCUserId { get; set; }
 
-    /// <summary>Nivel del plan de mejora (Free/Basic/Premium). Asignado manualmente por un admin - no hay checkout todavia.</summary>
+    /// <summary>Nivel del plan de mejora (Free/Basic/Premium). El nivel "real" vigente se calcula con
+    /// PlanCalculator.IsActive(PlanExpiresAt) - si vencio, se trata como Free aunque este campo diga otra cosa.</summary>
     public CandidatePlanTier PlanTier { get; set; } = CandidatePlanTier.Free;
+
+    /// <summary>Fecha en que vence el plan actual. Null = sin plan de pago (Free). Hoy la fija un admin
+    /// (+1 mes al asignar); cuando este Stripe, la fija el webhook con el current_period_end real.</summary>
+    public DateTime? PlanExpiresAt { get; set; }
+
+    [MaxLength(100)]
+    public string? StripeCustomerId { get; set; }
+
+    [MaxLength(100)]
+    public string? StripeSubscriptionId { get; set; }
 
     [ForeignKey("SCUserId")]
     public virtual SCUser User { get; set; } = null!;

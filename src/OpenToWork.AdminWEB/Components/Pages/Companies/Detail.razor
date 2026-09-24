@@ -89,6 +89,21 @@ else
                             @Lang.T("admin.companies.featured")
                         </span>
                     }
+                    <label class="admin-plan-tier-picker" title="@Lang.T("admin.companies.planTierHint")">
+                        @Lang.T("admin.companies.planTier"):
+                        <select class="nav-select" value="@((int)Company.PlanTier)" @onchange="OnPlanTierChanged">
+                            <option value="@((int)CompanyPlanTier.None)">Sin plan</option>
+                            <option value="@((int)CompanyPlanTier.Basic)">Basic</option>
+                            <option value="@((int)CompanyPlanTier.Premium)">Premium</option>
+                            <option value="@((int)CompanyPlanTier.Platinum)">Platinum</option>
+                        </select>
+                    </label>
+                    @if (Company.PlanExpiresAt.HasValue)
+                    {
+                        <span class="admin-chip @(Company.PlanIsActive ? "admin-chip--success" : "admin-chip--danger")">
+                            @(Company.PlanIsActive ? Lang.T("admin.companies.planActiveUntil") : Lang.T("admin.companies.planExpiredOn")) @Company.PlanExpiresAt.Value.ToLocalTime().ToString("dd MMM yyyy")
+                        </span>
+                    }
                 </div>
                 <div class="admin-hero-contact">
                     @if (!string.IsNullOrEmpty(Company.Country) || !string.IsNullOrEmpty(Company.City))
@@ -328,6 +343,19 @@ else
         IsTogglingFeatured = false;
         if (success)
             Company.IsFeatured = !Company.IsFeatured;
+    }
+
+    private async Task OnPlanTierChanged(ChangeEventArgs e)
+    {
+        if (Company == null || !int.TryParse(e.Value?.ToString(), out var raw)) return;
+        var tier = (CompanyPlanTier)raw;
+        var ok = await AuthApi.SetCompanyPlanTierAsync(Company.Id, tier);
+        if (ok)
+        {
+            Company.PlanTier = tier;
+            Company.PlanExpiresAt = tier == CompanyPlanTier.None ? null : DateTime.UtcNow.AddMonths(1);
+            Company.PlanIsActive = tier != CompanyPlanTier.None;
+        }
     }
 
     private async Task DeleteCompany()

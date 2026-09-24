@@ -111,6 +111,8 @@ public class AdminUserService : IAdminUserService
             dto.IsProfilePublic = c.IsProfilePublic;
             dto.CompletedAt = c.CompletedAt;
             dto.PlanTier = c.PlanTier;
+            dto.PlanExpiresAt = c.PlanExpiresAt;
+            dto.PlanIsActive = PlanCalculator.IsActive(c.PlanExpiresAt);
             dto.Skills = c.CandidateSkills?.Select(cs => new AdminCandidateSkillDto
             {
                 Name = cs.Skill?.Name ?? "",
@@ -189,6 +191,7 @@ public class AdminUserService : IAdminUserService
         if (candidate == null) return false;
 
         candidate.PlanTier = tier;
+        candidate.PlanExpiresAt = tier == CandidatePlanTier.Free ? null : PlanCalculator.NewExpirationFromNow();
         candidate.UpdatedAt = DateTime.UtcNow;
         candidate.UpdatedBy = adminId;
         await _context.SaveChangesAsync();

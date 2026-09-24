@@ -138,6 +138,12 @@ else
                             <option value="@((int)CandidatePlanTier.Premium)">Premium</option>
                         </select>
                     </label>
+                    @if (Profile.PlanExpiresAt.HasValue)
+                    {
+                        <span class="admin-result-badge @(Profile.PlanIsActive ? "admin-result-badge--success" : "admin-result-badge--danger")">
+                            @(Profile.PlanIsActive ? Lang.T("admin.candidates.planActiveUntil") : Lang.T("admin.candidates.planExpiredOn")) @Profile.PlanExpiresAt.Value.ToLocalTime().ToString("dd MMM yyyy")
+                        </span>
+                    }
                 </div>
             </div>
             <div class="admin-hero-actions">
@@ -1004,7 +1010,12 @@ else
         if (Profile == null || !int.TryParse(e.Value?.ToString(), out var raw)) return;
         var tier = (CandidatePlanTier)raw;
         var ok = await AuthApi.SetCandidatePlanTierAsync(UserId, tier);
-        if (ok) Profile.PlanTier = tier;
+        if (ok)
+        {
+            Profile.PlanTier = tier;
+            Profile.PlanExpiresAt = tier == CandidatePlanTier.Free ? null : DateTime.UtcNow.AddMonths(1);
+            Profile.PlanIsActive = tier != CandidatePlanTier.Free;
+        }
     }
 
     private async Task LoadScoreDataAsync()

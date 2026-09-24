@@ -63,6 +63,13 @@ public class CompanyCrmController : AdminControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    [HttpPut("companies/{id}/plan-tier")]
+    public async Task<IActionResult> SetPlanTier(Guid id, [FromBody] SetCompanyPlanTierDto dto)
+    {
+        var result = await _crmService.SetCompanyPlanTierAsync(id, dto.Tier, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpGet("pipeline")]
     public async Task<IActionResult> GetPipeline(
         [FromQuery] int page = 1,
@@ -179,4 +186,9 @@ public class ReassignCompanyDto
 public class SetFeaturedDto
 {
     public bool Featured { get; set; }
+}
+
+public class SetCompanyPlanTierDto
+{
+    public CompanyPlanTier Tier { get; set; }
 }

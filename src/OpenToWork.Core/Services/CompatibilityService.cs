@@ -205,12 +205,14 @@ public class CompatibilityService : ICompatibilityService
             return;
 
         var candidateIds = items.Select(i => i.CandidateId).ToList();
-        var tiers = await _context.PT_Candidates
+        var plans = await _context.PT_Candidates
             .Where(c => candidateIds.Contains(c.Id) && !c.IsDeleted)
-            .ToDictionaryAsync(c => c.Id, c => c.PlanTier);
+            .ToDictionaryAsync(c => c.Id, c => new { c.PlanTier, c.PlanExpiresAt });
 
         foreach (var item in items)
-            item.HasPriorityPlan = tiers.TryGetValue(item.CandidateId, out var tier) && tier != CandidatePlanTier.Free;
+            item.HasPriorityPlan = plans.TryGetValue(item.CandidateId, out var plan)
+                && plan.PlanTier != CandidatePlanTier.Free
+                && PlanCalculator.IsActive(plan.PlanExpiresAt);
     }
 
     /// <summary>Marca IsVerifiedTD en cada match usando la regla unica de VerifiedCandidateHelper.</summary>

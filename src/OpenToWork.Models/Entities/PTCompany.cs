@@ -1,10 +1,25 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.Models.Entities;
 
 public class PTCompany : BaseEntity
 {
+    /// <summary>Nivel del plan de mejora (Basic/Premium/Platinum). El nivel "real" vigente se calcula con
+    /// PlanCalculator.IsActive(PlanExpiresAt) - si vencio, se trata como None aunque este campo diga otra cosa.</summary>
+    public CompanyPlanTier PlanTier { get; set; } = CompanyPlanTier.None;
+
+    /// <summary>Fecha en que vence el plan actual. Null = sin plan de pago. Hoy la fija un admin
+    /// (+1 mes al asignar); cuando este Stripe, la fija el webhook con el current_period_end real.</summary>
+    public DateTime? PlanExpiresAt { get; set; }
+
+    [MaxLength(100)]
+    public string? StripeCustomerId { get; set; }
+
+    [MaxLength(100)]
+    public string? StripeSubscriptionId { get; set; }
+
     // Nullable: una empresa registrada por un usuario tiene su Id aqui;
     // una empresa "prospecto" captada desde el CRM administrativo no tiene
     // cuenta de usuario asociada todavia y queda en null.

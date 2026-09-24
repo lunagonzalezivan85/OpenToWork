@@ -1302,6 +1302,13 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<bool> SetCompanyPlanTierAsync(Guid id, CompanyPlanTier tier)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/company-crm/companies/{id}/plan-tier", new { Tier = tier });
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<CompanyPipelineResultDto> GetCompanyPipelineAsync(int page = 1, int pageSize = 50, int? stage = null, Guid? assignedTo = null, string? search = null)
     {
         await SetAuthHeaderAsync();

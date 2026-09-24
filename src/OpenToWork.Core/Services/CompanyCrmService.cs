@@ -108,6 +108,9 @@ public class CompanyCrmService : ICompanyCrmService
             IsFeatured = company.IsFeatured,
             CreatedAt = company.CreatedAt,
             SCUserId = company.SCUserId,
+            PlanTier = company.PlanTier,
+            PlanExpiresAt = company.PlanExpiresAt,
+            PlanIsActive = PlanCalculator.IsActive(company.PlanExpiresAt),
             Pipeline = pipeline != null ? new CompanyPipelineDto
             {
                 Id = pipeline.Id,
@@ -218,6 +221,21 @@ public class CompanyCrmService : ICompanyCrmService
 
         await _db.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "CompanyCrm.SetFeatured", "PTCompany", id, $"Empresa {(featured ? "destacada" : "sin destacar")}: {company.Name}", ipAddress);
+        return true;
+    }
+
+    public async Task<bool> SetCompanyPlanTierAsync(Guid id, CompanyPlanTier tier, Guid adminId, string? ipAddress)
+    {
+        var company = await _db.PT_Companies.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        if (company == null) return false;
+
+        company.PlanTier = tier;
+        company.PlanExpiresAt = tier == CompanyPlanTier.None ? null : PlanCalculator.NewExpirationFromNow();
+        company.UpdatedAt = DateTime.UtcNow;
+        company.UpdatedBy = adminId;
+
+        await _db.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "CompanyCrm.SetPlanTier", "PTCompany", id, tier.ToString(), ipAddress);
         return true;
     }
 

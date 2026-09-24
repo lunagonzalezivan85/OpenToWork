@@ -51,6 +51,9 @@ public class CompanyDetailDto
     public DateTime CreatedAt { get; set; }
     public Guid? SCUserId { get; set; }
     public CompanyPipelineDto? Pipeline { get; set; }
+    public CompanyPlanTier PlanTier { get; set; }
+    public DateTime? PlanExpiresAt { get; set; }
+    public bool PlanIsActive { get; set; }
 }
 
 public class CompanyPipelineDto
