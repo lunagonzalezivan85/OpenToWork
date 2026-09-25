@@ -5909,3 +5909,17 @@ textarea.admin-input {
     color: var(--accent-primary);
     cursor: default;
 }
+
+/* --- Mensajes (bandeja del equipo): lista + hilo; en pantallas angostas se apilan --- */
+.admin-messages-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 360px) 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 720px) {
+    .admin-messages-grid {
+        grid-template-columns: 1fr;
+    }
+}

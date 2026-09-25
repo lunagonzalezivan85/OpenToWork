@@ -148,6 +148,7 @@ else
                 </div>
             </div>
             <div class="admin-hero-actions">
+                <StartConversationButton UserId="UserId" />
                 @if (!string.IsNullOrEmpty(Profile.CvUrl))
                 {
                     <a href="@Profile.CvUrl" target="_blank" class="admin-pill-btn admin-pill-btn--primary">

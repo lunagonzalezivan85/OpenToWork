@@ -202,6 +202,12 @@ else
                         </span>
                     }
                 </div>
+                @if (Company.SCUserId.HasValue)
+                {
+                    <div style="display: flex; justify-content: flex-end;">
+                        <StartConversationButton UserId="Company.SCUserId.Value" />
+                    </div>
+                }
                 @if (!string.IsNullOrEmpty(InviteError))
                 {
                     <p style="color: var(--danger); font-size: 0.8rem; margin: 0;">@InviteError</p>
@@ -376,6 +382,7 @@ else
         }
         InviteResult = result;
         PortalAccess = await AuthApi.GetCompanyPortalAccessAsync(Company.Id);
+        Company = await AuthApi.GetCompanyAsync(Company.Id) ?? Company; // ya tiene SCUserId: habilita "Enviar mensaje"
     }
 
     private async Task CopyInviteUrlAsync()

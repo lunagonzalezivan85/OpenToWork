@@ -94,7 +94,13 @@
         "vacancy": "Vacante",
         "online": "En l\u00ednea",
         "offline": "Desconectado",
-        "search": "Buscar conversaciones..."
+        "search": "Buscar conversaciones...",
+        "newToTeam": "Escribir a Trato Directo",
+        "newHint": "Tu mensaje le llega al equipo de Trato Directo",
+        "subject": "Asunto (opcional)",
+        "teamIntro": "Aquí hablas con el equipo de Trato Directo: dudas sobre tu proceso, tus vacantes o tus documentos. Elige una conversación o escríbenos.",
+        "noConversationsYet": "Aún no tienes mensajes. Usa \"Escribir a Trato Directo\" para contactarnos.",
+        "sendError": "No se pudo enviar el mensaje. Intenta de nuevo."
     },
     "search": {
         "placeholder": "Buscar empleos, empresas, palabras clave...",

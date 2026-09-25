@@ -1,6 +1,28 @@
 {
   "brand": "Trato Directo Admin",
+  "messages": {
+    "title": "Messages",
+    "subtitle": "Conversations with portal candidates and companies. They see you as \"Trato Directo\".",
+    "all": "All",
+    "unread": "Unread",
+    "search": "Search by name, email or subject...",
+    "empty": "No conversations.",
+    "select": "Pick a conversation from the list.",
+    "assignedTo": "Handled by:",
+    "viewProfile": "View profile",
+    "read": "read",
+    "replyPlaceholder": "Write your reply...",
+    "replyHint": "If email is enabled, the user gets an email notification.",
+    "send": "Send",
+    "sendError": "The message could not be sent.",
+    "roleCandidate": "Candidate",
+    "roleCompany": "Company",
+    "start": "Send message",
+    "startSubject": "Subject (optional)",
+    "startHint": "It reaches them in their portal as a message from Trato Directo."
+  },
   "nav": {
+    "messages": "Messages",
     "dashboard": "Dashboard",
     "recruitment": "Recruitment",
     "sales": "Sales",

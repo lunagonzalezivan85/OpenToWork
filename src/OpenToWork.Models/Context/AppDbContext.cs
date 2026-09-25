@@ -52,6 +52,8 @@ public class AppDbContext : DbContext
     public DbSet<PTContractVacancy> PT_ContractVacancies => Set<PTContractVacancy>();
     public DbSet<PTContractPayment> PT_ContractPayments => Set<PTContractPayment>();
     public DbSet<PTContractRevision> PT_ContractRevisions => Set<PTContractRevision>();
+    public DbSet<PTConversation> PT_Conversations => Set<PTConversation>();
+    public DbSet<PTMessage> PT_Messages => Set<PTMessage>();
     public DbSet<PTWarrantyReplacement> PT_WarrantyReplacements => Set<PTWarrantyReplacement>();
     public DbSet<SYSystemConfig> SY_SystemConfig => Set<SYSystemConfig>();
     public DbSet<PTJobLevel> PT_JobLevels => Set<PTJobLevel>();
@@ -220,6 +222,24 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(cv => cv.PT_PromoCodeId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PTConversation>(e =>
+        {
+            e.ToTable("PT_Conversations");
+            e.HasIndex(c => new { c.SCUserId, c.LastMessageAt });
+            e.HasIndex(c => new { c.UnreadForStaff, c.LastMessageAt });
+            e.HasOne(c => c.User).WithMany().HasForeignKey(c => c.SCUserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(c => c.AssignedStaff).WithMany().HasForeignKey(c => c.AssignedStaffId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(c => c.Vacancy).WithMany().HasForeignKey(c => c.PT_VacancyId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PTMessage>(e =>
+        {
+            e.ToTable("PT_Messages");
+            e.HasIndex(m => new { m.PT_ConversationId, m.CreatedAt });
+            e.HasOne(m => m.Conversation).WithMany(c => c.Messages).HasForeignKey(m => m.PT_ConversationId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(m => m.Sender).WithMany().HasForeignKey(m => m.SenderUserId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<PTContractRevision>(e =>

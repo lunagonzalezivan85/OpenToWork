@@ -1341,6 +1341,68 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    // --- Mensajes con candidatos y empresas del portal ---
+
+    public async Task<int> GetUnreadMessagesCountAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/messages/unread-count");
+        if (!response.IsSuccessStatusCode) return 0;
+        return await response.Content.ReadFromJsonAsync<int>();
+    }
+
+    public async Task<List<AdminConversationDto>> GetMessageInboxAsync(bool unreadOnly = false, string? search = null)
+    {
+        await SetAuthHeaderAsync();
+        var url = $"api/admin/messages?unreadOnly={unreadOnly}";
+        if (!string.IsNullOrWhiteSpace(search)) url += $"&search={Uri.EscapeDataString(search)}";
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<AdminConversationDto>>() ?? new();
+    }
+
+    public async Task<AdminConversationDto?> GetConversationAsync(Guid conversationId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/messages/{conversationId}");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<AdminConversationDto>();
+    }
+
+    public async Task<List<AdminMessageDto>> GetConversationMessagesAsync(Guid conversationId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/messages/{conversationId}/messages");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<AdminMessageDto>>() ?? new();
+    }
+
+    public async Task<(AdminMessageDto? Result, string? Error)> ReplyToConversationAsync(Guid conversationId, string content)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/messages/{conversationId}/reply", new AdminSendMessageDto { Content = content });
+        return await ReadResultAsync<AdminMessageDto>(response);
+    }
+
+    public async Task<(Guid? ConversationId, string? Error)> StartConversationAsync(AdminStartConversationDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/admin/messages/start", dto);
+        var (result, error) = await ReadResultAsync<StartConversationResult>(response);
+        return (result?.ConversationId, error);
+    }
+
+    private class StartConversationResult
+    {
+        public Guid ConversationId { get; set; }
+    }
+
+    public async Task MarkConversationReadByStaffAsync(Guid conversationId)
+    {
+        await SetAuthHeaderAsync();
+        await _httpClient.PutAsync($"api/admin/messages/{conversationId}/read", null);
+    }
+
     public async Task<CompanyPortalAccessDto?> GetCompanyPortalAccessAsync(Guid companyId)
     {
         await SetAuthHeaderAsync();

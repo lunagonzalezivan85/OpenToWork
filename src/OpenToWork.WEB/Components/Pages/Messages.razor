@@ -3,14 +3,21 @@
 @using OpenToWork.WEB.Services
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
+@implements IDisposable
 
+@* Mensajes con el equipo de Trato Directo (unica contraparte: con el Embudo Ciego la empresa y el
+   candidato no hablan directo). Datos reales de PT_Conversations/PT_Messages; se refresca cada
+   RefreshSeconds mientras la pagina esta abierta. *@
 <PageTitle>@Lang.T("common.messages.title")</PageTitle>
 
 <div class="page-container">
-    <div class="messages-layout @(SelectedConversation != null ? "show-chat" : "")">
+    <div class="messages-layout @(SelectedConversation != null || IsComposing ? "show-chat" : "")">
         <!-- Left: Conversations sidebar -->
         <div class="messages-sidebar">
             <div class="messages-sidebar-header">
+                <button class="ot-btn ot-btn--primary ot-btn--small w-full" style="margin-bottom: 0.75rem;" @onclick="StartCompose">
+                    @Lang.T("common.messages.newToTeam")
+                </button>
                 <div class="messages-filter-tabs">
                     <button class="messages-filter-tab @(MessageFilter == "all" ? "active" : "")" @onclick='() => SetFilter("all")'>
                         @Lang.T("common.messages.all")
@@ -30,7 +37,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                         <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                     </svg>
-                    <input type="text" @bind="SearchQuery" placeholder="@Lang.T("common.messages.search")" class="messages-search-input" />
+                    <input type="text" @bind="SearchQuery" @bind:event="oninput" placeholder="@Lang.T("common.messages.search")" class="messages-search-input" />
                 </div>
             </div>
 
@@ -41,7 +48,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40" opacity="0.3">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                         </svg>
-                        <p>@Lang.T("common.messages.noConversations")</p>
+                        <p>@(Conversations.Count == 0 ? Lang.T("common.messages.noConversationsYet") : Lang.T("common.messages.noConversations"))</p>
                     </div>
                 }
                 else
@@ -52,7 +59,7 @@
                             <div class="conversation-avatar">@conv.ParticipantAvatar</div>
                             <div class="conversation-content">
                                 <div class="conversation-top-row">
-                                    <span class="conversation-name">@conv.ParticipantName</span>
+                                    <span class="conversation-name">@(conv.Subject ?? conv.ParticipantName)</span>
                                     <span class="conversation-time">@FormatTime(conv.LastMessageAt)</span>
                                 </div>
                                 @if (!string.IsNullOrEmpty(conv.VacancyTitle))
@@ -75,7 +82,33 @@
 
         <!-- Right: Chat panel -->
         <div class="messages-chat">
-            @if (SelectedConversation == null)
+            @if (IsComposing)
+            {
+                <div class="chat-header">
+                    <button class="chat-back-btn" @onclick="BackToList">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <div class="chat-header-avatar">TD</div>
+                    <div class="chat-header-info">
+                        <h3 class="chat-header-name">@Lang.T("common.messages.newToTeam")</h3>
+                        <span class="chat-header-vacancy">@Lang.T("common.messages.newHint")</span>
+                    </div>
+                </div>
+                <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                    <input type="text" class="ot-input-field" maxlength="200" @bind="ComposeSubject" placeholder="@Lang.T("common.messages.subject")" />
+                    <textarea class="ot-input-field" rows="5" maxlength="4000" @bind="ComposeContent" placeholder="@Lang.T("common.messages.typeMessage")"></textarea>
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-error">@ErrorMessage</div>
+                    }
+                    <button class="ot-btn ot-btn--primary ot-btn--medium" disabled="@(IsSending || string.IsNullOrWhiteSpace(ComposeContent))" @onclick="SendNewConversation">
+                        @Lang.T("common.messages.send")
+                    </button>
+                </div>
+            }
+            else if (SelectedConversation == null)
             {
                 <div class="messages-chat-empty">
                     <div class="messages-chat-empty-icon">
@@ -84,7 +117,7 @@
                         </svg>
                     </div>
                     <h3 class="messages-chat-empty-title">@Lang.T("common.messages.title")</h3>
-                    <p class="messages-chat-empty-text">@Lang.T("common.messages.selectConversation")</p>
+                    <p class="messages-chat-empty-text">@Lang.T("common.messages.teamIntro")</p>
                 </div>
             }
             else
@@ -98,21 +131,17 @@
                     <div class="chat-header-avatar">@SelectedConversation.ParticipantAvatar</div>
                     <div class="chat-header-info">
                         <h3 class="chat-header-name">@SelectedConversation.ParticipantName</h3>
-                        @if (!string.IsNullOrEmpty(SelectedConversation.VacancyTitle))
+                        @if (!string.IsNullOrEmpty(SelectedConversation.Subject) || !string.IsNullOrEmpty(SelectedConversation.VacancyTitle))
                         {
                             <span class="chat-header-vacancy">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
                                     <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                                     <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                                 </svg>
-                                @SelectedConversation.VacancyTitle
+                                @string.Join(" · ", new[] { SelectedConversation.Subject, SelectedConversation.VacancyTitle }.Where(s => !string.IsNullOrEmpty(s)))
                             </span>
                         }
                     </div>
-                    <span class="chat-header-status">
-                        <span class="chat-status-dot"></span>
-                        @Lang.T("common.messages.online")
-                    </span>
                 </div>
 
                 <div class="chat-messages" id="chatMessages">
@@ -120,16 +149,20 @@
                     {
                         <div class="chat-message @(msg.IsMine ? "mine" : "theirs")">
                             <div class="chat-message-bubble">
-                                <p class="chat-message-text">@msg.Content</p>
+                                <p class="chat-message-text" style="white-space: pre-line;">@msg.Content</p>
                                 <span class="chat-message-time">@FormatTime(msg.SentAt)</span>
                             </div>
                         </div>
                     }
                 </div>
 
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="alert alert-error" style="margin: 0 1rem;">@ErrorMessage</div>
+                }
                 <div class="chat-input-area">
-                    <input type="text" @bind="NewMessage" @onkeypress="OnKeyPress" placeholder="@Lang.T("common.messages.typeMessage")" class="chat-input" />
-                    <button class="chat-send-btn" @onclick="SendMessage" disabled="@string.IsNullOrEmpty(NewMessage?.Trim())">
+                    <input type="text" @bind="NewMessage" @bind:event="oninput" @onkeypress="OnKeyPress" maxlength="4000" placeholder="@Lang.T("common.messages.typeMessage")" class="chat-input" />
+                    <button class="chat-send-btn" @onclick="SendMessage" disabled="@(IsSending || string.IsNullOrEmpty(NewMessage?.Trim()))">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                             <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
                         </svg>
@@ -141,6 +174,8 @@
 </div>
 
 @code {
+    private const int RefreshSeconds = 15;
+
     private List<ConversationDto> Conversations { get; set; } = new();
     private List<MessageDto> ChatMessages { get; set; } = new();
     private string MessageFilter { get; set; } = "all";
@@ -148,6 +183,16 @@
     private Guid? SelectedConversationId { get; set; }
     private ConversationDto? SelectedConversation { get; set; }
     private string NewMessage { get; set; } = "";
+    private bool IsSending { get; set; }
+    private string? ErrorMessage { get; set; }
+
+    // Nueva conversacion con Trato Directo
+    private bool IsComposing { get; set; }
+    private string ComposeSubject { get; set; } = "";
+    private string ComposeContent { get; set; } = "";
+
+    private System.Threading.Timer? _refreshTimer;
+
     private int UnreadCount => Conversations.Count(c => !c.IsRead);
 
     private List<ConversationDto> FilteredConversations => Conversations
@@ -157,7 +202,10 @@
             "read" => c.IsRead,
             _ => true
         })
-        .Where(c => string.IsNullOrEmpty(SearchQuery) || c.ParticipantName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(c => string.IsNullOrEmpty(SearchQuery)
+            || (c.Subject?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+            || c.LastMessage.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)
+            || (c.VacancyTitle?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false))
         .ToList();
 
     protected override async Task OnInitializedAsync()
@@ -165,60 +213,124 @@
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
         Conversations = await AuthApi.GetConversationsAsync();
+
+        // StateHasChanged siempre via InvokeAsync: el Timer corre fuera del Dispatcher de Blazor
+        // (llamarlo directo tumbaba el circuito, ver bug de Companies/Pipeline 18-Sep).
+        _refreshTimer = new System.Threading.Timer(_ => _ = InvokeAsync(RefreshAsync), null,
+            TimeSpan.FromSeconds(RefreshSeconds), TimeSpan.FromSeconds(RefreshSeconds));
+    }
+
+    private async Task RefreshAsync()
+    {
+        Conversations = await AuthApi.GetConversationsAsync();
+        if (SelectedConversationId is { } id)
+        {
+            SelectedConversation = Conversations.FirstOrDefault(c => c.Id == id) ?? SelectedConversation;
+            ChatMessages = await AuthApi.GetMessagesAsync(id);
+            if (SelectedConversation is { IsRead: false })
+                await MarkReadAsync(SelectedConversation);
+        }
+        StateHasChanged();
     }
 
     private async Task SelectConversation(ConversationDto conv)
     {
+        IsComposing = false;
+        ErrorMessage = null;
         SelectedConversation = conv;
         SelectedConversationId = conv.Id;
         ChatMessages = await AuthApi.GetMessagesAsync(conv.Id);
 
         if (!conv.IsRead)
-        {
-            conv.IsRead = true;
-            conv.UnreadCount = 0;
-            await AuthApi.MarkConversationReadAsync(conv.Id);
-        }
+            await MarkReadAsync(conv);
+    }
+
+    private async Task MarkReadAsync(ConversationDto conv)
+    {
+        conv.IsRead = true;
+        conv.UnreadCount = 0;
+        await AuthApi.MarkConversationReadAsync(conv.Id);
     }
 
     private void SetFilter(string filter) => MessageFilter = filter;
 
-    private void BackToList()
+    private void StartCompose()
     {
+        IsComposing = true;
         SelectedConversation = null;
         SelectedConversationId = null;
+        ComposeSubject = "";
+        ComposeContent = "";
+        ErrorMessage = null;
+    }
+
+    private void BackToList()
+    {
+        IsComposing = false;
+        SelectedConversation = null;
+        SelectedConversationId = null;
+        ErrorMessage = null;
+    }
+
+    private async Task SendNewConversation()
+    {
+        if (IsSending || string.IsNullOrWhiteSpace(ComposeContent)) return;
+        IsSending = true;
+        ErrorMessage = null;
+
+        var msg = await AuthApi.SendMessageAsync(new SendMessageDto
+        {
+            ConversationId = Guid.Empty,
+            Subject = string.IsNullOrWhiteSpace(ComposeSubject) ? null : ComposeSubject.Trim(),
+            Content = ComposeContent.Trim()
+        });
+        IsSending = false;
+
+        if (msg == null)
+        {
+            ErrorMessage = Lang.T("common.messages.sendError");
+            return;
+        }
+
+        IsComposing = false;
+        Conversations = await AuthApi.GetConversationsAsync();
+        var created = Conversations.FirstOrDefault(c => c.Id == msg.ConversationId);
+        if (created != null)
+            await SelectConversation(created);
     }
 
     private async Task SendMessage()
     {
-        if (string.IsNullOrEmpty(NewMessage?.Trim()) || SelectedConversationId == null) return;
+        if (IsSending || string.IsNullOrEmpty(NewMessage?.Trim()) || SelectedConversationId == null) return;
+        IsSending = true;
+        ErrorMessage = null;
 
-        var dto = new SendMessageDto
+        var msg = await AuthApi.SendMessageAsync(new SendMessageDto
         {
             ConversationId = SelectedConversationId.Value,
             Content = NewMessage.Trim()
-        };
+        });
+        IsSending = false;
 
-        var msg = await AuthApi.SendMessageAsync(dto);
-        if (msg != null)
+        if (msg == null)
         {
-            ChatMessages.Add(msg);
-            if (SelectedConversation != null)
-            {
-                SelectedConversation.LastMessage = msg.Content;
-                SelectedConversation.LastMessageAt = msg.SentAt;
-            }
+            ErrorMessage = Lang.T("common.messages.sendError");
+            return;
         }
 
+        ChatMessages.Add(msg);
+        if (SelectedConversation != null)
+        {
+            SelectedConversation.LastMessage = msg.Content;
+            SelectedConversation.LastMessageAt = msg.SentAt;
+        }
         NewMessage = "";
     }
 
     private async Task OnKeyPress(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !string.IsNullOrEmpty(NewMessage?.Trim()))
-        {
             await SendMessage();
-        }
     }
 
     private static string FormatTime(DateTime time)
@@ -228,6 +340,8 @@
             : diff.TotalHours < 1 ? $"{(int)diff.TotalMinutes}m"
             : diff.TotalDays < 1 ? $"{(int)diff.TotalHours}h"
             : diff.TotalDays < 7 ? $"{(int)diff.TotalDays}d"
-            : time.ToString("dd/MM");
+            : time.ToLocalTime().ToString("dd/MM");
     }
+
+    public void Dispose() => _refreshTimer?.Dispose();
 }

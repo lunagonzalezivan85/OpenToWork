@@ -39,6 +39,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAdminSkillService, AdminSkillService>();
         services.AddScoped<ICompanyCrmService, CompanyCrmService>();
         services.AddScoped<ISystemConfigService, SystemConfigService>();
+        services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IMessagingService, MessagingService>();
 
         return services;
     }
@@ -56,6 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IAdminContractService, AdminContractService>();
         services.AddScoped<ICompanyPortalAccessService, CompanyPortalAccessService>();
+        services.AddScoped<IMessagingService, MessagingService>();
         services.AddScoped<IAdminSkillService, AdminSkillService>();
         services.AddScoped<IAdminDashboardService, AdminDashboardService>();
         services.AddScoped<IExportService, ExportService>();

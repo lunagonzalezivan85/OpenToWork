@@ -1,0 +1,61 @@
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+@* "Enviar mensaje" desde la ficha de un candidato o empresa: abre una conversacion nueva en su
+   portal (como "Trato Directo") y lleva a la bandeja de Mensajes. *@
+@if (!IsOpen)
+{
+    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { IsOpen = true; Error = null; }">@Lang.T("admin.messages.start")</button>
+}
+else
+{
+    <div style="display: flex; flex-direction: column; gap: 0.4rem; min-width: 280px; padding: 0.6rem; border: 1px solid var(--card-border); border-radius: 10px; background: var(--card-bg, #fff);">
+        <input class="admin-input" maxlength="200" @bind="Subject" placeholder="@Lang.T("admin.messages.startSubject")" />
+        <textarea class="admin-input" rows="3" maxlength="4000" @bind="Content" @bind:event="oninput" placeholder="@Lang.T("admin.messages.replyPlaceholder")"></textarea>
+        <span style="font-size: 0.72rem; color: var(--text-muted);">@Lang.T("admin.messages.startHint")</span>
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <span style="color: var(--danger); font-size: 0.78rem;">@Error</span>
+        }
+        <div style="display: flex; gap: 0.4rem;">
+            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@(IsSending || string.IsNullOrWhiteSpace(Content))" @onclick="SendAsync">@Lang.T("admin.messages.send")</button>
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => IsOpen = false">@Lang.T("admin.common.cancel")</button>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>SCUser.Id del candidato o de la empresa (debe tener cuenta en el portal).</summary>
+    [Parameter] public Guid UserId { get; set; }
+    [Parameter] public Guid? VacancyId { get; set; }
+
+    private bool IsOpen;
+    private bool IsSending;
+    private string? Subject;
+    private string Content = "";
+    private string? Error;
+
+    private async Task SendAsync()
+    {
+        if (IsSending || string.IsNullOrWhiteSpace(Content)) return;
+        IsSending = true;
+        Error = null;
+        var (conversationId, error) = await AuthApi.StartConversationAsync(new AdminStartConversationDto
+        {
+            UserId = UserId,
+            Subject = string.IsNullOrWhiteSpace(Subject) ? null : Subject.Trim(),
+            VacancyId = VacancyId,
+            Content = Content.Trim()
+        });
+        IsSending = false;
+        if (conversationId == null)
+        {
+            Error = error ?? Lang.T("admin.messages.sendError");
+            return;
+        }
+        Nav.NavigateTo($"/messages/{conversationId}");
+    }
+}

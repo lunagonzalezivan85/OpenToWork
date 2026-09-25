@@ -94,7 +94,13 @@
         "vacancy": "Vacancy",
         "online": "Online",
         "offline": "Offline",
-        "search": "Search conversations..."
+        "search": "Search conversations...",
+        "newToTeam": "Write to Trato Directo",
+        "newHint": "Your message goes to the Trato Directo team",
+        "subject": "Subject (optional)",
+        "teamIntro": "Here you talk with the Trato Directo team: questions about your process, your vacancies or your documents. Pick a conversation or write to us.",
+        "noConversationsYet": "You have no messages yet. Use \"Write to Trato Directo\" to contact us.",
+        "sendError": "The message could not be sent. Please try again."
     },
     "search": {
         "placeholder": "Search jobs, companies, keywords...",

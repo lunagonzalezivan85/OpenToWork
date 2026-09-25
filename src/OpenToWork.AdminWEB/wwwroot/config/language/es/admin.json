@@ -1,6 +1,28 @@
 {
   "brand": "Trato Directo Admin",
+  "messages": {
+    "title": "Mensajes",
+    "subtitle": "Conversaciones con candidatos y empresas del portal. Ellos te ven como \"Trato Directo\".",
+    "all": "Todas",
+    "unread": "Sin leer",
+    "search": "Buscar por nombre, correo o asunto...",
+    "empty": "No hay conversaciones.",
+    "select": "Elige una conversación de la lista.",
+    "assignedTo": "Atiende:",
+    "viewProfile": "Ver ficha",
+    "read": "leído",
+    "replyPlaceholder": "Escribe tu respuesta...",
+    "replyHint": "Si el correo está activo, el usuario recibe un aviso por email.",
+    "send": "Enviar",
+    "sendError": "No se pudo enviar el mensaje.",
+    "roleCandidate": "Candidato",
+    "roleCompany": "Empresa",
+    "start": "Enviar mensaje",
+    "startSubject": "Asunto (opcional)",
+    "startHint": "Le llega en su portal como mensaje de Trato Directo."
+  },
   "nav": {
+    "messages": "Mensajes",
     "dashboard": "Panel",
     "recruitment": "Reclutamiento",
     "sales": "Ventas",

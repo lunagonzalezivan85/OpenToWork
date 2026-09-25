@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @using OpenToWork.AdminWEB.Services
 @inject LanguageService Lang
 @inject AdminAuthApiService AuthApi
@@ -23,6 +24,18 @@
                     </svg>
                 </span>
                 <span class="admin-nav-label">@Lang.T("admin.nav.dashboard")</span>
+            </a>
+            <a href="/messages" class="admin-nav-item">
+                <span class="admin-nav-icon-squircle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                </span>
+                <span class="admin-nav-label">@Lang.T("admin.nav.messages")</span>
+                @if (UnreadMessages > 0)
+                {
+                    <span class="admin-result-badge admin-result-badge--danger" style="margin-left: auto;">@UnreadMessages</span>
+                }
             </a>
             <div class="admin-nav-group admin-nav-group--collapsible expanded" id="submenu-recruitment" aria-expanded="true">
                 <button class="admin-nav-group-header" @onclick='() => ToggleSubmenu("submenu-recruitment")'>
@@ -268,6 +281,7 @@
 
 @code {
     private bool IsSuperAdmin;
+    private int UnreadMessages;
 
     protected override async Task OnInitializedAsync()
     {
@@ -286,7 +300,23 @@
 
         var staffRoleRaw = await LocalStorage.GetItemAsync("otwadmin-staff-role");
         IsSuperAdmin = int.TryParse(staffRoleRaw, out var role) && role == (int)OpenToWork.Shared.Enums.AdminStaffRole.SuperAdmin;
+
+        // Conversaciones con mensajes sin leer del portal: se recuenta al entrar y al cambiar de pagina.
+        UnreadMessages = await AuthApi.GetUnreadMessagesCountAsync();
+        Nav.LocationChanged += OnLocationChanged;
     }
+
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        try
+        {
+            var count = await AuthApi.GetUnreadMessagesCountAsync();
+            await InvokeAsync(() => { UnreadMessages = count; StateHasChanged(); });
+        }
+        catch { /* un fallo del contador no debe romper la navegacion */ }
+    }
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
 
     private async Task OnThemeChanged(ChangeEventArgs e)
     {
