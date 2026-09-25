@@ -16,6 +16,11 @@
         <p class="admin-page-header-subtitle">@(Contract?.ContractNumber ?? "")</p>
     </div>
     <div class="admin-page-actions">
+        @if (IsDraft)
+        {
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.contract.editDraft")</button>
+            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="IssueOfficialAsync" disabled="@IsIssuing">@Lang.T("admin.contract.issueOfficial")</button>
+        }
         <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="PrintDocumentAsync">@Lang.T("admin.contract.print")</button>
         <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("admin.contract.backToVacancy")</button>
     </div>
@@ -31,7 +36,15 @@ else if (Contract == null)
 }
 else
 {
-    <div class="contract-doc">
+    @if (!string.IsNullOrEmpty(IssueError))
+    {
+        <p style="color: var(--danger); font-size: 0.85rem; max-width: 880px; margin: 0 auto 1rem;">@IssueError</p>
+    }
+    <div class="contract-doc @(IsDraft ? "contract-doc--draft" : "")">
+        @if (IsDraft)
+        {
+            <div class="cd-draft-banner">@Lang.T("admin.contract.docDraftBanner")</div>
+        }
         @* === Membrete corporativo === *@
         <header class="cd-letterhead">
             <div class="cd-letterhead-left">
@@ -425,6 +438,24 @@ else
         Contract = await AuthApi.GetContractAsync(ContractId);
         Identity = await AuthApi.GetCompanyIdentityAsync() ?? new();
         IsLoading = false;
+    }
+
+    // Borrador: marca de agua y botones "Editar borrador" / "Emitir version oficial" (= Enviar).
+    // Una vez emitido ya no se edita sin abrir una nueva version del contrato.
+    private bool IsDraft => Contract?.Status == (int)ContractStatus.Draft;
+    private bool IsIssuing { get; set; }
+    private string? IssueError { get; set; }
+
+    private async Task IssueOfficialAsync()
+    {
+        if (Contract == null || IsIssuing) return;
+        IsIssuing = true;
+        IssueError = null;
+        if (await AuthApi.SendContractAsync(Contract.Id))
+            Contract = await AuthApi.GetContractAsync(ContractId);
+        else
+            IssueError = Lang.T("admin.contract.issueError");
+        IsIssuing = false;
     }
 
     private void GoBack()
