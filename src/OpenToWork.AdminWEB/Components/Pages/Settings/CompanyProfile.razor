@@ -75,6 +75,11 @@ else
                     <label class="ot-input-label">@Lang.T("admin.companyProfile.jurisdictionCity")</label>
                     <InputText class="ot-input-field" @bind-Value="Form.JurisdictionCity" />
                 </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.companyProfile.privacyEmail")</label>
+                    <InputText class="ot-input-field" type="email" @bind-Value="Form.PrivacyEmail" placeholder="privacidad@tratodirecto.com" />
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.companyProfile.privacyEmailHint")</span>
+                </div>
             </div>
             <div class="admin-chart-card" style="grid-column: 1 / -1;">
                 <span class="admin-chart-card-title">@Lang.T("admin.companyProfile.sectionPreview")</span>
@@ -131,7 +136,8 @@ else
             LegalRepName = Get("legal_rep_name"),
             LegalRepPosition = Get("legal_rep_position"),
             LegalRepDni = Get("legal_rep_dni"),
-            JurisdictionCity = Get("jurisdiction_city")
+            JurisdictionCity = Get("jurisdiction_city"),
+            PrivacyEmail = Get("company_privacy_email")
         };
     }
 
@@ -152,7 +158,8 @@ else
                 new() { Key = "legal_rep_name", Value = Form.LegalRepName },
                 new() { Key = "legal_rep_position", Value = Form.LegalRepPosition },
                 new() { Key = "legal_rep_dni", Value = Form.LegalRepDni },
-                new() { Key = "jurisdiction_city", Value = Form.JurisdictionCity }
+                new() { Key = "jurisdiction_city", Value = Form.JurisdictionCity },
+                new() { Key = "company_privacy_email", Value = Form.PrivacyEmail }
             }
         };
 
@@ -175,5 +182,6 @@ else
         public string LegalRepPosition { get; set; } = "";
         public string LegalRepDni { get; set; } = "";
         public string JurisdictionCity { get; set; } = "";
+        public string PrivacyEmail { get; set; } = "";
     }
 }

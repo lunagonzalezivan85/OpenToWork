@@ -1,0 +1,178 @@
+@page "/privacy"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+
+@* Politica de privacidad del portal (RGPD + LOPDGDD), redactada de forma generica con la estructura habitual
+   de plataformas de seleccion de personal en Espana. Los datos del responsable salen de la configuracion
+   (admin > Datos de la Empresa, endpoint publico api/legal/identity). DEBE revisarla un asesor legal antes
+   de publicarse en produccion. *@
+<PageTitle>Política de privacidad</PageTitle>
+
+<div class="page-container">
+    <div class="about-hero">
+        <h1 class="about-hero-title">Política de privacidad</h1>
+        <p class="about-hero-subtitle">Cómo tratamos los datos de candidatos y empresas en Trato Directo</p>
+    </div>
+
+    <article class="legal-doc">
+        <p class="legal-doc-updated">Última actualización: 25 de septiembre de 2026</p>
+
+        <p>
+            En Trato Directo conectamos a empresas con profesionales verificados. Para hacerlo necesitamos tratar
+            datos personales, y queremos que sepas con claridad qué datos usamos, para qué, durante cuánto tiempo y
+            qué derechos tienes. Esta política se aplica al portal de candidatos y empresas y a los servicios de
+            selección que prestamos a través de él, conforme al Reglamento (UE) 2016/679 (RGPD) y a la Ley Orgánica
+            3/2018 de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD).
+        </p>
+
+        <h2>1. Responsable del tratamiento</h2>
+        <ul>
+            <li><strong>Razón social:</strong> @Value(Identity?.LegalName)</li>
+            <li><strong>CIF:</strong> @Value(Identity?.TaxId)</li>
+            <li><strong>Domicilio:</strong> @Value(Identity?.Address)</li>
+            @if (!string.IsNullOrWhiteSpace(Identity?.MercantileRegistry))
+            {
+                <li><strong>Datos registrales:</strong> @Identity.MercantileRegistry</li>
+            }
+            <li><strong>Contacto para privacidad:</strong> @ContactLine</li>
+        </ul>
+
+        <h2>2. Qué datos tratamos</h2>
+        <h3>Si eres candidato</h3>
+        <ul>
+            <li><strong>Identificación y contacto:</strong> nombre, apellidos, correo electrónico, teléfono, documento de identidad, fecha de nacimiento, nacionalidad y localidad.</li>
+            <li><strong>Perfil profesional:</strong> currículum, experiencia laboral, formación, certificaciones, habilidades, idiomas, disponibilidad, expectativas salariales y preferencias de empleo.</li>
+            <li><strong>Verificación:</strong> referencias laborales y sus respuestas, documentos que nos aportes (por ejemplo, permiso de trabajo o títulos), resultados de pruebas técnicas y notas de las entrevistas realizadas por nuestro equipo.</li>
+            <li><strong>Actividad en el portal:</strong> postulaciones, mensajes con nuestro equipo y el estado de tus procesos de selección.</li>
+        </ul>
+        <h3>Si eres empresa</h3>
+        <ul>
+            <li>Datos de la persona de contacto (nombre, cargo, correo y teléfono) y de la empresa (razón social, CIF, domicilio).</li>
+            <li>Información de las vacantes, contratos de servicio, pagos y comunicaciones con nuestro equipo.</li>
+        </ul>
+        <h3>Datos técnicos</h3>
+        <ul>
+            <li>Dirección IP, tipo de dispositivo y registros de acceso necesarios para la seguridad del servicio.</li>
+        </ul>
+        <p>
+            No te pedimos datos de categorías especiales (salud, ideología, origen étnico, etc.). Si alguno aparece
+            en tu currículum o en tus documentos, te pedimos que lo omitas; no lo usamos para ninguna decisión.
+        </p>
+
+        <h2>3. Para qué los usamos y con qué base legal</h2>
+        <table class="legal-doc-table">
+            <thead>
+                <tr><th>Finalidad</th><th>Base legal</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Crear y gestionar tu cuenta en el portal.</td><td>Ejecución del contrato de uso del servicio (art. 6.1.b RGPD).</td></tr>
+                <tr><td>Evaluar tu perfil, verificar tu experiencia y referencias, y proponerte vacantes adecuadas.</td><td>Aplicación de medidas precontractuales a petición tuya (art. 6.1.b RGPD) y tu consentimiento para contactar a tus referencias (art. 6.1.a RGPD).</td></tr>
+                <tr><td>Presentar tu candidatura a una empresa cliente.</td><td>Tu consentimiento, que prestas al participar en el proceso de esa vacante (art. 6.1.a RGPD).</td></tr>
+                <tr><td>Prestar el servicio de selección a las empresas, gestionar contratos, pagos y garantías.</td><td>Ejecución del contrato con la empresa (art. 6.1.b RGPD).</td></tr>
+                <tr><td>Atender tus consultas y mensajes.</td><td>Interés legítimo en responder a quien se comunica con nosotros (art. 6.1.f RGPD).</td></tr>
+                <tr><td>Seguridad del portal, prevención del fraude y registro de actividad.</td><td>Interés legítimo (art. 6.1.f RGPD).</td></tr>
+                <tr><td>Cumplir obligaciones contables, fiscales y de atención a autoridades.</td><td>Obligación legal (art. 6.1.c RGPD).</td></tr>
+            </tbody>
+        </table>
+
+        <h2>4. Presentación a empresas (confidencialidad)</h2>
+        <p>
+            Trato Directo actúa como intermediario. Mientras tu proceso está en marcha, las empresas <strong>no ven tu
+            identidad</strong>: solo reciben información agregada sobre la vacante. Únicamente cuando nuestro equipo te
+            presenta formalmente a una empresa para una vacante concreta, esa empresa puede ver tu perfil profesional y
+            tu currículum. Nunca le facilitamos tu documento de identidad, tu fecha de nacimiento ni tu dirección.
+        </p>
+
+        <h2>5. Evaluación automatizada y perfiles</h2>
+        <p>
+            Para agilizar la selección, el portal calcula de forma automática indicadores sobre tu perfil (por ejemplo,
+            completitud del perfil, verificaciones realizadas y grado de compatibilidad con una vacante) y puede utilizar
+            herramientas automatizadas para leer tu currículum y rellenar tu perfil. Estos indicadores son un apoyo:
+            <strong>ninguna decisión que te afecte se toma únicamente de forma automatizada</strong>, siempre la revisa
+            una persona de nuestro equipo. Puedes pedir la intervención humana, expresar tu punto de vista e impugnar
+            una valoración escribiéndonos.
+        </p>
+
+        <h2>6. A quién comunicamos los datos</h2>
+        <ul>
+            <li><strong>Empresas clientes</strong>, solo en los términos del apartado 4.</li>
+            <li><strong>Proveedores que nos prestan servicios</strong> (alojamiento, correo electrónico, análisis de documentos, pagos), que actúan como encargados del tratamiento bajo contrato y solo con nuestras instrucciones.</li>
+            <li><strong>Administraciones públicas, jueces y tribunales</strong>, cuando exista una obligación legal.</li>
+        </ul>
+        <p>No vendemos ni cedemos tus datos con fines publicitarios.</p>
+
+        <h2>7. Transferencias internacionales</h2>
+        <p>
+            Algunos proveedores tecnológicos pueden tratar datos fuera del Espacio Económico Europeo. En ese caso lo
+            hacemos únicamente con garantías adecuadas: decisiones de adecuación de la Comisión Europea o cláusulas
+            contractuales tipo aprobadas por ella.
+        </p>
+
+        <h2>8. Cuánto tiempo conservamos los datos</h2>
+        <ul>
+            <li><strong>Perfil de candidato:</strong> mientras tu cuenta esté activa. Si no la usas durante dos años, eliminaremos o anonimizaremos tus datos, salvo que participes en un proceso en curso.</li>
+            <li><strong>Procesos de selección y garantías:</strong> durante el proceso y el periodo de garantía pactado con la empresa, y después bloqueados durante los plazos de prescripción de posibles responsabilidades.</li>
+            <li><strong>Datos contractuales y de facturación de empresas:</strong> durante la relación y, después, los plazos exigidos por la normativa mercantil y fiscal (por regla general, hasta seis años).</li>
+            <li><strong>Registros de seguridad:</strong> el tiempo necesario para su finalidad, sin superar el previsto por la normativa aplicable.</li>
+        </ul>
+
+        <h2>9. Tus derechos</h2>
+        <p>
+            Puedes ejercer en cualquier momento tus derechos de <strong>acceso, rectificación, supresión, oposición,
+            limitación del tratamiento y portabilidad</strong>, así como <strong>retirar tu consentimiento</strong> sin
+            que ello afecte a la licitud del tratamiento anterior. Muchos datos puedes corregirlos tú mismo desde tu perfil.
+            Para lo demás, escríbenos a @ContactLine, indicando qué derecho quieres ejercer; podremos pedirte que
+            acredites tu identidad. Te responderemos en el plazo de un mes.
+        </p>
+        <p>
+            Si consideras que no hemos atendido correctamente tu solicitud, puedes presentar una reclamación ante la
+            Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noopener">www.aepd.es</a>).
+        </p>
+
+        <h2>10. Seguridad</h2>
+        <p>
+            Aplicamos medidas técnicas y organizativas para proteger tus datos: acceso restringido según el rol de cada
+            persona, contraseñas cifradas, conexiones seguras, documentos almacenados fuera de las zonas públicas del
+            servidor y registro de las acciones del equipo sobre los datos.
+        </p>
+
+        <h2>11. Menores de edad</h2>
+        <p>
+            El portal está dirigido a personas mayores de 16 años con capacidad legal para trabajar en España. Si
+            detectamos datos de un menor de esa edad, los eliminaremos.
+        </p>
+
+        <h2>12. Almacenamiento en tu navegador</h2>
+        <p>
+            El portal guarda en tu navegador solo la información técnica necesaria para funcionar (tu sesión, el idioma
+            y el tema visual). No utilizamos cookies publicitarias. Si en el futuro incorporamos cookies analíticas o de
+            terceros, te pediremos antes tu consentimiento.
+        </p>
+
+        <h2>13. Cambios en esta política</h2>
+        <p>
+            Podemos actualizar esta política cuando cambien nuestros servicios o la normativa. Publicaremos la nueva
+            versión en esta página con su fecha y, si el cambio es relevante, te avisaremos por el portal o por correo.
+        </p>
+    </article>
+</div>
+
+@code {
+    private PublicLegalIdentityDto? Identity;
+
+    // Si el correo de privacidad no esta configurado (admin > Datos de la Empresa), se remite a la direccion postal.
+    private string ContactLine => !string.IsNullOrWhiteSpace(Identity?.PrivacyEmail)
+        ? Identity!.PrivacyEmail
+        : $"la dirección postal indicada arriba ({Value(Identity?.Address)})";
+
+    private static string Value(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        Identity = await AuthApi.GetLegalIdentityAsync();
+    }
+}

@@ -19,6 +19,7 @@ public class SystemConfigService : ISystemConfigService
     public const string LegalRepPosition = "legal_rep_position";
     public const string LegalRepDni = "legal_rep_dni";
     public const string JurisdictionCity = "jurisdiction_city";
+    public const string CompanyPrivacyEmail = "company_privacy_email";
 
     public const string SmtpCategory = "Smtp";
     public const string SmtpHost = "smtp_host";
@@ -93,7 +94,8 @@ public class SystemConfigService : ISystemConfigService
             LegalRepName = Get(LegalRepName, "Luis Alejandro Velasquez"),
             LegalRepPosition = Get(LegalRepPosition, "Representante Legal"),
             LegalRepDni = Get(LegalRepDni, "3212312345"),
-            JurisdictionCity = Get(JurisdictionCity, "Madrid")
+            JurisdictionCity = Get(JurisdictionCity, "Madrid"),
+            PrivacyEmail = Get(CompanyPrivacyEmail, "")
         };
     }
 
