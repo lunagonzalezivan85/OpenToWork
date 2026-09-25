@@ -1113,6 +1113,8 @@
     "manualOverrideToggle": "Set a manual price (off-list)",
     "manualPrice": "Manual price",
     "overrideReason": "Reason for manual price",
+    "overrideReasonRequired": "Enter the reason for the fixed price: it is required and recorded in the contract.",
+    "positions": "Positions",
     "overrideReasonPlaceholder": "E.g.: special deal with the client",
     "viewDocument": "Formal document",
     "print": "Print / Save PDF",

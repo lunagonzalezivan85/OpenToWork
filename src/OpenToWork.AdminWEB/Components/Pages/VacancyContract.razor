@@ -151,8 +151,19 @@ else if (IsEditing)
                         </div>
                     </div>
                     <div class="ot-input-group" style="margin-top: 0.5rem;">
-                        <label class="ot-input-label">@Lang.T("admin.contract.overrideReason")</label>
-                        <input type="text" @bind="line.FormOverrideReason" class="admin-modal-input" placeholder="@Lang.T("admin.contract.overrideReasonPlaceholder")" />
+                        <label class="ot-input-label">@Lang.T("admin.contract.overrideReason") *</label>
+                        <input type="text" @bind="line.FormOverrideReason" class="admin-modal-input" placeholder="@Lang.T("admin.contract.overrideReasonPlaceholder")"
+                               style="@(ShowOverrideReasonErrors && string.IsNullOrWhiteSpace(line.FormOverrideReason) ? "border-color: var(--danger);" : "")" />
+                        @if (ShowOverrideReasonErrors && string.IsNullOrWhiteSpace(line.FormOverrideReason))
+                        {
+                            <p style="color: var(--danger); font-size: 0.75rem; margin: 0.25rem 0 0;">@Lang.T("admin.contract.overrideReasonRequired")</p>
+                        }
+                    </div>
+                }
+                @if (FormFeeApplicationType == (int)FeeApplicationType.PerPosition)
+                {
+                    <div class="admin-recruitment-info-row" style="margin-top: 0.5rem;"><span>@Lang.T("admin.contract.positions")</span>
+                        <strong>@line.Positions × @FormatEur(line.UnitPrice) = @FormatEur(LineTotal(line))</strong>
                     </div>
                 }
                 <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; margin-top: 0.75rem; cursor: pointer;">
@@ -268,6 +279,10 @@ else if (Contract != null)
             {
                 <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.manualPrice")</span><strong>@FormatEur(line.BasePrice)</strong></div>
                 <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.overrideReason")</span><strong>@line.OverrideReason</strong></div>
+            }
+            @if (Contract.FeeApplicationType == (int)FeeApplicationType.PerPosition)
+            {
+                <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.positions")</span><strong>@line.Positions × @FormatEur(line.FinalPrice) = @FormatEur(line.LineTotal)</strong></div>
             }
         }
         <div class="admin-recruitment-info-row"><span>@Lang.T("admin.contract.feeAmount")</span><strong>@FormatEur(Contract.FeeAmount)</strong></div>
@@ -472,6 +487,7 @@ else if (Contract != null)
     private int FormJobType { get; set; }
     private int? FormCoverageDays { get; set; }
     private int FormFeeApplicationType { get; set; }
+    private bool ShowOverrideReasonErrors { get; set; }
     private decimal FormOpeningPct { get; set; } = 30m;
     private decimal FormValidationPct { get; set; } = 50m;
     private decimal FormConsolidationPct { get; set; } = 20m;
@@ -499,13 +515,20 @@ else if (Contract != null)
         // Garantia de esta vacante especifica (no del contrato).
         public int? FormWarrantyDays { get; set; }
         public int? JobLevelWarrantyDays { get; set; }
+
+        /// <summary>Posiciones de la vacante (RequiredApplicants): con tarifa por posicion el total de la
+        /// linea es precio unitario x posiciones (mismo calculo que AdminContractService.ApplyPricingAsync).</summary>
+        public int Positions { get; set; } = 1;
+
+        public decimal UnitPrice => ManualOverride ? FormManualPrice ?? 0 : AppliedPromo?.FinalAmount ?? ListPrice ?? 0;
     }
+
+    private decimal LineTotal(VacancyLineForm l) =>
+        FormFeeApplicationType == (int)FeeApplicationType.PerPosition ? l.UnitPrice * l.Positions : l.UnitPrice;
 
     private List<VacancyLineForm> VacancyLines { get; set; } = new();
 
-    private decimal TotalFeeAmount => VacancyLines.Sum(l => l.ManualOverride
-        ? l.FormManualPrice ?? 0
-        : l.AppliedPromo?.FinalAmount ?? l.ListPrice ?? 0);
+    private decimal TotalFeeAmount => VacancyLines.Sum(LineTotal);
 
     // Decision
     private bool ShowRejectReason { get; set; }
@@ -679,7 +702,8 @@ else if (Contract != null)
                     ? new PromoValidationResultDto { IsValid = true, Code = cv.PromoCode, DiscountAmount = cv.DiscountAmount, FinalAmount = cv.FinalPrice ?? 0 }
                     : null,
                 FormWarrantyDays = cv.WarrantyDays,
-                JobLevelWarrantyDays = _jobTypes.FirstOrDefault(t => t.Id == cv.JobTypeId)?.LevelWarrantyDays
+                JobLevelWarrantyDays = _jobTypes.FirstOrDefault(t => t.Id == cv.JobTypeId)?.LevelWarrantyDays,
+                Positions = Math.Max(1, cv.RequiredApplicants ?? 1)
             }).ToList();
         }
         else if (Vacancy != null)
@@ -695,7 +719,8 @@ else if (Contract != null)
                     JobLevelName = Vacancy.JobLevelName,
                     ListPrice = jobType?.CurrentPrice,
                     FormWarrantyDays = jobType?.LevelWarrantyDays,
-                    JobLevelWarrantyDays = jobType?.LevelWarrantyDays
+                    JobLevelWarrantyDays = jobType?.LevelWarrantyDays,
+                    Positions = Math.Max(1, Vacancy.RequiredApplicants ?? 1)
                 }
             };
         }
@@ -773,6 +798,14 @@ else if (Contract != null)
         if (FormOpeningPct + FormValidationPct + FormConsolidationPct != 100m)
         {
             FormPaymentSumError = true;
+            return;
+        }
+
+        // Precio fijo (manual): el motivo es obligatorio - queda como justificacion en el contrato.
+        ShowOverrideReasonErrors = VacancyLines.Any(l => l.ManualOverride && string.IsNullOrWhiteSpace(l.FormOverrideReason));
+        if (ShowOverrideReasonErrors)
+        {
+            FormError = Lang.T("admin.contract.overrideReasonRequired");
             return;
         }
 

@@ -43,8 +43,16 @@ public class PTContractVacancy : BaseEntity
 
     public decimal DiscountAmount { get; set; }
 
-    /// <summary>BasePrice - DiscountAmount. Es lo que realmente se factura por esta vacante.</summary>
+    /// <summary>BasePrice - DiscountAmount: precio UNITARIO (por posicion) despues del descuento.</summary>
     public decimal? FinalPrice { get; set; }
+
+    /// <summary>Snapshot de posiciones de la vacante (RequiredApplicants) al cotizar.</summary>
+    public int Positions { get; set; } = 1;
+
+    /// <summary>Lo que realmente se factura por esta linea: FinalPrice x Positions si la tarifa es por
+    /// posicion (FeeApplicationType.PerPosition, clausula 6.2 del Contrato Marco), FinalPrice si es por
+    /// proceso o precio global. El contrato suma estos totales en FeeAmount.</summary>
+    public decimal? LineTotal { get; set; }
 
     /// <summary>true = el admin escribio el precio a mano en vez de tomar la lista de precios.</summary>
     public bool IsManualOverride { get; set; }

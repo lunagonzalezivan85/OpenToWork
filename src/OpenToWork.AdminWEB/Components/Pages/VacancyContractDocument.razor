@@ -365,6 +365,22 @@ else
             <h4 class="cd-clause-title">7. Condiciones económicas</h4>
             <table class="cd-table cd-table--anexo">
                 <tbody>
+                    @foreach (var vacancy in Contract.Vacancies)
+                    {
+                        <tr>
+                            <td class="cd-table-label">Tarifa · @vacancy.Title</td>
+                            <td>
+                                @if (Contract.FeeApplicationType == (int)FeeApplicationType.PerPosition)
+                                {
+                                    @($"{vacancy.Positions} × {FormatEur(vacancy.FinalPrice)} = {FormatEur(vacancy.LineTotal)}")
+                                }
+                                else
+                                {
+                                    @FormatEur(vacancy.LineTotal)
+                                }
+                            </td>
+                        </tr>
+                    }
                     <tr><td class="cd-table-label">Tarifa sin IVA</td><td>@FormatEur(Contract.FeeAmount)</td></tr>
                     <tr><td class="cd-table-label">Aplicación de tarifa</td><td>@GetFeeApplicationLabel(Contract.FeeApplicationType)</td></tr>
                     <tr><td class="cd-table-label">Distribución de pago</td><td>@FormatPct(Contract.PaymentOpeningPct) Apertura / @FormatPct(Contract.PaymentValidationPct) Validación / @FormatPct(Contract.PaymentConsolidationPct) Consolidación</td></tr>

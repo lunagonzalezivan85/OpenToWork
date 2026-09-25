@@ -34,7 +34,7 @@ public class AdminVacancyContractDto
 
     // 6. Garantia: ver WarrantyDays por linea en Vacancies (cada vacante tiene la suya).
 
-    // 7. Condiciones economicas. FeeAmount es la suma de FinalPrice de cada linea (Vacancies) - no se edita directo.
+    // 7. Condiciones economicas. FeeAmount es la suma de LineTotal de cada linea (Vacancies; precio x posiciones si la tarifa es por posicion) - no se edita directo.
     public decimal? FeeAmount { get; set; }
     public string Currency { get; set; } = "EUR";
     public int FeeApplicationType { get; set; }
@@ -115,6 +115,8 @@ public class ContractVacancyItemDto
     public string? PromoCode { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal? FinalPrice { get; set; }
+    public int Positions { get; set; } = 1;
+    public decimal? LineTotal { get; set; }
     public bool IsManualOverride { get; set; }
     public string? OverrideReason { get; set; }
 

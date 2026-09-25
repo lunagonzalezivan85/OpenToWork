@@ -1113,6 +1113,8 @@
     "manualOverrideToggle": "Fijar un precio manual (fuera de lista)",
     "manualPrice": "Precio manual",
     "overrideReason": "Motivo del precio manual",
+    "overrideReasonRequired": "Indica el motivo del precio fijo: es obligatorio y queda registrado en el contrato.",
+    "positions": "Posiciones",
     "overrideReasonPlaceholder": "Ej: negociación especial con el cliente",
     "viewDocument": "Documento formal",
     "print": "Imprimir / Guardar PDF",

@@ -83,6 +83,8 @@ public class AdminContractService : IAdminContractService
                         PromoCode = cv.PromoCodeText,
                         DiscountAmount = cv.DiscountAmount,
                         FinalPrice = cv.FinalPrice,
+                        Positions = cv.Positions,
+                        LineTotal = cv.LineTotal ?? cv.FinalPrice,
                         IsManualOverride = cv.IsManualOverride,
                         OverrideReason = cv.OverrideReason,
                         WarrantyDays = cv.WarrantyDays
@@ -132,10 +134,10 @@ public class AdminContractService : IAdminContractService
         foreach (var line in DistinctLines(dto.VacancyLines))
         {
             var cv = new PTContractVacancy { PT_VacancyId = line.VacancyId, CreatedBy = adminId };
-            await ApplyPricingAsync(cv, line, appliedPromos);
+            await ApplyPricingAsync(cv, line, dto.FeeApplicationType, appliedPromos);
             contract.ContractVacancies.Add(cv);
         }
-        contract.FeeAmount = contract.ContractVacancies.Sum(cv => cv.FinalPrice ?? 0);
+        contract.FeeAmount = contract.ContractVacancies.Sum(cv => cv.LineTotal ?? 0);
 
         _context.PT_VacancyContracts.Add(contract);
         await _context.SaveChangesAsync();
@@ -201,9 +203,9 @@ public class AdminContractService : IAdminContractService
                 cv = new PTContractVacancy { PT_VacancyId = vacancyId, CreatedBy = adminId };
                 contract.ContractVacancies.Add(cv);
             }
-            await ApplyPricingAsync(cv, line, appliedPromos);
+            await ApplyPricingAsync(cv, line, dto.FeeApplicationType, appliedPromos);
         }
-        contract.FeeAmount = contract.ContractVacancies.Where(cv => !cv.IsDeleted).Sum(cv => cv.FinalPrice ?? 0);
+        contract.FeeAmount = contract.ContractVacancies.Where(cv => !cv.IsDeleted).Sum(cv => cv.LineTotal ?? 0);
 
         await _context.SaveChangesAsync();
         await RedeemPromosAsync(appliedPromos);
@@ -226,13 +228,27 @@ public class AdminContractService : IAdminContractService
         dto.PaymentConsolidationPct = Math.Round(dto.PaymentConsolidationPct, 2);
     }
 
-    /// <summary>Resuelve el precio de una linea del contrato: manual (con motivo) o automatico
-    /// (precio de lista del tipo de puesto de la vacante + codigo promocional opcional).</summary>
-    private async Task ApplyPricingAsync(PTContractVacancy cv, ContractVacancyLineDto line, List<(Guid PromoCodeId, PTContractVacancy Line)> appliedPromos)
+    /// <summary>Precio de una linea del contrato: unitario (ApplyUnitPriceAsync) y total segun la
+    /// aplicacion de tarifa - por posicion multiplica por las posiciones de la vacante (clausula 6.2 del
+    /// Contrato Marco: sin indicacion, la tarifa aplica a cada contratacion efectiva).</summary>
+    private async Task ApplyPricingAsync(PTContractVacancy cv, ContractVacancyLineDto line, int feeApplicationType, List<(Guid PromoCodeId, PTContractVacancy Line)> appliedPromos)
     {
         var vacancy = await _context.PT_Vacancies
             .FirstOrDefaultAsync(v => v.Id == line.VacancyId && !v.IsDeleted)
             ?? throw new InvalidOperationException("Una de las vacantes seleccionadas ya no existe.");
+
+        await ApplyUnitPriceAsync(cv, line, vacancy, appliedPromos);
+
+        cv.Positions = Math.Max(1, vacancy.RequiredApplicants ?? 1);
+        cv.LineTotal = feeApplicationType == (int)FeeApplicationType.PerPosition
+            ? Math.Round((cv.FinalPrice ?? 0) * cv.Positions, 2)
+            : cv.FinalPrice;
+    }
+
+    /// <summary>Precio unitario de una linea: manual (con motivo) o automatico (precio de lista del
+    /// tipo de puesto de la vacante + codigo promocional opcional).</summary>
+    private async Task ApplyUnitPriceAsync(PTContractVacancy cv, ContractVacancyLineDto line, PTVacancy vacancy, List<(Guid PromoCodeId, PTContractVacancy Line)> appliedPromos)
+    {
 
         cv.PT_JobTypeId = vacancy.PT_JobTypeId;
         cv.WarrantyDays = await ResolveWarrantyDaysAsync(line, vacancy);
