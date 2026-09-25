@@ -24,6 +24,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<ICvParserService, CvParserService>();
         services.AddScoped<IValidationService, ValidationService>();
         services.AddHttpClient<IValidationService, ValidationService>();
+        services.AddHttpClient<IGoogleTokenValidator, GoogleTokenValidator>();
         services.AddScoped<IScoringService, ScoringService>();
         services.AddScoped<ICompatibilityService, CompatibilityService>();
         services.AddScoped<IReferenceService, ReferenceService>();

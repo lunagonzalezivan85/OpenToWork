@@ -17,12 +17,14 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
     private readonly ITokenCryptoService _tokenCrypto;
+    private readonly IGoogleTokenValidator _googleTokenValidator;
 
-    public AuthService(AppDbContext context, IConfiguration config, ITokenCryptoService tokenCrypto)
+    public AuthService(AppDbContext context, IConfiguration config, ITokenCryptoService tokenCrypto, IGoogleTokenValidator googleTokenValidator)
     {
         _context = context;
         _config = config;
         _tokenCrypto = tokenCrypto;
+        _googleTokenValidator = googleTokenValidator;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, string? createdBy = null)
@@ -263,24 +265,17 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto?> GoogleLoginAsync(string googleToken)
     {
-        // In production, validate the Google ID token with Google's API
-        // For now, we decode the JWT payload to extract the email and GoogleId
-        // This is a simplified implementation - production should use Google's tokeninfo endpoint
+        // Revision de seguridad 25-Sep: antes se decodificaba el payload SIN verificar la firma y
+        // cualquiera entraba a una cuenta ajena fabricando un token con su correo. Ahora el token se
+        // valida contra Google (firma, emisor, audiencia, vigencia) en GoogleTokenValidator.
+        var identity = await _googleTokenValidator.ValidateAsync(googleToken);
+        if (identity == null) return null;
+
+        var email = identity.Email;
+        var googleId = identity.Subject;
+
         try
         {
-            var parts = googleToken.Split('.');
-            if (parts.Length < 2) return null;
-
-            var payload = parts[1];
-            payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
-            var json = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
-
-            using var doc = System.Text.Json.JsonDocument.Parse(json);
-            var email = doc.RootElement.GetProperty("email").GetString();
-            var googleId = doc.RootElement.GetProperty("sub").GetString();
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId)) return null;
-
             var user = await _context.SC_Users
                 .Include(u => u.UserRoles)
                 .Include(u => u.UserPreference)
@@ -315,6 +310,10 @@ public class AuthService : IAuthService
                 }
                 else
                 {
+                    // Solo se vincula a una cuenta existente si Google garantiza que el correo es de
+                    // quien inicia sesion; si no, cualquiera con una cuenta de Google con ese correo
+                    // sin verificar podria apropiarse de la cuenta.
+                    if (!identity.EmailVerified) return null;
                     user.GoogleId = googleId;
                     user.EmailVerified = true;
                 }

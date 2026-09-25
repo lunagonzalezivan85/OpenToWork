@@ -112,7 +112,7 @@ public class ProfileService : IProfileService
     public async Task<CandidateExperienceDto?> UpdateExperienceAsync(Guid experienceId, UpdateExperienceDto dto, Guid userId)
     {
         var experience = await _context.PT_CandidateExperiences
-            .FirstOrDefaultAsync(e => e.Id == experienceId && !e.IsDeleted);
+            .FirstOrDefaultAsync(e => e.Id == experienceId && !e.IsDeleted && e.Candidate.SCUserId == userId);
 
         if (experience == null) return null;
 
@@ -134,7 +134,7 @@ public class ProfileService : IProfileService
     public async Task<bool> DeleteExperienceAsync(Guid experienceId, Guid userId)
     {
         var experience = await _context.PT_CandidateExperiences
-            .FirstOrDefaultAsync(e => e.Id == experienceId && !e.IsDeleted);
+            .FirstOrDefaultAsync(e => e.Id == experienceId && !e.IsDeleted && e.Candidate.SCUserId == userId);
 
         if (experience == null) return false;
 
@@ -174,7 +174,7 @@ public class ProfileService : IProfileService
     public async Task<CandidateEducationDto?> UpdateEducationAsync(Guid educationId, UpdateEducationDto dto, Guid userId)
     {
         var education = await _context.PT_CandidateEducations
-            .FirstOrDefaultAsync(e => e.Id == educationId && !e.IsDeleted);
+            .FirstOrDefaultAsync(e => e.Id == educationId && !e.IsDeleted && e.Candidate.SCUserId == userId);
 
         if (education == null) return null;
 
@@ -195,7 +195,7 @@ public class ProfileService : IProfileService
     public async Task<bool> DeleteEducationAsync(Guid educationId, Guid userId)
     {
         var education = await _context.PT_CandidateEducations
-            .FirstOrDefaultAsync(e => e.Id == educationId && !e.IsDeleted);
+            .FirstOrDefaultAsync(e => e.Id == educationId && !e.IsDeleted && e.Candidate.SCUserId == userId);
 
         if (education == null) return false;
 
@@ -234,7 +234,7 @@ public class ProfileService : IProfileService
     public async Task<CandidateCertificationDto?> UpdateCertificationAsync(Guid certificationId, UpdateCertificationDto dto, Guid userId)
     {
         var certification = await _context.PT_CandidateCertifications
-            .FirstOrDefaultAsync(c => c.Id == certificationId && !c.IsDeleted);
+            .FirstOrDefaultAsync(c => c.Id == certificationId && !c.IsDeleted && c.Candidate.SCUserId == userId);
 
         if (certification == null) return null;
 
@@ -254,7 +254,7 @@ public class ProfileService : IProfileService
     public async Task<bool> DeleteCertificationAsync(Guid certificationId, Guid userId)
     {
         var certification = await _context.PT_CandidateCertifications
-            .FirstOrDefaultAsync(c => c.Id == certificationId && !c.IsDeleted);
+            .FirstOrDefaultAsync(c => c.Id == certificationId && !c.IsDeleted && c.Candidate.SCUserId == userId);
 
         if (certification == null) return false;
 
