@@ -328,6 +328,14 @@
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
 
+        // Este es el panel del candidato: una empresa que llegue aqui (enlace viejo, pie de pagina,
+        // registro) va a su propio panel en vez de ver "Completa tu perfil" de candidato.
+        if (await AuthApi.GetUserRoleAsync() == "1")
+        {
+            Nav.NavigateTo("/company-dashboard", replace: true);
+            return;
+        }
+
         string? jwtName = null;
         var token = await AuthApi.GetTokenAsync();
         if (!string.IsNullOrEmpty(token))

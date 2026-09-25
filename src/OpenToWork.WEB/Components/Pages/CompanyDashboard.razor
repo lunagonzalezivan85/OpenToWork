@@ -194,6 +194,13 @@
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
 
+        // Panel de empresa: un candidato que llegue aqui va a su propio panel.
+        if (await AuthApi.GetUserRoleAsync() == "0")
+        {
+            Nav.NavigateTo("/dashboard", replace: true);
+            return;
+        }
+
         Slides = new()
         {
             new HeroSlide

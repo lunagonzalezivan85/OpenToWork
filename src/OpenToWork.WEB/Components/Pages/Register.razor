@@ -122,7 +122,7 @@
                 if (SelectedRole == 0 && !result.Data.User.WizardCompleted)
                     Nav.NavigateTo("/wizard");
                 else
-                    Nav.NavigateTo(!string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/dashboard");
+                    Nav.NavigateTo(!string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : SelectedRole == 1 ? "/company-dashboard" : "/dashboard");
             }
             else if (result.EmailAlreadyRegistered)
             {
