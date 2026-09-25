@@ -160,9 +160,15 @@ else if (IsEditing)
                         }
                     </div>
                 }
+                <div class="admin-recruitment-grid" style="margin-top: 0.5rem; align-items: end;">
+                    <div class="ot-input-group">
+                        <label class="ot-input-label">@Lang.T("admin.contract.positions") *</label>
+                        <input type="number" min="1" step="1" @bind="line.Positions" @bind:event="oninput" class="admin-modal-input" />
+                    </div>
+                </div>
                 @if (FormFeeApplicationType == (int)FeeApplicationType.PerPosition)
                 {
-                    <div class="admin-recruitment-info-row" style="margin-top: 0.5rem;"><span>@Lang.T("admin.contract.positions")</span>
+                    <div class="admin-recruitment-info-row" style="margin-top: 0.5rem;"><span>@Lang.T("admin.contract.lineTotal")</span>
                         <strong>@line.Positions × @FormatEur(line.UnitPrice) = @FormatEur(LineTotal(line))</strong>
                     </div>
                 }
@@ -582,7 +588,7 @@ else if (Contract != null)
     }
 
     private decimal LineTotal(VacancyLineForm l) =>
-        FormFeeApplicationType == (int)FeeApplicationType.PerPosition ? l.UnitPrice * l.Positions : l.UnitPrice;
+        FormFeeApplicationType == (int)FeeApplicationType.PerPosition ? l.UnitPrice * Math.Max(1, l.Positions) : l.UnitPrice;
 
     private List<VacancyLineForm> VacancyLines { get; set; } = new();
 
@@ -912,7 +918,8 @@ else if (Contract != null)
                 PromoCode = !l.ManualOverride && l.AppliedPromo is { IsValid: true } ? l.AppliedPromo.Code : null,
                 ManualPrice = l.ManualOverride ? l.FormManualPrice : null,
                 OverrideReason = l.ManualOverride ? l.FormOverrideReason : null,
-                WarrantyDays = l.FormWarrantyDays
+                WarrantyDays = l.FormWarrantyDays,
+                Positions = Math.Max(1, l.Positions)
             }).ToList(),
             ScopeServices = FormScope.ToList(),
             TargetCandidates = FormTargetCandidates,

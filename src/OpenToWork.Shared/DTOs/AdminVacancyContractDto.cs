@@ -83,6 +83,10 @@ public class ContractVacancyLineDto
     /// <summary>Periodo de garantia en dias naturales para esta vacante. Si es null, el servidor
     /// usa la referencia del nivel del tipo de puesto de la vacante (PTJobLevel.WarrantyDays).</summary>
     public int? WarrantyDays { get; set; }
+
+    /// <summary>Posiciones a cubrir en esta vacante. Si se informa, actualiza tambien la vacante
+    /// (PTVacancy.RequiredApplicants) - con tarifa por posicion multiplica el precio.</summary>
+    public int? Positions { get; set; }
 }
 
 public class AdminContractDecisionDto

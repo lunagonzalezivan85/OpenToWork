@@ -240,6 +240,14 @@ public class AdminContractService : IAdminContractService
 
         await ApplyUnitPriceAsync(cv, line, vacancy, appliedPromos);
 
+        // Las posiciones se editan desde el contrato y quedan tambien en la vacante (una sola fuente:
+        // el documento las muestra como "Numero de posiciones" de la vacante).
+        if (line.Positions is { } positions)
+        {
+            if (positions < 1)
+                throw new InvalidOperationException($"\"{vacancy.Title}\": debe tener al menos 1 posicion.");
+            vacancy.RequiredApplicants = positions;
+        }
         cv.Positions = Math.Max(1, vacancy.RequiredApplicants ?? 1);
         cv.LineTotal = feeApplicationType == (int)FeeApplicationType.PerPosition
             ? Math.Round((cv.FinalPrice ?? 0) * cv.Positions, 2)
