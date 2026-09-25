@@ -510,8 +510,25 @@ public class CompanyCrmService : ICompanyCrmService
         };
         _db.PT_CompanyStageLogs.Add(log);
 
+        // Ganar el trato (Cerrado Ganado, a mano o al aceptar el contrato) convierte al prospecto en
+        // cliente Activo. Solo desde Prospecto: una empresa Inactiva se reactiva a mano.
+        var activated = false;
+        if (dto.ToStage == (int)CompanyPipelineStage.CerradoGanado)
+        {
+            var company = await _db.PT_Companies.FirstOrDefaultAsync(c => c.Id == pipeline.PT_CompanyId && !c.IsDeleted);
+            if (company != null && company.Status == (int)CompanyStatus.Prospecto)
+            {
+                company.Status = (int)CompanyStatus.Activa;
+                company.UpdatedAt = DateTime.UtcNow;
+                company.UpdatedBy = adminId;
+                activated = true;
+            }
+        }
+
         await _db.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "CompanyCrm.MoveStage", "PTCompanyPipeline", pipelineId, $"Empresa movida de etapa {fromStage} a {dto.ToStage}", ipAddress);
+        if (activated)
+            await _auditLog.LogAsync(adminId, "CompanyCrm.ActivateOnWin", "PTCompany", pipeline.PT_CompanyId, "Prospecto -> Activa (Cerrado Ganado)", ipAddress);
 
         return true;
     }
