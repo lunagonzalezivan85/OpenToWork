@@ -33,6 +33,16 @@ public class AdminVacancyDto
     public DateTime? ClosedAt { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public int ViewsCount { get; set; }
+
+    /// <summary>Primera aceptacion del contrato de la vacante (una nueva version no reinicia la cuenta).
+    /// Null si no hay contrato aceptado.</summary>
+    public DateTime? ContractSignedAt { get; set; }
+    /// <summary>Dias naturales desde la firma hasta el cierre de la vacante (o hasta hoy si sigue abierta).</summary>
+    public int? DaysSinceSigned { get; set; }
+    /// <summary>Mismo tramo en dias habiles (lunes a viernes), comparable con el plazo del contrato.</summary>
+    public int? BusinessDaysSinceSigned { get; set; }
+    /// <summary>Plazo objetivo de cobertura del contrato, en dias habiles.</summary>
+    public int? TargetCoverageDays { get; set; }
 }
 
 public class AdminVacancyResultDto

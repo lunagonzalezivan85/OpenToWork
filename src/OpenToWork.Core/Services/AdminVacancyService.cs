@@ -75,6 +75,8 @@ public class AdminVacancyService : IAdminVacancyService
             .Take(pageSize)
             .ToListAsync();
 
+        await SetDaysSinceContractSignedAsync(items);
+
         return new AdminVacancyResultDto
         {
             Items = items,
@@ -82,6 +84,56 @@ public class AdminVacancyService : IAdminVacancyService
             Page = page,
             PageSize = pageSize
         };
+    }
+
+    /// <summary>Dias desde la firma del contrato hasta el cierre de la vacante (o hasta hoy), pedido de
+    /// Darwin 25-Sep. La firma es la PRIMERA aceptacion (audit log "AcceptContract"): abrir una nueva
+    /// version del contrato y reaceptarla no reinicia la cuenta.</summary>
+    private async Task SetDaysSinceContractSignedAsync(List<AdminVacancyDto> items)
+    {
+        var vacancyIds = items.Where(i => !i.IsTemporary).Select(i => i.Id).ToList();
+        if (vacancyIds.Count == 0) return;
+
+        var contracts = await _context.PT_ContractVacancies
+            .Where(cv => vacancyIds.Contains(cv.PT_VacancyId) && !cv.IsDeleted && !cv.Contract.IsDeleted)
+            .Select(cv => new { cv.PT_VacancyId, cv.PT_ContractId, cv.Contract.AcceptedAt, cv.Contract.TargetCoverageDays })
+            .ToListAsync();
+        if (contracts.Count == 0) return;
+
+        var contractIds = contracts.Select(c => c.PT_ContractId).Distinct().ToList();
+        var firstAcceptance = await _context.AD_AuditLogs
+            .Where(a => a.Action == "AcceptContract" && a.EntityId != null && contractIds.Contains(a.EntityId.Value))
+            .GroupBy(a => a.EntityId!.Value)
+            .Select(g => new { ContractId = g.Key, At = g.Min(a => a.CreatedAt) })
+            .ToDictionaryAsync(x => x.ContractId, x => x.At);
+
+        foreach (var item in items)
+        {
+            var contract = contracts.FirstOrDefault(c => c.PT_VacancyId == item.Id);
+            if (contract == null) continue;
+
+            DateTime? signedAt = firstAcceptance.TryGetValue(contract.PT_ContractId, out var first) ? first : contract.AcceptedAt;
+            if (signedAt == null) continue;
+
+            var end = item.Status == (int)VacancyStatus.Closed && item.ClosedAt.HasValue ? item.ClosedAt.Value : DateTime.UtcNow;
+            item.ContractSignedAt = signedAt;
+            // Fechas en hora local (la misma con la que el admin las muestra), no UTC: si no, cerca de la
+            // medianoche el conteo sale corrido un dia respecto de las fechas visibles.
+            var from = DateTime.SpecifyKind(signedAt.Value, DateTimeKind.Utc).ToLocalTime().Date;
+            var to = DateTime.SpecifyKind(end, DateTimeKind.Utc).ToLocalTime().Date;
+            item.DaysSinceSigned = Math.Max(0, (int)(to - from).TotalDays);
+            item.BusinessDaysSinceSigned = BusinessDaysBetween(from, to);
+            item.TargetCoverageDays = contract.TargetCoverageDays;
+        }
+    }
+
+    /// <summary>Dias habiles (lunes a viernes) transcurridos despues de 'from' hasta 'to' inclusive.</summary>
+    private static int BusinessDaysBetween(DateTime from, DateTime to)
+    {
+        var days = 0;
+        for (var d = from.AddDays(1); d <= to; d = d.AddDays(1))
+            if (d.DayOfWeek != DayOfWeek.Saturday && d.DayOfWeek != DayOfWeek.Sunday) days++;
+        return days;
     }
 
     /// <summary>Codigo de PT_Vacancy.Category (texto libre historico) -> nombre del PTJobType

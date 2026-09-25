@@ -77,6 +77,20 @@ else
                         {
                             <span class="admin-oneui-chip">@v.ViewsCount vistas</span>
                         }
+                        @if (v.DaysSinceSigned.HasValue)
+                        {
+                            var overdue = v.TargetCoverageDays.HasValue && v.BusinessDaysSinceSigned > v.TargetCoverageDays;
+                            <span class="admin-result-badge @(overdue ? "admin-result-badge--danger" : v.Status == (int)VacancyStatus.Closed ? "admin-result-badge--success" : "admin-result-badge--info")"
+                                  title="@CoverageTooltip(v)">
+                                @(v.Status == (int)VacancyStatus.Closed
+                                    ? string.Format(Lang.T("admin.vacancies.coveredInDays"), v.DaysSinceSigned)
+                                    : string.Format(Lang.T("admin.vacancies.dayFromSigning"), v.DaysSinceSigned))
+                                @if (v.TargetCoverageDays.HasValue)
+                                {
+                                    <text> · @v.BusinessDaysSinceSigned/@v.TargetCoverageDays @Lang.T("admin.vacancies.businessDaysShort")</text>
+                                }
+                            </span>
+                        }
                     </div>
                 </div>
                 <div class="admin-oneui-meta" @onclick:stopPropagation="true">
@@ -694,6 +708,13 @@ else
         await AuthApi.ModerateVacancyAsync(id, status);
         await LoadVacancies();
     }
+
+    private string CoverageTooltip(AdminVacancyDto v) =>
+        string.Format(Lang.T("admin.vacancies.coverageTooltip"),
+            v.ContractSignedAt?.ToLocalTime().ToString("dd/MM/yyyy"),
+            v.Status == (int)VacancyStatus.Closed && v.ClosedAt.HasValue ? v.ClosedAt.Value.ToLocalTime().ToString("dd/MM/yyyy") : Lang.T("admin.vacancies.today"),
+            v.DaysSinceSigned, v.BusinessDaysSinceSigned,
+            v.TargetCoverageDays?.ToString() ?? "-");
 
     private string StatusLabel(int status) => (VacancyStatus)status switch
     {
