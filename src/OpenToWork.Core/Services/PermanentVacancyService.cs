@@ -3,6 +3,7 @@ using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
 using OpenToWork.Models.Entities;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.Core.Services;
 
@@ -93,8 +94,19 @@ public class PermanentVacancyService : IPermanentVacancyService
         vacancy.ViewsCount++;
         await _context.SaveChangesAsync();
 
-        return await MapToDtoAsync(vacancy);
+        var dto = await MapToDtoAsync(vacancy);
+        dto.IsContractLocked = await IsContractLockedAsync(vacancy.Id);
+        return dto;
     }
+
+    /// <summary>La vacante esta en un contrato Enviado o Aceptado (ver VacancyDto.IsContractLocked).</summary>
+    private Task<bool> IsContractLockedAsync(Guid vacancyId) =>
+        _context.PT_ContractVacancies.AnyAsync(cv => cv.PT_VacancyId == vacancyId && !cv.IsDeleted
+            && !cv.Contract.IsDeleted
+            && (cv.Contract.Status == (int)ContractStatus.Sent || cv.Contract.Status == (int)ContractStatus.Accepted));
+
+    private const string ContractLockedMessage =
+        "Esta vacante tiene un contrato con Trato Directo: ese cambio se solicita a Trato Directo desde Mensajes.";
 
     public async Task<IEnumerable<VacancyDto>> GetVacanciesByCompanyAsync(Guid companyId)
     {
@@ -161,6 +173,18 @@ public class PermanentVacancyService : IPermanentVacancyService
 
         if (vacancy == null) return null;
 
+        // Con contrato, la empresa solo edita lo descriptivo; lo que figura en el contrato se pide a TD.
+        if (await IsContractLockedAsync(id) && (
+                (dto.Title != null && dto.Title != vacancy.Title)
+                || (dto.SalaryMin.HasValue && dto.SalaryMin != vacancy.SalaryMin)
+                || (dto.SalaryMax.HasValue && dto.SalaryMax != vacancy.SalaryMax)
+                || (dto.Location != null && dto.Location != (vacancy.Location ?? ""))
+                || (dto.ContractType.HasValue && dto.ContractType != vacancy.ContractType)
+                || (dto.WorkMode.HasValue && dto.WorkMode != vacancy.WorkMode)
+                || (dto.Category != null && dto.Category != (vacancy.Category ?? ""))
+                || (dto.Status.HasValue && dto.Status != vacancy.Status)))
+            throw new InvalidOperationException(ContractLockedMessage);
+
         if (dto.Title != null) vacancy.Title = dto.Title;
         if (dto.Description != null) vacancy.Description = dto.Description;
         if (dto.Requirements != null) vacancy.Requirements = dto.Requirements;
@@ -182,6 +206,9 @@ public class PermanentVacancyService : IPermanentVacancyService
 
     public async Task<bool> DeleteVacancyAsync(Guid id, Guid userId)
     {
+        if (await IsContractLockedAsync(id))
+            throw new InvalidOperationException(ContractLockedMessage);
+
         var vacancy = await _context.PT_Vacancies
             .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
 
@@ -214,6 +241,9 @@ public class PermanentVacancyService : IPermanentVacancyService
 
     public async Task<bool> CloseVacancyAsync(Guid id, Guid userId)
     {
+        if (await IsContractLockedAsync(id))
+            throw new InvalidOperationException(ContractLockedMessage);
+
         var vacancy = await _context.PT_Vacancies
             .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted);
 

@@ -60,7 +60,8 @@
         "jobTypeRequired": "Select a job type",
         "createFailed": "Could not create the vacancy. Make sure you have company permissions.",
         "publishBlocked": "Couldn't publish the vacancy",
-        "publishGeneric": "Something went wrong publishing the vacancy. Please try again."
+        "publishGeneric": "Something went wrong publishing the vacancy. Please try again.",
+        "updateFailed": "The vacancy could not be saved. Please try again."
     },
     "success": {
         "created": "Vacancy created successfully",
@@ -95,7 +96,24 @@
         "location": "Location",
         "category": "Category",
         "jobTypePlaceholder": "Select a job type...",
-        "skills": "Required skills"
+        "skills": "Required skills",
+        "workMode": "Work mode",
+        "contractType": "Contract type",
+        "experienceLevel": "Required experience",
+        "englishLevel": "English level"
+    },
+    "contractLockedHint": "This vacancy has a contract with Trato Directo. You can edit the description, requirements, experience and English; the position, number of positions, salary, location and work mode are in the contract and are changed by asking Trato Directo.",
+    "changeRequest": {
+        "title": "Request a change from Trato Directo",
+        "hint": "Tell us what you want to change in the contract (position, number of positions, salary, location, work mode). We will reply in Messages.",
+        "subjectEdit": "Change request",
+        "subjectClose": "Closure request",
+        "placeholderEdit": "E.g.: we need 3 waiters instead of 2, with a salary of 1,250 €...",
+        "placeholderClose": "Tell us why you want to close or pause this vacancy...",
+        "requestClose": "Request closure",
+        "send": "Send to Trato Directo",
+        "sent": "Request sent. We will reply in",
+        "goToMessages": "Messages"
     },
     "notFound": "Could not load the vacancy. It may not exist or has been deleted.",
     "matchScore": {

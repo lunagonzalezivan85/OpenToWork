@@ -85,9 +85,17 @@ public class PermanentVacanciesController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+        if (!await OwnsVacancyAsync(id, userId.Value)) return Forbid(); // solo la empresa duena de la vacante
 
-        var result = await _vacancyService.UpdateVacancyAsync(id, dto, userId.Value);
-        return result != null ? Ok(result) : NotFound();
+        try
+        {
+            var result = await _vacancyService.UpdateVacancyAsync(id, dto, userId.Value);
+            return result != null ? Ok(result) : NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     [HttpDelete("{id}")]
@@ -95,9 +103,17 @@ public class PermanentVacanciesController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+        if (!await OwnsVacancyAsync(id, userId.Value)) return Forbid(); // solo la empresa duena de la vacante
 
-        var deleted = await _vacancyService.DeleteVacancyAsync(id, userId.Value);
-        return deleted ? NoContent() : NotFound();
+        try
+        {
+            var deleted = await _vacancyService.DeleteVacancyAsync(id, userId.Value);
+            return deleted ? NoContent() : NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     [HttpPost("{id}/publish")]
@@ -105,6 +121,7 @@ public class PermanentVacanciesController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+        if (!await OwnsVacancyAsync(id, userId.Value)) return Forbid(); // solo la empresa duena de la vacante
 
         try
         {
@@ -122,9 +139,17 @@ public class PermanentVacanciesController : ControllerBase
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+        if (!await OwnsVacancyAsync(id, userId.Value)) return Forbid(); // solo la empresa duena de la vacante
 
-        var closed = await _vacancyService.CloseVacancyAsync(id, userId.Value);
-        return closed ? Ok() : NotFound();
+        try
+        {
+            var closed = await _vacancyService.CloseVacancyAsync(id, userId.Value);
+            return closed ? Ok() : NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     [HttpPost("convert-temp/{tempVacancyId}")]

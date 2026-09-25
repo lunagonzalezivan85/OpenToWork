@@ -60,7 +60,8 @@
         "jobTypeRequired": "Selecciona un tipo de puesto",
         "createFailed": "No se pudo crear la vacante. Verifica que tienes permisos de empresa.",
         "publishBlocked": "No se pudo publicar la vacante",
-        "publishGeneric": "Ocurrió un error al publicar la vacante. Intenta de nuevo."
+        "publishGeneric": "Ocurrió un error al publicar la vacante. Intenta de nuevo.",
+        "updateFailed": "No se pudo guardar la vacante. Intenta de nuevo."
     },
     "success": {
         "created": "Vacante creada correctamente",
@@ -95,7 +96,24 @@
         "location": "Ubicación",
         "category": "Categoría",
         "jobTypePlaceholder": "Selecciona un tipo de puesto...",
-        "skills": "Skills requeridos"
+        "skills": "Skills requeridos",
+        "workMode": "Modalidad",
+        "contractType": "Tipo de contrato",
+        "experienceLevel": "Experiencia requerida",
+        "englishLevel": "Nivel de inglés"
+    },
+    "contractLockedHint": "Esta vacante tiene un contrato con Trato Directo. Puedes editar la descripción, los requisitos, la experiencia y el inglés; el puesto, las posiciones, el salario, la ubicación y la modalidad figuran en el contrato y se cambian pidiéndoselo a Trato Directo.",
+    "changeRequest": {
+        "title": "Solicitar un cambio a Trato Directo",
+        "hint": "Cuéntanos qué quieres cambiar del contrato (puesto, posiciones, salario, ubicación, modalidad). Te respondemos en Mensajes.",
+        "subjectEdit": "Solicitud de cambio",
+        "subjectClose": "Solicitud de cierre",
+        "placeholderEdit": "Ej.: necesitamos 3 camareros en vez de 2, con salario de 1.250 €...",
+        "placeholderClose": "Cuéntanos por qué quieres cerrar o pausar esta vacante...",
+        "requestClose": "Solicitar cierre",
+        "send": "Enviar a Trato Directo",
+        "sent": "Solicitud enviada. Te respondemos por",
+        "goToMessages": "Mensajes"
     },
     "notFound": "No se pudo cargar la vacante. Es posible que no exista o haya sido eliminada.",
     "matchScore": {

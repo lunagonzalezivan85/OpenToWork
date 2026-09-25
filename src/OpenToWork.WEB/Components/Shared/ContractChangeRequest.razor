@@ -1,0 +1,63 @@
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+
+@* Solicitud de cambio a Trato Directo para una vacante con contrato (lo que figura en el contrato no lo
+   edita la empresa sola). Se envia como conversacion de Mensajes vinculada a la vacante; el equipo lo
+   aplica abriendo una nueva version del contrato. *@
+@if (Sent)
+{
+    <div class="alert alert-success" style="margin: 0;">
+        @Lang.T("vacancies.changeRequest.sent") <a href="/messages">@Lang.T("vacancies.changeRequest.goToMessages")</a>
+    </div>
+}
+else
+{
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <textarea class="ot-input-field" rows="3" maxlength="4000" @bind="Text" @bind:event="oninput" placeholder="@Placeholder"></textarea>
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="alert alert-error" style="margin: 0;">@Error</div>
+        }
+        <div>
+            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@(IsSending || string.IsNullOrWhiteSpace(Text))" @onclick="SendAsync">
+                @Lang.T("vacancies.changeRequest.send")
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid VacancyId { get; set; }
+    [Parameter] public string VacancyTitle { get; set; } = "";
+    /// <summary>Asunto del mensaje (p. ej. "Solicitud de cambio" o "Solicitud de cierre").</summary>
+    [Parameter] public string Subject { get; set; } = "";
+    [Parameter] public string Placeholder { get; set; } = "";
+
+    private string Text = "";
+    private bool IsSending;
+    private bool Sent;
+    private string? Error;
+
+    private async Task SendAsync()
+    {
+        if (IsSending || string.IsNullOrWhiteSpace(Text)) return;
+        IsSending = true;
+        Error = null;
+        var msg = await AuthApi.SendMessageAsync(new SendMessageDto
+        {
+            ConversationId = Guid.Empty,
+            Subject = $"{Subject}: {VacancyTitle}",
+            VacancyId = VacancyId,
+            Content = Text.Trim()
+        });
+        IsSending = false;
+        if (msg == null)
+        {
+            Error = Lang.T("common.messages.sendError");
+            return;
+        }
+        Sent = true;
+    }
+}

@@ -360,6 +360,24 @@ public class ApiAuthService
         return response.IsSuccessStatusCode;
     }
 
+    /// <summary>Edita una vacante propia. Error = motivo del rechazo (p. ej. campo incluido en el contrato).</summary>
+    public async Task<(VacancyDto? Result, string? Error)> UpdatePermanentVacancyAsync(Guid id, UpdateVacancyDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/permanentvacancies/{id}", dto);
+        if (response.IsSuccessStatusCode)
+            return (await response.Content.ReadFromJsonAsync<VacancyDto>(), null);
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+            return (null, body != null && body.TryGetValue("error", out var e) ? e : null);
+        }
+        catch
+        {
+            return (null, null);
+        }
+    }
+
     public async Task<bool> DeleteVacancyAsync(Guid id)
     {
         await SetAuthHeaderAsync();

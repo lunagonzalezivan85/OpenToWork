@@ -55,7 +55,13 @@ else
                                 @Lang.T("vacancies.publish")
                             </button>
                         }
-                        @if (Vacancy.Status == 1)
+                        @if (Vacancy.IsContractLocked)
+                        {
+                            <button class="ot-btn ot-btn--secondary ot-btn--small" @onclick="() => ShowCloseRequest = !ShowCloseRequest">
+                                @Lang.T("vacancies.changeRequest.requestClose")
+                            </button>
+                        }
+                        else if (Vacancy.Status == 1)
                         {
                             <button class="ot-btn ot-btn--secondary ot-btn--small" @onclick="CloseVacancy">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -68,6 +74,19 @@ else
                     </div>
                 </div>
             </div>
+
+            @if (Vacancy.IsContractLocked)
+            {
+                <div class="alert alert-warning" style="margin: 0.75rem 0 0;">@Lang.T("vacancies.contractLockedHint")</div>
+            }
+            @if (ShowCloseRequest)
+            {
+                <div style="margin-top: 0.75rem;">
+                    <ContractChangeRequest VacancyId="Vacancy.Id" VacancyTitle="@Vacancy.Title"
+                                           Subject="@Lang.T("vacancies.changeRequest.subjectClose")"
+                                           Placeholder="@Lang.T("vacancies.changeRequest.placeholderClose")" />
+                </div>
+            }
 
             <!-- Pill Badges inside hero -->
             <div class="vm-pills">
@@ -146,6 +165,8 @@ else
                         </div>
                     }
 
+                    @if (!Vacancy.IsContractLocked)
+                    {
                     <div class="vm-delete-zone">
                         <button class="vm-delete-btn" @onclick="DeleteVacancy">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -155,6 +176,7 @@ else
                             @Lang.T("common.buttons.delete")
                         </button>
                     </div>
+                    }
                 </div>
             </div>
 
@@ -286,6 +308,9 @@ else
     private void GoBack() => Nav.NavigateTo("/my-vacancies");
 
     private void GoToVerifiedPersonnel() => Nav.NavigateTo("/verified-applicants");
+
+    // Con contrato: "Solicitar cierre" (mensaje a Trato Directo) en vez de cerrar/eliminar directo.
+    private bool ShowCloseRequest { get; set; }
 
     private void EditVacancy() => Nav.NavigateTo($"/my-vacancies/{Id}/edit");
 

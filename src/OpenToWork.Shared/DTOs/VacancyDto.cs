@@ -29,6 +29,12 @@ public class VacancyDto
     public string? JobTypeName { get; set; }
     public string? JobLevelName { get; set; }
     public List<string> Skills { get; set; } = new();
+
+    /// <summary>La vacante esta en un contrato Enviado o Aceptado: los datos que figuran en el contrato
+    /// (puesto, posiciones, salario, ubicacion, modalidad, tipo de contrato, categoria) no los edita la
+    /// empresa sola - pide el cambio a Trato Directo (nueva version del contrato). Tampoco la cierra ni
+    /// elimina sola. Solo se informa en el detalle (GetVacancyByIdAsync).</summary>
+    public bool IsContractLocked { get; set; }
 }
 
 public class CreateVacancyDto

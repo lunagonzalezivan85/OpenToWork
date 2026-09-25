@@ -1,0 +1,201 @@
+@page "/my-vacancies/{Id:guid}/edit"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+@* Edicion de una vacante por la empresa. Si tiene contrato con Trato Directo (IsContractLocked), lo que
+   figura en el contrato queda de solo lectura y el cambio se pide a TD (decision de Darwin, 25-Sep);
+   el servidor aplica la misma regla (PermanentVacancyService.UpdateVacancyAsync). *@
+<PageTitle>@Lang.T("vacancies.edit")</PageTitle>
+
+<div class="page-container">
+    <button class="vm-back-link" @onclick="GoBack">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+        @Lang.T("vacancies.backToMyVacancies")
+    </button>
+
+    @if (IsLoading)
+    {
+        <p>@Lang.T("common.labels.loading")</p>
+    }
+    else if (Vacancy == null)
+    {
+        <div class="alert alert-error">@Lang.T("vacancies.notFound")</div>
+    }
+    else
+    {
+        <div class="vm-card" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+            <h2 style="margin: 0;">@Lang.T("vacancies.edit") · @Vacancy.Title</h2>
+
+            @if (Vacancy.IsContractLocked)
+            {
+                <div class="alert alert-warning" style="margin: 0;">@Lang.T("vacancies.contractLockedHint")</div>
+            }
+
+            <div class="form-grid">
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("vacancies.fields.title")</label>
+                    <input class="ot-input-field" maxlength="200" @bind="Form.Title" disabled="@Locked" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("vacancies.fields.category")</label>
+                    <input class="ot-input-field" maxlength="100" @bind="Form.Category" disabled="@Locked" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("vacancies.fields.location")</label>
+                    <input class="ot-input-field" maxlength="200" @bind="Form.Location" disabled="@Locked" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("vacancies.fields.workMode")</label>
+                    <select class="ot-input-field" @bind="Form.WorkMode" disabled="@Locked">
+                        <option value="0">@Lang.T("vacancies.workMode.onSite")</option>
+                        <option value="1">@Lang.T("vacancies.workMode.hybrid")</option>
+                        <option value="2">@Lang.T("vacancies.workMode.remote")</option>
+                    </select>
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("vacancies.fields.contractType")</label>
+                    <select class="ot-input-field" @bind="Form.ContractType" disabled="@Locked">
+                        <option value="0">@Lang.T("common.contract.fullTime")</option>
+                        <option value="1">@Lang.T("common.contract.partTime")</option>
+                        <option value="2">@Lang.T("common.contract.contract")</option>
+                        <option value="3">@Lang.T("common.contract.remote")</option>
+                    </select>
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("vacancies.fields.salaryMin")</label>
+                    <input class="ot-input-field" type="number" min="0" step="1" @bind="Form.SalaryMin" disabled="@Locked" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("vacancies.fields.salaryMax")</label>
+                    <input class="ot-input-field" type="number" min="0" step="1" @bind="Form.SalaryMax" disabled="@Locked" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("vacancies.fields.experienceLevel")</label>
+                    <select class="ot-input-field" @bind="Form.ExperienceLevel">
+                        <option value="">-</option>
+                        <option value="0">@Lang.T("vacancies.experience.none")</option>
+                        <option value="1">@Lang.T("vacancies.experience.lessThanOne")</option>
+                        <option value="2">@Lang.T("vacancies.experience.oneToThree")</option>
+                        <option value="3">@Lang.T("vacancies.experience.threeToFive")</option>
+                        <option value="4">@Lang.T("vacancies.experience.moreThanFive")</option>
+                    </select>
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("vacancies.fields.englishLevel")</label>
+                    <select class="ot-input-field" @bind="Form.EnglishLevel">
+                        <option value="">-</option>
+                        <option value="0">@Lang.T("vacancies.english.none")</option>
+                        <option value="1">@Lang.T("vacancies.english.basic")</option>
+                        <option value="2">@Lang.T("vacancies.english.intermediate")</option>
+                        <option value="3">@Lang.T("vacancies.english.advanced")</option>
+                        <option value="4">@Lang.T("vacancies.english.native")</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("vacancies.fields.description")</label>
+                <textarea class="ot-input-field" rows="5" @bind="Form.Description"></textarea>
+            </div>
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("vacancies.fields.requirements")</label>
+                <textarea class="ot-input-field" rows="5" @bind="Form.Requirements"></textarea>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Error))
+            {
+                <div class="alert alert-error" style="margin: 0;">@Error</div>
+            }
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="ot-btn ot-btn--primary ot-btn--medium" disabled="@IsSaving" @onclick="SaveAsync">@Lang.T("common.buttons.save")</button>
+                <button class="ot-btn ot-btn--outline ot-btn--medium" @onclick="GoBack">@Lang.T("common.buttons.cancel")</button>
+            </div>
+        </div>
+
+        @if (Vacancy.IsContractLocked)
+        {
+            <div class="vm-card" style="padding: 1.25rem; margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <h3 style="margin: 0;">@Lang.T("vacancies.changeRequest.title")</h3>
+                <p style="margin: 0; color: var(--text-muted);">@Lang.T("vacancies.changeRequest.hint")</p>
+                <ContractChangeRequest VacancyId="Vacancy.Id" VacancyTitle="@Vacancy.Title"
+                                       Subject="@Lang.T("vacancies.changeRequest.subjectEdit")"
+                                       Placeholder="@Lang.T("vacancies.changeRequest.placeholderEdit")" />
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private VacancyDto? Vacancy;
+    private UpdateVacancyDto Form = new();
+    private bool IsLoading = true;
+    private bool IsSaving;
+    private string? Error;
+
+    private bool Locked => Vacancy?.IsContractLocked == true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        Vacancy = await AuthApi.GetPermanentVacancyAsync(Id);
+        if (Vacancy != null)
+        {
+            Form = new UpdateVacancyDto
+            {
+                Title = Vacancy.Title,
+                Description = Vacancy.Description,
+                Requirements = Vacancy.Requirements,
+                SalaryMin = Vacancy.SalaryMin,
+                SalaryMax = Vacancy.SalaryMax,
+                Location = Vacancy.Location,
+                ContractType = Vacancy.ContractType,
+                WorkMode = Vacancy.WorkMode,
+                Category = Vacancy.Category,
+                ExperienceLevel = Vacancy.ExperienceLevel,
+                EnglishLevel = Vacancy.EnglishLevel
+            };
+        }
+        IsLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (Vacancy == null || IsSaving) return;
+        if (!Locked && string.IsNullOrWhiteSpace(Form.Title))
+        {
+            Error = Lang.T("vacancies.errors.titleRequired");
+            return;
+        }
+
+        IsSaving = true;
+        Error = null;
+        // Con contrato solo viaja lo descriptivo (el resto se pide a Trato Directo).
+        var dto = Locked
+            ? new UpdateVacancyDto
+            {
+                Description = Form.Description ?? "",
+                Requirements = Form.Requirements ?? "",
+                ExperienceLevel = Form.ExperienceLevel,
+                EnglishLevel = Form.EnglishLevel
+            }
+            : Form;
+
+        var (result, error) = await AuthApi.UpdatePermanentVacancyAsync(Id, dto);
+        IsSaving = false;
+        if (result == null)
+        {
+            Error = error ?? Lang.T("vacancies.errors.updateFailed");
+            return;
+        }
+        Nav.NavigateTo($"/my-vacancies/{Id}");
+    }
+
+    private void GoBack() => Nav.NavigateTo($"/my-vacancies/{Id}");
+}
