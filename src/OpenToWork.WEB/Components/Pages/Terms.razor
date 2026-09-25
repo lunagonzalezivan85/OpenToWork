@@ -1,0 +1,148 @@
+@page "/terms"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+
+@* Terminos y condiciones de uso del portal, redactados de forma generica con la estructura habitual de plataformas
+   de seleccion de personal en Espana. Las condiciones economicas de cada empresa (honorarios, garantias) viven en
+   su contrato de servicio, que prevalece sobre este texto. DEBE revisarlo un asesor legal antes de publicarse en
+   produccion. *@
+<PageTitle>Términos y condiciones</PageTitle>
+
+<div class="page-container">
+    <div class="about-hero">
+        <h1 class="about-hero-title">Términos y condiciones</h1>
+        <p class="about-hero-subtitle">Las reglas de uso del portal de Trato Directo para candidatos y empresas</p>
+    </div>
+
+    <article class="legal-doc">
+        <p class="legal-doc-updated">Última actualización: 25 de septiembre de 2026</p>
+
+        <p>
+            Estos términos regulan el acceso y el uso del portal de Trato Directo y de los servicios de selección de
+            personal que prestamos a través de él. Al registrarte o utilizar el portal aceptas estos términos; si no
+            estás de acuerdo con ellos, no debes usarlo. El tratamiento de tus datos personales se rige por nuestra
+            <a href="/privacy">Política de privacidad</a>.
+        </p>
+
+        <h2>1. Qué es Trato Directo</h2>
+        <p>
+            Trato Directo es un servicio de selección de personal. Conectamos a empresas que necesitan cubrir una
+            vacante con profesionales cuyo perfil, experiencia y referencias verifica nuestro equipo. No somos el
+            empleador de los candidatos: la relación laboral, cuando se produce, se establece directamente entre el
+            candidato y la empresa que lo contrata.
+        </p>
+
+        <h2>2. Quién puede usar el portal</h2>
+        <ul>
+            <li><strong>Candidatos:</strong> personas mayores de 16 años con capacidad legal para trabajar en España.</li>
+            <li><strong>Empresas:</strong> personas jurídicas o profesionales que buscan personal para su actividad, representadas por una persona mayor de edad con facultades suficientes para aceptar estos términos en su nombre.</li>
+        </ul>
+
+        <h2>3. Tu cuenta</h2>
+        <ul>
+            <li>Los datos que facilites al registrarte y en tu perfil deben ser veraces, completos y estar actualizados.</li>
+            <li>Tu cuenta es personal. Eres responsable de mantener la confidencialidad de tu contraseña y de la actividad realizada con ella; avísanos en cuanto sospeches un uso no autorizado.</li>
+            <li>Cada persona o empresa debe tener una sola cuenta, salvo que acordemos otra cosa.</li>
+        </ul>
+
+        <h2>4. Condiciones para candidatos</h2>
+        <ul>
+            <li><strong>El servicio es gratuito para los candidatos.</strong> Nunca te cobraremos por registrarte, postularte ni ser presentado a una empresa.</li>
+            <li>Nuestro equipo puede revisar tu perfil, entrevistarte, realizar pruebas técnicas y contactar a las referencias que nos indiques. Al facilitar una referencia confirmas que esa persona está de acuerdo en ser contactada.</li>
+            <li>Postularte o ser presentado a una empresa <strong>no garantiza</strong> la obtención de un empleo. La decisión de contratar corresponde siempre a la empresa.</li>
+            <li>Debes informarnos si aceptas una oferta, si dejas de estar disponible o si abandonas un puesto obtenido a través de Trato Directo, para que podamos gestionar correctamente el proceso.</li>
+            <li>Aportar información falsa (experiencia, títulos, referencias o documentos) puede suponer la exclusión de los procesos y la baja de tu cuenta.</li>
+        </ul>
+
+        <h2>5. Condiciones para empresas</h2>
+        <ul>
+            <li>Cada proceso de selección se rige por el <strong>contrato de servicio</strong> que la empresa acepta en el portal para esa vacante, que fija los honorarios, la forma de pago, los plazos y el periodo de garantía. En caso de conflicto, el contrato de servicio prevalece sobre estos términos.</li>
+            <li>La información de las vacantes debe ser veraz y ajustarse a la legislación laboral. No se admiten ofertas discriminatorias por razón de sexo, origen, edad, discapacidad, religión, orientación sexual o cualquier otra circunstancia personal o social.</li>
+            <li>Los perfiles de candidatos que te presentemos son <strong>confidenciales</strong>: solo puedes usarlos para evaluar a esa persona para la vacante concreta, sin copiarlos, cederlos a terceros ni utilizarlos para otros fines.</li>
+            <li>Si contratas, directamente o a través de terceros, a un candidato que te hemos presentado, se aplicarán los honorarios previstos en el contrato de servicio aunque la contratación se produzca fuera del portal o para un puesto distinto, dentro del plazo que en él se indique.</li>
+            <li>La empresa es la única responsable de la relación laboral con las personas que contrate: condiciones de trabajo, salario, alta en la Seguridad Social y cumplimiento de la normativa laboral y de prevención de riesgos.</li>
+        </ul>
+
+        <h2>6. Uso aceptable</h2>
+        <p>Al usar el portal te comprometes a no:</p>
+        <ul>
+            <li>suplantar a otra persona o empresa, ni crear cuentas con datos falsos;</li>
+            <li>publicar contenidos ilícitos, ofensivos, discriminatorios o que vulneren derechos de terceros;</li>
+            <li>extraer datos del portal de forma masiva o automatizada, ni utilizar la información de otros usuarios para fines ajenos al servicio;</li>
+            <li>intentar acceder a cuentas, datos o zonas del sistema a las que no tengas autorización, ni interferir en su funcionamiento;</li>
+            <li>contactar a candidatos o empresas presentados por Trato Directo para eludir el servicio.</li>
+        </ul>
+
+        <h2>7. Contenidos y propiedad intelectual</h2>
+        <p>
+            El portal, su diseño, su software, sus textos y la marca Trato Directo nos pertenecen o tenemos licencia para
+            usarlos, y no puedes reproducirlos ni explotarlos sin nuestra autorización. Los contenidos que aportas
+            (currículum, descripciones de vacantes, documentos) siguen siendo tuyos; nos concedes el permiso necesario
+            para almacenarlos, procesarlos y mostrarlos en la medida en que lo requiera la prestación del servicio.
+        </p>
+
+        <h2>8. Responsabilidad</h2>
+        <ul>
+            <li>Verificamos la información de los candidatos con diligencia profesional, pero no podemos garantizar la exactitud absoluta de los datos que aportan los usuarios ni el resultado de una contratación.</li>
+            <li>No respondemos de las decisiones de contratación, ni de las obligaciones derivadas de la relación laboral entre candidato y empresa, más allá de lo pactado en el contrato de servicio.</li>
+            <li>No respondemos de los daños derivados de un uso del portal contrario a estos términos, ni de interrupciones causadas por terceros o por causas ajenas a nuestro control.</li>
+            <li>Nada de lo anterior limita los derechos que la ley reconoce a los consumidores ni nuestra responsabilidad en los casos en que no pueda excluirse legalmente.</li>
+        </ul>
+
+        <h2>9. Disponibilidad del servicio</h2>
+        <p>
+            Trabajamos para que el portal esté disponible de forma continuada, pero podemos interrumpirlo temporalmente
+            por mantenimiento, mejoras o motivos de seguridad, y modificar o retirar funcionalidades. Cuando sea posible,
+            avisaremos con antelación de las interrupciones programadas.
+        </p>
+
+        <h2>10. Suspensión y baja</h2>
+        <p>
+            Puedes darte de baja cuando quieras escribiéndonos. Podremos suspender o cancelar una cuenta que incumpla
+            estos términos, aporte información falsa o haga un uso fraudulento del servicio. La baja no afecta a las
+            obligaciones ya asumidas, en particular a las derivadas de un contrato de servicio en curso ni al deber de
+            confidencialidad sobre los perfiles recibidos.
+        </p>
+
+        <h2>11. Cambios en estos términos</h2>
+        <p>
+            Podemos modificar estos términos cuando cambien nuestros servicios o la normativa. Publicaremos la nueva
+            versión en esta página con su fecha y, si el cambio es relevante, te avisaremos por el portal o por correo.
+            Si continúas usando el portal después de la entrada en vigor, se entenderá que aceptas los nuevos términos.
+            Los cambios no afectan a los contratos de servicio ya aceptados.
+        </p>
+
+        <h2>12. Ley aplicable y jurisdicción</h2>
+        <p>
+            Estos términos se rigen por la legislación española. Si eres consumidor, podrás acudir a los juzgados de tu
+            domicilio. En los demás casos, las partes se someten a los juzgados y tribunales del domicilio social de
+            Trato Directo, salvo que el contrato de servicio disponga otra cosa.
+        </p>
+
+        <h2>13. Contacto</h2>
+        <p>
+            Para cualquier consulta sobre estos términos puedes escribirnos a @ContactLine.
+        </p>
+    </article>
+</div>
+
+@code {
+    private PublicLegalIdentityDto? Identity;
+
+    // Mismo contacto que la politica de privacidad: correo de privacidad (admin > Datos de la Empresa) o, si falta,
+    // la direccion postal.
+    private string ContactLine => !string.IsNullOrWhiteSpace(Identity?.PrivacyEmail)
+        ? Identity!.PrivacyEmail
+        : $"nuestra dirección postal ({Value(Identity?.Address)})";
+
+    private static string Value(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        Identity = await AuthApi.GetLegalIdentityAsync();
+    }
+}
