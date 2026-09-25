@@ -1,7 +1,5 @@
 @page "/terms"
-@using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
-@inject ApiAuthService AuthApi
 @inject LanguageService Lang
 
 @* Terminos y condiciones de uso del portal, redactados de forma generica con la estructura habitual de plataformas
@@ -123,26 +121,15 @@
 
         <h2>13. Contacto</h2>
         <p>
-            Para cualquier consulta sobre estos términos puedes escribirnos a @ContactLine.
+            Para cualquier consulta sobre estos términos puedes escribirnos a <a href="mailto:info@tratodirecto.es">info@tratodirecto.es</a>.
         </p>
     </article>
 </div>
 
 @code {
-    private PublicLegalIdentityDto? Identity;
-
-    // Mismo contacto que la politica de privacidad: correo de privacidad (admin > Datos de la Empresa) o, si falta,
-    // la direccion postal.
-    private string ContactLine => !string.IsNullOrWhiteSpace(Identity?.PrivacyEmail)
-        ? Identity!.PrivacyEmail
-        : $"nuestra dirección postal ({Value(Identity?.Address)})";
-
-    private static string Value(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v;
-
     protected override async Task OnInitializedAsync()
     {
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
-        Identity = await AuthApi.GetLegalIdentityAsync();
     }
 }
