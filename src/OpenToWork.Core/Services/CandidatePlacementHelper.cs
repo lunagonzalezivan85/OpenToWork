@@ -15,6 +15,13 @@ namespace OpenToWork.Core.Services;
 /// </summary>
 internal static class CandidatePlacementHelper
 {
+    /// <summary>Rechazos (sin ninguna contratacion) a partir de los cuales un candidato se considera
+    /// "quemado": se sigue entregando a empresas que lo descartan. Decision de Darwin (24-Sep).</summary>
+    public const int BurnedRejectionThreshold = 3;
+
+    public static bool IsBurned(int rejectedCount, bool everHired) =>
+        !everHired && rejectedCount >= BurnedRejectionThreshold;
+
     /// <summary>Dado un set de SCUser.Id de candidatos, devuelve su resumen keyed por SCUser.Id.
     /// Los que no tienen perfil de candidato ni entregas no aparecen en el diccionario.</summary>
     public static async Task<Dictionary<Guid, CandidatePlacementSummaryDto>> GetSummariesAsync(AppDbContext context, IEnumerable<Guid> userIds)
@@ -45,11 +52,12 @@ internal static class CandidatePlacementHelper
 
         var hiredNegotiations = await context.PT_Negotiations
             .Where(n => !n.IsDeleted && n.Status == (int)NegotiationStatus.Cerrada
-                && n.WinningApplication != null && n.PlacementEndedAt == null && candidateIds.Contains(n.WinningApplication.PT_CandidateId))
+                && n.WinningApplication != null && candidateIds.Contains(n.WinningApplication.PT_CandidateId))
             .Select(n => new
             {
                 n.Id,
                 CandidateId = n.WinningApplication!.PT_CandidateId,
+                n.PlacementEndedAt,
                 ClosedAt = n.ClosedAt ?? n.CreatedAt,
                 CompanyName = n.Vacancy.Company.Name,
                 VacancyTitle = n.Vacancy.Title
@@ -73,7 +81,7 @@ internal static class CandidatePlacementHelper
                 .Where(d => d.Status == (int)DeliveryStatus.Hired && d.PlacementEndedAt == null && !replacedSet.Contains(d.Id))
                 .Select(d => (d.DeliveredAt, d.CompanyName, d.VacancyTitle))
                 .Concat(hiredNegotiations
-                    .Where(n => n.CandidateId == candidateId && !replacedSet.Contains(n.Id))
+                    .Where(n => n.CandidateId == candidateId && n.PlacementEndedAt == null && !replacedSet.Contains(n.Id))
                     .Select(n => (DeliveredAt: n.ClosedAt, n.CompanyName, n.VacancyTitle)))
                 .OrderByDescending(p => p.DeliveredAt)
                 .ToList();
@@ -81,6 +89,10 @@ internal static class CandidatePlacementHelper
             if (own.Count == 0 && placements.Count == 0) continue;
 
             var last = own.FirstOrDefault();
+            // "Nunca contratado" mira el historial completo (aunque ya haya dejado el puesto).
+            var everHired = own.Any(d => d.Status == (int)DeliveryStatus.Hired)
+                || hiredNegotiations.Any(n => n.CandidateId == candidateId);
+            var rejected = own.Count(d => d.Status == (int)DeliveryStatus.RejectedByCompany);
             var placed = placements.FirstOrDefault();
             result[userId] = new CandidatePlacementSummaryDto
             {
@@ -88,7 +100,8 @@ internal static class CandidatePlacementHelper
                 PlacedCompanyName = placements.Count > 0 ? placed.CompanyName : null,
                 PlacedVacancyTitle = placements.Count > 0 ? placed.VacancyTitle : null,
                 DeliveriesCount = own.Count,
-                RejectedCount = own.Count(d => d.Status == (int)DeliveryStatus.RejectedByCompany),
+                RejectedCount = rejected,
+                IsBurned = IsBurned(rejected, everHired),
                 LastDeliveryStatus = last?.Status,
                 LastDeliveryCompanyName = last?.CompanyName,
                 LastDeliveredAt = last?.DeliveredAt,

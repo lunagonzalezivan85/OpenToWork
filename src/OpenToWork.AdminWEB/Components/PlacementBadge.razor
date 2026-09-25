@@ -3,7 +3,7 @@
 @using OpenToWork.Shared.Enums
 @inject LanguageService Lang
 
-@* Estado del candidato despues de la entrega (Colocado / ultima entrega). Regla en CandidatePlacementHelper. *@
+@* Estado del candidato despues de la entrega (Colocado / ultima entrega / quemado). Regla en CandidatePlacementHelper. *@
 @if (Placement != null)
 {
     @if (Placement.IsPlaced)
@@ -22,25 +22,20 @@
             }
         </span>
     }
+    @if (Placement.IsBurned)
+    {
+        <span class="admin-result-badge admin-result-badge--danger" title="@Lang.T("admin.recruitment.burnedTooltip")">
+            @Lang.T("admin.recruitment.burned") · @Placement.RejectedCount @Lang.T("admin.recruitment.rejectionsShort")
+        </span>
+    }
 }
 
 @code {
     [Parameter] public CandidatePlacementSummaryDto? Placement { get; set; }
 
-    private string LastStatusClass => Placement?.LastDeliveryLeft == true ? "admin-result-badge--muted" : Placement?.LastDeliveryStatus switch
-    {
-        (int)DeliveryStatus.Interested => "admin-result-badge--info",
-        (int)DeliveryStatus.RejectedByCompany => "admin-result-badge--danger",
-        _ => "admin-result-badge--warning"
-    };
+    private string LastStatusClass => Placement?.LastDeliveryLeft == true
+        ? "admin-result-badge--muted"
+        : DeliveryLabels.StatusBadgeClass(Placement?.LastDeliveryStatus ?? (int)DeliveryStatus.Delivered);
 
-    private string StatusLabel(int? status) => status switch
-    {
-        (int)DeliveryStatus.Delivered => Lang.T("admin.recruitment.deliveryDelivered"),
-        (int)DeliveryStatus.ViewedByCompany => Lang.T("admin.recruitment.deliveryViewed"),
-        (int)DeliveryStatus.Interested => Lang.T("admin.recruitment.deliveryInterested"),
-        (int)DeliveryStatus.Hired => Lang.T("admin.recruitment.deliveryHired"),
-        (int)DeliveryStatus.RejectedByCompany => Lang.T("admin.recruitment.deliveryRejected"),
-        _ => "-"
-    };
+    private string StatusLabel(int? status) => status.HasValue ? Lang.T(DeliveryLabels.StatusKey(status.Value)) : "-";
 }

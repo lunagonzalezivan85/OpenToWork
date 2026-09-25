@@ -138,7 +138,17 @@ public class DeliveryService : IDeliveryService
         };
     }
 
-    public async Task<DeliveryDto?> RespondToDeliveryAsync(Guid deliveryId, int status, string? feedback, Guid companyUserId)
+    /// <summary>El motivo es obligatorio al Descartar (permite contar rechazos por motivo en el
+    /// historial del candidato) y se limpia en cualquier otro estado.</summary>
+    private static int? ValidatedRejectionReason(int status, int? rejectionReason)
+    {
+        if (status != (int)DeliveryStatus.RejectedByCompany) return null;
+        if (rejectionReason == null || !Enum.IsDefined(typeof(DeliveryRejectionReason), rejectionReason.Value))
+            throw new InvalidOperationException("Indica el motivo del descarte.");
+        return rejectionReason;
+    }
+
+    public async Task<DeliveryDto?> RespondToDeliveryAsync(Guid deliveryId, int status, string? feedback, int? rejectionReason, Guid companyUserId)
     {
         var delivery = await _context.PT_CandidateDeliveries
             .Include(d => d.Company)
@@ -157,6 +167,7 @@ public class DeliveryService : IDeliveryService
 
         delivery.Status = status;
         delivery.CompanyFeedback = feedback;
+        delivery.RejectionReason = ValidatedRejectionReason(status, rejectionReason);
         delivery.RespondedAt = DateTime.UtcNow;
         delivery.UpdatedAt = DateTime.UtcNow;
 
@@ -169,7 +180,7 @@ public class DeliveryService : IDeliveryService
     /// cuando la da por telefono/WhatsApp en vez de desde su portal. Queda en el audit log quien la
     /// cargo. No permite salir de Contratado si ya hay fechas de contratacion/incorporacion o el
     /// proceso esta cerrado, para no dejar garantia/cierre colgando de una entrega no contratada.</summary>
-    public async Task<DeliveryDto?> RecordCompanyResponseByAdminAsync(Guid deliveryId, int status, string? feedback, Guid adminId, string? ipAddress)
+    public async Task<DeliveryDto?> RecordCompanyResponseByAdminAsync(Guid deliveryId, int status, string? feedback, int? rejectionReason, Guid adminId, string? ipAddress)
     {
         var delivery = await _context.PT_CandidateDeliveries
             .FirstOrDefaultAsync(d => d.Id == deliveryId && !d.IsDeleted);
@@ -196,15 +207,73 @@ public class DeliveryService : IDeliveryService
         delivery.Status = status;
         if (feedback != null)
             delivery.CompanyFeedback = feedback;
+        delivery.RejectionReason = ValidatedRejectionReason(status, rejectionReason);
         delivery.RespondedAt = DateTime.UtcNow;
         delivery.UpdatedAt = DateTime.UtcNow;
         delivery.UpdatedBy = adminId;
         await _context.SaveChangesAsync();
 
         await _auditLog.LogAsync(adminId, "Recruitment.RecordCompanyResponse", "PTCandidateDelivery", delivery.Id,
-            $"{{\"from\":{previousStatus},\"to\":{status},\"source\":\"admin\"}}", ipAddress);
+            $"{{\"from\":{previousStatus},\"to\":{status},\"rejectionReason\":{rejectionReason?.ToString() ?? "null"},\"source\":\"admin\"}}", ipAddress);
 
         return await GetDeliveryDtoAsync(deliveryId);
+    }
+
+    public async Task<CandidateDeliveryHistoryDto?> GetCandidateHistoryAsync(Guid userId)
+    {
+        var candidateId = await _context.PT_Candidates
+            .Where(c => c.SCUserId == userId && !c.IsDeleted)
+            .Select(c => (Guid?)c.Id)
+            .FirstOrDefaultAsync();
+        if (candidateId == null) return null;
+
+        var items = await _context.PT_CandidateDeliveries
+            .Where(d => d.PT_CandidateId == candidateId && !d.IsDeleted)
+            .OrderByDescending(d => d.DeliveredAt)
+            .Select(d => new DeliveryHistoryItemDto
+            {
+                Id = d.Id,
+                CompanyName = d.Company.Name,
+                VacancyTitle = d.Vacancy.Title,
+                DeliveredAt = d.DeliveredAt,
+                RespondedAt = d.RespondedAt,
+                Status = d.Status,
+                RejectionReason = d.RejectionReason,
+                CompanyFeedback = d.CompanyFeedback,
+                PlacementEndedAt = d.PlacementEndedAt
+            })
+            .ToListAsync();
+
+        var companyIds = await _context.PT_CandidateDeliveries
+            .Where(d => d.PT_CandidateId == candidateId && !d.IsDeleted)
+            .Select(d => d.PT_CompanyId)
+            .Distinct()
+            .CountAsync();
+
+        // "Nunca contratado" tambien cuenta negociaciones ganadas (misma regla que el badge).
+        var wonNegotiation = await _context.PT_Negotiations
+            .AnyAsync(n => !n.IsDeleted && n.Status == (int)NegotiationStatus.Cerrada
+                && n.WinningApplication != null && n.WinningApplication.PT_CandidateId == candidateId);
+
+        var hired = items.Count(i => i.Status == (int)DeliveryStatus.Hired);
+        var rejectedItems = items.Where(i => i.Status == (int)DeliveryStatus.RejectedByCompany).ToList();
+
+        return new CandidateDeliveryHistoryDto
+        {
+            TotalDeliveries = items.Count,
+            DistinctCompanies = companyIds,
+            HiredCount = hired,
+            RejectedCount = rejectedItems.Count,
+            PendingCount = items.Count - hired - rejectedItems.Count,
+            IsBurned = CandidatePlacementHelper.IsBurned(rejectedItems.Count, hired > 0 || wonNegotiation),
+            BurnedThreshold = CandidatePlacementHelper.BurnedRejectionThreshold,
+            RejectionsByReason = rejectedItems
+                .GroupBy(i => i.RejectionReason)
+                .Select(g => new RejectionReasonCountDto { Reason = g.Key, Count = g.Count() })
+                .OrderByDescending(r => r.Count)
+                .ToList(),
+            Items = items
+        };
     }
 
     public async Task<int> ReleaseCandidateAsync(Guid userId, ReleaseCandidateDto dto, Guid adminId, string? ipAddress)
@@ -426,6 +495,7 @@ public class DeliveryService : IDeliveryService
             Status = d.Status,
             AdminNote = d.AdminNote,
             CompanyFeedback = d.CompanyFeedback,
+            RejectionReason = d.RejectionReason,
             DeliveredAt = d.DeliveredAt,
             ViewedAt = d.ViewedAt,
             RespondedAt = d.RespondedAt,

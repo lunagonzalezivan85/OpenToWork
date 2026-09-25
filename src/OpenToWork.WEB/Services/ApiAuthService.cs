@@ -319,11 +319,12 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<VacancyApplicantSummaryDto>();
     }
 
-    public async Task<bool> RespondToDeliveryAsync(Guid deliveryId, int status, string? feedback)
+    /// <summary>rejectionReason (DeliveryRejectionReason) es obligatorio si status = RejectedByCompany.</summary>
+    public async Task<bool> RespondToDeliveryAsync(Guid deliveryId, int status, string? feedback, int? rejectionReason = null)
     {
         await SetAuthHeaderAsync();
         var response = await _httpClient.PutAsJsonAsync($"api/deliveries/{deliveryId}/respond",
-            new RespondDeliveryDto { Status = status, Feedback = feedback });
+            new RespondDeliveryDto { Status = status, Feedback = feedback, RejectionReason = rejectionReason });
         return response.IsSuccessStatusCode;
     }
 

@@ -1,0 +1,110 @@
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+
+@* Historial de entregas del candidato: a cuantas empresas se entrego, cuantas lo rechazaron y por
+   que. Sirve para detectar candidatos "quemados" (regla en CandidatePlacementHelper.IsBurned). *@
+@if (History != null && History.TotalDeliveries > 0)
+{
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">
+            @Lang.T("admin.recruitment.deliveryHistory") (@History.TotalDeliveries)
+            @if (History.IsBurned)
+            {
+                <span class="admin-result-badge admin-result-badge--danger" style="margin-left:0.5rem;">@Lang.T("admin.recruitment.burned")</span>
+            }
+        </h3>
+
+        @if (History.IsBurned)
+        {
+            <p style="color: var(--danger); font-size: 0.85rem; margin: 0 0 0.75rem;">
+                @string.Format(Lang.T("admin.recruitment.burnedHint"), History.RejectedCount)
+            </p>
+        }
+
+        <div class="admin-profile-info-grid">
+            <div class="admin-profile-info-item">
+                <span class="admin-profile-info-label">@Lang.T("admin.recruitment.historyCompanies")</span>
+                <span class="admin-profile-info-value">@History.DistinctCompanies</span>
+            </div>
+            <div class="admin-profile-info-item">
+                <span class="admin-profile-info-label">@Lang.T("admin.recruitment.historyHired")</span>
+                <span class="admin-profile-info-value">@History.HiredCount</span>
+            </div>
+            <div class="admin-profile-info-item">
+                <span class="admin-profile-info-label">@Lang.T("admin.recruitment.historyRejected")</span>
+                <span class="admin-profile-info-value">@History.RejectedCount</span>
+            </div>
+            <div class="admin-profile-info-item">
+                <span class="admin-profile-info-label">@Lang.T("admin.recruitment.historyPending")</span>
+                <span class="admin-profile-info-value">@History.PendingCount</span>
+            </div>
+        </div>
+
+        @if (History.RejectionsByReason.Count > 0)
+        {
+            <div style="margin-top: 0.75rem;">
+                <span class="admin-profile-info-label">@Lang.T("admin.recruitment.historyRejectionsByReason")</span>
+                <div class="admin-profile-badges" style="margin-top: 0.35rem;">
+                    @foreach (var r in History.RejectionsByReason)
+                    {
+                        <span class="admin-result-badge admin-result-badge--danger">@Lang.T(DeliveryLabels.RejectionReasonKey(r.Reason)) · @r.Count</span>
+                    }
+                </div>
+            </div>
+        }
+
+        <table class="ot-table" style="margin-top: 0.75rem;">
+            <thead>
+                <tr>
+                    <th>@Lang.T("admin.recruitment.historyDate")</th>
+                    <th>@Lang.T("admin.recruitment.historyCompany")</th>
+                    <th>@Lang.T("admin.recruitment.historyStatus")</th>
+                    <th>@Lang.T("admin.recruitment.historyReason")</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var i in History.Items)
+                {
+                    <tr>
+                        <td>@i.DeliveredAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <div>@i.CompanyName</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">@i.VacancyTitle</div>
+                        </td>
+                        <td>
+                            <span class="admin-result-badge @DeliveryLabels.StatusBadgeClass(i.Status)">@Lang.T(DeliveryLabels.StatusKey(i.Status))</span>
+                            @if (i.PlacementEndedAt.HasValue)
+                            {
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.recruitment.leftJobOn") @i.PlacementEndedAt.Value.ToLocalTime().ToString("dd/MM/yyyy")</div>
+                            }
+                        </td>
+                        <td>
+                            @if (i.Status == (int)DeliveryStatus.RejectedByCompany)
+                            {
+                                <div>@Lang.T(DeliveryLabels.RejectionReasonKey(i.RejectionReason))</div>
+                            }
+                            @if (!string.IsNullOrEmpty(i.CompanyFeedback))
+                            {
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">@i.CompanyFeedback</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid UserId { get; set; }
+
+    private CandidateDeliveryHistoryDto? History;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        History = await AuthApi.GetCandidateDeliveryHistoryAsync(UserId);
+    }
+}

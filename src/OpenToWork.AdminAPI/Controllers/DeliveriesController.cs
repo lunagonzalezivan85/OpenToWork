@@ -47,13 +47,22 @@ public class DeliveriesController : AdminControllerBase
     {
         try
         {
-            var result = await _deliveryService.RecordCompanyResponseByAdminAsync(id, dto.Status, dto.Feedback, AdminId, ClientIp);
+            var result = await _deliveryService.RecordCompanyResponseByAdminAsync(id, dto.Status, dto.Feedback, dto.RejectionReason, AdminId, ClientIp);
             return result == null ? NotFound() : Ok(result);
         }
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    /// <summary>Historial de entregas del candidato: a cuantas empresas se entrego, cuantas lo
+    /// rechazaron y por que (detecta candidatos "quemados").</summary>
+    [HttpGet("history/{userId}")]
+    public async Task<IActionResult> History(Guid userId)
+    {
+        var result = await _deliveryService.GetCandidateHistoryAsync(userId);
+        return result == null ? NotFound() : Ok(result);
     }
 
     /// <summary>"Liberar candidato": el candidato dejo su puesto fuera de garantia (renuncia,

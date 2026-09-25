@@ -1160,6 +1160,12 @@ else
                                 </div>
                                 <span class="admin-result-badge @GetDeliveryBadgeClass(d.Status)">@GetDeliveryStatusLabel(d.Status)</span>
                             </div>
+                            @if (d.Status == (int)DeliveryStatus.RejectedByCompany)
+                            {
+                                <div style="font-size:0.8rem; margin-top:0.35rem;">
+                                    @Lang.T("admin.recruitment.rejectionReason"): <strong>@Lang.T(DeliveryLabels.RejectionReasonKey(d.RejectionReason))</strong>
+                                </div>
+                            }
                             @if (!string.IsNullOrEmpty(d.CompanyFeedback))
                             {
                                 <div style="font-size:0.8rem; margin-top:0.35rem; color: var(--text-muted);">
@@ -1184,6 +1190,16 @@ else
                                             <option value="@((int)DeliveryStatus.Hired)">@GetDeliveryStatusLabel((int)DeliveryStatus.Hired)</option>
                                             <option value="@((int)DeliveryStatus.RejectedByCompany)">@GetDeliveryStatusLabel((int)DeliveryStatus.RejectedByCompany)</option>
                                         </select>
+                                        @if (ResponseStatus == (int)DeliveryStatus.RejectedByCompany)
+                                        {
+                                            <select class="admin-select" style="width:100%; margin-top:0.35rem;" @bind="ResponseRejectionReason">
+                                                <option value="">@Lang.T("admin.recruitment.rejectionReasonPlaceholder")</option>
+                                                @foreach (var r in DeliveryLabels.RejectionReasons)
+                                                {
+                                                    <option value="@((int)r)">@Lang.T(DeliveryLabels.RejectionReasonKey((int)r))</option>
+                                                }
+                                            </select>
+                                        }
                                         <textarea class="admin-input" rows="2" style="width:100%; margin-top:0.35rem;" @bind="ResponseFeedback" placeholder="@Lang.T("admin.recruitment.companyResponsePlaceholder")"></textarea>
                                         @if (!string.IsNullOrEmpty(ResponseError))
                                         {
@@ -1600,6 +1616,7 @@ else
     // Respuesta de la empresa cargada por el admin (cuando responde fuera del portal).
     private Guid? RecordingResponseForId { get; set; }
     private int ResponseStatus { get; set; }
+    private int? ResponseRejectionReason { get; set; }
     private string? ResponseFeedback { get; set; }
     private string? ResponseError { get; set; }
 
@@ -1650,6 +1667,7 @@ else
             ? d.Status
             : (int)DeliveryStatus.Interested;
         ResponseFeedback = d.CompanyFeedback;
+        ResponseRejectionReason = d.RejectionReason;
         ResponseError = null;
     }
 
@@ -1659,7 +1677,7 @@ else
         IsDeliveryBusy = true;
         ResponseError = null;
 
-        var dto = new RespondDeliveryDto { Status = ResponseStatus, Feedback = ResponseFeedback };
+        var dto = new RespondDeliveryDto { Status = ResponseStatus, Feedback = ResponseFeedback, RejectionReason = ResponseRejectionReason };
         var (result, error) = await AuthApi.RecordDeliveryCompanyResponseAsync(deliveryId, dto);
         if (result != null)
         {

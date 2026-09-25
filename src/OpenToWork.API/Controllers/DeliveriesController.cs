@@ -45,7 +45,7 @@ public class DeliveriesController : ControllerBase
 
         try
         {
-            var result = await _deliveryService.RespondToDeliveryAsync(id, dto.Status, dto.Feedback, userId.Value);
+            var result = await _deliveryService.RespondToDeliveryAsync(id, dto.Status, dto.Feedback, dto.RejectionReason, userId.Value);
             return result == null ? NotFound() : Ok(result);
         }
         catch (InvalidOperationException ex)

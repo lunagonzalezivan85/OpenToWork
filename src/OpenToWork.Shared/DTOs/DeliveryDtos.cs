@@ -20,6 +20,7 @@ public class DeliveryDto
     public int Status { get; set; }
     public string? AdminNote { get; set; }
     public string? CompanyFeedback { get; set; }
+    public int? RejectionReason { get; set; }
     public DateTime DeliveredAt { get; set; }
     public DateTime? ViewedAt { get; set; }
     public DateTime? RespondedAt { get; set; }
@@ -79,6 +80,8 @@ public class RespondDeliveryDto
 {
     public int Status { get; set; }
     public string? Feedback { get; set; }
+    /// <summary>DeliveryRejectionReason, obligatorio si Status = RejectedByCompany.</summary>
+    public int? RejectionReason { get; set; }
 }
 
 /// <summary>Resumen de entregas de un candidato para las listas del admin (pipeline, consola,
@@ -95,6 +98,8 @@ public class CandidatePlacementSummaryDto
     public DateTime? LastDeliveredAt { get; set; }
     /// <summary>La ultima entrega fue Contratado pero el candidato ya dejo el puesto (reposicion o liberado).</summary>
     public bool LastDeliveryLeft { get; set; }
+    /// <summary>Candidato "quemado": BurnedRejectionThreshold o mas rechazos y nunca contratado.</summary>
+    public bool IsBurned { get; set; }
 }
 
 public class ReleaseCandidateDto
@@ -102,4 +107,41 @@ public class ReleaseCandidateDto
     /// <summary>PlacementEndReason.</summary>
     public int Reason { get; set; }
     public string? Notes { get; set; }
+}
+
+/// <summary>Historial de entregas de un candidato (todas las empresas/vacantes), para detectar
+/// candidatos "quemados" (muchos rechazos sin ninguna contratacion).</summary>
+public class CandidateDeliveryHistoryDto
+{
+    public int TotalDeliveries { get; set; }
+    public int DistinctCompanies { get; set; }
+    public int HiredCount { get; set; }
+    public int RejectedCount { get; set; }
+    /// <summary>Entregadas sin respuesta final (Entregado/Visto/Interesado).</summary>
+    public int PendingCount { get; set; }
+    /// <summary>RejectedCount >= CandidatePlacementHelper.BurnedRejectionThreshold y nunca contratado.</summary>
+    public bool IsBurned { get; set; }
+    public int BurnedThreshold { get; set; }
+    /// <summary>Rechazos agrupados por DeliveryRejectionReason (null = registrado antes de existir el motivo).</summary>
+    public List<RejectionReasonCountDto> RejectionsByReason { get; set; } = new();
+    public List<DeliveryHistoryItemDto> Items { get; set; } = new();
+}
+
+public class RejectionReasonCountDto
+{
+    public int? Reason { get; set; }
+    public int Count { get; set; }
+}
+
+public class DeliveryHistoryItemDto
+{
+    public Guid Id { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string VacancyTitle { get; set; } = string.Empty;
+    public DateTime DeliveredAt { get; set; }
+    public DateTime? RespondedAt { get; set; }
+    public int Status { get; set; }
+    public int? RejectionReason { get; set; }
+    public string? CompanyFeedback { get; set; }
+    public DateTime? PlacementEndedAt { get; set; }
 }

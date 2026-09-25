@@ -45,6 +45,9 @@ public class PTCandidateDelivery : BaseEntity
     [MaxLength(1000)]
     public string? CompanyFeedback { get; set; }
 
+    /// <summary>DeliveryRejectionReason. Obligatorio cuando Status = RejectedByCompany; null en otro caso.</summary>
+    public int? RejectionReason { get; set; }
+
     public DateTime? ViewedAt { get; set; }
 
     public DateTime? RespondedAt { get; set; }
