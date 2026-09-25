@@ -1200,6 +1200,27 @@ Commits en `main`: `292f6ad`, `60e9c86`, `8709492`, `11c0668`, `cbb6fba`.
 
 Commits en `main`: `5bddf5a`, `76d33fe`, `0b4cbfc`, `8c26975`, `bff541d`, `c1b80f3`, `c541f3e`, `0731d6e`, `105bd0e`, `7939ebe`, `fcc7f8e`.
 
+### 9. Aviso para Ivan: revision de seguridad y paginas legales (25 Sep, tarde) — LEER ANTES DEL PULL
+
+**1. Antes de hacer pull, copia tus CV.** Los CV de candidatos estaban versionados en git (`wwwroot/uploads/cv`) y el **repositorio de GitHub es publico**: cualquiera podia descargarlos (hay CV de personas reales). Salieron del repositorio (`git rm --cached`) y ahora viven fuera de `wwwroot`, en `storage/cv` (raiz del repo, ignorada por git; configurable con `Storage:Root`). **Al hacer pull, git borrara tus copias locales**: antes, copia los PDF de `src/OpenToWork.API/wwwroot/uploads/cv` (y de AdminAPI si tienes) a `storage/cv/`.
+
+**2. Pendiente de coordinar entre Darwin e Ivan:** poner el repositorio en **privado** y purgar los CV del historial de git (siguen en commits antiguos; requiere `git filter-repo` + force push, y que ambos vuelvan a clonar). No se hizo nada de esto todavia.
+
+**3. Aplicar 1 migracion nueva** (mismo comando de siempre): `PrivacyContactEmail` — solo datos, crea la clave `company_privacy_email` en la configuracion.
+
+**Cambios:**
+
+- **Seguridad del API publico** (continuacion de la de vacantes):
+  - Login con Google: el token no se validaba (se aceptaba cualquier correo). Ahora se verifica la firma con las claves de Google y el `GoogleOAuth:ClientId`; con `ClientId` vacio el login con Google queda desactivado. Solo se vincula a una cuenta existente si Google confirma el correo.
+  - Perfil: editar/borrar experiencia, formacion, habilidades, etc. no comprobaba el dueño → un usuario podia modificar el perfil de otro. Corregido.
+  - `GET api/profile/candidate/{id}`: cualquier usuario veia el perfil completo de cualquier candidato. Ahora solo el propio candidato, o la empresa a la que Trato Directo se lo entrego (sin documento de identidad, fecha de nacimiento ni direccion).
+  - CV: ya no son archivos publicos. Se descargan por endpoints con permiso (`api/profile/cv`, `api/profile/candidate/{id}/cv`, `api/admin/candidates/{userId}/cv`) y el servicio `ICvStorage`.
+- **Portal**: la grilla de vacantes de la ficha de empresa se salia del contenedor (ahora se adapta al ancho); se quito "Empresas que confian en nosotros" de la pagina de inicio.
+- **Admin, lista de vacantes**: "Dia N desde la firma" (o "Cubierta en N dias" si esta cerrada), dias habiles contra el objetivo de cobertura, en rojo si se pasa.
+- **Paginas legales del portal**: `/privacy` (politica de privacidad RGPD/LOPDGDD) y `/terms` (terminos y condiciones, coherentes con la clausula 12 del contrato). Texto generico: **debe revisarlo un asesor legal**. Nuevo campo "Correo de privacidad" en Datos de la Empresa (endpoint publico `api/legal/identity`, sin el DNI del representante).
+
+Commits en `main`: `dd79c1c`, `a328e54`, `a5669ba`, `edd28fb`, `680bf34`, `baf9934`, `20a23e7`, `07e9037`, `e070bbb`, `f6f72e4`.
+
 ---
 
 ## Datos de prueba (Seed Data)

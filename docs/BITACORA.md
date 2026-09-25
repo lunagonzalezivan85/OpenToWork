@@ -426,3 +426,37 @@ El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` 
 - Vista del proceso y del plan en el portal del candidato; avisos por correo al candidato (entregado/contratado).
 - Portal de empresa: el saludo usa la parte del correo en vez del nombre de la empresa; la campana muestra alertas pensadas para candidatos.
 - La interfaz de negociaciones ya no esta en `Vacancies.razor` (quedo solo el code-behind).
+
+---
+
+## Sesión: 25 Septiembre 2026, tarde (revisión de seguridad y páginas legales)
+
+### IMPORTANTE - Migraciones y CV
+
+> - `PrivacyContactEmail` — solo datos: clave `company_privacy_email` en `SY_SystemConfig`.
+> - **Los CV salieron del repositorio** (el repo de GitHub es público y tenía 23 CV de personas reales). Ahora se guardan en `storage/cv` (ignorado por git). Antes del pull, copiar los PDF de `wwwroot/uploads/cv` a `storage/cv`. Pendiente coordinar: repo privado + purga del historial.
+
+### Cambios Realizados
+
+#### 1. Seguridad del API público
+- `GoogleTokenValidator`: valida firma (JWKS de Google, caché 6 h), emisor, audiencia (`GoogleOAuth:ClientId`) y vigencia. Sin `ClientId` el login con Google queda desactivado. Solo vincula una cuenta existente si el correo está verificado.
+- `ProfileService`: las 6 operaciones de editar/borrar secciones del perfil comprueban el dueño.
+- `GetCandidateByIdAsync(candidateId, viewerUserId)`: dueño completo; empresa solo si le fue entregado, sin identificación, fecha de nacimiento ni dirección; resto 404.
+- `ICvStorage`/`CvStorage`: CV fuera de `wwwroot`, descarga por endpoints con permiso; el nombre de archivo debe empezar por `cv_{userId}_` (bloquea rutas manipuladas).
+
+#### 2. Portal
+- `.home-vacancies-grid` con `auto-fill, minmax(260px, 1fr)` (la ficha de empresa obligaba a hacer scroll).
+- Quitada la sección "Empresas que confían en nosotros" de la página de inicio.
+- `/privacy`: política de privacidad genérica (12 apartados); contacto = correo de privacidad o, si falta, la dirección postal.
+- `/terms`: términos y condiciones genéricos (13 apartados), contacto info@tratodirecto.es. Coherentes con la cláusula 12 del contrato (no contratación directa).
+- Ambos textos deben revisarlos un asesor legal.
+
+#### 3. Admin
+- Lista de vacantes: días desde la firma del contrato (primer `AcceptContract` del registro de auditoría) hasta hoy o hasta el cierre, en hora local, y días hábiles contra el objetivo de cobertura.
+- Datos de la Empresa: campo "Correo de privacidad" (endpoint público `api/legal/identity`, sin DNI del representante).
+
+### Pendiente
+- Repo privado y purga de CV del historial (coordinación Darwin–Ivan).
+- Revisión de seguridad puntos 5 (búsqueda de candidatos abierta a cualquier usuario) y 6 (controles de rol: candidato creando vacantes, empresa en `/candidates/me`).
+- Decidir si la empresa con candidato entregado debe ver su teléfono.
+- Aviso legal (LSSI) con los datos del titular, si se quiere publicar.
