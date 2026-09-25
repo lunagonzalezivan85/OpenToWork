@@ -5,7 +5,10 @@ namespace OpenToWork.Core.Interfaces;
 public interface IProfileService
 {
     Task<CandidateProfileDto?> GetProfileAsync(Guid userId);
-    Task<CandidateProfileDto?> GetCandidateByIdAsync(Guid candidateId);
+    /// <summary>Perfil de un candidato visto por otro usuario: el propio candidato lo ve completo; una
+    /// empresa solo si Trato Directo le entrego a ese candidato (sin DNI, nacimiento ni direccion).
+    /// Null para cualquier otro.</summary>
+    Task<CandidateProfileDto?> GetCandidateByIdAsync(Guid candidateId, Guid viewerUserId);
     Task<CandidateProfileDto?> UpdateProfileAsync(Guid userId, UpdateCandidateProfileDto dto);
     Task<CandidateExperienceDto> AddExperienceAsync(Guid userId, CreateExperienceDto dto);
     Task<CandidateExperienceDto?> UpdateExperienceAsync(Guid experienceId, UpdateExperienceDto dto, Guid userId);

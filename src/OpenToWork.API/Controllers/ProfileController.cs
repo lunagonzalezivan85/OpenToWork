@@ -35,7 +35,11 @@ public class ProfileController : ControllerBase
     [HttpGet("candidate/{candidateId}")]
     public async Task<IActionResult> GetCandidateProfile(Guid candidateId)
     {
-        var result = await _profileService.GetCandidateByIdAsync(candidateId);
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        // Solo el propio candidato o una empresa a la que TD se lo entrego (ProfileService).
+        var result = await _profileService.GetCandidateByIdAsync(candidateId, userId.Value);
         return result != null ? Ok(result) : NotFound();
     }
 

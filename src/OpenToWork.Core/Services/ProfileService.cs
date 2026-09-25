@@ -30,8 +30,12 @@ public class ProfileService : IProfileService
         return MapToProfileDto(candidate);
     }
 
-    public async Task<CandidateProfileDto?> GetCandidateByIdAsync(Guid candidateId)
+    public async Task<CandidateProfileDto?> GetCandidateByIdAsync(Guid candidateId, Guid viewerUserId)
     {
+        // Revision de seguridad 25-Sep: antes cualquier usuario con sesion (incluso otro candidato)
+        // leia el perfil completo de cualquier candidato (DNI, telefono, direccion, CV), aunque fuera
+        // privado, y rompia el Embudo Ciego. Ahora: el propio candidato, o una empresa a la que TD le
+        // entrego a ese candidato.
         var candidate = await _context.PT_Candidates
             .Include(c => c.Experiences)
             .Include(c => c.Educations)
@@ -40,8 +44,19 @@ public class ProfileService : IProfileService
             .FirstOrDefaultAsync(c => c.Id == candidateId && !c.IsDeleted);
 
         if (candidate == null) return null;
+        if (candidate.SCUserId == viewerUserId) return MapToProfileDto(candidate);
 
-        return MapToProfileDto(candidate);
+        var deliveredToViewer = await _context.PT_CandidateDeliveries
+            .AnyAsync(d => d.PT_CandidateId == candidateId && !d.IsDeleted
+                && d.Company.SCUserId == viewerUserId && !d.Company.IsDeleted);
+        if (!deliveredToViewer) return null;
+
+        // La empresa evalua al candidato: no necesita documento, fecha de nacimiento ni direccion.
+        var dto = MapToProfileDto(candidate);
+        dto.Identification = null;
+        dto.BirthDate = null;
+        dto.Address = null;
+        return dto;
     }
 
     public async Task<CandidateProfileDto?> UpdateProfileAsync(Guid userId, UpdateCandidateProfileDto dto)
