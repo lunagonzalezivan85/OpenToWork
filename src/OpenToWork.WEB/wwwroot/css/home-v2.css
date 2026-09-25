@@ -388,7 +388,10 @@
 /* Vacancies Grid */
 .home-vacancies-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    /* Tantas columnas de >= 260px como quepan en el contenedor (4 en el ancho completo del inicio,
+       2 en contenedores angostos como la ficha de empresa). Con repeat(4, 1fr) fijo, las tarjetas
+       no se encogian y se salian del contenedor, forzando scroll horizontal. */
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: var(--space-md);
 }
 
