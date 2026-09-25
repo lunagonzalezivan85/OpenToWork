@@ -819,7 +819,7 @@ Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-f
 - [x] Vidriera de planes Basic/Premium/Platinum (`PT_Plans`, `Audience=Company`) conectada a `/plans` — **construido 21-Sep**, detras de flag `feature_company_plans_enabled` (encendido por defecto). Sigue faltando el checkout real (el CRM sigue vendiendo por posicion via Precios y Niveles de Precio, no por suscripcion) — ver "Observaciones para Darwin / Dsiezar" punto 4
 - [x] Plan de Prioridad para Candidatos — **construido 21-Sep** como 3 niveles (Free/Basic 5.99€/Premium 9.99€, `PTCandidate.PlanTier`), con boost real en el ranking de matching, detras de flag `feature_candidate_priority_plan_enabled` (apagado por defecto). Nivel asignado a mano por un admin (no hay checkout) — ver "Observaciones para Darwin / Dsiezar" punto 4
 - [ ] Checkout/pasarela de pagos real para ambos planes de arriba — sigue sin existir (Fase 7)
-- [ ] Terminar el flujo del candidato en el panel administrativo — pedido de Darwin (21-Sep). **Avance 24-Sep**: respuesta de la empresa registrable desde el admin, estado "Colocado" (bloquea re-entregas, columna propia en el pipeline) y estado de entregas visible en pipeline/consola/perfil — ver `docs/BITACORA.md`, sesion 22-24 Sep. Falta: vista del proceso y del plan en el portal del candidato, avisos por correo al candidato
+- [ ] Terminar el flujo del candidato en el panel administrativo — pedido de Darwin (21-Sep). **Avance 24-Sep**: respuesta de la empresa registrable desde el admin, estado "Colocado" (bloquea re-entregas, columna propia en el pipeline) y estado de entregas visible en pipeline/consola/perfil — ver `docs/BITACORA.md`, sesion 22-24 Sep. **Avance 25-Sep**: historial de entregas con motivo de descarte y aviso de candidato "Quemado"; mensajeria real candidato/empresa <-> Trato Directo. Falta: vista del proceso y del plan en el portal del candidato, avisos por correo al candidato (entregado/contratado)
 - [ ] Entidad `COSubscription` — CompanyId, Plan, Status, StartDate, EndDate, MonthlyFee
 - [ ] Entidad `COSearchHistory` — CompanyId, Filters, ResultCount, SearchedAt
 - [ ] Entidad `COCandidateView` — CompanyId, CandidateId, ScoreSnapshot, ViewedAt
@@ -1172,6 +1172,33 @@ dotnet ef database update --project src/OpenToWork.Models --startup-project src/
 - Ojo con los datos de prueba: varios candidatos (p. ej. Donald, Juan Perez) salen Colocados por negociaciones Cerradas de pruebas anteriores, por eso ya no aparecen en rankings ni busquedas.
 
 Commits en `main`: `292f6ad`, `60e9c86`, `8709492`, `11c0668`, `cbb6fba`.
+
+### 8. Aviso para Ivan: recorrido de Darwin por el sistema (24-25 Sep) — 6 migraciones nuevas
+
+**Hay que aplicar 6 migraciones nuevas a mano** (mismo comando de arriba: `dotnet ef database update --project src/OpenToWork.Models --startup-project src/OpenToWork.Models`). Todas estan recortadas a mano del ruido de seed de siempre.
+
+| Migracion | Que hace |
+|-----------|----------|
+| `DeliveryRejectionReason` | Motivo estructurado del descarte de una entrega |
+| `ExperienceLevelYearRanges` | Solo datos: traduce el nivel de experiencia de las vacantes a la escala nueva por rangos de anos |
+| `ContractLinePositions` | Posiciones y total por linea de contrato (tarifa por posicion = precio x posiciones) |
+| `ContractVersions` | Version del contrato + tabla `PT_ContractRevisions` (historial de versiones) |
+| `ActivateWonProspects` | Solo datos: empresas en Cerrado Ganado que seguian como Prospecto pasan a Activa |
+| `Messaging` | Tablas `PT_Conversations` y `PT_Messages` (mensajeria real) |
+
+**Cambios que tocan pantallas/flujos de Ivan** (detalle en `docs/BITACORA.md`, sesion 24-25 Sep):
+
+- **Alta de empresa (`Companies/Create.razor`) y mapa del CRM (`Companies/PipelineDetail.razor`)**: la direccion elegida en el mapa ahora si llega al formulario (antes podia quedar vacia), con codigo postal; la ubicacion de cada vacante nueva arranca con la direccion de la empresa; la revision muestra direccion y descripcion.
+- **Nivel de experiencia por rangos**: Sin experiencia / Menos de 1 ano / 1-3 / 3-5 / Mas de 5 (admin, portal y matching). Se quito el campo duplicado "Anos de experiencia" de los formularios.
+- **Contrato de vacantes**: con tarifa por posicion el total es precio x posiciones (antes cobraba una sola); "Posiciones a cubrir" editable desde el contrato; motivo obligatorio en precio fijo; borrador con marca de agua y boton "Emitir version oficial"; **"Abrir nueva version"** para corregir un contrato enviado o aceptado (con motivo e historial; al reaceptar, los pagos pendientes se recalculan y lo ya cobrado genera un tramo de "Ajuste").
+- **Estado de la empresa**: pasa sola de Prospecto a Activa al llegar a Cerrado Ganado (a mano o al aceptar el contrato).
+- **Acceso al portal para empresas creadas desde el admin**: boton "Dar acceso al portal" en el detalle de la empresa (crea el usuario con el correo de contacto, vinculado a la misma empresa, y genera un enlace para que elija su contraseña). Antes, si la empresa se registraba sola, quedaba una empresa duplicada y vacia. Nueva pagina del portal `/reset-password` (tambien sirve para recuperar contraseña).
+- **Mensajeria real**: `/messages` del portal mostraba 4 conversaciones inventadas a cualquier usuario. Ahora es real y **solo con Trato Directo** (con el Embudo Ciego la empresa y el candidato no hablan directo). Bandeja nueva **Mensajes** en el admin con contador de no leidos, y "Enviar mensaje" desde la ficha del candidato y de la empresa.
+- **Historial de entregas por candidato** en su perfil, con rechazos por motivo y aviso de candidato **"Quemado"** (3+ rechazos sin ninguna contratacion).
+- **Portal de empresa**: `/dashboard` ya no le muestra el panel de candidato; pagina nueva `/my-vacancies/{id}/edit`. Con contrato, la empresa solo edita descripcion, requisitos, experiencia e ingles; lo demas y el cierre se piden a Trato Directo por Mensajes.
+- **Seguridad (importante)**: en el API publico, editar/eliminar/publicar/cerrar una vacante no comprobaba que fuera de la empresa que lo pedia; cualquier usuario del portal podia modificar o borrar vacantes ajenas. Corregido (403).
+
+Commits en `main`: `5bddf5a`, `76d33fe`, `0b4cbfc`, `8c26975`, `bff541d`, `c1b80f3`, `c541f3e`, `0731d6e`, `105bd0e`, `7939ebe`, `fcc7f8e`.
 
 ---
 

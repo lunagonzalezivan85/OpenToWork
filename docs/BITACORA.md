@@ -375,3 +375,54 @@ El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` 
 ### Pendiente
 
 - Resto de "Terminar el flujo del candidato": que el candidato vea su proceso en su portal, que vea su plan/vencimiento, avisos por correo al candidato (entregado/contratado), documentos pedidos por el reclutador desde el portal del candidato.
+
+---
+
+## Sesión: 25 Septiembre 2026 (recorrido de Darwin por el sistema)
+
+### IMPORTANTE - Migraciones
+
+> Aplicar a mano (`dotnet ef database update ...`). Todas recortadas del ruido de seed de siempre (`SY_DocumentTypes`/`SY_WizardSteps`/`PT_Plans`).
+> - `DeliveryRejectionReason` — `PT_CandidateDeliveries.RejectionReason`
+> - `ExperienceLevelYearRanges` — solo datos: vacantes a la escala nueva de experiencia (Junior→1-3, Mid→3-5, Senior/Lead→Mas de 5)
+> - `ContractLinePositions` — `PT_ContractVacancies.Positions`/`LineTotal` (lineas existentes: 1 posicion, `LineTotal = FinalPrice`, no altera importes historicos)
+> - `ContractVersions` — `PT_VacancyContracts.Version` + tabla `PT_ContractRevisions`
+> - `ActivateWonProspects` — solo datos: empresas en Cerrado Ganado que seguian como Prospecto → Activa
+> - `Messaging` — tablas `PT_Conversations` y `PT_Messages`
+
+### Cambios Realizados
+
+#### 1. Historial de entregas por candidato + candidato "quemado"
+- Motivo estructurado al descartar una entrega (`DeliveryRejectionReason`), obligatorio desde el admin y desde el API de la empresa.
+- Seccion "Historial de entregas" en el perfil del candidato: empresas distintas, contratado, rechazos, sin respuesta, rechazos por motivo y tabla de entregas.
+- "Quemado" = 3 o mas rechazos sin ninguna contratacion (`CandidatePlacementHelper.IsBurned`), visible en pipeline, consola, perfil y detalle.
+
+#### 2. Alta de empresa y vacantes (pantallas de Iluna)
+- Mapa: "Usar ubicacion" espera la geocodificacion (antes podia dejar la direccion vacia), usa el marcador si no se toco el mapa, muestra la direccion elegida y agrega el codigo postal.
+- La ubicacion de cada vacante nueva arranca con la direccion + ciudad de la empresa.
+- Experiencia por rangos (Sin experiencia / Menos de 1 / 1-3 / 3-5 / Mas de 5); se quito "Anos de experiencia" del formulario.
+- La revision del alta muestra direccion y descripcion.
+
+#### 3. Contrato de vacantes
+- **Bug**: con tarifa por posicion se cobraba una sola posicion. Ahora total = precio unitario x posiciones (clausula 6.2). "Posiciones a cubrir" editable desde el contrato (actualiza la vacante). "N.º objetivo de candidatos" pasa a "Candidatos a presentar (objetivo)".
+- Motivo obligatorio en precio fijo (manual).
+- Borrador con marca de agua "BORRADOR - no valido para firma" + botones "Editar borrador" / "Emitir version oficial".
+- "Abrir nueva version" (contrato Enviado/Aceptado → Borrador v+1, con motivo; copia completa de la version anterior en `PT_ContractRevisions`). Al reaceptar: tramos pendientes recalculados; diferencia sobre lo ya cobrado en un tramo "Ajuste" (positivo = falta cobrar, negativo = saldo a favor). Decision de Darwin.
+
+#### 4. Empresas
+- Cerrado Ganado → la empresa pasa de Prospecto a Activa (`CompanyCrmService.MoveStageAsync`, unico punto para cambio manual y aceptacion de contrato).
+- "Dar acceso al portal" (`CompanyPortalAccessService`): crea el usuario de la empresa con su correo de contacto, lo vincula a la empresa existente y genera un enlace de activacion (7 dias, solo se guarda el hash; por correo si el SMTP esta activo). Pagina nueva del portal `/reset-password`.
+
+#### 5. Mensajeria real (portal ↔ Trato Directo)
+- `/messages` del portal devolvia 4 conversaciones inventadas fijas. Ahora `MessagingService` + `PT_Conversations`/`PT_Messages`, **solo usuario del portal ↔ equipo de Trato Directo** (Embudo Ciego; decision de Darwin). El portal ve siempre "Trato Directo".
+- Admin: bandeja `/messages` (sin leer, busqueda, hilo con "leido", respuesta), "Mensajes" en el menu con contador, "Enviar mensaje" desde la ficha del candidato y de la empresa. Aviso por correo al usuario si el SMTP esta activo.
+
+#### 6. Portal de empresa
+- `/dashboard` redirige a `/company-dashboard` si el usuario es empresa (y viceversa); enlace del pie de pagina y fin del registro corregidos.
+- Pagina `/my-vacancies/{id}/edit` (el boton "Editar vacante" llevaba a una ruta inexistente). Con contrato Enviado/Aceptado la empresa edita solo descripcion, requisitos, experiencia e ingles; lo demas y el cierre se piden por Mensajes ("Solicitar cambio" / "Solicitar cierre"). Decision de Darwin.
+- **Seguridad**: editar/eliminar/publicar/cerrar vacantes en el API publico no comprobaba la empresa duena → cualquier usuario del portal podia modificar o borrar vacantes ajenas. Corregido con `OwnsVacancyAsync` (403).
+
+### Pendiente
+- Vista del proceso y del plan en el portal del candidato; avisos por correo al candidato (entregado/contratado).
+- Portal de empresa: el saludo usa la parte del correo en vez del nombre de la empresa; la campana muestra alertas pensadas para candidatos.
+- La interfaz de negociaciones ya no esta en `Vacancies.razor` (quedo solo el code-behind).
