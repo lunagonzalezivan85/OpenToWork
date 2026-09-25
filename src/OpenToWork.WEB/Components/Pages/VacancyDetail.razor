@@ -232,11 +232,11 @@
 
     private string GetExperienceLevelLabel(int level) => level switch
     {
-        0 => Lang.T("vacancies.experience.entry"),
-        1 => Lang.T("vacancies.experience.junior"),
-        2 => Lang.T("vacancies.experience.mid"),
-        3 => Lang.T("vacancies.experience.senior"),
-        4 => Lang.T("vacancies.experience.lead"),
+        0 => Lang.T("vacancies.experience.none"),
+        1 => Lang.T("vacancies.experience.lessThanOne"),
+        2 => Lang.T("vacancies.experience.oneToThree"),
+        3 => Lang.T("vacancies.experience.threeToFive"),
+        4 => Lang.T("vacancies.experience.moreThanFive"),
         _ => ""
     };
 

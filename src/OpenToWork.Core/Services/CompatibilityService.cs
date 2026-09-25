@@ -23,14 +23,14 @@ public class CompatibilityService : ICompatibilityService
     private const double DefaultExperienceWeight = 0.30;
     private const double DefaultLocationWeight = 0.20;
 
-    // Anos minimos por bucket de ExperienceLevel (fase-3-sub4.md pregunta 3).
+    // Anos minimos por rango de ExperienceLevel (limite inferior de cada rango; escala de 24-Sep).
     private static readonly Dictionary<ExperienceLevel, int> ExperienceLevelMinYears = new()
     {
-        [ExperienceLevel.Entry] = 0,
-        [ExperienceLevel.Junior] = 1,
-        [ExperienceLevel.Mid] = 3,
-        [ExperienceLevel.Senior] = 5,
-        [ExperienceLevel.Lead] = 8
+        [ExperienceLevel.None] = 0,
+        [ExperienceLevel.LessThanOneYear] = 0,
+        [ExperienceLevel.OneToThreeYears] = 1,
+        [ExperienceLevel.ThreeToFiveYears] = 3,
+        [ExperienceLevel.MoreThanFiveYears] = 5
     };
 
     private const int DefaultShortlistLimit = 20; // mismo default que AdminVacancyService.GetVacanciesAsync.

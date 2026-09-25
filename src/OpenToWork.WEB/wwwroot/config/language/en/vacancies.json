@@ -31,11 +31,11 @@
         "remote": "Remote"
     },
     "experience": {
-        "entry": "Entry",
-        "junior": "Junior",
-        "mid": "Mid",
-        "senior": "Senior",
-        "lead": "Lead"
+        "none": "No experience",
+        "lessThanOne": "Less than 1 year",
+        "oneToThree": "1 to 3 years",
+        "threeToFive": "3 to 5 years",
+        "moreThanFive": "More than 5 years"
     },
     "english": {
         "none": "None",

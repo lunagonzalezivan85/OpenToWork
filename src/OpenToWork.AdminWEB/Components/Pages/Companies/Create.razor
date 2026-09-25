@@ -194,16 +194,12 @@ else if (WizardStep == 2)
                 <label>@Lang.T("admin.vacancies.experienceLevel")</label>
                 <select @bind="CurrentVacancy.ExperienceLevel" class="admin-input">
                     <option value="">@Lang.T("admin.common.notSpecified")</option>
-                    <option value="0">@Lang.T("admin.vacancies.expEntry")</option>
-                    <option value="1">@Lang.T("admin.vacancies.expJunior")</option>
-                    <option value="2">@Lang.T("admin.vacancies.expMid")</option>
-                    <option value="3">@Lang.T("admin.vacancies.expSenior")</option>
-                    <option value="4">@Lang.T("admin.vacancies.expLead")</option>
+                    <option value="0">@Lang.T("admin.vacancies.expNone")</option>
+                    <option value="1">@Lang.T("admin.vacancies.expLessThanOne")</option>
+                    <option value="2">@Lang.T("admin.vacancies.expOneToThree")</option>
+                    <option value="3">@Lang.T("admin.vacancies.expThreeToFive")</option>
+                    <option value="4">@Lang.T("admin.vacancies.expMoreThanFive")</option>
                 </select>
-            </div>
-            <div class="admin-form-field">
-                <label>@Lang.T("admin.vacancies.yearsExperience")</label>
-                <input type="number" min="0" max="50" step="1" @bind="CurrentVacancy.YearsExperience" class="admin-input" />
             </div>
             <div class="admin-form-field">
                 <label>@Lang.T("admin.vacancies.requiredApplicants")</label>
@@ -255,6 +251,11 @@ else if (WizardStep == 3)
                 <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.contactEmail")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.ContactEmail ?? "-")</span></div>
                 <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.contactPhone")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.ContactPhone ?? "-")</span></div>
                 <div><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.country")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(CompanyDto.Country ?? "-") / @(CompanyDto.City ?? "-")</span></div>
+                <div style="grid-column: 1 / -1;"><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.address")</span><br /><span style="font-weight: 500; font-size: 0.88rem;">@(string.IsNullOrWhiteSpace(CompanyDto.Address) ? "-" : CompanyDto.Address)</span></div>
+                @if (!string.IsNullOrWhiteSpace(CompanyDto.Description))
+                {
+                    <div style="grid-column: 1 / -1;"><span style="color: #778DA9; font-size: 0.8rem;">@Lang.T("admin.companies.description")</span><br /><span style="font-weight: 400; font-size: 0.85rem; white-space: pre-line;">@CompanyDto.Description</span></div>
+                }
             </div>
         </div>
 
@@ -324,6 +325,7 @@ else if (WizardStep == 4)
                 <button type="button" class="ot-btn ot-btn--primary ot-btn--small" @onclick="SearchOnMap">@Lang.T("admin.companies.search")</button>
             </div>
             <div id="create-company-map-container" style="width: 100%; height: 320px; border-radius: 12px; overflow: hidden; border: 1px solid #E8F1FF;"></div>
+            <p id="create-company-map-container-address" style="font-size: 0.85rem; color: var(--text-muted); margin: 0.5rem 0 0; min-height: 1.2em;"></p>
             <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
                 <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick="CloseMapModal">@Lang.T("admin.common.cancel")</button>
                 <button type="button" class="ot-btn ot-btn--primary ot-btn--small" @onclick="UseSelectedLocation">@Lang.T("admin.companies.useLocation")</button>
@@ -480,7 +482,7 @@ else if (WizardStep == 4)
         WizardError = null;
         if (!ValidateCurrentVacancy()) return;
         VacancyDtos.Add(CurrentVacancy);
-        CurrentVacancy = new AdminCreateVacancyDto();
+        CurrentVacancy = NewVacancy();
     }
 
     private void AddVacancyAndContinue()
@@ -488,7 +490,7 @@ else if (WizardStep == 4)
         WizardError = null;
         if (!ValidateCurrentVacancy()) return;
         VacancyDtos.Add(CurrentVacancy);
-        CurrentVacancy = new AdminCreateVacancyDto();
+        CurrentVacancy = NewVacancy();
         WizardStep = 3;
     }
 
@@ -507,13 +509,22 @@ else if (WizardStep == 4)
 
     private void GoToStep(int step)
     {
-        if (step == 2) CurrentVacancy = new AdminCreateVacancyDto();
+        if (step == 2) CurrentVacancy = NewVacancy();
         WizardStep = step;
     }
+
+    /// <summary>Ubicacion de la empresa (direccion elegida en el mapa + ciudad), usada como ubicacion
+    /// por defecto de cada vacante nueva - el admin la puede cambiar si el puesto es en otro sitio.</summary>
+    private string? CompanyLocation =>
+        string.Join(", ", new[] { CompanyDto.Address, CompanyDto.City }.Where(s => !string.IsNullOrWhiteSpace(s))) is { Length: > 0 } loc ? loc : null;
+
+    private AdminCreateVacancyDto NewVacancy() => new() { Location = CompanyLocation };
 
     private void GoToStep2()
     {
         WizardError = null;
+        if (string.IsNullOrWhiteSpace(CurrentVacancy.Location))
+            CurrentVacancy.Location = CompanyLocation;
         WizardStep = 2;
     }
 

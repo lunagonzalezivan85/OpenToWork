@@ -133,7 +133,7 @@ else
                 {
                     <div class="ot-input-group">
                         <label class="ot-input-label">@Lang.T("admin.vacancies.company") *</label>
-                        <select @bind="WizardModel.CompanyId" class="admin-modal-input">
+                        <select @bind="WizardModel.CompanyId" @bind:after="OnWizardCompanyChanged" class="admin-modal-input">
                             <option value="">@Lang.T("admin.vacancies.selectCompany")</option>
                             @foreach (var c in WizardCompanies)
                             {
@@ -209,16 +209,12 @@ else
                             <label class="ot-input-label">@Lang.T("admin.vacancies.experienceLevel")</label>
                             <select @bind="WizardModel.ExperienceLevel" class="admin-modal-input">
                                 <option value="">@Lang.T("admin.common.notSpecified")</option>
-                                <option value="0">@Lang.T("admin.vacancies.expEntry")</option>
-                                <option value="1">@Lang.T("admin.vacancies.expJunior")</option>
-                                <option value="2">@Lang.T("admin.vacancies.expMid")</option>
-                                <option value="3">@Lang.T("admin.vacancies.expSenior")</option>
-                                <option value="4">@Lang.T("admin.vacancies.expLead")</option>
+                                <option value="0">@Lang.T("admin.vacancies.expNone")</option>
+                                <option value="1">@Lang.T("admin.vacancies.expLessThanOne")</option>
+                                <option value="2">@Lang.T("admin.vacancies.expOneToThree")</option>
+                                <option value="3">@Lang.T("admin.vacancies.expThreeToFive")</option>
+                                <option value="4">@Lang.T("admin.vacancies.expMoreThanFive")</option>
                             </select>
-                        </div>
-                        <div class="ot-input-group">
-                            <label class="ot-input-label">@Lang.T("admin.vacancies.yearsExperience")</label>
-                            <input type="number" min="0" max="50" step="1" @bind="WizardModel.YearsExperience" class="admin-modal-input" />
                         </div>
                         <div class="ot-input-group">
                             <label class="ot-input-label">@Lang.T("admin.vacancies.requiredApplicants")</label>
@@ -327,7 +323,11 @@ else
         WizardError = null;
         ShowWizard = true;
         WizardCompanies = await AuthApi.GetCompaniesAsync(pageSize: 200);
-        if (CompanyId.HasValue) WizardModel.CompanyId = CompanyId.Value;
+        if (CompanyId.HasValue)
+        {
+            WizardModel.CompanyId = CompanyId.Value;
+            await OnWizardCompanyChanged();
+        }
     }
 
     private void CloseWizard() => ShowWizard = false;
@@ -364,6 +364,17 @@ else
         2 => !string.IsNullOrWhiteSpace(WizardModel.Requirements),
         _ => true
     };
+
+    /// <summary>La ubicacion de la vacante arranca con la direccion de la empresa (la elegida en el
+    /// mapa al darla de alta); el admin la puede cambiar si el puesto es en otro sitio.</summary>
+    private async Task OnWizardCompanyChanged()
+    {
+        if (WizardModel.CompanyId == Guid.Empty || !string.IsNullOrWhiteSpace(WizardModel.Location)) return;
+        var company = await AuthApi.GetCompanyAsync(WizardModel.CompanyId);
+        if (company == null) return;
+        var location = string.Join(", ", new[] { company.Address, company.City }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        if (location.Length > 0) WizardModel.Location = location;
+    }
 
     private void WizardNext()
     {
