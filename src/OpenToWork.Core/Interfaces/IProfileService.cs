@@ -2,6 +2,9 @@ using OpenToWork.Shared.DTOs;
 
 namespace OpenToWork.Core.Interfaces;
 
+/// <summary>Datos para servir el CV de un candidato (ruta fisica via ICvStorage.ResolveForOwner).</summary>
+public record CandidateCvReference(string CvUrl, Guid OwnerUserId, string CandidateName);
+
 public interface IProfileService
 {
     Task<CandidateProfileDto?> GetProfileAsync(Guid userId);
@@ -9,6 +12,10 @@ public interface IProfileService
     /// empresa solo si Trato Directo le entrego a ese candidato (sin DNI, nacimiento ni direccion).
     /// Null para cualquier otro.</summary>
     Task<CandidateProfileDto?> GetCandidateByIdAsync(Guid candidateId, Guid viewerUserId);
+
+    /// <summary>Referencia al CV de un candidato con la misma regla que el perfil (el propio candidato o una
+    /// empresa a la que TD se lo entrego). Null si no tiene CV o el usuario no puede verlo.</summary>
+    Task<CandidateCvReference?> GetCvForViewerAsync(Guid candidateId, Guid viewerUserId);
     Task<CandidateProfileDto?> UpdateProfileAsync(Guid userId, UpdateCandidateProfileDto dto);
     Task<CandidateExperienceDto> AddExperienceAsync(Guid userId, CreateExperienceDto dto);
     Task<CandidateExperienceDto?> UpdateExperienceAsync(Guid experienceId, UpdateExperienceDto dto, Guid userId);

@@ -420,6 +420,24 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<List<ApplicationDto>>() ?? new();
     }
 
+    /// <summary>CV propio (null si no hay). Los CV ya no son archivos publicos: se bajan con sesion.</summary>
+    public Task<(byte[] Content, string FileName)?> GetMyCvAsync() => DownloadCvAsync("api/profile/cv");
+
+    /// <summary>CV de un candidato (el propio o uno entregado por TD a la empresa).</summary>
+    public Task<(byte[] Content, string FileName)?> GetCandidateCvAsync(Guid candidateId) =>
+        DownloadCvAsync($"api/profile/candidate/{candidateId}/cv");
+
+    private async Task<(byte[] Content, string FileName)?> DownloadCvAsync(string url)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync(url);
+        if (!response.IsSuccessStatusCode) return null;
+        var name = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+            ?? "CV.pdf";
+        return (await response.Content.ReadAsByteArrayAsync(), name);
+    }
+
     public async Task<CandidateProfileDto?> GetCandidateProfileByIdAsync(Guid candidateId)
     {
         await SetAuthHeaderAsync();

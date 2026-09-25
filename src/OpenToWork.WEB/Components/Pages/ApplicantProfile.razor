@@ -4,6 +4,7 @@
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
 @inject NavigationManager Nav
+@inject IJSRuntime Js
 
 <PageTitle>Perfil del Postulante</PageTitle>
 
@@ -48,7 +49,7 @@
                 <div class="cv-header-actions">
                     @if (!string.IsNullOrEmpty(Profile.CvUrl))
                     {
-                        <a href="@Profile.CvUrl" target="_blank" class="ot-btn ot-btn--outline ot-btn--small">
+                        <a href="#" @onclick="DownloadCvAsync" @onclick:preventDefault class="ot-btn ot-btn--outline ot-btn--small">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
                             Ver CV
                         </a>
@@ -280,6 +281,15 @@
 </div>
 
 @code {
+    // El CV ya no es un archivo publico: el API solo lo entrega si TD le entrego este candidato a la empresa.
+    private async Task DownloadCvAsync()
+    {
+        if (Profile == null) return;
+        var cv = await AuthApi.GetCandidateCvAsync(Profile.Id);
+        if (cv is { } file)
+            await Js.InvokeVoidAsync("fileDownload.save", file.FileName, "application/pdf", Convert.ToBase64String(file.Content));
+    }
+
     [Parameter] public string CandidateId { get; set; } = "";
     private bool Loading { get; set; } = true;
     private CandidateProfileDto? Profile { get; set; }

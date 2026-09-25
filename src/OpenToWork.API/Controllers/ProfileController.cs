@@ -14,9 +14,11 @@ public class ProfileController : ControllerBase
     private readonly IProfileService _profileService;
     private readonly ICvParserService _cvParserService;
     private readonly IWebHostEnvironment _env;
+    private readonly ICvStorage _cvStorage;
 
-    public ProfileController(IProfileService profileService, ICvParserService cvParserService, IWebHostEnvironment env)
+    public ProfileController(IProfileService profileService, ICvParserService cvParserService, IWebHostEnvironment env, ICvStorage cvStorage)
     {
+        _cvStorage = cvStorage;
         _profileService = profileService;
         _cvParserService = cvParserService;
         _env = env;
@@ -41,6 +43,38 @@ public class ProfileController : ControllerBase
         // Solo el propio candidato o una empresa a la que TD se lo entrego (ProfileService).
         var result = await _profileService.GetCandidateByIdAsync(candidateId, userId.Value);
         return result != null ? Ok(result) : NotFound();
+    }
+
+    /// <summary>CV propio del candidato autenticado.</summary>
+    [HttpGet("cv")]
+    public async Task<IActionResult> GetMyCv()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var profile = await _profileService.GetProfileAsync(userId.Value);
+        return profile == null ? NotFound() : await ServeCvAsync(profile.Id, userId.Value);
+    }
+
+    /// <summary>CV de un candidato: el propio candidato o una empresa a la que TD se lo entrego
+    /// (misma regla que el perfil). Antes era un archivo estatico publico en wwwroot.</summary>
+    [HttpGet("candidate/{candidateId}/cv")]
+    public async Task<IActionResult> GetCandidateCv(Guid candidateId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        return await ServeCvAsync(candidateId, userId.Value);
+    }
+
+    private async Task<IActionResult> ServeCvAsync(Guid candidateId, Guid viewerUserId)
+    {
+        var cv = await _profileService.GetCvForViewerAsync(candidateId, viewerUserId);
+        var path = cv == null ? null : _cvStorage.ResolveForOwner(cv.CvUrl, cv.OwnerUserId);
+        if (path == null) return NotFound();
+
+        var downloadName = string.IsNullOrWhiteSpace(cv!.CandidateName) ? "CV.pdf" : $"CV {cv.CandidateName}.pdf";
+        return PhysicalFile(path, "application/pdf", downloadName);
     }
 
     [HttpPut]
@@ -160,25 +194,17 @@ public class ProfileController : ControllerBase
         if (file.Length > 10_000_000)
             return BadRequest("File size must be less than 10MB");
 
-        var uploadsDir = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads", "cv");
-        Directory.CreateDirectory(uploadsDir);
-
-        var fileName = $"cv_{userId.Value}_{DateTime.UtcNow:yyyyMMddHHmmss}.pdf";
-        var filePath = Path.Combine(uploadsDir, fileName);
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
-        var cvUrl = $"/uploads/cv/{fileName}";
-
         byte[] fileBytes;
         using (var ms = new MemoryStream())
         {
             await file.CopyToAsync(ms);
             fileBytes = ms.ToArray();
         }
+
+        // Carpeta privada (ICvStorage), ya no wwwroot: el CV solo se descarga con permiso (GET cv).
+        var fileName = _cvStorage.NewFileName(userId.Value);
+        await _cvStorage.SaveAsync(fileName, fileBytes);
+        var cvUrl = _cvStorage.ToCvUrl(fileName);
 
         CvParseResultDto? parsedData = null;
         try

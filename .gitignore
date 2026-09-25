@@ -42,3 +42,9 @@ Desktop.ini
 # Logs
 logs/
 *.log
+
+# Archivos subidos por usuarios (CV, documentos: datos personales). Nunca al repo.
+# Los CV viven en storage/ (ICvStorage, Storage:Root); ver revision de seguridad 25-Sep.
+storage/
+src/*/wwwroot/uploads/
+src/*/uploads/

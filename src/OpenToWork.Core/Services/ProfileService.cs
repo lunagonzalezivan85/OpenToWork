@@ -45,11 +45,7 @@ public class ProfileService : IProfileService
 
         if (candidate == null) return null;
         if (candidate.SCUserId == viewerUserId) return MapToProfileDto(candidate);
-
-        var deliveredToViewer = await _context.PT_CandidateDeliveries
-            .AnyAsync(d => d.PT_CandidateId == candidateId && !d.IsDeleted
-                && d.Company.SCUserId == viewerUserId && !d.Company.IsDeleted);
-        if (!deliveredToViewer) return null;
+        if (!await IsDeliveredToViewerAsync(candidateId, viewerUserId)) return null;
 
         // La empresa evalua al candidato: no necesita documento, fecha de nacimiento ni direccion.
         var dto = MapToProfileDto(candidate);
@@ -57,6 +53,26 @@ public class ProfileService : IProfileService
         dto.BirthDate = null;
         dto.Address = null;
         return dto;
+    }
+
+    /// <summary>El candidato fue entregado por TD a la empresa de este usuario (unico caso en que una
+    /// empresa ve su perfil y su CV).</summary>
+    private Task<bool> IsDeliveredToViewerAsync(Guid candidateId, Guid viewerUserId) =>
+        _context.PT_CandidateDeliveries.AnyAsync(d => d.PT_CandidateId == candidateId && !d.IsDeleted
+            && d.Company.SCUserId == viewerUserId && !d.Company.IsDeleted);
+
+    public async Task<CandidateCvReference?> GetCvForViewerAsync(Guid candidateId, Guid viewerUserId)
+    {
+        var candidate = await _context.PT_Candidates
+            .Where(c => c.Id == candidateId && !c.IsDeleted)
+            .Select(c => new { c.SCUserId, c.CvUrl, c.FirstName, c.LastName })
+            .FirstOrDefaultAsync();
+        if (candidate == null || string.IsNullOrWhiteSpace(candidate.CvUrl)) return null;
+
+        if (candidate.SCUserId != viewerUserId && !await IsDeliveredToViewerAsync(candidateId, viewerUserId))
+            return null;
+
+        return new CandidateCvReference(candidate.CvUrl, candidate.SCUserId, $"{candidate.FirstName} {candidate.LastName}".Trim());
     }
 
     public async Task<CandidateProfileDto?> UpdateProfileAsync(Guid userId, UpdateCandidateProfileDto dto)

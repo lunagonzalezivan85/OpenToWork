@@ -46,6 +46,11 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddDatabaseContext(builder.Configuration);
 builder.Services.AddCoreServices(builder.Configuration);
 
+// CVs en carpeta privada compartida por ambos API (fuera de wwwroot y del repo). Por defecto <repo>/storage.
+var storageRoot = builder.Configuration["Storage:Root"]
+    ?? Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "..", "storage"));
+builder.Services.AddSingleton<OpenToWork.Core.Interfaces.ICvStorage>(new OpenToWork.Core.Services.CvStorage(storageRoot));
+
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

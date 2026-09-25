@@ -6,6 +6,7 @@
 @inject LanguageService Lang
 @inject LocalStorageService LocalStorage
 @inject NavigationManager Nav
+@inject IJSRuntime Js
 
 <PageTitle>@Lang.T("profile.title")</PageTitle>
 
@@ -74,7 +75,7 @@
                             </div>
                             @if (!string.IsNullOrEmpty(ProfileData.CvUrl))
                             {
-                                <a href="@ProfileData.CvUrl" target="_blank" class="wizard-cv-link">
+                                <a href="#" @onclick="DownloadMyCvAsync" @onclick:preventDefault class="wizard-cv-link">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                         <path d="M14 2v6h6" />
@@ -501,7 +502,7 @@
                                 </label>
                                 @if (!string.IsNullOrEmpty(ProfileData.CvUrl))
                                 {
-                                    <a href="@ProfileData.CvUrl" target="_blank" class="wizard-cv-link">
+                                    <a href="#" @onclick="DownloadMyCvAsync" @onclick:preventDefault class="wizard-cv-link">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                                             <path d="M14 2v6h6" />
@@ -949,6 +950,14 @@
 }
 
 @code {
+    // El CV ya no es un archivo publico: se baja por el API con la sesion (revision de seguridad 25-Sep).
+    private async Task DownloadMyCvAsync()
+    {
+        var cv = await AuthApi.GetMyCvAsync();
+        if (cv is { } file)
+            await Js.InvokeVoidAsync("fileDownload.save", file.FileName, "application/pdf", Convert.ToBase64String(file.Content));
+    }
+
     private CandidateProfileDto? ProfileData { get; set; }
     private int CurrentStep { get; set; } = 0;
     private string UserName { get; set; } = "";

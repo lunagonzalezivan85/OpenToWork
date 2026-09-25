@@ -6,6 +6,7 @@
 @inject LocalStorageService LocalStorage
 @inject AdminAuthApiService AuthApi
 @inject NavigationManager Nav
+@inject IJSRuntime Js
 
 <PageTitle>@(Profile?.CandidateName ?? Lang.T("admin.profile.title"))</PageTitle>
 
@@ -151,7 +152,7 @@ else
                 <StartConversationButton UserId="UserId" />
                 @if (!string.IsNullOrEmpty(Profile.CvUrl))
                 {
-                    <a href="@Profile.CvUrl" target="_blank" class="admin-pill-btn admin-pill-btn--primary">
+                    <a href="#" @onclick="DownloadCvAsync" @onclick:preventDefault class="admin-pill-btn admin-pill-btn--primary">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         @Lang.T("admin.profile.downloadCv")
                     </a>
@@ -381,7 +382,7 @@ else
                     {
                         <div class="admin-profile-info-item">
                             <span class="admin-profile-info-label">CV</span>
-                            <span class="admin-profile-info-value"><a href="@Profile.CvUrl" target="_blank">@Lang.T("admin.recruitment.viewCV")</a></span>
+                            <span class="admin-profile-info-value"><a href="#" @onclick="DownloadCvAsync" @onclick:preventDefault>@Lang.T("admin.recruitment.viewCV")</a></span>
                         </div>
                     }
                     @if (Profile.Availability.HasValue)
@@ -918,6 +919,14 @@ else
 }
 
 @code {
+    // El CV esta en una carpeta privada del servidor: se baja por el API del admin (revision de seguridad 25-Sep).
+    private async Task DownloadCvAsync()
+    {
+        var cv = await AuthApi.GetCandidateCvAsync(UserId);
+        if (cv is { } file)
+            await Js.InvokeVoidAsync("fileDownload.save", file.FileName, "application/pdf", Convert.ToBase64String(file.Content));
+    }
+
     [Parameter] public Guid UserId { get; set; }
     private AdminUserProfileDto? Profile { get; set; }
     private RecruitmentDetailDto? Recruitment { get; set; }

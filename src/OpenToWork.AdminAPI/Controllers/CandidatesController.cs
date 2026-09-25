@@ -21,6 +21,8 @@ public class CandidatesController : AdminControllerBase
     private readonly IVerificationStatusService _verificationStatusService;
     private readonly IAdminApplicationService _applicationService;
     private readonly ICompatibilityService _compatibilityService;
+    private readonly ICvStorage _cvStorage;
+    private readonly IProfileService _profileService;
 
     public CandidatesController(
         IAdminCandidateService candidateService,
@@ -31,7 +33,9 @@ public class CandidatesController : AdminControllerBase
         IValidationService validationService,
         IVerificationStatusService verificationStatusService,
         IAdminApplicationService applicationService,
-        ICompatibilityService compatibilityService)
+        ICompatibilityService compatibilityService,
+        ICvStorage cvStorage,
+        IProfileService profileService)
     {
         _candidateService = candidateService;
         _registrationService = registrationService;
@@ -42,6 +46,21 @@ public class CandidatesController : AdminControllerBase
         _verificationStatusService = verificationStatusService;
         _applicationService = applicationService;
         _compatibilityService = compatibilityService;
+        _cvStorage = cvStorage;
+        _profileService = profileService;
+    }
+
+    /// <summary>CV del candidato para el equipo de TD (carpeta privada; antes era un archivo publico
+    /// y el enlace relativo del admin apuntaba a un servidor que no lo tenia).</summary>
+    [HttpGet("{userId:guid}/cv")]
+    public async Task<IActionResult> GetCv(Guid userId)
+    {
+        var profile = await _profileService.GetProfileAsync(userId);
+        var path = profile == null ? null : _cvStorage.ResolveForOwner(profile.CvUrl, userId);
+        if (path == null) return NotFound();
+
+        var name = $"{profile!.FirstName} {profile.LastName}".Trim();
+        return PhysicalFile(path, "application/pdf", string.IsNullOrWhiteSpace(name) ? "CV.pdf" : $"CV {name}.pdf");
     }
 
     [HttpGet]
@@ -107,20 +126,14 @@ public class CandidatesController : AdminControllerBase
             fileBytes = ms.ToArray();
         }
 
-        var uploadsDir = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads", "cv");
-        Directory.CreateDirectory(uploadsDir);
-
         var result = await _registrationService.RegisterFromCvAsync(fileBytes, file.FileName, file.ContentType, AdminId);
 
         if (!result.Success)
             return BadRequest(new { error = result.Error });
 
+        // Carpeta privada (ICvStorage), ya no wwwroot publico.
         if (!string.IsNullOrEmpty(result.CvUrl))
-        {
-            var fileName = Path.GetFileName(result.CvUrl);
-            var filePath = Path.Combine(uploadsDir, fileName);
-            await System.IO.File.WriteAllBytesAsync(filePath, fileBytes);
-        }
+            await _cvStorage.SaveAsync(Path.GetFileName(result.CvUrl), fileBytes);
 
         return Ok(result);
     }

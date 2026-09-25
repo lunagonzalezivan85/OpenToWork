@@ -1341,6 +1341,18 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    /// <summary>CV del candidato (carpeta privada del servidor; null si no tiene).</summary>
+    public async Task<(byte[] Content, string FileName)?> GetCandidateCvAsync(Guid userId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/candidates/{userId}/cv");
+        if (!response.IsSuccessStatusCode) return null;
+        var name = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+            ?? "CV.pdf";
+        return (await response.Content.ReadAsByteArrayAsync(), name);
+    }
+
     // --- Mensajes con candidatos y empresas del portal ---
 
     public async Task<int> GetUnreadMessagesCountAsync()
