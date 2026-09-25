@@ -1341,6 +1341,21 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<CompanyPortalAccessDto?> GetCompanyPortalAccessAsync(Guid companyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/company-crm/companies/{companyId}/portal-access");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CompanyPortalAccessDto>();
+    }
+
+    public async Task<(CompanyPortalInviteResultDto? Result, string? Error)> InviteCompanyToPortalAsync(Guid companyId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync($"api/admin/company-crm/companies/{companyId}/portal-access/invite", null);
+        return await ReadResultAsync<CompanyPortalInviteResultDto>(response);
+    }
+
     public async Task<bool> SetCompanyPlanTierAsync(Guid id, CompanyPlanTier tier)
     {
         await SetAuthHeaderAsync();

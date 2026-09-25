@@ -55,6 +55,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IJobPricingService, JobPricingService>();
         services.AddScoped<IPromoCodeService, PromoCodeService>();
         services.AddScoped<IAdminContractService, AdminContractService>();
+        services.AddScoped<ICompanyPortalAccessService, CompanyPortalAccessService>();
         services.AddScoped<IAdminSkillService, AdminSkillService>();
         services.AddScoped<IAdminDashboardService, AdminDashboardService>();
         services.AddScoped<IExportService, ExportService>();

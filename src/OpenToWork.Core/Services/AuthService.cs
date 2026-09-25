@@ -247,10 +247,14 @@ public class AuthService : IAuthService
 
         if (user == null || user.PasswordResetExpiresAt == null || user.PasswordResetExpiresAt < DateTime.UtcNow)
             return false;
+        if (string.IsNullOrEmpty(newPassword) || newPassword.Length < 6) // mismo minimo que RegisterDto
+            return false;
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         user.PasswordResetToken = null;
         user.PasswordResetExpiresAt = null;
+        // Usar el enlace recibido por correo (recuperacion o invitacion de empresa) prueba el email.
+        user.EmailVerified = true;
         user.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();

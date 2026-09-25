@@ -178,10 +178,51 @@ else
                         <span style="font-weight: 500; font-size: 0.88rem;">-</span>
                     }
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0;">
+                <div style="display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
                     <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.contactPhone")</span>
                     <span style="font-weight: 500; font-size: 0.88rem;">@(Company.ContactPhone ?? "-")</span>
                 </div>
+                @* Acceso al portal (empresas creadas desde el admin nacen sin usuario): invitacion con enlace *@
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; padding: 0.35rem 0;">
+                    <span style="color: #778DA9; font-size: 0.82rem;">@Lang.T("admin.companies.portalAccess")</span>
+                    @if (PortalAccess?.IsActivated == true)
+                    {
+                        <span class="admin-result-badge admin-result-badge--success">@Lang.T("admin.companies.portalActive")</span>
+                    }
+                    else
+                    {
+                        <span style="display: flex; align-items: center; gap: 0.5rem;">
+                            @if (PortalAccess?.HasAccount == true)
+                            {
+                                <span class="admin-result-badge admin-result-badge--warning">@Lang.T("admin.companies.portalInvited")</span>
+                            }
+                            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@IsInviting" @onclick="InviteToPortalAsync">
+                                @(PortalAccess?.HasAccount == true ? Lang.T("admin.companies.portalResendInvite") : Lang.T("admin.companies.portalInvite"))
+                            </button>
+                        </span>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(InviteError))
+                {
+                    <p style="color: var(--danger); font-size: 0.8rem; margin: 0;">@InviteError</p>
+                }
+                @if (InviteResult != null)
+                {
+                    <div style="background: var(--bg-soft, #F1F5F9); border-radius: 8px; padding: 0.6rem; font-size: 0.8rem;">
+                        <p style="margin: 0 0 0.35rem;">
+                            @(InviteResult.EmailSent
+                                ? string.Format(Lang.T("admin.companies.portalInviteSent"), InviteResult.Email)
+                                : Lang.T("admin.companies.portalInviteCopy"))
+                        </p>
+                        <div style="display: flex; gap: 0.35rem;">
+                            <input class="admin-input" readonly value="@InviteResult.InviteUrl" style="flex: 1; font-size: 0.75rem;" />
+                            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="CopyInviteUrlAsync">@(InviteCopied ? Lang.T("admin.companies.portalCopied") : Lang.T("admin.companies.portalCopy"))</button>
+                        </div>
+                        <p style="margin: 0.35rem 0 0; color: #778DA9;">
+                            @Lang.T("admin.companies.portalUser"): @InviteResult.Email · @Lang.T("admin.companies.portalExpires") @InviteResult.ExpiresAt.ToLocalTime().ToString("dd/MM/yyyy")
+                        </p>
+                    </div>
+                }
             </div>
         </div>
 
@@ -303,10 +344,45 @@ else
         {
             Company = await AuthApi.GetCompanyAsync(id);
             if (Company != null)
+            {
                 Contract = await AuthApi.GetContractByCompanyAsync(Company.Id);
+                PortalAccess = await AuthApi.GetCompanyPortalAccessAsync(Company.Id);
+            }
         }
         AdminUsers = await AuthApi.GetUsersAsync(role: (int)UserRole.Admin);
         SelectedUserId = AdminUsers.FirstOrDefault()?.Id.ToString() ?? "";
+    }
+
+    // Acceso al portal: el enlace de activacion solo se ve aqui, justo despues de generarlo
+    // (en la base queda solo el hash del token).
+    private CompanyPortalAccessDto? PortalAccess;
+    private CompanyPortalInviteResultDto? InviteResult;
+    private string? InviteError;
+    private bool IsInviting;
+    private bool InviteCopied;
+
+    private async Task InviteToPortalAsync()
+    {
+        if (Company == null || IsInviting) return;
+        IsInviting = true;
+        InviteError = null;
+        InviteCopied = false;
+        var (result, error) = await AuthApi.InviteCompanyToPortalAsync(Company.Id);
+        IsInviting = false;
+        if (result == null)
+        {
+            InviteError = error ?? Lang.T("admin.companies.portalInviteError");
+            return;
+        }
+        InviteResult = result;
+        PortalAccess = await AuthApi.GetCompanyPortalAccessAsync(Company.Id);
+    }
+
+    private async Task CopyInviteUrlAsync()
+    {
+        if (InviteResult == null) return;
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", InviteResult.InviteUrl);
+        InviteCopied = true;
     }
 
     private async Task ViewContract()
