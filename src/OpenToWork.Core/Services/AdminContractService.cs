@@ -60,6 +60,7 @@ public class AdminContractService : IAdminContractService
                 CompanyContactPhone = c.Company.ContactPhone,
                 ContractNumber = c.ContractNumber,
                 Status = c.Status,
+                Version = c.Version,
                 Vacancies = c.ContractVacancies
                     .Where(cv => !cv.IsDeleted)
                     .Select(cv => new ContractVacancyItemDto
@@ -397,6 +398,69 @@ public class AdminContractService : IAdminContractService
         await _auditLog.LogAsync(adminId, success ? "ContractEmailSent" : "ContractEmailFailed",
             "PT_VacancyContracts", contract.Id,
             success ? null : $"{{\"error\":\"{error?.Replace("\"", "'")}\"}}", ipAddress);
+    }
+
+    public async Task<AdminVacancyContractDto?> ReopenAsync(Guid contractId, string? reason, Guid adminId, string? ipAddress)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new InvalidOperationException("Indica por que se abre una nueva version del contrato.");
+
+        var contract = await _context.PT_VacancyContracts
+            .FirstOrDefaultAsync(c => c.Id == contractId && !c.IsDeleted);
+        if (contract == null) return null;
+        if (contract.Status != (int)ContractStatus.Sent && contract.Status != (int)ContractStatus.Accepted)
+            throw new InvalidOperationException("Solo se abre una nueva version de un contrato Enviado o Aceptado (un Borrador o Rechazado ya se puede editar).");
+
+        var snapshot = await GetByIdAsync(contractId);
+        _context.PT_ContractRevisions.Add(new PTContractRevision
+        {
+            PT_VacancyContractId = contract.Id,
+            VersionNumber = contract.Version,
+            PreviousStatus = contract.Status,
+            FeeAmount = contract.FeeAmount,
+            Reason = reason.Trim(),
+            SnapshotJson = System.Text.Json.JsonSerializer.Serialize(snapshot),
+            CreatedBy = adminId
+        });
+
+        // Los tramos de pago y lo ya cobrado se conservan: al reaceptar la nueva version,
+        // ContractPaymentService.RecalculateTranchesAsync los ajusta al importe nuevo.
+        contract.Version++;
+        contract.Status = (int)ContractStatus.Draft;
+        contract.AcceptedAt = null;
+        contract.UpdatedAt = DateTime.UtcNow;
+        contract.UpdatedBy = adminId;
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "ReopenContract", "PT_VacancyContracts", contract.Id,
+            $"{{\"contractNumber\":\"{contract.ContractNumber}\",\"newVersion\":{contract.Version},\"reason\":{System.Text.Json.JsonSerializer.Serialize(reason.Trim())}}}", ipAddress);
+
+        return await GetByIdAsync(contractId);
+    }
+
+    public async Task<List<ContractRevisionDto>> GetRevisionsAsync(Guid contractId)
+    {
+        var rows = await _context.PT_ContractRevisions
+            .Where(r => r.PT_VacancyContractId == contractId && !r.IsDeleted)
+            .OrderByDescending(r => r.VersionNumber)
+            .Select(r => new
+            {
+                r.Id, r.VersionNumber, r.PreviousStatus, r.FeeAmount, r.Reason, r.CreatedAt, r.SnapshotJson,
+                CreatedByName = _context.SC_Users.Where(u => u.Id == r.CreatedBy).Select(u => u.Email).FirstOrDefault()
+            })
+            .ToListAsync();
+
+        return rows.Select(r => new ContractRevisionDto
+        {
+            Id = r.Id,
+            VersionNumber = r.VersionNumber,
+            PreviousStatus = r.PreviousStatus,
+            FeeAmount = r.FeeAmount,
+            Reason = r.Reason,
+            CreatedAt = r.CreatedAt,
+            CreatedByName = r.CreatedByName,
+            Snapshot = System.Text.Json.JsonSerializer.Deserialize<AdminVacancyContractDto>(r.SnapshotJson)
+        }).ToList();
     }
 
     public async Task<bool> DecideAsync(Guid contractId, bool accepted, string? reason, Guid adminId, string? ipAddress)

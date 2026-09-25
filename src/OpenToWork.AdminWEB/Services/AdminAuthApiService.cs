@@ -511,6 +511,21 @@ public class AdminAuthApiService
         }
     }
 
+    public async Task<(AdminVacancyContractDto? Result, string? Error)> ReopenContractAsync(Guid contractId, string reason)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/admin/contracts/{contractId}/reopen", new ReopenContractDto { Reason = reason });
+        return await ReadResultAsync<AdminVacancyContractDto>(response);
+    }
+
+    public async Task<List<ContractRevisionDto>> GetContractRevisionsAsync(Guid contractId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/contracts/{contractId}/revisions");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<ContractRevisionDto>>() ?? new();
+    }
+
     public async Task<bool> SendContractAsync(Guid contractId)
     {
         await SetAuthHeaderAsync();

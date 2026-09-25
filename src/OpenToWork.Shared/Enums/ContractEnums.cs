@@ -49,7 +49,12 @@ public enum PaymentTrancheType
     Apertura = 0,
     Validacion = 1,
     Consolidacion = 2,
-    ReposicionSegunda = 3
+    ReposicionSegunda = 3,
+
+    /// <summary>Diferencia al reaceptar una nueva version del contrato con otro importe: sobre tramos
+    /// ya pagados, positivo = falta cobrar, negativo = saldo a favor de la empresa (ver
+    /// ContractPaymentService.RecalculateTranchesAsync).</summary>
+    Ajuste = 4
 }
 
 /// <summary>Estado de un tramo de pago (PTContractPayment). Simple pagado/pendiente por ahora,

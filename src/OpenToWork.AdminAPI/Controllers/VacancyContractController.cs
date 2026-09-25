@@ -104,6 +104,29 @@ public class VacancyContractController : AdminControllerBase
         return ok ? NoContent() : BadRequest();
     }
 
+    /// <summary>Abre una nueva version de un contrato Enviado o Aceptado para corregirlo: guarda la
+    /// version actual con el motivo y lo devuelve a Borrador.</summary>
+    [HttpPost("{contractId:guid}/reopen")]
+    public async Task<IActionResult> Reopen(Guid contractId, [FromBody] ReopenContractDto dto)
+    {
+        try
+        {
+            var result = await _contractService.ReopenAsync(contractId, dto.Reason, AdminId, ClientIp);
+            return result == null ? NotFound() : Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>Versiones anteriores del contrato (mas reciente primero).</summary>
+    [HttpGet("{contractId:guid}/revisions")]
+    public async Task<IActionResult> GetRevisions(Guid contractId)
+    {
+        return Ok(await _contractService.GetRevisionsAsync(contractId));
+    }
+
     /// <summary>Tramos de pago (Apertura/Validacion/Consolidacion) del contrato. Se generan
     /// automaticamente al aceptar el contrato (ver Decide).</summary>
     [HttpGet("{contractId:guid}/payments")]

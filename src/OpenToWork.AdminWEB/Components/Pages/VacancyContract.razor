@@ -471,6 +471,64 @@ else if (Contract != null)
     }
 }
 
+@* === Versiones del contrato: abrir una nueva version para corregir uno ya emitido/aceptado === *@
+@if (!IsLoading && Contract != null)
+{
+    <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
+        <h3 class="admin-recruitment-card-title">@Lang.T("admin.contract.versionsTitle") · v@(Contract.Version)</h3>
+
+        @if (Contract.Status == (int)ContractStatus.Sent || Contract.Status == (int)ContractStatus.Accepted)
+        {
+            @if (ShowReopenForm)
+            {
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0 0 0.5rem;">@Lang.T("admin.contract.reopenHint")</p>
+                <textarea @bind="ReopenReason" class="admin-modal-input" rows="2" placeholder="@Lang.T("admin.contract.reopenReasonPlaceholder")"></textarea>
+                @if (!string.IsNullOrEmpty(ReopenError))
+                {
+                    <p style="color: var(--danger); font-size: 0.8rem; margin: 0.35rem 0;">@ReopenError</p>
+                }
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@IsSaving" @onclick="ConfirmReopenAsync">@Lang.T("admin.contract.reopenConfirm")</button>
+                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { ShowReopenForm = false; ReopenError = null; }">@Lang.T("admin.common.cancel")</button>
+                </div>
+            }
+            else
+            {
+                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => { ShowReopenForm = true; ReopenReason = null; ReopenError = null; }">@Lang.T("admin.contract.reopen")</button>
+            }
+        }
+
+        @if (Revisions.Count == 0)
+        {
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0.75rem 0 0;">@Lang.T("admin.contract.noPreviousVersions")</p>
+        }
+        else
+        {
+            <table class="ot-table" style="margin-top: 0.75rem;">
+                <thead>
+                    <tr>
+                        <th>@Lang.T("admin.contract.version")</th>
+                        <th>@Lang.T("admin.contract.feeAmount")</th>
+                        <th>@Lang.T("admin.contract.versionReplacedOn")</th>
+                        <th>@Lang.T("admin.contract.versionReason")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Revisions)
+                    {
+                        <tr>
+                            <td>v@(r.VersionNumber) <span style="font-size: 0.75rem; color: var(--text-muted);">(@Lang.T(GetStatusBadgeInfo(r.PreviousStatus).Label))</span></td>
+                            <td>@FormatEur(r.FeeAmount)</td>
+                            <td>@r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")<div style="font-size: 0.75rem; color: var(--text-muted);">@r.CreatedByName</div></td>
+                            <td style="white-space: pre-line;">@r.Reason</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+}
+
 @code {
     [Parameter] public Guid VacancyId { get; set; }
 
@@ -578,7 +636,42 @@ else if (Contract != null)
         LoadForm();
         await LoadTranchesAsync();
         await LoadWarrantyReplacementsAsync();
+        await LoadRevisionsAsync();
         IsLoading = false;
+    }
+
+    // Versiones: reabrir un contrato Enviado/Aceptado como nueva version en Borrador (con motivo).
+    private List<ContractRevisionDto> Revisions { get; set; } = new();
+    private bool ShowReopenForm { get; set; }
+    private string? ReopenReason { get; set; }
+    private string? ReopenError { get; set; }
+
+    private async Task LoadRevisionsAsync() =>
+        Revisions = Contract != null ? await AuthApi.GetContractRevisionsAsync(Contract.Id) : new();
+
+    private async Task ConfirmReopenAsync()
+    {
+        if (Contract == null || IsSaving) return;
+        if (string.IsNullOrWhiteSpace(ReopenReason))
+        {
+            ReopenError = Lang.T("admin.contract.reopenReasonRequired");
+            return;
+        }
+        IsSaving = true;
+        var (result, error) = await AuthApi.ReopenContractAsync(Contract.Id, ReopenReason);
+        IsSaving = false;
+        if (result == null)
+        {
+            ReopenError = error ?? Lang.T("admin.contract.reopenError");
+            return;
+        }
+        Contract = result;
+        ShowReopenForm = false;
+        BuildVacancyLines();
+        LoadForm();
+        await LoadTranchesAsync();
+        await LoadWarrantyReplacementsAsync();
+        await LoadRevisionsAsync();
     }
 
     private async Task LoadTranchesAsync()
@@ -595,6 +688,7 @@ else if (Contract != null)
         PaymentTrancheType.Validacion => Lang.T("admin.contract.paymentValidation"),
         PaymentTrancheType.Consolidacion => Lang.T("admin.contract.paymentConsolidation"),
         PaymentTrancheType.ReposicionSegunda => Lang.T("admin.contract.paymentReplacement"),
+        PaymentTrancheType.Ajuste => Lang.T("admin.contract.paymentAdjustment"),
         _ => "-"
     };
 

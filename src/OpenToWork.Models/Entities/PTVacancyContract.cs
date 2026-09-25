@@ -23,6 +23,10 @@ public class PTVacancyContract : BaseEntity
 
     public int Status { get; set; } = 0;
 
+    /// <summary>Version vigente del contrato (1 al crearlo; +1 cada vez que se reabre para corregirlo,
+    /// ver PTContractRevision).</summary>
+    public int Version { get; set; } = 1;
+
     /// <summary>Seccion 5: actuaciones contratadas, JSON array de codigos (publicacion, busqueda, screening, entrevista, evaluacion, referencias, shortlist, briefing, seguimiento).</summary>
     [MaxLength(500)]
     public string? ScopeServices { get; set; }

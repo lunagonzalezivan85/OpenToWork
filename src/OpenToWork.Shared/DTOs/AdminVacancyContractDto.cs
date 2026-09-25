@@ -8,6 +8,8 @@ namespace OpenToWork.Shared.DTOs;
 public class AdminVacancyContractDto
 {
     public Guid Id { get; set; }
+    /// <summary>Version vigente (1 = original; sube al reabrir para corregir, ver ContractRevisionDto).</summary>
+    public int Version { get; set; } = 1;
     public Guid CompanyId { get; set; }
     public string? CompanyName { get; set; }
     public string? CompanyLegalName { get; set; }
@@ -146,4 +148,23 @@ public class ContractPaymentDto
 public class MarkTranchePaidDto
 {
     public string? Notes { get; set; }
+}
+
+/// <summary>Version anterior de un contrato (se guarda al reabrirlo para corregirlo).</summary>
+public class ContractRevisionDto
+{
+    public Guid Id { get; set; }
+    public int VersionNumber { get; set; }
+    public int PreviousStatus { get; set; }
+    public decimal? FeeAmount { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public string? CreatedByName { get; set; }
+    /// <summary>Copia completa de esa version (para verla o compararla).</summary>
+    public AdminVacancyContractDto? Snapshot { get; set; }
+}
+
+public class ReopenContractDto
+{
+    public string? Reason { get; set; }
 }

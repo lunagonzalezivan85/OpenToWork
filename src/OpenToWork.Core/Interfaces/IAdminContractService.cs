@@ -10,4 +10,8 @@ public interface IAdminContractService
     Task<AdminVacancyContractDto?> CreateAsync(Guid companyId, AdminSaveVacancyContractDto dto, Guid adminId, string? ipAddress);
     Task<bool> SendAsync(Guid contractId, Guid adminId, string? ipAddress);
     Task<bool> DecideAsync(Guid contractId, bool accepted, string? reason, Guid adminId, string? ipAddress);
+    /// <summary>Reabre un contrato Enviado o Aceptado como nueva version en Borrador, guardando la version
+    /// actual (copia completa + motivo) en PT_ContractRevisions.</summary>
+    Task<AdminVacancyContractDto?> ReopenAsync(Guid contractId, string? reason, Guid adminId, string? ipAddress);
+    Task<List<ContractRevisionDto>> GetRevisionsAsync(Guid contractId);
 }

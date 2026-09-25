@@ -51,6 +51,7 @@ public class AppDbContext : DbContext
     public DbSet<PTVacancyContract> PT_VacancyContracts => Set<PTVacancyContract>();
     public DbSet<PTContractVacancy> PT_ContractVacancies => Set<PTContractVacancy>();
     public DbSet<PTContractPayment> PT_ContractPayments => Set<PTContractPayment>();
+    public DbSet<PTContractRevision> PT_ContractRevisions => Set<PTContractRevision>();
     public DbSet<PTWarrantyReplacement> PT_WarrantyReplacements => Set<PTWarrantyReplacement>();
     public DbSet<SYSystemConfig> SY_SystemConfig => Set<SYSystemConfig>();
     public DbSet<PTJobLevel> PT_JobLevels => Set<PTJobLevel>();
@@ -219,6 +220,17 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(cv => cv.PT_PromoCodeId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PTContractRevision>(e =>
+        {
+            e.ToTable("PT_ContractRevisions");
+            e.HasIndex(r => new { r.PT_VacancyContractId, r.VersionNumber });
+            e.Property(r => r.SnapshotJson).HasColumnType("longtext");
+            e.HasOne(r => r.Contract)
+                .WithMany()
+                .HasForeignKey(r => r.PT_VacancyContractId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<PTContractPayment>(e =>
