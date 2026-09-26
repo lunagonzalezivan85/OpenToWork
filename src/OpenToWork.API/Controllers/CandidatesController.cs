@@ -16,8 +16,9 @@ public class CandidatesController : ControllerBase
     private readonly IReferenceService _referenceService;
     private readonly IVerificationStatusService _verificationStatusService;
     private readonly ICandidateSearchService _candidateSearchService;
+    private readonly ISystemConfigService _systemConfig;
 
-    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService, ICandidateSearchService candidateSearchService)
+    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService, ICandidateSearchService candidateSearchService, ISystemConfigService systemConfig)
     {
         _candidateService = candidateService;
         _validationService = validationService;
@@ -25,6 +26,7 @@ public class CandidatesController : ControllerBase
         _referenceService = referenceService;
         _verificationStatusService = verificationStatusService;
         _candidateSearchService = candidateSearchService;
+        _systemConfig = systemConfig;
     }
 
     /// <summary>Busqueda avanzada de la empresa por score/verificacion/skill (Fase 5). Solo candidatos con perfil publico.</summary>
@@ -56,6 +58,18 @@ public class CandidatesController : ControllerBase
         }
 
         return Ok(candidate);
+    }
+
+    /// <summary>Proceso del propio candidato: etapa, empresas a las que se le presento y plan (/my-process).</summary>
+    [HttpGet("me/process")]
+    public async Task<IActionResult> GetMyProcess()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var process = await _candidateService.GetMyProcessAsync(userId.Value);
+        process.PlanFeatureEnabled = await _systemConfig.GetCandidatePriorityPlanEnabledAsync();
+        return Ok(process);
     }
 
     [HttpGet("wizard-status")]

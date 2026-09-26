@@ -9,4 +9,5 @@ public interface ICandidateService
     Task<CandidateDto> CreateCandidateAsync(Guid userId, string createdBy);
     Task<CandidateDto> UpdateWizardStepAsync(Guid userId, UpdateCandidateWizardDto dto);
     Task<bool> IsWizardCompleteAsync(Guid userId);
+    Task<CandidateProcessDto> GetMyProcessAsync(Guid userId);
 }

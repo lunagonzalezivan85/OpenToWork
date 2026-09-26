@@ -52,6 +52,15 @@
                             Postulantes verificados
                         </a>
                     }
+                    else
+                    {
+                        <a href="/my-process" class="nav-link @(CurrentPage == "my-process" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <circle cx="5" cy="6" r="2" /><circle cx="5" cy="18" r="2" /><path d="M5 8v8M10 6h10M10 18h10M10 12h6" />
+                            </svg>
+                            @Lang.T("common.nav.myProcess")
+                        </a>
+                    }
                     <a href="/messages" class="nav-link @(CurrentPage == "messages" ? "active" : "")">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -150,6 +159,7 @@
                                 else
                                 {
                                     <a href="/my-applications" class="nav-user-dropdown-item">@Lang.T("common.nav.myApplications")</a>
+                                    <a href="/my-process" class="nav-user-dropdown-item">@Lang.T("common.nav.myProcess")</a>
                                 }
                                 <a href="@(IsCompany ? "/company-profile" : "/profile")" class="nav-user-dropdown-item">@Lang.T("common.nav.profile")</a>
                                 <!-- Settings inside dropdown (mobile) -->
@@ -255,6 +265,12 @@
                         <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
                     </svg>
                     <span>@Lang.T("common.nav.myApplications")</span>
+                </a>
+                <a href="/my-process" class="bottom-nav-item @(CurrentPage == "my-process" ? "active" : "")">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                        <circle cx="5" cy="6" r="2" /><circle cx="5" cy="18" r="2" /><path d="M5 8v8M10 6h10M10 18h10M10 12h6" />
+                    </svg>
+                    <span>@Lang.T("common.nav.myProcess")</span>
                 </a>
             }
             <a href="/messages" class="bottom-nav-item @(CurrentPage == "messages" ? "active" : "")">
@@ -515,6 +531,7 @@
             "vacancies" => Lang.T("common.nav.vacancies"),
             "my-vacancies" => Lang.T("common.nav.myVacancies"),
             "my-applications" => Lang.T("common.nav.myApplications"),
+            "my-process" => Lang.T("common.nav.myProcess"),
             "verified-applicants" => "Postulantes verificados",
             "profile" => Lang.T("common.nav.profile"),
             "messages" => Lang.T("common.nav.messages"),

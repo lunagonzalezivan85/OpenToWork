@@ -3,6 +3,7 @@ using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
 using OpenToWork.Models.Entities;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.Core.Services;
 
@@ -90,6 +91,62 @@ public class CandidateService : ICandidateService
     {
         return await _context.PT_Candidates
             .AnyAsync(c => c.SCUserId == userId && c.WizardCompleted && !c.IsDeleted);
+    }
+
+    /// <summary>Proceso del propio candidato para el portal: etapa del reclutamiento, empresas a las que
+    /// Trato Directo lo presento y plan. Nunca expone notas internas, reclutador ni motivo de rechazo.</summary>
+    public async Task<CandidateProcessDto> GetMyProcessAsync(Guid userId)
+    {
+        var result = new CandidateProcessDto();
+
+        var candidate = await _context.PT_Candidates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.SCUserId == userId && !c.IsDeleted);
+        if (candidate != null)
+        {
+            result.PlanTier = candidate.PlanTier;
+            result.PlanExpiresAt = candidate.PlanExpiresAt;
+            result.PlanIsActive = candidate.PlanTier != CandidatePlanTier.Free && PlanCalculator.IsActive(candidate.PlanExpiresAt);
+        }
+
+        var recruitment = await _context.PT_CandidateRecruitments
+            .AsNoTracking()
+            .Include(r => r.Vacancy).ThenInclude(v => v!.Company)
+            .Include(r => r.StageLogs)
+            .FirstOrDefaultAsync(r => r.SCUserId == userId && !r.IsDeleted);
+        if (recruitment != null)
+        {
+            result.HasRecruitment = true;
+            result.CurrentStage = recruitment.CurrentStage;
+            result.StageEnteredAt = recruitment.StageEnteredAt;
+            result.VacancyTitle = recruitment.Vacancy?.Title;
+            result.VacancyCompanyName = recruitment.Vacancy?.Company?.Name;
+            result.StageReachedAt[(int)RecruitmentStage.Postulation] = recruitment.CreatedAt;
+            foreach (var log in recruitment.StageLogs.Where(l => !l.IsDeleted).OrderBy(l => l.CreatedAt))
+                result.StageReachedAt.TryAdd(log.ToStage, log.CreatedAt);
+        }
+
+        if (candidate != null)
+        {
+            result.Deliveries = await _context.PT_CandidateDeliveries
+                .AsNoTracking()
+                .Where(d => d.PT_CandidateId == candidate.Id && !d.IsDeleted)
+                .OrderByDescending(d => d.DeliveredAt)
+                .Select(d => new CandidateProcessDeliveryDto
+                {
+                    VacancyId = d.PT_VacancyId,
+                    VacancyTitle = d.Vacancy.Title,
+                    CompanyName = d.Company.Name,
+                    Location = d.Vacancy.Location,
+                    DeliveredAt = d.DeliveredAt,
+                    Status = d.Status,
+                    IncorporationDate = d.IncorporationDate,
+                    PlacementEnded = d.PlacementEndedAt != null
+                })
+                .ToListAsync();
+        }
+
+        return result;
     }
 
     private static CandidateDto MapToDto(PTCandidate c) => new()

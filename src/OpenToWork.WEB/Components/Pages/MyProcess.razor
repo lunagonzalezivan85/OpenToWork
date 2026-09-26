@@ -1,0 +1,184 @@
+@page "/my-process"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+@* Proceso del candidato con Trato Directo: etapa de verificacion, empresas a las que se le presento y plan.
+   Decisiones de Darwin (25-Sep): el candidato ve el nombre de la empresa y el puesto; un rechazo se muestra
+   solo como "No seleccionado", sin motivo. *@
+<PageTitle>@Lang.T("applications.process.title")</PageTitle>
+
+<div class="page-container">
+    <h1 class="mb-sm">@Lang.T("applications.process.title")</h1>
+    <p class="process-subtitle">@Lang.T("applications.process.subtitle")</p>
+
+    @if (IsLoading)
+    {
+        <p>@Lang.T("common.labels.loading")</p>
+    }
+    else if (Process == null)
+    {
+        <div class="ot-card text-center">
+            <p class="auth-subtitle">@Lang.T("errors.generic")</p>
+        </div>
+    }
+    else
+    {
+        <div class="process-layout">
+            <section class="ot-card process-card">
+                <h2 class="process-card-title">@Lang.T("applications.process.stagesTitle")</h2>
+
+                @if (!Process.HasRecruitment)
+                {
+                    <p class="process-empty">@Lang.T("applications.process.noRecruitment")</p>
+                }
+                else
+                {
+                    @if (!string.IsNullOrWhiteSpace(Process.VacancyTitle))
+                    {
+                        <p class="process-vacancy">
+                            <span>@Lang.T("applications.process.linkedVacancy"):</span>
+                            <strong>@Process.VacancyTitle</strong>@(string.IsNullOrWhiteSpace(Process.VacancyCompanyName) ? "" : $" · {Process.VacancyCompanyName}")
+                        </p>
+                    }
+
+                    @if (IsClosed)
+                    {
+                        <div class="process-closed">
+                            <strong>@Lang.T("applications.process.closed")</strong>
+                            <span>@Lang.T("applications.process.closedDesc")</span>
+                            <a href="/messages" class="ot-btn ot-btn--outline ot-btn--small">@Lang.T("common.nav.messages")</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <ol class="process-steps">
+                            @for (var stage = 0; stage <= (int)RecruitmentStage.ReadyToDeliver; stage++)
+                            {
+                                // "Perfil verificado" es la meta: al alcanzarla se muestra completada, no en curso.
+                                var state = stage < Process.CurrentStage || Process.CurrentStage == (int)RecruitmentStage.ReadyToDeliver
+                                    ? "done"
+                                    : stage == Process.CurrentStage ? "current" : "pending";
+                                <li class="process-step process-step--@state">
+                                    <span class="process-step-dot">@(state == "done" ? "✓" : (stage + 1).ToString())</span>
+                                    <div class="process-step-body">
+                                        <strong>@Lang.T($"applications.process.stage{stage}")</strong>
+                                        @if (state == "current" || stage == Process.CurrentStage)
+                                        {
+                                            <span>@Lang.T($"applications.process.stage{stage}Desc")</span>
+                                        }
+                                        @if (StageDate(stage) is DateTime reached && state != "pending")
+                                        {
+                                            <small>@Lang.T("applications.process.since") @reached.ToLocalTime().ToString("dd/MM/yyyy")</small>
+                                        }
+                                    </div>
+                                </li>
+                            }
+                        </ol>
+                    }
+                }
+            </section>
+
+            <section class="ot-card process-card">
+                <h2 class="process-card-title">@Lang.T("applications.process.deliveriesTitle")</h2>
+
+                @if (!Process.Deliveries.Any())
+                {
+                    <p class="process-empty">@Lang.T("applications.process.noDeliveries")</p>
+                }
+                else
+                {
+                    <ul class="process-deliveries">
+                        @foreach (var d in Process.Deliveries)
+                        {
+                            <li class="process-delivery">
+                                <div class="process-delivery-main">
+                                    <a href="/vacancies/@d.VacancyId" class="process-delivery-title">@d.VacancyTitle</a>
+                                    <span class="process-delivery-company">@d.CompanyName@(string.IsNullOrWhiteSpace(d.Location) ? "" : $" · {d.Location}")</span>
+                                    <small>
+                                        @Lang.T("applications.process.presentedOn") @d.DeliveredAt.ToLocalTime().ToString("dd/MM/yyyy")
+                                        @if (d.Status == (int)DeliveryStatus.Hired && d.IncorporationDate is DateTime start)
+                                        {
+                                            <text> · @Lang.T("applications.process.startsOn") @start.ToString("dd/MM/yyyy")</text>
+                                        }
+                                    </small>
+                                </div>
+                                <span class="process-badge process-badge--@DeliveryTone(d)">@DeliveryLabel(d)</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+
+            @if (Process.PlanFeatureEnabled)
+            {
+                <section class="ot-card process-card">
+                    <h2 class="process-card-title">@Lang.T("applications.process.planTitle")</h2>
+                    @if (Process.PlanTier != CandidatePlanTier.Free && Process.PlanExpiresAt is DateTime expires)
+                    {
+                        <p class="process-plan">
+                            <strong>Plan @Process.PlanTier</strong>
+                            <span class="process-badge process-badge--@(Process.PlanIsActive ? "success" : "danger")">
+                                @(Process.PlanIsActive ? Lang.T("applications.process.planActiveUntil") : Lang.T("applications.process.planExpiredOn"))
+                                @expires.ToLocalTime().ToString("dd/MM/yyyy")
+                            </span>
+                        </p>
+                        @if (!Process.PlanIsActive)
+                        {
+                            <a href="/plans" class="ot-btn ot-btn--primary ot-btn--small">@Lang.T("applications.process.planSee")</a>
+                        }
+                    }
+                    else
+                    {
+                        <p class="process-plan"><strong>@Lang.T("applications.process.planFree")</strong></p>
+                        <p class="process-empty">@Lang.T("applications.process.planFreeDesc")</p>
+                        <a href="/plans" class="ot-btn ot-btn--primary ot-btn--small">@Lang.T("applications.process.planSee")</a>
+                    }
+                </section>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private CandidateProcessDto? Process;
+    private bool IsLoading = true;
+
+    private bool IsClosed => Process?.CurrentStage == (int)RecruitmentStage.Dismissed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        // Pagina solo de candidatos: una empresa va a su propio panel.
+        if (await AuthApi.GetUserRoleAsync() == "1")
+        {
+            Nav.NavigateTo("/company-dashboard", replace: true);
+            return;
+        }
+
+        Process = await AuthApi.GetMyProcessAsync();
+        IsLoading = false;
+    }
+
+    private DateTime? StageDate(int stage) =>
+        Process != null && Process.StageReachedAt.TryGetValue(stage, out var d) ? d : null;
+
+    private string DeliveryLabel(CandidateProcessDeliveryDto d) =>
+        d.Status == (int)DeliveryStatus.Hired && d.PlacementEnded
+            ? Lang.T("applications.process.placementEnded")
+            : Lang.T($"applications.process.delivery{d.Status}");
+
+    private static string DeliveryTone(CandidateProcessDeliveryDto d) => (DeliveryStatus)d.Status switch
+    {
+        DeliveryStatus.Hired when d.PlacementEnded => "muted",
+        DeliveryStatus.Hired => "success",
+        DeliveryStatus.Interested => "accent",
+        DeliveryStatus.RejectedByCompany => "muted",
+        _ => "neutral"
+    };
+}

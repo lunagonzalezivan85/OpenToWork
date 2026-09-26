@@ -120,6 +120,25 @@
         </div>
     </div>
 
+    @if (Process != null)
+    {
+        <!-- Row: Mi proceso (resumen, enlaza a /my-process) -->
+        <div class="bento-grid">
+            <a href="/my-process" class="bento-card bento-card--full dash-process-card">
+                <div class="dash-process-info">
+                    <span class="bento-card-title">@Lang.T("common.nav.myProcess")</span>
+                    <strong>@ProcessStageLabel</strong>
+                    <span class="dash-process-desc">@Lang.T("applications.process.dashboardCardDesc")</span>
+                </div>
+                <div class="dash-process-stat">
+                    <span class="dash-indicator-value">@Process.Deliveries.Count</span>
+                    <span class="dash-indicator-label">@Lang.T("applications.process.deliveriesTitle")</span>
+                </div>
+                <span class="ot-btn ot-btn--outline ot-btn--small">@Lang.T("applications.process.dashboardCardLink")</span>
+            </a>
+        </div>
+    }
+
     @if (CandidateProfile != null)
     {
         <!-- Row: Tu Evaluacion (Fase 3, sub-fase 3.8) -->
@@ -306,6 +325,16 @@
 
 @code {
     private CandidateDto? CandidateProfile { get; set; }
+    private CandidateProcessDto? Process { get; set; }
+
+    // Etapa actual para la tarjeta "Mi proceso": 5 (descartado) se muestra como proceso finalizado.
+    private string ProcessStageLabel => Process switch
+    {
+        null => "",
+        { HasRecruitment: false } => Lang.T("applications.process.stage0"),
+        { CurrentStage: 5 } => Lang.T("applications.process.closed"),
+        _ => Lang.T($"applications.process.stage{Process.CurrentStage}")
+    };
     private List<TempVacancyDto> RecommendedVacancies { get; set; } = new();
     private bool ShowWizardPrompt { get; set; }
     private bool CandidatePlanFeatureEnabled { get; set; }
@@ -351,6 +380,7 @@
         }
 
         CandidateProfile = await AuthApi.GetCandidateProfileAsync();
+        Process = await AuthApi.GetMyProcessAsync();
 
         if (CandidateProfile != null)
         {

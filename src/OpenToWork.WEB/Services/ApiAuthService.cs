@@ -412,6 +412,14 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<List<ApplicationDto>>() ?? new();
     }
 
+    public async Task<CandidateProcessDto?> GetMyProcessAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/candidates/me/process");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<CandidateProcessDto>();
+    }
+
     public async Task<List<ApplicationDto>> GetApplicationsByVacancyAsync(Guid vacancyId)
     {
         await SetAuthHeaderAsync();

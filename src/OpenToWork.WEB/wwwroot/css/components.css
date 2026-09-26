@@ -5069,3 +5069,267 @@ a.cv-contact-item:hover {
         padding: var(--space-md);
     }
 }
+
+/* ===== Mi proceso (candidato) ===== */
+.process-subtitle {
+    color: var(--text-muted);
+    margin-bottom: var(--space-lg);
+}
+
+.process-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-lg);
+    align-items: start;
+}
+
+.process-card-title {
+    font-size: 1.05rem;
+    margin: 0 0 var(--space-md);
+    color: var(--text-primary);
+}
+
+.process-empty {
+    color: var(--text-muted);
+    margin: 0 0 var(--space-sm);
+}
+
+.process-vacancy {
+    margin: 0 0 var(--space-md);
+    color: var(--text-secondary);
+}
+
+.process-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.process-step {
+    display: flex;
+    gap: var(--space-md);
+    position: relative;
+    padding-bottom: var(--space-md);
+}
+
+.process-step:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 13px;
+    top: 28px;
+    bottom: 0;
+    width: 2px;
+    background: var(--card-border);
+}
+
+.process-step--done:not(:last-child)::before {
+    background: var(--success);
+}
+
+.process-step-dot {
+    flex: 0 0 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 2px solid var(--card-border);
+    color: var(--text-muted);
+    background: var(--card-bg);
+}
+
+.process-step--done .process-step-dot {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+}
+
+.process-step--current .process-step-dot {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.process-step-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 3px;
+}
+
+.process-step-body strong {
+    color: var(--text-primary);
+}
+
+.process-step--pending .process-step-body strong {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.process-step-body span {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.process-step-body small,
+.process-delivery small {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.process-closed {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    color: var(--text-secondary);
+}
+
+.process-closed strong {
+    color: var(--text-primary);
+}
+
+.process-deliveries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.process-delivery {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.process-delivery:last-child {
+    border-bottom: none;
+}
+
+.process-delivery-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.process-delivery-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.process-delivery-title:hover {
+    color: var(--accent-primary);
+}
+
+.process-delivery-company {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.process-badge {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+}
+
+.process-badge--neutral {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.process-badge--accent {
+    background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+    color: var(--accent-primary);
+}
+
+.process-badge--success {
+    background: color-mix(in srgb, var(--success) 15%, transparent);
+    color: var(--success);
+}
+
+.process-badge--danger {
+    background: color-mix(in srgb, var(--danger) 15%, transparent);
+    color: var(--danger);
+}
+
+.process-badge--muted {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+}
+
+.process-plan {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    margin: 0 0 var(--space-sm);
+    color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+    .process-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .process-delivery {
+        flex-direction: column;
+        gap: var(--space-xs);
+    }
+}
+
+.bento-card.dash-process-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-lg);
+    text-decoration: none;
+    color: inherit;
+}
+
+.dash-process-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.dash-process-info strong {
+    color: var(--text-primary);
+    font-size: 1.05rem;
+}
+
+.dash-process-desc {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.dash-process-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 160px;
+}
+
+@media (max-width: 640px) {
+    .bento-card.dash-process-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+    }
+
+    .dash-process-stat {
+        align-items: flex-start;
+        text-align: left;
+        max-width: none;
+    }
+}
