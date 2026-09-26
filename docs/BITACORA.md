@@ -460,3 +460,29 @@ El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` 
 - Revisión de seguridad puntos 5 (búsqueda de candidatos abierta a cualquier usuario) y 6 (controles de rol: candidato creando vacantes, empresa en `/candidates/me`).
 - Decidir si la empresa con candidato entregado debe ver su teléfono.
 - Aviso legal (LSSI) con los datos del titular, si se quiere publicar.
+
+---
+
+## Sesión: 25 Septiembre 2026, noche (portal del candidato)
+
+### Sin migraciones
+> Fotos de perfil en `storage/photos` (privado, ignorado por git), igual que los CV.
+
+### Cambios Realizados
+
+#### 1. "Mi proceso" (`/my-process`)
+- `CandidateService.GetMyProcessAsync` + `GET api/candidates/me/process` (`CandidateProcessDto`): etapa del reclutamiento y fecha en que alcanzó cada una (`PTRecruitmentStageLog`), vacante vinculada, entregas (`PTCandidateDelivery`) y plan (`PlanTier`/`PlanExpiresAt`, visible solo con `feature_candidate_priority_plan_enabled`).
+- Decisiones de Darwin: el candidato ve el nombre de la empresa y el puesto; rechazo = "No seleccionado" sin motivo; etapa 5 (descartado) = "proceso finalizado" con enlace a Mensajes.
+- Enlace en el menú, el desplegable y la barra inferior del candidato; tarjeta resumen en `/dashboard`.
+
+#### 2. Foto y nombre del candidato
+- Paso "Perfil" del asistente: subir/cambiar/quitar foto y editar Nombre/Apellidos (obligatorios).
+- `IProfilePhotoStorage`/`ProfilePhotoStorage`: valida la firma (JPG/PNG/WebP), máx. 2 MB, nombre `photo_{userId}_{ts}.ext` (el dueño va en el nombre, como los CV). Endpoints `GET/POST/DELETE api/profile/photo` y `GET api/admin/candidates/{userId}/photo`; portal y admin la muestran como data URL.
+- `PUT api/profile` acepta `FirstName`/`LastName` y deja de aceptar `ProfilePictureUrl`.
+
+#### 3. Panel
+- `.bento-grid + .bento-grid { margin-top }`: las filas del panel estaban pegadas.
+
+### Pendiente
+- Avisos por correo al candidato (entregado/contratado).
+- Recargar `/profile` redirige al login aunque haya sesión (bug previo).

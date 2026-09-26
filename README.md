@@ -819,7 +819,7 @@ Los 2 items que dependian de Fase 3 quedaron resueltos el 01-Sep-2026 (ver sub-f
 - [x] Vidriera de planes Basic/Premium/Platinum (`PT_Plans`, `Audience=Company`) conectada a `/plans` — **construido 21-Sep**, detras de flag `feature_company_plans_enabled` (encendido por defecto). Sigue faltando el checkout real (el CRM sigue vendiendo por posicion via Precios y Niveles de Precio, no por suscripcion) — ver "Observaciones para Darwin / Dsiezar" punto 4
 - [x] Plan de Prioridad para Candidatos — **construido 21-Sep** como 3 niveles (Free/Basic 5.99€/Premium 9.99€, `PTCandidate.PlanTier`), con boost real en el ranking de matching, detras de flag `feature_candidate_priority_plan_enabled` (apagado por defecto). Nivel asignado a mano por un admin (no hay checkout) — ver "Observaciones para Darwin / Dsiezar" punto 4
 - [ ] Checkout/pasarela de pagos real para ambos planes de arriba — sigue sin existir (Fase 7)
-- [ ] Terminar el flujo del candidato en el panel administrativo — pedido de Darwin (21-Sep). **Avance 24-Sep**: respuesta de la empresa registrable desde el admin, estado "Colocado" (bloquea re-entregas, columna propia en el pipeline) y estado de entregas visible en pipeline/consola/perfil — ver `docs/BITACORA.md`, sesion 22-24 Sep. **Avance 25-Sep**: historial de entregas con motivo de descarte y aviso de candidato "Quemado"; mensajeria real candidato/empresa <-> Trato Directo. Falta: vista del proceso y del plan en el portal del candidato, avisos por correo al candidato (entregado/contratado)
+- [ ] Terminar el flujo del candidato en el panel administrativo — pedido de Darwin (21-Sep). **Avance 24-Sep**: respuesta de la empresa registrable desde el admin, estado "Colocado" (bloquea re-entregas, columna propia en el pipeline) y estado de entregas visible en pipeline/consola/perfil — ver `docs/BITACORA.md`, sesion 22-24 Sep. **Avance 25-Sep**: historial de entregas con motivo de descarte y aviso de candidato "Quemado"; mensajeria real candidato/empresa <-> Trato Directo. **Avance 25-Sep noche**: vista del proceso y del plan en el portal del candidato (`/my-process`). Falta: avisos por correo al candidato (entregado/contratado), documentos pedidos por el reclutador desde el portal del candidato
 - [ ] Entidad `COSubscription` — CompanyId, Plan, Status, StartDate, EndDate, MonthlyFee
 - [ ] Entidad `COSearchHistory` — CompanyId, Filters, ResultCount, SearchedAt
 - [ ] Entidad `COCandidateView` — CompanyId, CandidateId, ScoreSnapshot, ViewedAt
@@ -1220,6 +1220,17 @@ Commits en `main`: `5bddf5a`, `76d33fe`, `0b4cbfc`, `8c26975`, `bff541d`, `c1b80
 - **Paginas legales del portal**: `/privacy` (politica de privacidad RGPD/LOPDGDD) y `/terms` (terminos y condiciones, coherentes con la clausula 12 del contrato). Texto generico: **debe revisarlo un asesor legal**. Nuevo campo "Correo de privacidad" en Datos de la Empresa (endpoint publico `api/legal/identity`, sin el DNI del representante).
 
 Commits en `main`: `dd79c1c`, `a328e54`, `a5669ba`, `edd28fb`, `680bf34`, `baf9934`, `20a23e7`, `07e9037`, `e070bbb`, `f6f72e4`.
+
+### 10. Aviso para Ivan: portal del candidato — "Mi proceso", foto y nombre (25 Sep, noche)
+
+**Sin migraciones.** Las fotos de perfil se guardan en `storage/photos` (misma carpeta privada que los CV, ignorada por git).
+
+- **"Mi proceso"** (`/my-process`, nuevo en el menu, el desplegable y la barra inferior del candidato; tarjeta resumen en `/dashboard`): etapa de verificacion con fechas, empresas a las que Trato Directo lo presento (puesto, empresa, fecha y estado) y su plan con vencimiento (solo con `feature_candidate_priority_plan_enabled`). **Decisiones de Darwin**: el candidato ve el nombre de la empresa; un rechazo se muestra solo como "No seleccionado", sin motivo; un descarte del proceso se muestra como "proceso finalizado". Endpoint `GET api/candidates/me/process` (solo datos del propio usuario, sin notas internas ni reclutador).
+- **Foto y nombre completo**: en "Mi Perfil", paso "Perfil", el candidato puede subir/cambiar/quitar su foto (JPG, PNG o WebP, max 2 MB, validada por la firma del archivo) y editar Nombre y Apellidos (antes no habia donde). La foto es privada: solo la ven el candidato (`GET/POST/DELETE api/profile/photo`) y el equipo de TD en la ficha del candidato del admin (`GET api/admin/candidates/{userId}/photo`); se muestra como data URL. `PUT api/profile` ya no acepta `ProfilePictureUrl`.
+- **Panel**: las filas del `/dashboard` quedaban pegadas; ahora tienen la misma separacion que las tarjetas (`.bento-grid + .bento-grid` en `bento-grid.css`, afecta tambien al panel de empresa).
+- **Bug conocido, sin tocar**: recargar `/profile` (o abrirlo por URL) redirige al login aunque haya sesion; entrando desde el menu funciona.
+
+Commits en `main`: `1ed8d4d`, `ffdeb01`, `baa8701`.
 
 ---
 
