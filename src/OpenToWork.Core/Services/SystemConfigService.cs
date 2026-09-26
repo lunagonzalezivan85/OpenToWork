@@ -52,9 +52,16 @@ public class SystemConfigService : ISystemConfigService
         _auditLog = auditLog;
     }
 
+    /// <summary>Claves cuyo valor es un secreto (passwords, API keys). El listado general las
+    /// devuelve con Value = null - solo los endpoints dedicados las exponen, y esos no devuelven
+    /// el valor jamas (write-only). OJO: UpdateBulkAsync sigue permitiendo escribirlas.</summary>
+    private static bool IsSensitiveKey(string key) =>
+        key.EndsWith("_password", StringComparison.OrdinalIgnoreCase) ||
+        key.EndsWith("_api_key", StringComparison.OrdinalIgnoreCase);
+
     public async Task<List<SystemConfigDto>> GetAllAsync()
     {
-        return await _context.SY_SystemConfig
+        var items = await _context.SY_SystemConfig
             .Where(c => !c.IsDeleted && c.IsActive)
             .OrderBy(c => c.Category).ThenBy(c => c.Key)
             .Select(c => new SystemConfigDto
@@ -66,6 +73,11 @@ public class SystemConfigService : ISystemConfigService
                 Description = c.Description
             })
             .ToListAsync();
+
+        foreach (var item in items.Where(i => IsSensitiveKey(i.Key)))
+            item.Value = null;
+
+        return items;
     }
 
     public async Task UpdateBulkAsync(UpdateSystemConfigDto dto, Guid staffId)
