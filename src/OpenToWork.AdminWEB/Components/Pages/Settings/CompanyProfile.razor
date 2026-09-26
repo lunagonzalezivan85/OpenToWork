@@ -115,23 +115,35 @@ else
                 </label>
                 <div class="ot-input-group">
                     <label class="ot-input-label">@Lang.T("admin.aiSettings.provider")</label>
-                    <InputSelect class="ot-input-field" @bind-Value="AiForm.Provider">
+                    <InputSelect class="ot-input-field" @bind-Value="AiForm.Provider" @bind:after="OnAiProviderChanged">
                         <option value="">@Lang.T("admin.aiSettings.providerNone")</option>
-                        <option value="openai">OpenAI</option>
-                        <option value="anthropic">Anthropic (Claude)</option>
                         <option value="gemini">Google Gemini</option>
-                        <option value="deepseek">DeepSeek</option>
-                        <option value="openrouter">OpenRouter</option>
+                        <option value="groq">Groq</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Claude (Anthropic)</option>
                         <option value="custom">@Lang.T("admin.aiSettings.providerCustom")</option>
                     </InputSelect>
                 </div>
                 <div class="ot-input-group">
                     <label class="ot-input-label">@Lang.T("admin.aiSettings.baseUrl")</label>
-                    <InputText class="ot-input-field" @bind-Value="AiForm.BaseUrl" placeholder="https://api.openai.com/v1" />
+                    <InputText class="ot-input-field" @bind-Value="AiForm.BaseUrl" placeholder="@AiBaseUrlPlaceholder" />
                 </div>
                 <div class="ot-input-group">
                     <label class="ot-input-label">@Lang.T("admin.aiSettings.model")</label>
-                    <InputText class="ot-input-field" @bind-Value="AiForm.Model" placeholder="gpt-4o-mini" />
+                    @if (AiModelOptions.Count > 0)
+                    {
+                        <InputSelect class="ot-input-field" @bind-Value="AiForm.Model">
+                            <option value="">@Lang.T("admin.aiSettings.modelSelect")</option>
+                            @foreach (var m in AiModelOptions)
+                            {
+                                <option value="@m">@m</option>
+                            }
+                        </InputSelect>
+                    }
+                    else
+                    {
+                        <InputText class="ot-input-field" @bind-Value="AiForm.Model" placeholder="@Lang.T("admin.aiSettings.modelFreeHint")" />
+                    }
                 </div>
                 <div class="ot-input-group">
                     <label class="ot-input-label">@Lang.T("admin.aiSettings.apiKey")</label>
@@ -173,6 +185,42 @@ else
 
     private CompanyProfileForm Form = new();
     private AiSettingsDto AiForm = new();
+
+    private static readonly Dictionary<string, string[]> AiModelsByProvider = new()
+    {
+        ["gemini"] = new[] { "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash" },
+        ["groq"] = new[] { "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3-32b", "moonshotai/kimi-k2-instruct" },
+        ["openai"] = new[] { "gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o-mini" },
+        ["anthropic"] = new[] { "claude-sonnet-4-5", "claude-opus-4-1", "claude-haiku-4-5", "claude-sonnet-4" }
+    };
+
+    private List<string> AiModelOptions
+    {
+        get
+        {
+            if (!AiModelsByProvider.TryGetValue(AiForm.Provider, out var models))
+                return new List<string>();
+
+            var list = models.ToList();
+            if (!string.IsNullOrWhiteSpace(AiForm.Model) && !list.Contains(AiForm.Model))
+                list.Insert(0, AiForm.Model);
+            return list;
+        }
+    }
+
+    private string AiBaseUrlPlaceholder => AiForm.Provider switch
+    {
+        "gemini" => "https://generativelanguage.googleapis.com",
+        "groq" => "https://api.groq.com/openai/v1",
+        "openai" => "https://api.openai.com/v1",
+        "anthropic" => "https://api.anthropic.com/v1",
+        _ => Lang.T("admin.aiSettings.baseUrlCustomHint")
+    };
+
+    private void OnAiProviderChanged()
+    {
+        AiForm.Model = string.Empty;
+    }
 
     private static string NonEmpty(string value) => string.IsNullOrWhiteSpace(value) ? "[●]" : value;
 
