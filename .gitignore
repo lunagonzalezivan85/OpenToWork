@@ -48,3 +48,7 @@ logs/
 storage/
 src/*/wwwroot/uploads/
 src/*/uploads/
+
+# Despliegue: paquetes generados y configuracion de produccion (solo en el servidor)
+deploy/out/
+appsettings.Production.json

@@ -1,0 +1,6 @@
+{
+  "AllowedHosts": "__DOMAIN__;www.__DOMAIN__",
+  "ApiSettings": {
+    "BaseUrl": "http://127.0.0.1:5000/"
+  }
+}

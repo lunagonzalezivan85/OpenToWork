@@ -43,6 +43,9 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Fuera de Development exige claves y conexion propias (ver ProductionConfigGuard).
+OpenToWork.Core.Extensions.ProductionConfigGuard.Validate(builder.Configuration, builder.Environment.IsDevelopment());
+
 builder.Services.AddDatabaseContext(builder.Configuration);
 builder.Services.AddCoreServices(builder.Configuration);
 

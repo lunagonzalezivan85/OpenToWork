@@ -1,0 +1,22 @@
+{
+  "AllowedHosts": "localhost;127.0.0.1",
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=127.0.0.1;Port=3306;Database=TratoDirectoDb;User=tratodirecto;Password=__DB_PASSWORD__;CharSet=utf8mb4;ConnectionTimeout=60;"
+  },
+  "Jwt": {
+    "Key": "__JWT_ADMIN__"
+  },
+  "Storage": {
+    "Root": "__STORAGE__"
+  },
+  "Portal": {
+    "BaseUrl": "https://__DOMAIN__/"
+  },
+  "Gemini": {
+    "ApiKey": ""
+  },
+  "GoogleSearch": {
+    "ApiKey": "",
+    "SearchEngineId": ""
+  }
+}
