@@ -299,7 +299,8 @@ Rules:
                 continue;
             }
 
-            _logger.LogError("AI API error: {StatusCode} - {Response}", response.StatusCode, responseText);
+            // El body del error puede contener datos del CV enviado al proveedor - solo se loggea el status.
+            _logger.LogError("AI API error: {StatusCode}", response.StatusCode);
             throw new InvalidOperationException($"AI API returned {response.StatusCode}");
         }
 

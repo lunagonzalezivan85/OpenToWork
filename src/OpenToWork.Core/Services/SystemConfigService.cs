@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
@@ -8,8 +9,11 @@ namespace OpenToWork.Core.Services;
 
 public class SystemConfigService : ISystemConfigService
 {
+    private const string EncPrefix = "enc:";
+
     private readonly AppDbContext _context;
     private readonly IAuditLogService _auditLog;
+    private readonly IDataProtector _secrets;
 
     public const string CompanyLegalName = "company_legal_name";
     public const string CompanyTaxId = "company_tax_id";
@@ -46,10 +50,24 @@ public class SystemConfigService : ISystemConfigService
     public const string AiAdminSuggestionsEnabled = "ai_admin_suggestions_enabled";
     public const string AiMatchingEnabled = "ai_matching_enabled";
 
-    public SystemConfigService(AppDbContext context, IAuditLogService auditLog)
+    public SystemConfigService(AppDbContext context, IAuditLogService auditLog, IDataProtectionProvider dataProtection)
     {
         _context = context;
         _auditLog = auditLog;
+        _secrets = dataProtection.CreateProtector("SY_SystemConfig.Secrets");
+    }
+
+    /// <summary>Los valores de claves sensibles (sufijo _password/_api_key) se guardan cifrados
+    /// con prefijo "enc:". Valores legacy sin prefijo se leen como texto plano y se cifran en
+    /// la proxima escritura.</summary>
+    private string ProtectValue(string key, string value) =>
+        IsSensitiveKey(key) && !string.IsNullOrEmpty(value) ? EncPrefix + _secrets.Protect(value) : value;
+
+    private string UnprotectValue(string? value)
+    {
+        if (string.IsNullOrEmpty(value) || !value.StartsWith(EncPrefix)) return value ?? string.Empty;
+        try { return _secrets.Unprotect(value[EncPrefix.Length..]); }
+        catch (System.Security.Cryptography.CryptographicException) { return string.Empty; }
     }
 
     /// <summary>Claves cuyo valor es un secreto (passwords, API keys). El listado general las
@@ -91,7 +109,7 @@ public class SystemConfigService : ISystemConfigService
         {
             var config = configs.FirstOrDefault(c => c.Key == item.Key);
             if (config == null) continue;
-            config.Value = item.Value;
+            config.Value = ProtectValue(item.Key, item.Value ?? "");
             config.UpdatedAt = DateTime.UtcNow;
             config.UpdatedBy = staffId;
         }
@@ -139,7 +157,7 @@ public class SystemConfigService : ISystemConfigService
             Host = Get(SmtpHost),
             Port = int.TryParse(Get(SmtpPort), out var port) ? port : 587,
             Username = Get(SmtpUsername),
-            Password = includePassword ? Get(SmtpPassword) : string.Empty,
+            Password = includePassword ? UnprotectValue(Get(SmtpPassword)) : string.Empty,
             UseSsl = !bool.TryParse(Get(SmtpUseSsl), out var useSsl) || useSsl,
             FromAddress = Get(SmtpFromAddress),
             FromName = string.IsNullOrWhiteSpace(Get(SmtpFromName)) ? "Trato Directo" : Get(SmtpFromName),
@@ -175,7 +193,7 @@ public class SystemConfigService : ISystemConfigService
                 _context.SY_SystemConfig.Add(new SYSystemConfig
                 {
                     Key = key,
-                    Value = value,
+                    Value = ProtectValue(key, value),
                     Category = SmtpCategory,
                     IsActive = true,
                     CreatedBy = staffId
@@ -183,7 +201,7 @@ public class SystemConfigService : ISystemConfigService
             }
             else
             {
-                config.Value = value;
+                config.Value = ProtectValue(key, value);
                 config.UpdatedAt = DateTime.UtcNow;
                 config.UpdatedBy = staffId;
             }
@@ -211,7 +229,7 @@ public class SystemConfigService : ISystemConfigService
             Provider = Get(AiProvider),
             BaseUrl = Get(AiBaseUrl),
             Model = Get(AiModel),
-            ApiKey = includeApiKey ? Get(AiApiKey) : string.Empty,
+            ApiKey = includeApiKey ? UnprotectValue(Get(AiApiKey)) : string.Empty,
             HasApiKey = !string.IsNullOrWhiteSpace(Get(AiApiKey)),
             Enabled = Flag(AiEnabled),
             CvAnalysisEnabled = Flag(AiCvAnalysisEnabled),
@@ -250,7 +268,7 @@ public class SystemConfigService : ISystemConfigService
                 _context.SY_SystemConfig.Add(new SYSystemConfig
                 {
                     Key = key,
-                    Value = value,
+                    Value = ProtectValue(key, value),
                     Category = AiCategory,
                     IsActive = true,
                     CreatedBy = staffId
@@ -258,7 +276,7 @@ public class SystemConfigService : ISystemConfigService
             }
             else
             {
-                config.Value = value;
+                config.Value = ProtectValue(key, value);
                 config.UpdatedAt = DateTime.UtcNow;
                 config.UpdatedBy = staffId;
             }

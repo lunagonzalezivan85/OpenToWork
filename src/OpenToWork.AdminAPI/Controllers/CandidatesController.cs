@@ -137,6 +137,12 @@ public class CandidatesController : AdminControllerBase
             fileBytes = ms.ToArray();
         }
 
+        // Magic bytes: el ContentType lo declara el cliente y es falsificable - el PDF real
+        // siempre empieza con "%PDF-".
+        if (fileBytes.Length < 5 || fileBytes[0] != 0x25 || fileBytes[1] != 0x50 ||
+            fileBytes[2] != 0x44 || fileBytes[3] != 0x46 || fileBytes[4] != 0x2D)
+            return BadRequest("El archivo no es un PDF valido");
+
         var result = await _registrationService.RegisterFromCvAsync(fileBytes, file.FileName, file.ContentType, AdminId);
 
         if (!result.Success)
