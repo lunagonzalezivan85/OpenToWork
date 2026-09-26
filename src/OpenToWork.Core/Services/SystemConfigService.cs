@@ -35,6 +35,17 @@ public class SystemConfigService : ISystemConfigService
     public const string CandidatePriorityPlanEnabled = "feature_candidate_priority_plan_enabled";
     public const string CompanyPlansEnabled = "feature_company_plans_enabled";
 
+    public const string AiCategory = "Ai";
+    public const string AiProvider = "ai_provider";
+    public const string AiBaseUrl = "ai_base_url";
+    public const string AiModel = "ai_model";
+    public const string AiApiKey = "ai_api_key";
+    public const string AiEnabled = "ai_enabled";
+    public const string AiCvAnalysisEnabled = "ai_cv_analysis_enabled";
+    public const string AiCommandBarEnabled = "ai_command_bar_enabled";
+    public const string AiAdminSuggestionsEnabled = "ai_admin_suggestions_enabled";
+    public const string AiMatchingEnabled = "ai_matching_enabled";
+
     public SystemConfigService(AppDbContext context, IAuditLogService auditLog)
     {
         _context = context;
@@ -168,6 +179,81 @@ public class SystemConfigService : ISystemConfigService
 
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(staffId, "UpdateSmtpSettings", "SY_SystemConfig", null, null, null);
+    }
+
+    public async Task<AiSettingsDto> GetAiSettingsAsync() => await BuildAiSettingsAsync(includeApiKey: false);
+
+    public async Task<AiSettingsDto> GetAiCredentialsAsync() => await BuildAiSettingsAsync(includeApiKey: true);
+
+    private async Task<AiSettingsDto> BuildAiSettingsAsync(bool includeApiKey)
+    {
+        var values = await _context.SY_SystemConfig
+            .Where(c => !c.IsDeleted && c.Category == AiCategory)
+            .ToDictionaryAsync(c => c.Key, c => c.Value);
+
+        string Get(string key) => values.GetValueOrDefault(key) ?? string.Empty;
+        bool Flag(string key) => bool.TryParse(Get(key), out var b) && b;
+
+        return new AiSettingsDto
+        {
+            Provider = Get(AiProvider),
+            BaseUrl = Get(AiBaseUrl),
+            Model = Get(AiModel),
+            ApiKey = includeApiKey ? Get(AiApiKey) : string.Empty,
+            HasApiKey = !string.IsNullOrWhiteSpace(Get(AiApiKey)),
+            Enabled = Flag(AiEnabled),
+            CvAnalysisEnabled = Flag(AiCvAnalysisEnabled),
+            CommandBarEnabled = Flag(AiCommandBarEnabled),
+            AdminSuggestionsEnabled = Flag(AiAdminSuggestionsEnabled),
+            MatchingEnabled = Flag(AiMatchingEnabled)
+        };
+    }
+
+    public async Task UpdateAiSettingsAsync(AiSettingsDto dto, Guid staffId)
+    {
+        var items = new Dictionary<string, string>
+        {
+            [AiProvider] = dto.Provider.Trim(),
+            [AiBaseUrl] = dto.BaseUrl.Trim(),
+            [AiModel] = dto.Model.Trim(),
+            [AiEnabled] = dto.Enabled.ToString(),
+            [AiCvAnalysisEnabled] = dto.CvAnalysisEnabled.ToString(),
+            [AiCommandBarEnabled] = dto.CommandBarEnabled.ToString(),
+            [AiAdminSuggestionsEnabled] = dto.AdminSuggestionsEnabled.ToString(),
+            [AiMatchingEnabled] = dto.MatchingEnabled.ToString()
+        };
+        if (!string.IsNullOrWhiteSpace(dto.ApiKey))
+            items[AiApiKey] = dto.ApiKey;
+
+        var keys = items.Keys.ToList();
+        var existing = await _context.SY_SystemConfig
+            .Where(c => !c.IsDeleted && c.Category == AiCategory && keys.Contains(c.Key))
+            .ToListAsync();
+
+        foreach (var (key, value) in items)
+        {
+            var config = existing.FirstOrDefault(c => c.Key == key);
+            if (config == null)
+            {
+                _context.SY_SystemConfig.Add(new SYSystemConfig
+                {
+                    Key = key,
+                    Value = value,
+                    Category = AiCategory,
+                    IsActive = true,
+                    CreatedBy = staffId
+                });
+            }
+            else
+            {
+                config.Value = value;
+                config.UpdatedAt = DateTime.UtcNow;
+                config.UpdatedBy = staffId;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(staffId, "UpdateAiSettings", "SY_SystemConfig", null, null, null);
     }
 
     public async Task<bool> GetCandidatePriorityPlanEnabledAsync()

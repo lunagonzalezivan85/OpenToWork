@@ -496,6 +496,23 @@ public class AdminAuthApiService
         }
     }
 
+    // ===== IA / Proveedor de analisis =====
+
+    public async Task<AiSettingsDto?> GetAiSettingsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/system-config/ai");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<AiSettingsDto>();
+    }
+
+    public async Task<(AiSettingsDto? Result, string? Error)> UpdateAiSettingsAsync(AiSettingsDto dto)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync("api/admin/system-config/ai", dto);
+        return await ReadResultAsync<AiSettingsDto>(response);
+    }
+
     private static async Task<(T? Result, string? Error)> ReadResultAsync<T>(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)

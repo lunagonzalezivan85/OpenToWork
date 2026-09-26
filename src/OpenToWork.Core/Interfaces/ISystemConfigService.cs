@@ -14,6 +14,14 @@ public interface ISystemConfigService
     /// interno de IEmailService al enviar - nunca exponer via controller/API.</summary>
     Task<SmtpSettingsDto> GetSmtpCredentialsAsync();
 
+    /// <summary>Configuracion del proveedor de IA (sin la API key - HasApiKey indica si existe una).</summary>
+    Task<AiSettingsDto> GetAiSettingsAsync();
+    Task UpdateAiSettingsAsync(AiSettingsDto dto, Guid staffId);
+
+    /// <summary>Igual que GetAiSettingsAsync pero incluye la API key real. Solo para uso interno de los
+    /// servicios que consumen IA (analisis de CV, command bar, etc.) - nunca exponer via controller/API.</summary>
+    Task<AiSettingsDto> GetAiCredentialsAsync();
+
     /// <summary>Flag apagado por defecto: mientras este en false, los planes de candidato
     /// (audience=Candidate) no se muestran en el portal publico aunque existan filas activas.</summary>
     Task<bool> GetCandidatePriorityPlanEnabledAsync();

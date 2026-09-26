@@ -93,6 +93,71 @@ else
     </EditForm>
 
     <p class="admin-page-header-subtitle" style="margin-top: var(--space-md);">@Lang.T("admin.companyProfile.usageNote")</p>
+
+    <h2 style="margin-top: var(--space-lg);">@Lang.T("admin.aiSettings.sectionTitle")</h2>
+    <p class="admin-page-header-subtitle">@Lang.T("admin.aiSettings.subtitle")</p>
+
+    @if (AiSavedMessage)
+    {
+        <p style="color: var(--success); font-size: 0.85rem;">@Lang.T("admin.companyProfile.saved")</p>
+    }
+    @if (AiError != null)
+    {
+        <p style="color: var(--danger); font-size: 0.85rem;">@AiError</p>
+    }
+
+    <EditForm Model="AiForm" OnValidSubmit="SaveAi">
+        <div class="admin-chart-grid">
+            <div class="admin-chart-card">
+                <span class="admin-chart-card-title">@Lang.T("admin.aiSettings.sectionProvider")</span>
+                <label style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: var(--space-sm);">
+                    <input type="checkbox" @bind="AiForm.Enabled" /> @Lang.T("admin.aiSettings.enabled")
+                </label>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.aiSettings.provider")</label>
+                    <InputSelect class="ot-input-field" @bind-Value="AiForm.Provider">
+                        <option value="">@Lang.T("admin.aiSettings.providerNone")</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="gemini">Google Gemini</option>
+                        <option value="deepseek">DeepSeek</option>
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="custom">@Lang.T("admin.aiSettings.providerCustom")</option>
+                    </InputSelect>
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.aiSettings.baseUrl")</label>
+                    <InputText class="ot-input-field" @bind-Value="AiForm.BaseUrl" placeholder="https://api.openai.com/v1" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.aiSettings.model")</label>
+                    <InputText class="ot-input-field" @bind-Value="AiForm.Model" placeholder="gpt-4o-mini" />
+                </div>
+                <div class="ot-input-group">
+                    <label class="ot-input-label">@Lang.T("admin.aiSettings.apiKey")</label>
+                    <InputText type="password" class="ot-input-field" @bind-Value="AiForm.ApiKey" placeholder="@(AiForm.HasApiKey ? Lang.T("admin.aiSettings.apiKeySaved") : "sk-...")" />
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">@Lang.T("admin.aiSettings.apiKeyHint")</span>
+                </div>
+            </div>
+            <div class="admin-chart-card">
+                <span class="admin-chart-card-title">@Lang.T("admin.aiSettings.sectionUsage")</span>
+                <p class="admin-page-header-subtitle" style="margin: 0 0 var(--space-sm) 0;">@Lang.T("admin.aiSettings.usageHint")</p>
+                <label style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: var(--space-sm);">
+                    <input type="checkbox" @bind="AiForm.CvAnalysisEnabled" /> @Lang.T("admin.aiSettings.cvAnalysis")
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: var(--space-sm);">
+                    <input type="checkbox" @bind="AiForm.CommandBarEnabled" /> @Lang.T("admin.aiSettings.commandBar")
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: var(--space-sm);">
+                    <input type="checkbox" @bind="AiForm.AdminSuggestionsEnabled" /> @Lang.T("admin.aiSettings.adminSuggestions")
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.4rem;">
+                    <input type="checkbox" @bind="AiForm.MatchingEnabled" /> @Lang.T("admin.aiSettings.matching")
+                </label>
+            </div>
+        </div>
+        <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium" style="margin-top: var(--space-md);" disabled="@IsSavingAi">@Lang.T("admin.common.save")</button>
+    </EditForm>
 }
 
 @code {
@@ -102,7 +167,12 @@ else
     private bool SavedMessage;
     private string? Error;
 
+    private bool IsSavingAi;
+    private bool AiSavedMessage;
+    private string? AiError;
+
     private CompanyProfileForm Form = new();
+    private AiSettingsDto AiForm = new();
 
     private static string NonEmpty(string value) => string.IsNullOrWhiteSpace(value) ? "[●]" : value;
 
@@ -115,9 +185,36 @@ else
         IsSuperAdmin = int.TryParse(staffRoleRaw, out var role) && role == (int)AdminStaffRole.SuperAdmin;
 
         if (IsSuperAdmin)
+        {
             await LoadAsync();
+            await LoadAiAsync();
+        }
 
         IsLoading = false;
+    }
+
+    private async Task LoadAiAsync()
+    {
+        AiForm = await AuthApi.GetAiSettingsAsync() ?? new AiSettingsDto();
+    }
+
+    private async Task SaveAi()
+    {
+        AiError = null;
+        AiSavedMessage = false;
+        IsSavingAi = true;
+
+        var (result, error) = await AuthApi.UpdateAiSettingsAsync(AiForm);
+        IsSavingAi = false;
+
+        if (result == null)
+        {
+            AiError = error ?? Lang.T("admin.common.errorGeneric");
+            return;
+        }
+
+        AiForm = result;
+        AiSavedMessage = true;
     }
 
     private async Task LoadAsync()
