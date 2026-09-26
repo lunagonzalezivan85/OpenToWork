@@ -22,6 +22,7 @@ public class CandidatesController : AdminControllerBase
     private readonly IAdminApplicationService _applicationService;
     private readonly ICompatibilityService _compatibilityService;
     private readonly ICvStorage _cvStorage;
+    private readonly IProfilePhotoStorage _photoStorage;
     private readonly IProfileService _profileService;
 
     public CandidatesController(
@@ -35,6 +36,7 @@ public class CandidatesController : AdminControllerBase
         IAdminApplicationService applicationService,
         ICompatibilityService compatibilityService,
         ICvStorage cvStorage,
+        IProfilePhotoStorage photoStorage,
         IProfileService profileService)
     {
         _candidateService = candidateService;
@@ -47,7 +49,16 @@ public class CandidatesController : AdminControllerBase
         _applicationService = applicationService;
         _compatibilityService = compatibilityService;
         _cvStorage = cvStorage;
+        _photoStorage = photoStorage;
         _profileService = profileService;
+    }
+
+    /// <summary>Foto de perfil del candidato para el equipo de TD (almacenamiento privado).</summary>
+    [HttpGet("{userId:guid}/photo")]
+    public async Task<IActionResult> GetPhoto(Guid userId)
+    {
+        var photo = _photoStorage.ResolveForOwner(await _profileService.GetProfilePictureAsync(userId), userId);
+        return photo == null ? NotFound() : PhysicalFile(photo.Value.Path, photo.Value.ContentType);
     }
 
     /// <summary>CV del candidato para el equipo de TD (carpeta privada; antes era un archivo publico

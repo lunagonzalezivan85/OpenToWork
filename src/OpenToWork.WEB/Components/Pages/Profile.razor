@@ -462,6 +462,52 @@
                         <h2 class="wizard-step-title">@Lang.T("common.wizard.step7Title")</h2>
                         <p class="wizard-step-desc">@Lang.T("common.wizard.step7Desc")</p>
 
+                        <!-- Foto y nombre completo -->
+                        <div class="profile-identity">
+                            <div class="profile-photo">
+                                <div class="profile-photo-preview">
+                                    @if (!string.IsNullOrEmpty(PhotoDataUrl))
+                                    {
+                                        <img src="@PhotoDataUrl" alt="@Lang.T("profile.photo.title")" />
+                                    }
+                                    else
+                                    {
+                                        <span>@UserInitials</span>
+                                    }
+                                </div>
+                                <div class="profile-photo-actions">
+                                    <label class="ot-btn ot-btn--outline ot-btn--small profile-photo-pick">
+                                        <InputFile OnChange="OnPhotoSelected" accept="image/jpeg,image/png,image/webp" disabled="@IsUploadingPhoto" />
+                                        @(IsUploadingPhoto ? Lang.T("profile.photo.uploading") : string.IsNullOrEmpty(PhotoDataUrl) ? Lang.T("profile.photo.upload") : Lang.T("profile.photo.change"))
+                                    </label>
+                                    @if (!string.IsNullOrEmpty(PhotoDataUrl))
+                                    {
+                                        <button type="button" class="ot-btn ot-btn--ghost ot-btn--small" @onclick="RemovePhoto">@Lang.T("profile.photo.remove")</button>
+                                    }
+                                    <small class="profile-photo-hint">@Lang.T("profile.photo.hint")</small>
+                                    @if (PhotoError != null)
+                                    {
+                                        <span class="wizard-cv-error">@PhotoError</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="wizard-form-grid wizard-form-grid--2 profile-identity-names">
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("profile.fields.firstName")</label>
+                                    <input class="wizard-input" @bind="EditFirstName" maxlength="100" autocomplete="given-name" />
+                                </div>
+                                <div class="wizard-form-field">
+                                    <label class="wizard-field-label">@Lang.T("profile.fields.lastName")</label>
+                                    <input class="wizard-input" @bind="EditLastName" maxlength="100" autocomplete="family-name" />
+                                </div>
+                            </div>
+                            @if (NameError != null)
+                            {
+                                <span class="wizard-cv-error">@NameError</span>
+                            }
+                        </div>
+
                         <div class="wizard-form-grid wizard-form-grid--2">
                             <div class="wizard-form-field">
                                 <label class="wizard-field-label">
@@ -581,6 +627,10 @@
                                 @Lang.T("common.buttons.save")
                             </button>
                         </div>
+                        @if (ProfileSaved)
+                        {
+                            <span class="wizard-cv-success">@Lang.T("profile.saved")</span>
+                        }
                     }
                 </div>
 
@@ -621,9 +671,9 @@
                     <div class="wizard-summary-header">
                         <div class="wizard-summary-header-banner"></div>
                         <div class="wizard-summary-avatar">
-                            @if (!string.IsNullOrEmpty(ProfileData.ProfilePictureUrl))
+                            @if (!string.IsNullOrEmpty(PhotoDataUrl))
                             {
-                                <img src="@ProfileData.ProfilePictureUrl" alt="avatar" class="wizard-summary-avatar-img" />
+                                <img src="@PhotoDataUrl" alt="avatar" class="wizard-summary-avatar-img" />
                             }
                             else
                             {
@@ -1054,7 +1104,60 @@
 
         ProfileData = await AuthApi.GetProfileAsync();
         if (ProfileData == null)
+        {
             Nav.NavigateTo("/login?returnUrl=/profile");
+            return;
+        }
+
+        EditFirstName = ProfileData.FirstName;
+        EditLastName = ProfileData.LastName;
+        if (!string.IsNullOrWhiteSpace(ProfileData.FirstName))
+            UserInitials = GetInitials($"{ProfileData.FirstName} {ProfileData.LastName}");
+        if (!string.IsNullOrEmpty(ProfileData.ProfilePictureUrl))
+            PhotoDataUrl = await AuthApi.GetMyPhotoDataUrlAsync();
+    }
+
+    // --- Foto y nombre (paso "Perfil") ---
+    // La foto esta en almacenamiento privado del API: se muestra como data URL.
+    private string? PhotoDataUrl { get; set; }
+    private string EditFirstName { get; set; } = "";
+    private string EditLastName { get; set; } = "";
+    private bool IsUploadingPhoto { get; set; }
+    private string? PhotoError { get; set; }
+    private string? NameError { get; set; }
+    private bool ProfileSaved { get; set; }
+
+    private async Task OnPhotoSelected(InputFileChangeEventArgs e)
+    {
+        PhotoError = null;
+        var file = e.File;
+        if (file.Size > 2 * 1024 * 1024)
+        {
+            PhotoError = Lang.T("profile.photo.tooLarge");
+            return;
+        }
+
+        IsUploadingPhoto = true;
+        var error = await AuthApi.UploadPhotoAsync(file);
+        IsUploadingPhoto = false;
+
+        if (error != null)
+        {
+            PhotoError = Lang.T("profile.photo.invalid");
+            return;
+        }
+
+        PhotoDataUrl = await AuthApi.GetMyPhotoDataUrlAsync();
+        ProfileData = await AuthApi.GetProfileAsync();
+    }
+
+    private async Task RemovePhoto()
+    {
+        if (await AuthApi.DeletePhotoAsync())
+        {
+            PhotoDataUrl = null;
+            if (ProfileData != null) ProfileData.ProfilePictureUrl = null;
+        }
     }
 
     private void GoToStep(int step) => CurrentStep = step;
@@ -1162,8 +1265,18 @@
     private async Task SaveProfileData()
     {
         if (ProfileData == null) return;
+        NameError = null;
+        ProfileSaved = false;
+        if (string.IsNullOrWhiteSpace(EditFirstName) || string.IsNullOrWhiteSpace(EditLastName))
+        {
+            NameError = Lang.T("profile.fields.nameRequired");
+            return;
+        }
+
         var dto = new UpdateCandidateProfileDto
         {
+            FirstName = EditFirstName,
+            LastName = EditLastName,
             Title = ProfileData.Title,
             Summary = ProfileData.Summary,
             YearsOfExperience = ProfileData.YearsOfExperience,
@@ -1179,7 +1292,15 @@
             Country = ProfileData.Country,
             City = ProfileData.City
         };
-        ProfileData = await AuthApi.UpdateProfileAsync(dto);
+        var updated = await AuthApi.UpdateProfileAsync(dto);
+        if (updated != null)
+        {
+            ProfileData = updated;
+            EditFirstName = updated.FirstName;
+            EditLastName = updated.LastName;
+            UserInitials = GetInitials($"{updated.FirstName} {updated.LastName}");
+            ProfileSaved = true;
+        }
     }
 
     private async Task FinishWizard()

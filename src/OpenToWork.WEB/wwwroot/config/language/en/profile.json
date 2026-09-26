@@ -11,7 +11,20 @@
         "education": "Education",
         "certifications": "Certifications"
     },
+    "photo": {
+        "title": "Profile photo",
+        "upload": "Upload photo",
+        "change": "Change photo",
+        "remove": "Remove",
+        "uploading": "Uploading...",
+        "hint": "JPG, PNG or WebP, up to 2 MB. Only the Trato Directo team can see it.",
+        "tooLarge": "The photo can't be larger than 2 MB.",
+        "invalid": "The photo couldn't be uploaded. Use a JPG, PNG or WebP image up to 2 MB."
+    },
     "fields": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "nameRequired": "Enter your first and last name.",
         "title": "Professional title",
         "yearsExperience": "Years of experience",
         "linkedin": "LinkedIn URL",

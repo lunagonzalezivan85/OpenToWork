@@ -2,6 +2,8 @@ namespace OpenToWork.Shared.DTOs;
 
 public class UpdateCandidateProfileDto
 {
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
     public string? Title { get; set; }
     public string? Summary { get; set; }
     public int? YearsOfExperience { get; set; }

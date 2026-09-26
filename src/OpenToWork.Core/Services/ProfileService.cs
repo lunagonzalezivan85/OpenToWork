@@ -61,6 +61,27 @@ public class ProfileService : IProfileService
         _context.PT_CandidateDeliveries.AnyAsync(d => d.PT_CandidateId == candidateId && !d.IsDeleted
             && d.Company.SCUserId == viewerUserId && !d.Company.IsDeleted);
 
+    public async Task<string?> GetProfilePictureAsync(Guid userId) =>
+        await _context.PT_Candidates
+            .Where(c => c.SCUserId == userId && !c.IsDeleted)
+            .Select(c => c.ProfilePictureUrl)
+            .FirstOrDefaultAsync();
+
+    public async Task<bool> SetProfilePictureAsync(Guid userId, string? photoUrl)
+    {
+        var candidate = await _context.PT_Candidates
+            .FirstOrDefaultAsync(c => c.SCUserId == userId && !c.IsDeleted);
+        if (candidate == null) return false;
+
+        candidate.ProfilePictureUrl = photoUrl;
+        candidate.UpdatedAt = DateTime.UtcNow;
+        candidate.UpdatedBy = userId;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    private static string Truncate(string value, int max) => value.Length <= max ? value : value[..max];
+
     public async Task<CandidateCvReference?> GetCvForViewerAsync(Guid candidateId, Guid viewerUserId)
     {
         var candidate = await _context.PT_Candidates
@@ -82,6 +103,8 @@ public class ProfileService : IProfileService
 
         if (candidate == null) return null;
 
+        if (!string.IsNullOrWhiteSpace(dto.FirstName)) candidate.FirstName = Truncate(dto.FirstName.Trim(), 100);
+        if (!string.IsNullOrWhiteSpace(dto.LastName)) candidate.LastName = Truncate(dto.LastName.Trim(), 100);
         if (dto.Title != null) candidate.Title = dto.Title;
         if (dto.Summary != null) candidate.Summary = dto.Summary;
         if (dto.YearsOfExperience.HasValue) candidate.YearsOfExperience = dto.YearsOfExperience;
@@ -91,7 +114,7 @@ public class ProfileService : IProfileService
         if (dto.WorkAuthorization.HasValue) candidate.WorkAuthorization = dto.WorkAuthorization;
         if (dto.IsProfilePublic.HasValue) candidate.IsProfilePublic = dto.IsProfilePublic.Value;
         if (dto.CvUrl != null) candidate.CvUrl = dto.CvUrl;
-        if (dto.ProfilePictureUrl != null) candidate.ProfilePictureUrl = dto.ProfilePictureUrl;
+        // ProfilePictureUrl ya no se acepta aqui: solo lo fija la subida de foto (SetProfilePictureAsync).
         if (dto.Phone != null) candidate.Phone = dto.Phone;
         if (dto.Identification != null) candidate.Identification = dto.Identification;
         if (dto.BirthDate.HasValue) candidate.BirthDate = dto.BirthDate;

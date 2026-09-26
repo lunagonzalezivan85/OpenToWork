@@ -50,6 +50,7 @@ builder.Services.AddCoreServices(builder.Configuration);
 var storageRoot = builder.Configuration["Storage:Root"]
     ?? Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "..", "storage"));
 builder.Services.AddSingleton<OpenToWork.Core.Interfaces.ICvStorage>(new OpenToWork.Core.Services.CvStorage(storageRoot));
+builder.Services.AddSingleton<OpenToWork.Core.Interfaces.IProfilePhotoStorage>(new OpenToWork.Core.Services.ProfilePhotoStorage(storageRoot));
 
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

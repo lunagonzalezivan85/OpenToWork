@@ -1353,6 +1353,16 @@ public class AdminAuthApiService
         return (await response.Content.ReadAsByteArrayAsync(), name);
     }
 
+    /// <summary>Foto de perfil del candidato como data URL (almacenamiento privado del AdminAPI).</summary>
+    public async Task<string?> GetCandidatePhotoDataUrlAsync(Guid userId)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/candidates/{userId}/photo");
+        if (!response.IsSuccessStatusCode) return null;
+        var type = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+        return $"data:{type};base64,{Convert.ToBase64String(await response.Content.ReadAsByteArrayAsync())}";
+    }
+
     // --- Mensajes con candidatos y empresas del portal ---
 
     public async Task<int> GetUnreadMessagesCountAsync()

@@ -548,6 +548,38 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<UploadCvResponseDto>();
     }
 
+    /// <summary>Foto de perfil propia como data URL (esta en almacenamiento privado del API, no es una URL publica).</summary>
+    public async Task<string?> GetMyPhotoDataUrlAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/profile/photo");
+        if (!response.IsSuccessStatusCode) return null;
+        var type = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+        return $"data:{type};base64,{Convert.ToBase64String(await response.Content.ReadAsByteArrayAsync())}";
+    }
+
+    /// <summary>Sube la foto de perfil. Devuelve null si todo fue bien, o el mensaje de error del API.</summary>
+    public async Task<string?> UploadPhotoAsync(IBrowserFile file)
+    {
+        await SetAuthHeaderAsync();
+
+        using var content = new MultipartFormDataContent();
+        using var fileStream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+        var fileContent = new StreamContent(fileStream);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrEmpty(file.ContentType) ? "application/octet-stream" : file.ContentType);
+        content.Add(fileContent, "file", file.Name);
+
+        var response = await _httpClient.PostAsync("api/profile/photo", content);
+        return response.IsSuccessStatusCode ? null : (await response.Content.ReadAsStringAsync()).Trim('"');
+    }
+
+    public async Task<bool> DeletePhotoAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync("api/profile/photo");
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<CandidateProfileDto?> ApplyCvAsync(string cvUrl, CvParseResultDto parsedData)
     {
         await SetAuthHeaderAsync();

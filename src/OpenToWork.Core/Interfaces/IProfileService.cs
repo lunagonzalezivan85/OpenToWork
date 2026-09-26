@@ -17,6 +17,10 @@ public interface IProfileService
     /// empresa a la que TD se lo entrego). Null si no tiene CV o el usuario no puede verlo.</summary>
     Task<CandidateCvReference?> GetCvForViewerAsync(Guid candidateId, Guid viewerUserId);
     Task<CandidateProfileDto?> UpdateProfileAsync(Guid userId, UpdateCandidateProfileDto dto);
+    /// <summary>Referencia actual de la foto de perfil del candidato (null si no tiene o no existe).</summary>
+    Task<string?> GetProfilePictureAsync(Guid userId);
+    /// <summary>Cambia (o quita, con null) la foto de perfil. Devuelve false si el usuario no tiene perfil de candidato.</summary>
+    Task<bool> SetProfilePictureAsync(Guid userId, string? photoUrl);
     Task<CandidateExperienceDto> AddExperienceAsync(Guid userId, CreateExperienceDto dto);
     Task<CandidateExperienceDto?> UpdateExperienceAsync(Guid experienceId, UpdateExperienceDto dto, Guid userId);
     Task<bool> DeleteExperienceAsync(Guid experienceId, Guid userId);

@@ -11,7 +11,20 @@
         "education": "Educación",
         "certifications": "Certificaciones"
     },
+    "photo": {
+        "title": "Foto de perfil",
+        "upload": "Subir foto",
+        "change": "Cambiar foto",
+        "remove": "Quitar",
+        "uploading": "Subiendo...",
+        "hint": "JPG, PNG o WebP, máximo 2 MB. Solo la ve el equipo de Trato Directo.",
+        "tooLarge": "La foto no puede superar 2 MB.",
+        "invalid": "No se pudo subir la foto. Usa una imagen JPG, PNG o WebP de hasta 2 MB."
+    },
     "fields": {
+        "firstName": "Nombre",
+        "lastName": "Apellidos",
+        "nameRequired": "Escribe tu nombre y tus apellidos.",
         "title": "Título profesional",
         "yearsExperience": "Años de experiencia",
         "linkedin": "LinkedIn URL",

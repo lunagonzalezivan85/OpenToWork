@@ -62,9 +62,9 @@ else
         <div class="admin-hero-body">
             <div class="admin-hero-avatar-wrap">
                 <div class="admin-hero-avatar">
-                    @if (!string.IsNullOrEmpty(Profile.ProfilePictureUrl))
+                    @if (!string.IsNullOrEmpty(PhotoDataUrl))
                     {
-                        <img src="@Profile.ProfilePictureUrl" alt="avatar" />
+                        <img src="@PhotoDataUrl" alt="avatar" />
                     }
                     else
                     {
@@ -929,6 +929,7 @@ else
 
     [Parameter] public Guid UserId { get; set; }
     private AdminUserProfileDto? Profile { get; set; }
+    private string? PhotoDataUrl { get; set; }
     private RecruitmentDetailDto? Recruitment { get; set; }
     private List<AdminUserDto> AssignableUsers { get; set; } = new();
     private bool ShowAssign { get; set; }
@@ -1007,6 +1008,9 @@ else
             await Lang.InitializeAsync();
 
         Profile = await AuthApi.GetUserProfileAsync(UserId);
+        // La foto esta en almacenamiento privado: se pide al AdminAPI y se muestra como data URL.
+        if (!string.IsNullOrEmpty(Profile?.ProfilePictureUrl))
+            PhotoDataUrl = await AuthApi.GetCandidatePhotoDataUrlAsync(UserId);
         Recruitment = await AuthApi.GetRecruitmentByUserAsync(UserId);
         AssignableUsers = await AuthApi.GetUsersAsync(1, 100, 2);
 
