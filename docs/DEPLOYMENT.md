@@ -91,6 +91,29 @@ Al terminar muestra la respuesta de los dos API locales (debe ser 200).
 
 El portal y el admin redirigen solos de HTTP a HTTPS.
 
+### 5-bis. Alternativa: Cloudflare Tunnel (en lugar de DNS a la IP + win-acme)
+
+Si el servidor publica por **Cloudflare Tunnel** (`cloudflared` instalado en el servidor), no hacen falta los
+registros A del paso 1, ni abrir 80/443, ni win-acme: Cloudflare pone el HTTPS.
+
+1. El dominio debe estar **en Cloudflare**: agregar `tratodirecto.es` en el panel de Cloudflare y cambiar en GoDaddy
+   (Dominio → DNS → **Servidores de nombres** → "Cambiar" → "Usar mis propios servidores de nombres") los dos
+   nameservers que indique Cloudflare.
+2. En Cloudflare Zero Trust → **Networks → Tunnels** → el tunel del servidor → **Published application routes**
+   (antes "Public Hostname") → agregar una ruta por sitio:
+
+   | Subdominio | Dominio | Servicio |
+   |---|---|---|
+   | *(vacio)* | tratodirecto.es | `http://localhost:80` |
+   | www | tratodirecto.es | `http://localhost:80` |
+   | admin | tratodirecto.es | `http://localhost:80` |
+
+   Cloudflare crea solo los CNAME. IIS distingue el sitio por el nombre (bindings de `instalar.ps1`).
+   **No** usar *Networking → Routes → Hostname*: eso es una ruta de red privada (solo para equipos con WARP), no
+   publica el sitio en Internet.
+3. El portal y el admin respetan `X-Forwarded-Proto` de `cloudflared` (`UseForwardedHeaders`), asi que no hay bucle
+   de redireccion HTTP↔HTTPS.
+
 ### 6. Primer administrador
 
 1. Registrar tu cuenta en `https://tratodirecto.es/register`.

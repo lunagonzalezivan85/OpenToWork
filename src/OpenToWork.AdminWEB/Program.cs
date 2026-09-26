@@ -27,6 +27,15 @@ builder.Services.AddHttpClient<AdminAuthApiService>(client =>
 
 var app = builder.Build();
 
+// Detras de Cloudflare Tunnel (cloudflared en el mismo servidor) la peticion llega a IIS por HTTP aunque el
+// usuario use HTTPS: se respeta X-Forwarded-Proto para que UseHttpsRedirection no entre en bucle. Solo se
+// confia en proxies locales (loopback, el valor por defecto de KnownNetworks/KnownProxies).
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+        | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
