@@ -53,6 +53,8 @@
   },
   "companyProfile": {
     "title": "Datos de la Empresa",
+    "tabCompany": "Datos de la Empresa",
+    "tabApis": "APIs e IA",
     "subtitle": "Identidad legal de Trato Directo usada en el Contrato Marco",
     "sectionIdentity": "Identidad de la Empresa",
     "sectionLegalRep": "Representante Legal y Jurisdicción",

@@ -27,6 +27,13 @@ else if (IsLoading)
 }
 else
 {
+    <div class="admin-tabs">
+        <button class="admin-tab @(ActiveTab == "company" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("company")'>@Lang.T("admin.companyProfile.tabCompany")</button>
+        <button class="admin-tab @(ActiveTab == "apis" ? "admin-tab--active" : "")" @onclick='() => SwitchTab("apis")'>@Lang.T("admin.companyProfile.tabApis")</button>
+    </div>
+
+    @if (ActiveTab == "company")
+    {
     @if (SavedMessage)
     {
         <p style="color: var(--success); font-size: 0.85rem;">@Lang.T("admin.companyProfile.saved")</p>
@@ -93,7 +100,9 @@ else
     </EditForm>
 
     <p class="admin-page-header-subtitle" style="margin-top: var(--space-md);">@Lang.T("admin.companyProfile.usageNote")</p>
-
+    }
+    else
+    {
     <h2 style="margin-top: var(--space-lg);">@Lang.T("admin.aiSettings.sectionTitle")</h2>
     <p class="admin-page-header-subtitle">@Lang.T("admin.aiSettings.subtitle")</p>
 
@@ -170,6 +179,7 @@ else
         </div>
         <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium" style="margin-top: var(--space-md);" disabled="@IsSavingAi">@Lang.T("admin.common.save")</button>
     </EditForm>
+    }
 }
 
 @code {
@@ -178,6 +188,9 @@ else
     private bool IsSaving;
     private bool SavedMessage;
     private string? Error;
+
+    private string ActiveTab { get; set; } = "company";
+    private void SwitchTab(string tab) => ActiveTab = tab;
 
     private bool IsSavingAi;
     private bool AiSavedMessage;

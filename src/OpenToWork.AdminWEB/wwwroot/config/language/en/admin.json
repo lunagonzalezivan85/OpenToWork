@@ -53,6 +53,8 @@
   },
   "companyProfile": {
     "title": "Company Profile",
+    "tabCompany": "Company Info",
+    "tabApis": "APIs & AI",
     "subtitle": "Trato Directo's legal identity used in the Master Service Agreement",
     "sectionIdentity": "Company Identity",
     "sectionLegalRep": "Legal Representative & Jurisdiction",
