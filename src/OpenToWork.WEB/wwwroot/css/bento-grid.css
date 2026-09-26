@@ -4,6 +4,11 @@
     gap: var(--space-md);
 }
 
+/* Filas consecutivas (panel del candidato/empresa): mismo aire entre filas que entre tarjetas. */
+.bento-grid + .bento-grid {
+    margin-top: var(--space-md);
+}
+
 .bento-card {
     background-color: var(--card-bg);
     border: 1px solid var(--card-border);
