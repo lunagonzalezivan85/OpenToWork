@@ -115,9 +115,12 @@ Rules:
 
         var responseText = provider switch
         {
-            "openai" or "groq" => await CallOpenAiCompatibleAsync(DefaultBaseUrl(provider, baseUrl), apiKey, model, base64File, fileName, mimeType),
+            // Los endpoints OpenAI-compatibles no aceptan documentos en todos los modelos
+            // (p.ej. Groq gpt-oss-120b es text-only): se extrae el texto del PDF y se envia
+            // como prompt. Gemini/Claude si aceptan el PDF en base64.
+            "openai" or "groq" => await CallOpenAiCompatibleAsync(DefaultBaseUrl(provider, baseUrl), apiKey, model, ExtractCvText(fileBytes)),
             "anthropic" => await CallAnthropicAsync(DefaultBaseUrl(provider, baseUrl), apiKey, model, base64File, mimeType),
-            "custom" => await CallOpenAiCompatibleAsync(baseUrl, apiKey, model, base64File, fileName, mimeType),
+            "custom" => await CallOpenAiCompatibleAsync(baseUrl, apiKey, model, ExtractCvText(fileBytes)),
             _ => await CallGeminiAsync(baseUrl, apiKey, model, base64File, mimeType)
         };
 
@@ -192,7 +195,26 @@ Rules:
         return await PostWithRetryAsync(url, requestBody, c => c.Headers.Add("x-goog-api-key", apiKey));
     }
 
-    private async Task<string> CallOpenAiCompatibleAsync(string baseUrl, string apiKey, string model, string base64File, string fileName, string mimeType)
+    /// <summary>Extrae el texto del PDF con PdfPig. Los CVs escaneados (imagen sin capa de
+    /// texto) devuelven vacio - ahi se necesita un proveedor con soporte de documentos.</summary>
+    private static string ExtractCvText(byte[] pdfBytes)
+    {
+        var sb = new System.Text.StringBuilder();
+        using (var doc = UglyToad.PdfPig.PdfDocument.Open(pdfBytes))
+        {
+            foreach (var page in doc.GetPages())
+                sb.AppendLine(page.Text);
+        }
+
+        var text = sb.ToString().Trim();
+        if (string.IsNullOrEmpty(text))
+            throw new InvalidOperationException("El PDF no tiene texto extraible (posiblemente esta escaneado). Usa un proveedor con soporte de documentos como Gemini o Claude.");
+
+        // Limite conservador para no exceder contexto del modelo (~15k tokens).
+        return text.Length > 60_000 ? text[..60_000] : text;
+    }
+
+    private async Task<string> CallOpenAiCompatibleAsync(string baseUrl, string apiKey, string model, string cvText)
     {
         var url = $"{baseUrl}/chat/completions";
 
@@ -206,23 +228,7 @@ Rules:
                 new
                 {
                     role = "user",
-                    content = new object[]
-                    {
-                        new
-                        {
-                            type = "file",
-                            file = new
-                            {
-                                filename = fileName,
-                                file_data = $"data:{mimeType};base64,{base64File}"
-                            }
-                        },
-                        new
-                        {
-                            type = "text",
-                            text = ExtractionPrompt
-                        }
-                    }
+                    content = ExtractionPrompt + "\n\n--- CV ---\n" + cvText
                 }
             }
         };
