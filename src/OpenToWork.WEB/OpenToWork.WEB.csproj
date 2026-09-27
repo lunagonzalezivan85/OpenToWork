@@ -17,6 +17,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- Publica el web.config propio de la raiz del proyecto (proxy /api, CSP, cabeceras) -->
+    <PublishIISAssets>true</PublishIISAssets>
   </PropertyGroup>
 
 </Project>

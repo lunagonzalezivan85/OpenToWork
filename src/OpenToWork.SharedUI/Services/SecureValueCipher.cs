@@ -13,7 +13,8 @@ public class SecureValueCipher
     private const int NonceSize = 12;
     private const int TagSize = 16;
 
-    private readonly byte[] _key;
+    // null = sin cifrado (ver PassThrough)
+    private readonly byte[]? _key;
 
     /// <param name="key">Clave maestra (Security:LocalStorageKey). Si es null/vacia se genera una
     /// efimera por arranque: las sesiones guardadas no sobreviven un reinicio pero nunca hay
@@ -25,9 +26,17 @@ public class SecureValueCipher
             : RandomNumberGenerator.GetBytes(32);
     }
 
+    private SecureValueCipher() { }
+
+    /// <summary>Sin cifrado, para clientes WASM: AesGcm no existe en el navegador
+    /// (PlatformNotSupportedException) y la clave tendria que viajar al propio navegador,
+    /// asi que no protegeria nada. Los valores "enc:" de sesiones Blazor Server anteriores
+    /// no se pueden descifrar y se devuelven vacios (el usuario vuelve a iniciar sesion).</summary>
+    public static SecureValueCipher PassThrough() => new();
+
     public string Encrypt(string plainText)
     {
-        if (string.IsNullOrEmpty(plainText)) return plainText;
+        if (string.IsNullOrEmpty(plainText) || _key is null) return plainText;
 
         var nonce = RandomNumberGenerator.GetBytes(NonceSize);
         var plainBytes = Encoding.UTF8.GetBytes(plainText);
@@ -47,6 +56,7 @@ public class SecureValueCipher
     public string Decrypt(string? stored)
     {
         if (string.IsNullOrEmpty(stored) || !stored.StartsWith(EncPrefix)) return stored ?? string.Empty;
+        if (_key is null) return string.Empty;
 
         try
         {
