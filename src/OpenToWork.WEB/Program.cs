@@ -1,71 +1,33 @@
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using OpenToWork.WEB.Components;
 using OpenToWork.WEB.Services;
 using OpenToWork.SharedUI.Services;
-using Microsoft.AspNetCore.StaticFiles;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-builder.Services.AddAuthorization();
-builder.Services.AddAuthentication();
+// Cliente WASM: sin circuito SignalR - la app corre en el navegador y solo habla HTTP con la API.
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(sp => sp.GetRequiredService<AppAuthStateProvider>());
 
 builder.Services.AddScoped<LocalStorageService>();
-builder.Services.AddScoped<ApiAuthService>();
+builder.Services.AddScoped(sp => new SecureValueCipher(builder.Configuration["Security:LocalStorageKey"]));
 builder.Services.AddScoped<AppAuthStateProvider>();
 builder.Services.AddScoped(sp => new LanguageService(
     sp.GetRequiredService<Microsoft.JSInterop.IJSRuntime>(),
-    sp.GetRequiredService<IWebHostEnvironment>(),
+    sp.GetRequiredService<HttpClient>(),
     new[] { "common", "auth", "wizard", "dashboard", "vacancies", "profile", "validation", "errors", "applications" }));
-// Cifra tokens en localStorage (AES-256-GCM). Sin Security:LocalStorageKey la clave es efimera
-// por arranque - las sesiones no sobreviven un reinicio pero ningun secreto queda hardcodeado.
-builder.Services.AddSingleton(new SecureValueCipher(builder.Configuration["Security:LocalStorageKey"]));
-builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(sp => sp.GetRequiredService<AppAuthStateProvider>());
 
-builder.Services.AddHttpClient<ApiAuthService>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5000/");
-});
+// HttpClient por defecto: origen de la app (para assets como config/language/*.json).
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-var app = builder.Build();
+// ApiAuthService: cliente dedicado apuntando a la API del portal.
+builder.Services.AddScoped(sp => new ApiAuthService(
+    new HttpClient { BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5100/") },
+    sp.GetRequiredService<LocalStorageService>(),
+    sp.GetRequiredService<ILogger<ApiAuthService>>()));
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts();
-}
-
-app.Use(async (context, next) =>
-{
-    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    context.Response.Headers["X-Frame-Options"] = "DENY";
-    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    context.Response.Headers["Content-Security-Policy"] =
-        "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss:; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
-    await next();
-});
-
-var contentTypeProvider = new FileExtensionContentTypeProvider();
-contentTypeProvider.Mappings[".webmanifest"] = "application/manifest+json";
-contentTypeProvider.Mappings[".manifest"] = "application/manifest+json";
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    ContentTypeProvider = contentTypeProvider
-});
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
-app.UseAntiforgery();
-
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-app.Run();
+await builder.Build().RunAsync();

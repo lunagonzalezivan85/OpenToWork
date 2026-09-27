@@ -2,7 +2,7 @@
 @layout OpenToWork.WEB.Components.Layout.AuthLayout
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
-@using Microsoft.AspNetCore.WebUtilities
+@using System.Web
 @inject ApiAuthService AuthApi
 @inject AppAuthStateProvider AuthProvider
 @inject LanguageService Lang
@@ -73,8 +73,7 @@
             await Lang.InitializeAsync();
 
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("returnUrl", out var ru))
-            ReturnUrl = ru.ToString();
+        ReturnUrl = HttpUtility.ParseQueryString(uri.Query)["returnUrl"] ?? ReturnUrl;
     }
 
     private async Task HandleLogin()
