@@ -1,29 +1,38 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.JSInterop;
 
 namespace OpenToWork.SharedUI.Services;
 
 /// <summary>
-/// Loads flat-file JSON translations for a Blazor Server app. Each entry in <paramref name="sections"/>
-/// (passed at registration time) is both the JSON filename (wwwroot/config/language/{lang}/{section}.json)
-/// and the flatten prefix for its keys (e.g. "common.save"). AdminWEB registers a single "admin" section;
-/// WEB registers its full set of portal sections - this preserves both apps' existing behavior exactly.
+/// Loads flat-file JSON translations. Server apps (AdminWEB) read from wwwroot via
+/// <see cref="IWebHostEnvironment"/>; WASM (portal candidato) fetches the same
+/// config/language/*.json over HTTP. Each entry in <paramref name="sections"/>
+/// is both the JSON filename and the flatten prefix for its keys (e.g. "common.save").
 /// </summary>
 public class LanguageService
 {
     private readonly IJSRuntime _jsRuntime;
-    private readonly IWebHostEnvironment _env;
+    private readonly string? _webRootPath;
+    private readonly HttpClient? _http;
     private readonly string[] _sections;
     private string _currentLanguage = "es";
     public Dictionary<string, string> _translations = new();
 
     public event Action? OnLanguageChanged;
 
-    public LanguageService(IJSRuntime jsRuntime, IWebHostEnvironment env, string[] sections)
+    /// <summary>Blazor Server: lee los JSON del filesystem (wwwroot).</summary>
+    public LanguageService(IJSRuntime jsRuntime, string webRootPath, string[] sections)
     {
         _jsRuntime = jsRuntime;
-        _env = env;
+        _webRootPath = webRootPath;
+        _sections = sections;
+    }
+
+    /// <summary>Blazor WebAssembly: descarga los JSON via HTTP desde el origen de la app.</summary>
+    public LanguageService(IJSRuntime jsRuntime, HttpClient http, string[] sections)
+    {
+        _jsRuntime = jsRuntime;
+        _http = http;
         _sections = sections;
     }
 
@@ -58,19 +67,29 @@ public class LanguageService
     public async Task LoadTranslationsAsync(string lang)
     {
         _translations.Clear();
-        var basePath = Path.Combine(_env.WebRootPath, "config", "language", lang);
         foreach (var section in _sections)
         {
             try
             {
-                var filePath = Path.Combine(basePath, $"{section}.json");
-                if (!File.Exists(filePath)) continue;
-                var json = await File.ReadAllTextAsync(filePath);
+                var json = await LoadSectionJsonAsync(lang, section);
+                if (json == null) continue;
                 var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
                 if (dict != null) FlattenDictionary(dict, section, _translations);
             }
             catch { }
         }
+    }
+
+    private async Task<string?> LoadSectionJsonAsync(string lang, string section)
+    {
+        if (_http != null)
+        {
+            var response = await _http.GetAsync($"config/language/{lang}/{section}.json");
+            return response.IsSuccessStatusCode ? await response.Content.ReadAsStringAsync() : null;
+        }
+
+        var filePath = Path.Combine(_webRootPath!, "config", "language", lang, $"{section}.json");
+        return File.Exists(filePath) ? await File.ReadAllTextAsync(filePath) : null;
     }
 
     public string T(string key) => _translations.TryGetValue(key, out var value) ? value : key;

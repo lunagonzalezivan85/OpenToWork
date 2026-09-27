@@ -1,7 +1,7 @@
 @page "/my-vacancies"
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
-@using Microsoft.AspNetCore.WebUtilities
+@using System.Web
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
 @inject IJSRuntime JS
@@ -221,7 +221,7 @@
             await Lang.InitializeAsync();
 
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("action", out var action) && action == "create")
+        if (HttpUtility.ParseQueryString(uri.Query)["action"] == "create")
             ShowCreateForm = true;
 
         var jobTypesTask = AuthApi.GetJobTypesAsync();
