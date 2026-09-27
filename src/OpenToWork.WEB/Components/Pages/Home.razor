@@ -173,21 +173,7 @@
     {
         if (firstRender)
         {
-            await JS.InvokeVoidAsync("eval", @"
-                var v = document.getElementById('heroVideo');
-                if (v) {
-                    v.muted = true;
-                    v.volume = 0;
-                    var playlist = ['/v01.mp4?v=2', '/v02.mp4?v=2'];
-                    var idx = 0;
-                    v.addEventListener('ended', function () {
-                        idx = (idx + 1) % playlist.length;
-                        v.src = playlist[idx];
-                        v.play().catch(function(){});
-                    });
-                    v.play().catch(function(){});
-                }
-            ");
+            await JS.InvokeVoidAsync("startHeroVideo");
             await SearchInputRef.FocusAsync();
 
             await JS.InvokeVoidAsync("animateCounters");

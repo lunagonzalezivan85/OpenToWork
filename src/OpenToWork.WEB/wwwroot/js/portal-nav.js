@@ -31,3 +31,30 @@ window.animateCounters = function () {
         requestAnimationFrame(update);
     });
 };
+
+window.startHeroVideo = function () {
+    var v = document.getElementById('heroVideo');
+    if (!v) return;
+    v.muted = true;
+    v.volume = 0;
+    var playlist = ['/v01.mp4?v=2', '/v02.mp4?v=2'];
+    var idx = 0;
+    v.addEventListener('ended', function () {
+        idx = (idx + 1) % playlist.length;
+        v.src = playlist[idx];
+        v.play().catch(function () {});
+    });
+    v.play().catch(function () {});
+};
+
+window.otAntiCheat = {
+    start: function () {
+        window.otAntiCheatFlags = 0;
+        if (window.otAntiCheatHandler) document.removeEventListener('visibilitychange', window.otAntiCheatHandler);
+        window.otAntiCheatHandler = function () { if (document.hidden) window.otAntiCheatFlags++; };
+        document.addEventListener('visibilitychange', window.otAntiCheatHandler);
+    },
+    getFlags: function () {
+        return window.otAntiCheatFlags || 0;
+    }
+};
