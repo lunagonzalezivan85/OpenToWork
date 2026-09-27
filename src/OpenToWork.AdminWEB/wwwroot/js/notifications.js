@@ -59,6 +59,30 @@ window.swalError = function (title, text) {
     });
 };
 
+window.swalConfirmDanger = function (title, text, confirmText, cancelText) {
+    return Swal.fire({
+        title: title,
+        text: text,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#778DA9',
+        confirmButtonText: confirmText,
+        cancelButtonText: cancelText
+    }).then(function (result) { return result.isConfirmed; });
+};
+
+window.swalToastSuccess = function (title) {
+    return Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: title,
+        showConfirmButton: false,
+        timer: 2000
+    });
+};
+
 function createContainer() {
     const c = document.createElement('div');
     c.id = 'otw-notify-container';

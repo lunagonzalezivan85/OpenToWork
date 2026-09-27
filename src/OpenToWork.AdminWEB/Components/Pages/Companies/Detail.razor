@@ -444,34 +444,18 @@ else
     private async Task DeleteCompany()
     {
         if (Company == null) return;
-        var confirmed = await JS.InvokeAsync<bool>("eval", $@"
-            Swal.fire({{
-                title: '{Lang.T("admin.companies.delete")}',
-                text: '{Lang.T("admin.companies.deleteConfirm")}',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#778DA9',
-                confirmButtonText: '{Lang.T("admin.common.confirm")}',
-                cancelButtonText: '{Lang.T("admin.common.cancel")}'
-            }}).then((result) => result.isConfirmed);
-        ");
+        var confirmed = await JS.InvokeAsync<bool>("swalConfirmDanger",
+            Lang.T("admin.companies.delete"),
+            Lang.T("admin.companies.deleteConfirm"),
+            Lang.T("admin.common.confirm"),
+            Lang.T("admin.common.cancel"));
         if (!confirmed) return;
         IsDeleting = true;
         var success = await AuthApi.DeleteCompanyAsync(Company.Id);
         IsDeleting = false;
         if (success)
         {
-            await JS.InvokeVoidAsync("eval", $@"
-                Swal.fire({{
-                    toast: true,
-                    position: 'top-end',
-                    icon: 'success',
-                    title: '{Lang.T("admin.companies.deleted")}',
-                    showConfirmButton: false,
-                    timer: 2000
-                }});
-            ");
+            await JS.InvokeVoidAsync("swalToastSuccess", Lang.T("admin.companies.deleted"));
             Nav.NavigateTo("/companies");
         }
     }
