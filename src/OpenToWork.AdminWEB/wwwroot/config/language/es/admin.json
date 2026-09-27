@@ -53,6 +53,8 @@
   },
   "companyProfile": {
     "title": "Datos de la Empresa",
+    "tabCompany": "Datos de la Empresa",
+    "tabApis": "APIs e IA",
     "subtitle": "Identidad legal de Trato Directo usada en el Contrato Marco",
     "sectionIdentity": "Identidad de la Empresa",
     "sectionLegalRep": "Representante Legal y Jurisdicción",
@@ -70,6 +72,29 @@
     "privacyEmailHint": "Se publica en la Política de Privacidad del portal para que candidatos y empresas ejerzan sus derechos de protección de datos.",
     "saved": "Cambios guardados correctamente.",
     "usageNote": "Estos datos se usan en el Contrato Marco (Contrato de Prestación de Servicios) de cada empresa. El documento se genera en vivo cada vez que se abre o imprime, así que un cambio aquí también se ve reflejado en contratos ya firmados la próxima vez que se consulten — editar solo si cambia la información legal real de Trato Directo."
+  },
+  "aiSettings": {
+    "sectionTitle": "Inteligencia Artificial",
+    "subtitle": "Proveedor de IA usado por el sistema para los análisis (CV, matching, asistentes).",
+    "sectionProvider": "Conexión con el Proveedor",
+    "enabled": "IA habilitada",
+    "provider": "Proveedor",
+    "providerNone": "Sin configurar",
+    "providerCustom": "Otro / personalizado",
+    "baseUrl": "Endpoint (URL base)",
+    "baseUrlCustomHint": "https://tu-endpoint-compatible/v1",
+    "model": "Modelo",
+    "modelSelect": "Selecciona un modelo",
+    "modelFreeHint": "Nombre del modelo (texto libre)",
+    "apiKey": "API Key",
+    "apiKeySaved": "•••••••• (clave guardada)",
+    "apiKeyHint": "La clave se guarda pero nunca se muestra. Dejar vacío para conservar la actual.",
+    "sectionUsage": "Dónde se usa IA",
+    "usageHint": "Activa en qué puntos del sistema se consume el proveedor configurado. Todo apagado por defecto.",
+    "cvAnalysis": "Análisis de CV (FODA)",
+    "commandBar": "Barra de comandos IA (portal de empresa)",
+    "adminSuggestions": "Sugerencias IA del panel admin",
+    "matching": "Matching candidato-vacante con IA"
   },
   "portfolio": {
     "title": "Cartera de Clientes",

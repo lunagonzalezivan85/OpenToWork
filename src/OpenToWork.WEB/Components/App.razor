@@ -35,13 +35,7 @@
     <script src="/js/file-download.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="_framework/blazor.web.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(() => {});
-            });
-        }
-    </script>
+    <script src="/js/sw-register.js"></script>
 </body>
 
 </html>

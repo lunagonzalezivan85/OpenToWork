@@ -349,6 +349,90 @@ else
                 </div>
             </div>
 
+            @* === Pipeline y asignación === *@
+            <div class="bento-card">
+                <div class="bento-card-header admin-bento-header">
+                    <span class="bento-card-title">@Lang.T("admin.profile.pipelineTitle")</span>
+                    @if (Recruitment != null && Recruitment.Dismissal == null)
+                    {
+                        <span class="admin-result-badge admin-result-badge--info">@GetStageName(Recruitment.CurrentStage)</span>
+                    }
+                </div>
+                @if (Recruitment == null)
+                {
+                    <p class="admin-bento-empty">@Lang.T("admin.recruitment.noProcess")</p>
+                }
+                else if (Recruitment.Dismissal != null)
+                {
+                    <span class="admin-result-badge admin-result-badge--danger">@Lang.T("admin.recruitment.dismissed")</span>
+                }
+                else
+                {
+                    <div class="admin-pipeline-stepper-inline admin-pipeline-stepper-inline--compact admin-pipeline-stepper-inline--vertical">
+                        @for (int i = 0; i <= 4; i++)
+                        {
+                            var stageIndex = i;
+                            var stageClass = stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step--done" :
+                                stageIndex == Recruitment.CurrentStage ? "admin-pipeline-step--active" : "";
+                            <div class="admin-pipeline-step @stageClass">
+                                <div class="admin-pipeline-step-circle">
+                                    @if (stageIndex < Recruitment.CurrentStage)
+                                    {
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
+                                    }
+                                    else
+                                    {
+                                        @(stageIndex + 1)
+                                    }
+                                </div>
+                                <span class="admin-pipeline-step-label">@GetStageName(stageIndex)</span>
+                                @if (stageIndex < Recruitment.CurrentStage && stageIndex > 0 && HasStageNotes(stageIndex))
+                                {
+                                    <div class="admin-pipeline-step-note" @onclick="@(() => OpenStageDetail(stageIndex))">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                            <polyline points="14 2 14 8 20 8" />
+                                        </svg>
+                                    </div>
+                                }
+                            </div>
+                            @if (stageIndex < 4)
+                            {
+                                <div class="admin-pipeline-step-line @(stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step-line--done" : "")"></div>
+                            }
+                        }
+                    </div>
+                }
+                @if (Recruitment == null || Recruitment.Dismissal == null)
+                {
+                    <div class="bento-card-footer">
+                        <div class="admin-bento-actions">
+                            @if (Recruitment == null)
+                            {
+                                <button class="admin-pill-btn admin-pill-btn--primary admin-pill-btn--sm" @onclick="StartInvestigation">
+                                    @Lang.T("admin.recruitment.investigate")
+                                </button>
+                                <button class="admin-pill-btn admin-pill-btn--sm" @onclick="StartInvestigation">
+                                    @Lang.T("admin.recruitment.assignVacancy")
+                                </button>
+                            }
+                            else
+                            {
+                                @if (Recruitment.CurrentStage < 4)
+                                {
+                                    <button class="admin-pill-btn admin-pill-btn--primary admin-pill-btn--sm" @onclick="MoveToNextStage">
+                                        @Lang.T("admin.recruitment.moveToNext") → @GetStageName(Recruitment.CurrentStage + 1)
+                                    </button>
+                                }
+                                <a href="/candidates/pipeline/@UserId" class="admin-pill-btn admin-pill-btn--sm">
+                                    @Lang.T("admin.recruitment.detailTitle")
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
         </div>
 
         @* === Right panel 65% — Recruitment data === *@
@@ -503,80 +587,6 @@ else
                 </div>
             }
 
-            @* === Pipeline y asignación === *@
-            <div class="bento-card">
-                <div class="bento-card-header admin-bento-header">
-                    <span class="bento-card-title">@Lang.T("admin.profile.pipelineTitle")</span>
-                    @if (Recruitment != null && Recruitment.Dismissal == null)
-                    {
-                        <span class="admin-result-badge admin-result-badge--info">@GetStageName(Recruitment.CurrentStage)</span>
-                    }
-                </div>
-                @if (Recruitment == null)
-                {
-                    <p class="admin-bento-empty">@Lang.T("admin.recruitment.noProcess")</p>
-                    <div class="admin-bento-actions">
-                        <button class="admin-pill-btn admin-pill-btn--primary admin-pill-btn--sm" @onclick="StartInvestigation">
-                            @Lang.T("admin.recruitment.investigate")
-                        </button>
-                        <button class="admin-pill-btn admin-pill-btn--sm" @onclick="StartInvestigation">
-                            @Lang.T("admin.recruitment.assignVacancy")
-                        </button>
-                    </div>
-                }
-                else if (Recruitment.Dismissal != null)
-                {
-                    <span class="admin-result-badge admin-result-badge--danger">@Lang.T("admin.recruitment.dismissed")</span>
-                }
-                else
-                {
-                    <div class="admin-pipeline-stepper-inline admin-pipeline-stepper-inline--compact">
-                        @for (int i = 0; i <= 4; i++)
-                        {
-                            var stageIndex = i;
-                            var stageClass = stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step--done" :
-                                stageIndex == Recruitment.CurrentStage ? "admin-pipeline-step--active" : "";
-                            <div class="admin-pipeline-step @stageClass">
-                                <div class="admin-pipeline-step-circle">
-                                    @if (stageIndex < Recruitment.CurrentStage)
-                                    {
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="20 6 9 17 4 12" /></svg>
-                                    }
-                                    else
-                                    {
-                                        @(stageIndex + 1)
-                                    }
-                                </div>
-                                <span class="admin-pipeline-step-label">@GetStageName(stageIndex)</span>
-                                @if (stageIndex < Recruitment.CurrentStage && stageIndex > 0 && HasStageNotes(stageIndex))
-                                {
-                                    <div class="admin-pipeline-step-note" @onclick="@(() => OpenStageDetail(stageIndex))">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                            <polyline points="14 2 14 8 20 8" />
-                                        </svg>
-                                    </div>
-                                }
-                            </div>
-                            @if (stageIndex < 4)
-                            {
-                                <div class="admin-pipeline-step-line @(stageIndex < Recruitment.CurrentStage ? "admin-pipeline-step-line--done" : "")"></div>
-                            }
-                        }
-                    </div>
-                    <div class="admin-bento-actions">
-                        @if (Recruitment.CurrentStage < 4)
-                        {
-                            <button class="admin-pill-btn admin-pill-btn--primary admin-pill-btn--sm" @onclick="MoveToNextStage">
-                                @Lang.T("admin.recruitment.moveToNext") → @GetStageName(Recruitment.CurrentStage + 1)
-                            </button>
-                        }
-                        <a href="/candidates/pipeline/@UserId" class="admin-pill-btn admin-pill-btn--sm">
-                            @Lang.T("admin.recruitment.detailTitle")
-                        </a>
-                    </div>
-                }
-            </div>
         </div>
 
         @* === Investigation checklist (when in Investigation stage) === *@

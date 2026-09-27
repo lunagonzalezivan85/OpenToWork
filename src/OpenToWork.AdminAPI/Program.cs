@@ -1,5 +1,7 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.IdentityModel.Tokens;
 using OpenToWork.Core.Extensions;
 
@@ -51,7 +53,14 @@ var storageRoot = builder.Configuration["Storage:Root"]
 builder.Services.AddSingleton<OpenToWork.Core.Interfaces.ICvStorage>(new OpenToWork.Core.Services.CvStorage(storageRoot));
 builder.Services.AddSingleton<OpenToWork.Core.Interfaces.IProfilePhotoStorage>(new OpenToWork.Core.Services.ProfilePhotoStorage(storageRoot));
 
-var jwtKey = builder.Configuration["Jwt:Key"]!;
+// Keyring compartido con la API del portal: secretos de SY_SystemConfig cifrados con IDataProtection.
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(storageRoot, "keys")))
+    .SetApplicationName("OpenToWork");
+
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+    throw new InvalidOperationException("Jwt:Key no esta configurada. En dev: dotnet user-secrets set \"Jwt:Key\" \"<secreto-256bits>\". En prod: variable de entorno Jwt__Key.");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -70,11 +79,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    // Login admin: mas estricto que el portal - 5 intentos por minuto por IP.
+    options.AddPolicy("admin-auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? new[] { "http://localhost:5101", "https://localhost:5101" };
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5101", "https://localhost:5101")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -89,7 +116,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    await next();
+});
+
 app.UseCors();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

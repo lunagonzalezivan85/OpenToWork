@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
@@ -8,8 +9,11 @@ namespace OpenToWork.Core.Services;
 
 public class SystemConfigService : ISystemConfigService
 {
+    private const string EncPrefix = "enc:";
+
     private readonly AppDbContext _context;
     private readonly IAuditLogService _auditLog;
+    private readonly IDataProtector _secrets;
 
     public const string CompanyLegalName = "company_legal_name";
     public const string CompanyTaxId = "company_tax_id";
@@ -35,15 +39,47 @@ public class SystemConfigService : ISystemConfigService
     public const string CandidatePriorityPlanEnabled = "feature_candidate_priority_plan_enabled";
     public const string CompanyPlansEnabled = "feature_company_plans_enabled";
 
-    public SystemConfigService(AppDbContext context, IAuditLogService auditLog)
+    public const string AiCategory = "Ai";
+    public const string AiProvider = "ai_provider";
+    public const string AiBaseUrl = "ai_base_url";
+    public const string AiModel = "ai_model";
+    public const string AiApiKey = "ai_api_key";
+    public const string AiEnabled = "ai_enabled";
+    public const string AiCvAnalysisEnabled = "ai_cv_analysis_enabled";
+    public const string AiCommandBarEnabled = "ai_command_bar_enabled";
+    public const string AiAdminSuggestionsEnabled = "ai_admin_suggestions_enabled";
+    public const string AiMatchingEnabled = "ai_matching_enabled";
+
+    public SystemConfigService(AppDbContext context, IAuditLogService auditLog, IDataProtectionProvider dataProtection)
     {
         _context = context;
         _auditLog = auditLog;
+        _secrets = dataProtection.CreateProtector("SY_SystemConfig.Secrets");
     }
+
+    /// <summary>Los valores de claves sensibles (sufijo _password/_api_key) se guardan cifrados
+    /// con prefijo "enc:". Valores legacy sin prefijo se leen como texto plano y se cifran en
+    /// la proxima escritura.</summary>
+    private string ProtectValue(string key, string value) =>
+        IsSensitiveKey(key) && !string.IsNullOrEmpty(value) ? EncPrefix + _secrets.Protect(value) : value;
+
+    private string UnprotectValue(string? value)
+    {
+        if (string.IsNullOrEmpty(value) || !value.StartsWith(EncPrefix)) return value ?? string.Empty;
+        try { return _secrets.Unprotect(value[EncPrefix.Length..]); }
+        catch (System.Security.Cryptography.CryptographicException) { return string.Empty; }
+    }
+
+    /// <summary>Claves cuyo valor es un secreto (passwords, API keys). El listado general las
+    /// devuelve con Value = null - solo los endpoints dedicados las exponen, y esos no devuelven
+    /// el valor jamas (write-only). OJO: UpdateBulkAsync sigue permitiendo escribirlas.</summary>
+    private static bool IsSensitiveKey(string key) =>
+        key.EndsWith("_password", StringComparison.OrdinalIgnoreCase) ||
+        key.EndsWith("_api_key", StringComparison.OrdinalIgnoreCase);
 
     public async Task<List<SystemConfigDto>> GetAllAsync()
     {
-        return await _context.SY_SystemConfig
+        var items = await _context.SY_SystemConfig
             .Where(c => !c.IsDeleted && c.IsActive)
             .OrderBy(c => c.Category).ThenBy(c => c.Key)
             .Select(c => new SystemConfigDto
@@ -55,6 +91,11 @@ public class SystemConfigService : ISystemConfigService
                 Description = c.Description
             })
             .ToListAsync();
+
+        foreach (var item in items.Where(i => IsSensitiveKey(i.Key)))
+            item.Value = null;
+
+        return items;
     }
 
     public async Task UpdateBulkAsync(UpdateSystemConfigDto dto, Guid staffId)
@@ -68,7 +109,7 @@ public class SystemConfigService : ISystemConfigService
         {
             var config = configs.FirstOrDefault(c => c.Key == item.Key);
             if (config == null) continue;
-            config.Value = item.Value;
+            config.Value = ProtectValue(item.Key, item.Value ?? "");
             config.UpdatedAt = DateTime.UtcNow;
             config.UpdatedBy = staffId;
         }
@@ -116,7 +157,7 @@ public class SystemConfigService : ISystemConfigService
             Host = Get(SmtpHost),
             Port = int.TryParse(Get(SmtpPort), out var port) ? port : 587,
             Username = Get(SmtpUsername),
-            Password = includePassword ? Get(SmtpPassword) : string.Empty,
+            Password = includePassword ? UnprotectValue(Get(SmtpPassword)) : string.Empty,
             UseSsl = !bool.TryParse(Get(SmtpUseSsl), out var useSsl) || useSsl,
             FromAddress = Get(SmtpFromAddress),
             FromName = string.IsNullOrWhiteSpace(Get(SmtpFromName)) ? "Trato Directo" : Get(SmtpFromName),
@@ -152,7 +193,7 @@ public class SystemConfigService : ISystemConfigService
                 _context.SY_SystemConfig.Add(new SYSystemConfig
                 {
                     Key = key,
-                    Value = value,
+                    Value = ProtectValue(key, value),
                     Category = SmtpCategory,
                     IsActive = true,
                     CreatedBy = staffId
@@ -160,7 +201,7 @@ public class SystemConfigService : ISystemConfigService
             }
             else
             {
-                config.Value = value;
+                config.Value = ProtectValue(key, value);
                 config.UpdatedAt = DateTime.UtcNow;
                 config.UpdatedBy = staffId;
             }
@@ -168,6 +209,81 @@ public class SystemConfigService : ISystemConfigService
 
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(staffId, "UpdateSmtpSettings", "SY_SystemConfig", null, null, null);
+    }
+
+    public async Task<AiSettingsDto> GetAiSettingsAsync() => await BuildAiSettingsAsync(includeApiKey: false);
+
+    public async Task<AiSettingsDto> GetAiCredentialsAsync() => await BuildAiSettingsAsync(includeApiKey: true);
+
+    private async Task<AiSettingsDto> BuildAiSettingsAsync(bool includeApiKey)
+    {
+        var values = await _context.SY_SystemConfig
+            .Where(c => !c.IsDeleted && c.Category == AiCategory)
+            .ToDictionaryAsync(c => c.Key, c => c.Value);
+
+        string Get(string key) => values.GetValueOrDefault(key) ?? string.Empty;
+        bool Flag(string key) => bool.TryParse(Get(key), out var b) && b;
+
+        return new AiSettingsDto
+        {
+            Provider = Get(AiProvider),
+            BaseUrl = Get(AiBaseUrl),
+            Model = Get(AiModel),
+            ApiKey = includeApiKey ? UnprotectValue(Get(AiApiKey)) : string.Empty,
+            HasApiKey = !string.IsNullOrWhiteSpace(Get(AiApiKey)),
+            Enabled = Flag(AiEnabled),
+            CvAnalysisEnabled = Flag(AiCvAnalysisEnabled),
+            CommandBarEnabled = Flag(AiCommandBarEnabled),
+            AdminSuggestionsEnabled = Flag(AiAdminSuggestionsEnabled),
+            MatchingEnabled = Flag(AiMatchingEnabled)
+        };
+    }
+
+    public async Task UpdateAiSettingsAsync(AiSettingsDto dto, Guid staffId)
+    {
+        var items = new Dictionary<string, string>
+        {
+            [AiProvider] = dto.Provider.Trim(),
+            [AiBaseUrl] = dto.BaseUrl.Trim(),
+            [AiModel] = dto.Model.Trim(),
+            [AiEnabled] = dto.Enabled.ToString(),
+            [AiCvAnalysisEnabled] = dto.CvAnalysisEnabled.ToString(),
+            [AiCommandBarEnabled] = dto.CommandBarEnabled.ToString(),
+            [AiAdminSuggestionsEnabled] = dto.AdminSuggestionsEnabled.ToString(),
+            [AiMatchingEnabled] = dto.MatchingEnabled.ToString()
+        };
+        if (!string.IsNullOrWhiteSpace(dto.ApiKey))
+            items[AiApiKey] = dto.ApiKey;
+
+        var keys = items.Keys.ToList();
+        var existing = await _context.SY_SystemConfig
+            .Where(c => !c.IsDeleted && c.Category == AiCategory && keys.Contains(c.Key))
+            .ToListAsync();
+
+        foreach (var (key, value) in items)
+        {
+            var config = existing.FirstOrDefault(c => c.Key == key);
+            if (config == null)
+            {
+                _context.SY_SystemConfig.Add(new SYSystemConfig
+                {
+                    Key = key,
+                    Value = ProtectValue(key, value),
+                    Category = AiCategory,
+                    IsActive = true,
+                    CreatedBy = staffId
+                });
+            }
+            else
+            {
+                config.Value = ProtectValue(key, value);
+                config.UpdatedAt = DateTime.UtcNow;
+                config.UpdatedBy = staffId;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(staffId, "UpdateAiSettings", "SY_SystemConfig", null, null, null);
     }
 
     public async Task<bool> GetCandidatePriorityPlanEnabledAsync()

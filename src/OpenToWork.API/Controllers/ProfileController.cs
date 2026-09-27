@@ -16,14 +16,16 @@ public class ProfileController : ControllerBase
     private readonly IWebHostEnvironment _env;
     private readonly ICvStorage _cvStorage;
     private readonly IProfilePhotoStorage _photoStorage;
+    private readonly ILogger<ProfileController> _logger;
 
-    public ProfileController(IProfileService profileService, ICvParserService cvParserService, IWebHostEnvironment env, ICvStorage cvStorage, IProfilePhotoStorage photoStorage)
+    public ProfileController(IProfileService profileService, ICvParserService cvParserService, IWebHostEnvironment env, ICvStorage cvStorage, IProfilePhotoStorage photoStorage, ILogger<ProfileController> logger)
     {
         _cvStorage = cvStorage;
         _photoStorage = photoStorage;
         _profileService = profileService;
         _cvParserService = cvParserService;
         _env = env;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -260,6 +262,12 @@ public class ProfileController : ControllerBase
             fileBytes = ms.ToArray();
         }
 
+        // Magic bytes: el ContentType lo declara el cliente y es falsificable - el PDF real
+        // siempre empieza con "%PDF-".
+        if (fileBytes.Length < 5 || fileBytes[0] != 0x25 || fileBytes[1] != 0x50 ||
+            fileBytes[2] != 0x44 || fileBytes[3] != 0x46 || fileBytes[4] != 0x2D)
+            return BadRequest("Invalid PDF file");
+
         // Carpeta privada (ICvStorage), ya no wwwroot: el CV solo se descarga con permiso (GET cv).
         var fileName = _cvStorage.NewFileName(userId.Value);
         await _cvStorage.SaveAsync(fileName, fileBytes);
@@ -272,6 +280,7 @@ public class ProfileController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogWarning("CV parse fallo para user {UserId}: {Message}", userId.Value, ex.Message);
             return Ok(new UploadCvResponseDto { CvUrl = cvUrl, ParsedData = new CvParseResultDto() });
         }
 
