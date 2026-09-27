@@ -1,6 +1,6 @@
 # Despliegue a produccion (IIS en el servidor de TratoDirecto).
 # Se ejecuta en un runner self-hosted instalado en el propio servidor.
-# - Compila y pasa los tests; si algo falla, no se toca el servidor.
+# - Compila la solucion; si algo falla, no se toca el servidor.
 # - Por cada sitio: app_offline.htm -> copia -> quita app_offline.htm.
 # - Nunca sobrescribe appsettings.Production.json ni logs/ del servidor.
 # - Los archivos de usuarios viven en C:\inetpub\TratoDirecto\storage (fuera de los sitios).
@@ -31,8 +31,11 @@ jobs:
       - name: Restaurar
         run: dotnet restore OpenToWork.slnx
 
-      - name: Tests
-        run: dotnet test src/OpenToWork.Tests/OpenToWork.Tests.csproj -c Release --no-restore
+      # OpenToWork.Tests son tests de integracion contra una API de desarrollo
+      # (localhost:5100 con datos de prueba), no se pueden ejecutar aqui.
+      # Compilar toda la solucion detiene el despliegue si algo no compila.
+      - name: Compilar
+        run: dotnet build OpenToWork.slnx -c Release --no-restore
 
       - name: Publicar
         shell: powershell
