@@ -14,7 +14,8 @@ builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(sp => sp.GetRequiredService<AppAuthStateProvider>());
 
 builder.Services.AddScoped<LocalStorageService>();
-builder.Services.AddScoped(sp => new SecureValueCipher(builder.Configuration["Security:LocalStorageKey"]));
+// En WASM no se cifra localStorage: AesGcm no existe en el navegador y la clave seria publica.
+builder.Services.AddScoped(sp => SecureValueCipher.PassThrough());
 builder.Services.AddScoped<AppAuthStateProvider>();
 builder.Services.AddScoped(sp => new LanguageService(
     sp.GetRequiredService<Microsoft.JSInterop.IJSRuntime>(),
@@ -25,8 +26,13 @@ builder.Services.AddScoped(sp => new LanguageService(
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 // ApiAuthService: cliente dedicado apuntando a la API del portal.
+// En produccion la API se sirve en el mismo origen (/api/*, proxy inverso de IIS a TD-API),
+// asi que no hace falta CORS ni configurar la URL. En desarrollo se usa ApiSettings:BaseUrl.
+var apiBaseUrl = builder.HostEnvironment.IsDevelopment()
+    ? builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5100/"
+    : builder.HostEnvironment.BaseAddress;
 builder.Services.AddScoped(sp => new ApiAuthService(
-    new HttpClient { BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5100/") },
+    new HttpClient { BaseAddress = new Uri(apiBaseUrl) },
     sp.GetRequiredService<LocalStorageService>(),
     sp.GetRequiredService<ILogger<ApiAuthService>>()));
 

@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using OpenToWork.Core.Extensions;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -121,7 +122,17 @@ builder.Services.AddCors(options =>
     });
 });
 
+// El portal WASM llama a la API a traves del proxy inverso de IIS (tratodirecto.es/api -> 127.0.0.1:5000).
+// Sin esto todas las peticiones llegarian desde 127.0.0.1 y el rate limiter por IP seria global.
+// Por defecto solo se confia en proxies de loopback.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
+
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {
