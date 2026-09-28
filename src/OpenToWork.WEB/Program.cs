@@ -36,4 +36,10 @@ builder.Services.AddScoped(sp => new ApiAuthService(
     sp.GetRequiredService<LocalStorageService>(),
     sp.GetRequiredService<ILogger<ApiAuthService>>()));
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+
+// Cargar los textos ANTES del primer render: si no, la primera pantalla se pinta con las claves
+// ("common.home.heroTitle") hasta que llegan los JSON. Mientras tanto se ve el "Cargando..." de index.html.
+await host.Services.GetRequiredService<LanguageService>().InitializeAsync();
+
+await host.RunAsync();

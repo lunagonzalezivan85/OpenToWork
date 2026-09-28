@@ -47,7 +47,8 @@ public class LanguageService
         }
         catch (JSDisconnectedException) { }
         catch (InvalidOperationException) { }
-        _currentLanguage = saved ?? "es";
+        // Espanol por defecto; un valor guardado que no sea un idioma soportado tambien cae a espanol
+        _currentLanguage = saved is "es" or "en" ? saved : "es";
         await LoadTranslationsAsync(_currentLanguage);
     }
 
@@ -66,18 +67,26 @@ public class LanguageService
 
     public async Task LoadTranslationsAsync(string lang)
     {
-        _translations.Clear();
-        foreach (var section in _sections)
+        // Todas las secciones en paralelo, y el diccionario se sustituye de una vez al final: nunca queda
+        // vacio ni a medias mientras se renderiza (antes se vaciaba y se veian las claves, p. ej. "common.home.heroTitle").
+        var jsons = await Task.WhenAll(_sections.Select(async section =>
         {
+            try { return (section, json: await LoadSectionJsonAsync(lang, section)); }
+            catch { return (section, json: (string?)null); }
+        }));
+
+        var loaded = new Dictionary<string, string>();
+        foreach (var (section, json) in jsons)
+        {
+            if (json == null) continue;
             try
             {
-                var json = await LoadSectionJsonAsync(lang, section);
-                if (json == null) continue;
                 var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-                if (dict != null) FlattenDictionary(dict, section, _translations);
+                if (dict != null) FlattenDictionary(dict, section, loaded);
             }
             catch { }
         }
+        _translations = loaded;
     }
 
     private async Task<string?> LoadSectionJsonAsync(string lang, string section)
