@@ -60,6 +60,13 @@
             <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium ot-btn--full-width" disabled="@IsLoading">
                 @(IsLoading ? Lang.T("common.labels.loading") : Lang.T("common.buttons.register"))
             </button>
+
+            @* Aviso de primera capa (RGPD art. 13): informa y enlaza los textos legales; no es una casilla de consentimiento *@
+            <p class="auth-legal">
+                @Lang.T("auth.register.legalPrefix") <a href="/terms" target="_blank" rel="noopener">@Lang.T("auth.register.legalTerms")</a>
+                @Lang.T("auth.register.legalAnd") <a href="/privacy" target="_blank" rel="noopener">@Lang.T("auth.register.legalPrivacy")</a>
+                @Lang.T("auth.register.legalAndCookies") <a href="/cookies" target="_blank" rel="noopener">@Lang.T("auth.register.legalCookies")</a>.
+            </p>
         </EditForm>
 
         <p class="auth-link">

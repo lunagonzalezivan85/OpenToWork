@@ -125,15 +125,16 @@ Cada fase es independiente y se puede desplegar sola. Las fases C1 a C4 no neces
 **Criterio de cierre:** en `/my-vacancies` y `/my-vacancies/{id}` los avisos y la confirmacion de eliminar funcionan; la pestana Red del navegador no muestra ninguna peticion fuera de `tratodirecto.es`; la consola no muestra errores de CSP.
 **Esfuerzo:** pequeno (1 commit).
 
-### Fase C2 — Pagina `/cookies` y enlaces
+### Fase C2 — Pagina `/cookies` y enlaces — HECHA (27-Sep)
 
-- [ ] Pagina nueva `Cookies.razor` (`/cookies`) en el portal, con el mismo formato que `Privacy.razor` y `Terms.razor`. Texto base en la seccion 8 de este documento.
-- [ ] Claves i18n `common.cookies.*` en `es` y `en`.
-- [ ] Enlace "Cookies" en el pie del portal, junto a Privacidad y Terminos.
-- [ ] `/privacy` punto 11: remitir a `/cookies` para el detalle.
-- [ ] Registro (`/register`): mencionar la Politica de Cookies junto a la aceptacion de terminos.
+- [x] Pagina nueva `Cookies.razor` (`/cookies`) en el portal, con el mismo formato que `Privacy.razor` y `Terms.razor`. Texto base en la seccion 8 de este documento.
+- [x] ~~Claves i18n `common.cookies.*` en `es` y `en`.~~ **Cambio:** el texto de la politica va fijo en espanol, igual que `/privacy` y `/terms` (ninguna de las paginas legales usa i18n). Si mas adelante se traducen, se traducen las tres juntas. Si tienen i18n el enlace del pie (`common.footer.cookies`) y el aviso del registro (`auth.register.legal*`).
+- [x] Enlace "Cookies" en el pie del portal, junto a Privacidad y Terminos.
+- [x] `/privacy` punto 11: remite a `/cookies` para el detalle.
+- [x] Registro (`/register`): **no existia ninguna mencion a los textos legales** (ni casilla ni aviso). Se agrego un aviso informativo bajo el boton "Registrarse" con enlaces a Terminos, Privacidad y Cookies. Es informativo (RGPD art. 13), no una casilla de consentimiento: si el asesor legal pide una casilla obligatoria de aceptacion de terminos, es un cambio aparte (Fase C4).
+- [x] De paso: `ApiAuthService.GetLegalIdentityAsync` ya no rompe `/privacy` ni `/cookies` si el API falla o devuelve algo que no es JSON (antes salia la barra de error de Blazor); sin datos, la pagina muestra "—".
 
-**Criterio de cierre:** `/cookies` accesible sin sesion, en espanol e ingles, enlazada desde pie, privacidad y registro; la tabla coincide con el inventario de la seccion 3.1 despues de C1.
+**Criterio de cierre:** `/cookies` accesible sin sesion, enlazada desde pie, privacidad y registro; la tabla coincide con el inventario de la seccion 3.1 despues de C1. Verificado en local (escritorio y movil 375 px: la tabla tiene scroll propio y la pagina no se desborda; sin peticiones a otros dominios).
 **Esfuerzo:** pequeno-medio (1 commit).
 
 ### Fase C3 — Panel administrativo
@@ -149,6 +150,7 @@ Cada fase es independiente y se puede desplegar sola. Las fases C1 a C4 no neces
 ### Fase C4 — Revision legal y vigencia
 
 - [ ] Enviar `/cookies`, `/privacy` y `/terms` al asesor legal.
+- [ ] Preguntar al asesor si el registro necesita una casilla obligatoria de aceptacion de terminos (hoy solo hay un aviso informativo, ver C2).
 - [ ] Incorporar correcciones y poner "Ultima actualizacion: fecha" en las tres paginas.
 - [ ] Acordar quien revisa el inventario (seccion 3) cada vez que se agregue un script, CDN o servicio externo. Propuesta: regla en el README, "ningun script de terceros sin actualizar `docs/COOKIES_Y_PRIVACIDAD.md` y `/cookies`".
 

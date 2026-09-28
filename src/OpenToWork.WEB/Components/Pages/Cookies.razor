@@ -1,0 +1,107 @@
+@page "/cookies"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+
+@* Politica de cookies del portal (LSSI art. 22.2 + Guia de cookies de la AEPD). El portal solo usa almacenamiento
+   tecnico y de preferencias, exento de consentimiento, asi que no hay banner: basta con informar. El inventario
+   de la tabla debe coincidir con docs/COOKIES_Y_PRIVACIDAD.md (seccion 3.1): al agregar cualquier script, CDN o
+   servicio externo hay que actualizar ambos. DEBE revisarla un asesor legal. *@
+<PageTitle>Política de cookies</PageTitle>
+
+<div class="page-container">
+    <div class="about-hero">
+        <h1 class="about-hero-title">Política de cookies</h1>
+        <p class="about-hero-subtitle">Qué guarda Trato Directo en tu navegador y para qué</p>
+    </div>
+
+    <article class="legal-doc">
+        <p class="legal-doc-updated">Última actualización: 27 de septiembre de 2026</p>
+
+        <h2>1. Qué son las cookies y el almacenamiento local</h2>
+        <p>
+            Las cookies y el almacenamiento local son pequeños datos que una web guarda en tu navegador para
+            funcionar o para recordar tus preferencias. A efectos legales se tratan igual, así que en esta política
+            hablamos de ambos.
+        </p>
+
+        <h2>2. Qué usamos en Trato Directo</h2>
+        <p>
+            Solo usamos almacenamiento <strong>técnico y de preferencias</strong>, necesario para prestarte el
+            servicio que nos pides. <strong>No usamos cookies de analítica, de publicidad ni de redes sociales</strong>,
+            y no compartimos esta información con terceros para esos fines.
+        </p>
+        <p>
+            Por eso no te pedimos consentimiento: el artículo 22.2 de la Ley 34/2002 de Servicios de la Sociedad de la
+            Información (LSSI) exime de él a este tipo de almacenamiento. Aun así, te informamos de todo lo que
+            guardamos.
+        </p>
+
+        <div class="legal-doc-table-wrap">
+            <table class="legal-doc-table">
+                <thead>
+                    <tr><th>Nombre</th><th>Tipo</th><th>Finalidad</th><th>Duración</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>opentowork-token</code></td><td>Técnica</td><td>Mantener tu sesión iniciada.</td><td>Hasta que cierres sesión</td></tr>
+                    <tr><td><code>opentowork-refresh-token</code></td><td>Técnica</td><td>Renovar la sesión sin volver a pedirte la contraseña.</td><td>Hasta que cierres sesión</td></tr>
+                    <tr><td><code>opentowork-user-id</code></td><td>Técnica</td><td>Identificar al usuario conectado.</td><td>Hasta que cierres sesión</td></tr>
+                    <tr><td><code>opentowork-role</code></td><td>Técnica</td><td>Saber si tu cuenta es de candidato o de empresa para mostrarte el menú correcto.</td><td>Hasta que cierres sesión</td></tr>
+                    <tr><td><code>opentowork-lang</code></td><td>Preferencia</td><td>Recordar el idioma que elegiste.</td><td>Hasta que lo borres</td></tr>
+                    <tr><td><code>opentowork-theme</code></td><td>Preferencia</td><td>Recordar el tema visual que elegiste.</td><td>Hasta que lo borres</td></tr>
+                    <tr><td><code>tratodirecto-*</code></td><td>Técnica</td><td>Copia local de estilos e iconos para que el portal cargue más rápido.</td><td>Hasta la siguiente versión del portal</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>
+            Todo lo anterior lo guarda Trato Directo en el almacenamiento local de tu navegador. El portal no crea
+            cookies propias ni de terceros.
+        </p>
+
+        <h2>3. Proveedores</h2>
+        <p>
+            El portal se sirve a través de Cloudflare, que actúa como encargado del tratamiento para entregar la web
+            de forma rápida y segura. Todos los archivos del portal (código, estilos, tipografías e imágenes propias)
+            se sirven desde nuestro propio dominio: tu navegador no descarga nada de otros sitios al navegar por él.
+        </p>
+
+        <h2>4. Cómo borrarlo</h2>
+        <ul>
+            <li>Al <strong>cerrar sesión</strong> se borran los datos de la sesión.</li>
+            <li>Puedes borrar todo desde la configuración de tu navegador, en el apartado de datos o almacenamiento de
+                los sitios web. Si lo haces, tendrás que volver a iniciar sesión y a elegir idioma y tema.</li>
+        </ul>
+
+        <h2>5. Cambios en esta política</h2>
+        <p>
+            Si algún día incorporamos cookies que requieran tu consentimiento (por ejemplo, de analítica), te lo
+            pediremos antes de usarlas y actualizaremos esta página.
+        </p>
+
+        <h2>6. Responsable y contacto</h2>
+        <p>
+            El responsable es @Value(Identity?.LegalName) (CIF @Value(Identity?.TaxId)). Para cualquier duda sobre esta
+            política escríbenos a @ContactLine. Más información sobre cómo tratamos tus datos en nuestra
+            <a href="/privacy">Política de privacidad</a>.
+        </p>
+    </article>
+</div>
+
+@code {
+    private PublicLegalIdentityDto? Identity;
+
+    // Mismo criterio que Privacy.razor: correo de privacidad (admin > Datos de la Empresa) o, si falta, la direccion postal.
+    private string ContactLine => !string.IsNullOrWhiteSpace(Identity?.PrivacyEmail)
+        ? Identity!.PrivacyEmail
+        : $"nuestra dirección postal ({Value(Identity?.Address)})";
+
+    private static string Value(string? v) => string.IsNullOrWhiteSpace(v) ? "—" : v;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        Identity = await AuthApi.GetLegalIdentityAsync();
+    }
+}

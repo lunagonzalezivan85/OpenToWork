@@ -431,9 +431,18 @@ public class ApiAuthService
     /// <summary>Datos legales publicos de Trato Directo (politica de privacidad). No requiere sesion.</summary>
     public async Task<PublicLegalIdentityDto?> GetLegalIdentityAsync()
     {
-        var response = await _httpClient.GetAsync("api/legal/identity");
-        if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<PublicLegalIdentityDto>();
+        // Las paginas legales (/privacy, /cookies) deben mostrarse aunque el API falle: sin datos, muestran "—".
+        try
+        {
+            var response = await _httpClient.GetAsync("api/legal/identity");
+            if (!response.IsSuccessStatusCode) return null;
+            return await response.Content.ReadFromJsonAsync<PublicLegalIdentityDto>();
+        }
+        catch (Exception ex) when (ex is HttpRequestException or System.Text.Json.JsonException or TaskCanceledException)
+        {
+            _logger.LogWarning(ex, "No se pudieron obtener los datos legales");
+            return null;
+        }
     }
 
     /// <summary>CV propio (null si no hay). Los CV ya no son archivos publicos: se bajan con sesion.</summary>
