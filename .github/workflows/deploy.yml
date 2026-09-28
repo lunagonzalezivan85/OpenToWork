@@ -5,7 +5,9 @@
 # - Guarda una copia de cada sitio antes de sustituirlo y la restaura si la comprobacion final falla.
 # - Nunca sobrescribe appsettings.Production.json ni logs/ del servidor.
 # - Los archivos de usuarios viven en C:\inetpub\TratoDirecto\storage (fuera de los sitios).
-# - Las migraciones de EF Core NO se aplican aqui: siguen siendo manuales.
+# - Migraciones de EF Core: si hay pendientes, se hace un mysqldump completo y se aplican
+#   ANTES de tocar los sitios. Si fallan, no se despliega nada. La BD no se revierte sola:
+#   el dump queda en deploy-backup\db para restaurarlo a mano si hiciera falta.
 #
 # WEB (portal del candidato) es Blazor WebAssembly: IIS sirve archivos estaticos y
 # hace de proxy inverso de /api/* hacia TD-API (ver src/OpenToWork.WEB/web.config).
@@ -27,6 +29,8 @@ jobs:
     env:
       SITES_ROOT: C:\inetpub\TratoDirecto\sites
       PUBLIC_URL: https://tratodirecto.es
+      MYSQL_BIN: C:\Program Files\MySQL\MySQL Server 8.4\bin
+      DB_BACKUPS_TO_KEEP: '15'
       DOTNET_CLI_TELEMETRY_OPTOUT: '1'
       DOTNET_NOLOGO: '1'
 
@@ -51,6 +55,11 @@ jobs:
             dotnet publish "src/OpenToWork.$a/OpenToWork.$a.csproj" -c Release --no-restore -o "publish/$a"
             if ($LASTEXITCODE -ne 0) { throw "Fallo al publicar $a" }
           }
+          # Ejecutable autonomo con todas las migraciones (usa AppDbContextDesignTimeFactory)
+          dotnet tool restore
+          if ($LASTEXITCODE -ne 0) { throw 'Fallo dotnet tool restore' }
+          dotnet tool run dotnet-ef migrations bundle --project src/OpenToWork.Models --startup-project src/OpenToWork.Models --configuration Release --output publish/efbundle/migrate.exe --force
+          if ($LASTEXITCODE -ne 0) { throw 'Fallo al generar el bundle de migraciones' }
 
       - name: Comprobar requisitos de IIS
         shell: powershell
@@ -65,6 +74,66 @@ jobs:
           if ($usaProxy -and -not (Test-Path "$env:ProgramFiles\IIS\Application Request Routing\requestRouter.dll")) { $faltan += 'Application Request Routing (ARR)' }
           if ($faltan.Count) { throw "Falta en IIS: $($faltan -join ', '). No se ha tocado el servidor." }
           Write-Host 'IIS tiene todo lo necesario.'
+
+      - name: Migrar base de datos
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # Misma cadena de conexion que usa la API en produccion (nunca se imprime)
+          $settings = Join-Path $env:SITES_ROOT 'API\appsettings.Production.json'
+          $cs = (Get-Content $settings -Raw | ConvertFrom-Json).ConnectionStrings.DefaultConnection
+          if (-not $cs) { throw "No hay ConnectionStrings:DefaultConnection en $settings. No se ha tocado nada." }
+          $b = New-Object System.Data.Common.DbConnectionStringBuilder
+          $b.set_ConnectionString($cs)  # con "$b.ConnectionString =" PowerShell crea una clave en vez de parsear
+          function Valor([string[]]$claves, $defecto) {
+            foreach ($k in $claves) { if ($b.ContainsKey($k) -and "$($b[$k])") { return "$($b[$k])" } }
+            return $defecto
+          }
+          $db = Valor 'Database','Initial Catalog' $null
+          if (-not $db) { throw 'La cadena de conexion no indica la base de datos.' }
+          $clave = Valor 'Password','Pwd' ''
+          if ($clave) { Write-Host "::add-mask::$clave" }
+          $cnf = Join-Path $env:RUNNER_TEMP 'td-mysql.cnf'
+          @(
+            '[client]'
+            "host=$(Valor 'Server','Host','Data Source','Address' 'localhost')"
+            "port=$(Valor 'Port' '3306')"
+            "user=$(Valor 'User','User Id','Uid','Username' 'root')"
+            "password=`"$($clave.Replace('\', '\\').Replace('"', '\"'))`""
+          ) | Set-Content $cnf -Encoding ASCII
+          try {
+            $mysql = Join-Path $env:MYSQL_BIN 'mysql.exe'
+            $aplicadas = @(& $mysql "--defaults-extra-file=$cnf" -N -B -e "SELECT MigrationId FROM ``$db``.__EFMigrationsHistory ORDER BY MigrationId")
+            if ($LASTEXITCODE -ne 0) { throw 'No se pudo leer __EFMigrationsHistory.' }
+            $enRepo = @(Get-ChildItem src\OpenToWork.Models\Migrations -Filter *.cs |
+              Where-Object { $_.Name -match '^\d{14}_' -and $_.Name -notlike '*.Designer.cs' } |
+              ForEach-Object { $_.BaseName } | Sort-Object)
+            $desconocidas = @($aplicadas | Where-Object { $_ -notin $enRepo })
+            if ($desconocidas.Count) { throw "La BD tiene migraciones que no estan en main: $($desconocidas -join ', '). No se ha tocado nada." }
+            $pendientes = @($enRepo | Where-Object { $_ -notin $aplicadas })
+            Write-Host "Aplicadas: $($aplicadas.Count). En el repo: $($enRepo.Count). Pendientes: $($pendientes.Count)."
+            if (-not $pendientes.Count) { Write-Host 'Base de datos al dia.'; return }
+            $pendientes | ForEach-Object { Write-Host "  - $_" }
+
+            # Copia completa antes de migrar
+            $dumpDir = Join-Path $env:RUNNER_WORKSPACE 'deploy-backup\db'
+            New-Item -ItemType Directory -Force $dumpDir | Out-Null
+            $dump = Join-Path $dumpDir ("{0}-{1}-antes-de-{2}.sql" -f $db, (Get-Date -Format 'yyyyMMdd-HHmmss'), $pendientes[0])
+            & (Join-Path $env:MYSQL_BIN 'mysqldump.exe') "--defaults-extra-file=$cnf" --single-transaction --routines --triggers --events --default-character-set=utf8mb4 "--result-file=$dump" --databases $db
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path $dump) -or (Get-Item $dump).Length -lt 1024) { throw 'Fallo el mysqldump. No se ha migrado ni desplegado nada.' }
+            Write-Host "Copia de la BD: $dump ($([math]::Round((Get-Item $dump).Length / 1MB, 1)) MB)"
+            Get-ChildItem $dumpDir -Filter *.sql | Sort-Object LastWriteTime -Descending |
+              Select-Object -Skip ([int]$env:DB_BACKUPS_TO_KEEP) | Remove-Item -Force
+
+            $env:ConnectionStrings__DefaultConnection = $cs
+            & publish\efbundle\migrate.exe
+            if ($LASTEXITCODE -ne 0) { throw "Fallo al aplicar migraciones. No se ha desplegado nada. Copia previa: $dump" }
+            Write-Host "::notice::Migraciones aplicadas: $($pendientes -join ', '). Copia previa: $dump"
+          }
+          finally {
+            Remove-Item $cnf -Force -ErrorAction SilentlyContinue
+            Remove-Item Env:ConnectionStrings__DefaultConnection -ErrorAction SilentlyContinue
+          }
 
       - name: Desplegar en IIS
         id: desplegar
@@ -143,5 +212,6 @@ jobs:
             robocopy (Join-Path $backupRoot $a) $dest /MIR /R:5 /W:3 /XF app_offline.htm appsettings.Production.json /XD logs /NFL /NDL /NJH /NP
             Remove-Item (Join-Path $dest 'app_offline.htm') -Force -ErrorAction SilentlyContinue
           }
-          Write-Host '::error::El despliegue fallo y se restauro la version anterior. Revisa el log de los pasos anteriores.'
+          Write-Host '::error::El despliegue fallo y se restauro la version anterior de los sitios. Revisa el log de los pasos anteriores.'
+          Write-Host '::warning::Si el paso "Migrar base de datos" aplico migraciones, la BD NO se ha revertido (el dump previo esta en deploy-backup\db).'
           exit 0
