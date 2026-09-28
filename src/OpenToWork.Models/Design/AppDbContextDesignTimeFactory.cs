@@ -9,7 +9,9 @@ public class AppDbContextDesignTimeFactory : IDesignTimeDbContextFactory<AppDbCo
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var connectionString = "Server=localhost;Port=3306;Database=OpenToWorkDb;User=root;Password=;CharSet=utf8mb4;";
+        // En produccion el despliegue pasa la cadena real por variable de entorno (ver deploy.yml).
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? "Server=localhost;Port=3306;Database=OpenToWorkDb;User=root;Password=;CharSet=utf8mb4;";
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseMySql(connectionString, ServerVersion.Create(8, 0, 36, ServerType.MySql))
