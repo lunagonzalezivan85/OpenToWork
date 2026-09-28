@@ -235,59 +235,6 @@
                 </div>
             </div>
         </div>
-
-        @* === Sección 3: Verificaciones de candidatos *@
-        <h2 class="admin-section-title">@Lang.T("admin.dashboard.sectionVerifications")</h2>
-        <div class="admin-chart-card">
-            <span class="admin-chart-card-title">@Lang.T("admin.dashboard.candidateVerifications") (@totalCandidates @Lang.T("admin.dashboard.candidatesTotal"))</span>
-            <div class="admin-bar-chart">
-                <div class="admin-bar-row admin-clickable" @onclick="GoLinkedIn">
-                    <span class="admin-bar-label">@Lang.T("admin.dashboard.withLinkedIn")</span>
-                    <div class="admin-bar-track">
-                        <div class="admin-bar-fill admin-bar-fill--linkedin" style="width: @(totalCandidates > 0 ? Metrics.CandidatesWithLinkedIn * 100 / totalCandidates : 0)%">
-                            @(totalCandidates > 0 ? Metrics.CandidatesWithLinkedIn * 100 / totalCandidates : 0)%
-                        </div>
-                    </div>
-                    <span class="admin-bar-value">@Metrics.CandidatesWithLinkedIn</span>
-                </div>
-                <div class="admin-bar-row admin-clickable" @onclick="GoPortfolio">
-                    <span class="admin-bar-label">@Lang.T("admin.dashboard.withPortfolio")</span>
-                    <div class="admin-bar-track">
-                        <div class="admin-bar-fill admin-bar-fill--portfolio" style="width: @(totalCandidates > 0 ? Metrics.CandidatesWithPortfolio * 100 / totalCandidates : 0)%">
-                            @(totalCandidates > 0 ? Metrics.CandidatesWithPortfolio * 100 / totalCandidates : 0)%
-                        </div>
-                    </div>
-                    <span class="admin-bar-value">@Metrics.CandidatesWithPortfolio</span>
-                </div>
-                <div class="admin-bar-row admin-clickable" @onclick="GoCV">
-                    <span class="admin-bar-label">@Lang.T("admin.dashboard.withCV")</span>
-                    <div class="admin-bar-track">
-                        <div class="admin-bar-fill admin-bar-fill--cv" style="width: @(totalCandidates > 0 ? Metrics.CandidatesWithCV * 100 / totalCandidates : 0)%">
-                            @(totalCandidates > 0 ? Metrics.CandidatesWithCV * 100 / totalCandidates : 0)%
-                        </div>
-                    </div>
-                    <span class="admin-bar-value">@Metrics.CandidatesWithCV</span>
-                </div>
-                <div class="admin-bar-row admin-clickable" @onclick="GoEvaluated">
-                    <span class="admin-bar-label">@Lang.T("admin.dashboard.profilesComplete")</span>
-                    <div class="admin-bar-track">
-                        <div class="admin-bar-fill admin-bar-fill--evaluated" style="width: @evaluatedPct%">
-                            @evaluatedPct%
-                        </div>
-                    </div>
-                    <span class="admin-bar-value">@Metrics.EvaluatedProfiles</span>
-                </div>
-                <div class="admin-bar-row admin-clickable" @onclick="GoPending">
-                    <span class="admin-bar-label">@Lang.T("admin.dashboard.profilesIncomplete")</span>
-                    <div class="admin-bar-track">
-                        <div class="admin-bar-fill admin-bar-fill--pending" style="width: @(totalCandidates > 0 ? Metrics.PendingProfiles * 100 / totalCandidates : 0)%">
-                            @(totalCandidates > 0 ? Metrics.PendingProfiles * 100 / totalCandidates : 0)%
-                        </div>
-                    </div>
-                    <span class="admin-bar-value">@Metrics.PendingProfiles</span>
-                </div>
-            </div>
-        </div>
     }
     else
     {
@@ -452,9 +399,6 @@
     private void GoEvaluated() => GoToResults("candidate", "evaluated");
     private void GoPending() => GoToResults("candidate", "pending");
     private void GoScores() => GoToResults("candidate", "scores");
-    private void GoLinkedIn() => GoToResults("candidate", "linkedin");
-    private void GoPortfolio() => GoToResults("candidate", "portfolio");
-    private void GoCV() => GoToResults("candidate", "cv");
     private void GoCompanies() => GoToResults("company");
     private void GoToVacancies() => GoToResults(section: "vacancies");
 }
