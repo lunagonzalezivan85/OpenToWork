@@ -1,7 +1,7 @@
 @page "/vacancies"
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
-@using Microsoft.AspNetCore.WebUtilities
+@using System.Web
 @using Microsoft.AspNetCore.Components
 @inject ApiAuthService AuthApi
 @inject LanguageService Lang
@@ -177,12 +177,10 @@
             await Lang.InitializeAsync();
 
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("keyword", out var q))
-            ActiveQuery = q.ToString();
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("location", out var loc))
-            ActiveLocation = loc.ToString();
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("category", out var cat))
-            ActiveCategory = cat.ToString();
+        var query = HttpUtility.ParseQueryString(uri.Query);
+        if (query["keyword"] is { } kw) ActiveQuery = kw;
+        if (query["location"] is { } lc) ActiveLocation = lc;
+        if (query["category"] is { } ct) ActiveCategory = ct;
 
         SearchKeyword = ActiveQuery;
         SearchLocation = ActiveLocation;

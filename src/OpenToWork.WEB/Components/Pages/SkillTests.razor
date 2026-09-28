@@ -168,7 +168,7 @@
             CurrentAttempt = attempt;
             Answers = Enumerable.Repeat(-1, attempt.Test.Questions.Count).ToList();
             SecondsRemaining = attempt.SecondsRemaining;
-            await JS.InvokeVoidAsync("eval", "window.otAntiCheatFlags = 0; window.otAntiCheatHandler && document.removeEventListener('visibilitychange', window.otAntiCheatHandler); window.otAntiCheatHandler = () => { if (document.hidden) window.otAntiCheatFlags++; }; document.addEventListener('visibilitychange', window.otAntiCheatHandler);");
+            await JS.InvokeVoidAsync("otAntiCheat.start");
             StartTimer();
         }
         IsBusy = false;
@@ -209,7 +209,7 @@
         var antiCheatFlags = 0;
         try
         {
-            antiCheatFlags = await JS.InvokeAsync<int>("eval", "window.otAntiCheatFlags || 0");
+            antiCheatFlags = await JS.InvokeAsync<int>("otAntiCheat.getFlags");
         }
         catch { }
 

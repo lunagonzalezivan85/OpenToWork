@@ -1,0 +1,147 @@
+# Despliegue a produccion (IIS en el servidor de TratoDirecto).
+# Se ejecuta en un runner self-hosted instalado en el propio servidor.
+# - Compila la solucion; si algo falla, no se toca el servidor.
+# - Comprueba que IIS tiene lo que necesitan los web.config (URL Rewrite, ARR); si no, no se toca el servidor.
+# - Guarda una copia de cada sitio antes de sustituirlo y la restaura si la comprobacion final falla.
+# - Nunca sobrescribe appsettings.Production.json ni logs/ del servidor.
+# - Los archivos de usuarios viven en C:\inetpub\TratoDirecto\storage (fuera de los sitios).
+# - Las migraciones de EF Core NO se aplican aqui: siguen siendo manuales.
+#
+# WEB (portal del candidato) es Blazor WebAssembly: IIS sirve archivos estaticos y
+# hace de proxy inverso de /api/* hacia TD-API (ver src/OpenToWork.WEB/web.config).
+
+name: Deploy produccion
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, windows, tratodirecto]
+    env:
+      SITES_ROOT: C:\inetpub\TratoDirecto\sites
+      PUBLIC_URL: https://tratodirecto.es
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restaurar
+        run: dotnet restore OpenToWork.slnx
+
+      # OpenToWork.Tests son tests de integracion contra una API de desarrollo
+      # (localhost:5100 con datos de prueba), no se pueden ejecutar aqui.
+      # Compilar toda la solucion detiene el despliegue si algo no compila.
+      - name: Compilar
+        run: dotnet build OpenToWork.slnx -c Release --no-restore
+
+      - name: Publicar
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $apps = 'API','AdminAPI','WEB','AdminWEB'
+          foreach ($a in $apps) {
+            dotnet publish "src/OpenToWork.$a/OpenToWork.$a.csproj" -c Release --no-restore -o "publish/$a"
+            if ($LASTEXITCODE -ne 0) { throw "Fallo al publicar $a" }
+          }
+
+      - name: Comprobar requisitos de IIS
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # La cuenta del runner no puede leer applicationHost.config: se comprueban las DLL de los modulos.
+          # Que el proxy de ARR este activado lo verifica la comprobacion final de /api (con vuelta atras).
+          $faltan = @()
+          $usaRewrite = Select-String -Path publish\*\web.config -Pattern '<rewrite>' -Quiet
+          $usaProxy = Select-String -Path publish\*\web.config -Pattern 'url="http://127\.0\.0\.1:\d+/' -Quiet
+          if ($usaRewrite -and -not (Test-Path "$env:windir\System32\inetsrv\rewrite.dll")) { $faltan += 'URL Rewrite' }
+          if ($usaProxy -and -not (Test-Path "$env:ProgramFiles\IIS\Application Request Routing\requestRouter.dll")) { $faltan += 'Application Request Routing (ARR)' }
+          if ($faltan.Count) { throw "Falta en IIS: $($faltan -join ', '). No se ha tocado el servidor." }
+          Write-Host 'IIS tiene todo lo necesario.'
+
+      - name: Desplegar en IIS
+        id: desplegar
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $backupRoot = Join-Path $env:RUNNER_WORKSPACE 'deploy-backup'
+          $marker = Join-Path $backupRoot 'desplegados.txt'
+          New-Item -ItemType Directory -Force $backupRoot | Out-Null
+          Set-Content $marker '' -Encoding UTF8
+          # APIs primero, luego las webs que las consumen
+          $apps = 'API','AdminAPI','WEB','AdminWEB'
+          foreach ($a in $apps) {
+            $dest = Join-Path $env:SITES_ROOT $a
+            $offline = Join-Path $dest 'app_offline.htm'
+            Write-Host "==> $a -> $dest"
+            robocopy $dest (Join-Path $backupRoot $a) /MIR /R:2 /W:2 /XF app_offline.htm appsettings.Production.json /XD logs /NFL /NDL /NJH /NJS /NP
+            if ($LASTEXITCODE -ge 8) { throw "No se pudo hacer copia de seguridad de $a (codigo $LASTEXITCODE)" }
+            Add-Content $marker $a
+            Set-Content -Path $offline -Value '<html><body><h2>Actualizando, vuelve en unos segundos...</h2></body></html>' -Encoding UTF8
+            Start-Sleep -Seconds 5
+            try {
+              robocopy "publish\$a" $dest /MIR /R:5 /W:3 /XF app_offline.htm appsettings.Production.json /XD logs /NFL /NDL /NJH /NP
+              if ($LASTEXITCODE -ge 8) { throw "robocopy fallo en $a (codigo $LASTEXITCODE)" }
+            }
+            finally {
+              Remove-Item $offline -Force -ErrorAction SilentlyContinue
+            }
+          }
+          exit 0
+
+      - name: Comprobar que las apps funcionan
+        shell: powershell
+        run: |
+          function Probar($url, [int[]]$esperado, $contentType) {
+            $status = 0; $tipo = ''
+            for ($i = 0; $i -lt 6; $i++) {
+              try {
+                $r = Invoke-WebRequest $url -UseBasicParsing -MaximumRedirection 0 -TimeoutSec 30
+                $status = [int]$r.StatusCode; $tipo = "$($r.Headers['Content-Type'])"
+              } catch {
+                if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode; $tipo = "$($_.Exception.Response.ContentType)" } else { $status = 0 }
+              }
+              $ok = ($status -in $esperado) -and (-not $contentType -or $tipo -like "*$contentType*")
+              if ($ok) { break }
+              Start-Sleep -Seconds 5
+            }
+            Write-Host "$url -> HTTP $status $tipo"
+            return $ok
+          }
+          # APIs y AdminWEB: basta con que respondan sin error 5xx
+          $internos = 400..499 + 200..399
+          $checks = @(
+            @{ Url = 'http://127.0.0.1:5000/'; Ok = $internos },
+            @{ Url = 'http://127.0.0.1:5001/'; Ok = $internos },
+            @{ Url = 'http://127.0.0.1:5002/'; Ok = $internos },
+            # Portal WASM: pagina, runtime de Blazor y proxy /api -> TD-API (tiene que devolver JSON de la API)
+            @{ Url = "$env:PUBLIC_URL/"; Ok = @(200) },
+            @{ Url = "$env:PUBLIC_URL/_framework/blazor.webassembly.js"; Ok = @(200) },
+            @{ Url = "$env:PUBLIC_URL/api/vacancies/search"; Ok = @(200); Tipo = 'application/json' }
+          )
+          $fallos = @()
+          foreach ($c in $checks) { if (-not (Probar $c.Url $c.Ok $c.Tipo)) { $fallos += $c.Url } }
+          if ($fallos.Count) { throw "Fallaron: $($fallos -join ', ')" }
+
+      - name: Restaurar version anterior si algo fallo
+        if: failure() && steps.desplegar.outcome != 'skipped'
+        shell: powershell
+        run: |
+          $backupRoot = Join-Path $env:RUNNER_WORKSPACE 'deploy-backup'
+          $marker = Join-Path $backupRoot 'desplegados.txt'
+          if (-not (Test-Path $marker)) { Write-Host 'No hay nada que restaurar.'; exit 0 }
+          foreach ($a in (Get-Content $marker | Where-Object { $_ })) {
+            $dest = Join-Path $env:SITES_ROOT $a
+            Write-Host "<== Restaurando $a"
+            robocopy (Join-Path $backupRoot $a) $dest /MIR /R:5 /W:3 /XF app_offline.htm appsettings.Production.json /XD logs /NFL /NDL /NJH /NP
+            Remove-Item (Join-Path $dest 'app_offline.htm') -Force -ErrorAction SilentlyContinue
+          }
+          Write-Host '::error::El despliegue fallo y se restauro la version anterior. Revisa el log de los pasos anteriores.'
+          exit 0

@@ -203,17 +203,24 @@ else
     @if (Detail.Dismissal == null)
     {
         <div class="admin-recruitment-card" style="margin-top: 1.5rem;">
-            <h3 class="admin-recruitment-card-title">
-                Preferencias del candidato
-                @if (Preferences?.IsCompleted == true)
-                {
-                    <span class="admin-result-badge admin-result-badge--success" style="margin-left: 0.5rem;">Completado</span>
-                }
-                else
-                {
-                    <span class="admin-result-badge admin-result-badge--warning" style="margin-left: 0.5rem;">Pendiente</span>
-                }
+            <h3 class="admin-recruitment-card-title" style="cursor: pointer; user-select: none; justify-content: space-between;" @onclick="() => PreferencesCollapsed = !PreferencesCollapsed">
+                <span>
+                    Preferencias del candidato
+                    @if (Preferences?.IsCompleted == true)
+                    {
+                        <span class="admin-result-badge admin-result-badge--success" style="margin-left: 0.5rem;">Completado</span>
+                    }
+                    else
+                    {
+                        <span class="admin-result-badge admin-result-badge--warning" style="margin-left: 0.5rem;">Pendiente</span>
+                    }
+                </span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="transition: transform 0.2s ease; transform: rotate(@(PreferencesCollapsed ? "0deg" : "180deg")); color: var(--text-muted);">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
             </h3>
+            @if (!PreferencesCollapsed)
+            {
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Complete estas preferencias antes de avanzar al candidato a la siguiente etapa.</p>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem;">
@@ -296,6 +303,7 @@ else
                     @(PrefSaving ? "Guardando..." : "Guardar preferencias")
                 </button>
             </div>
+            }
         </div>
     }
 
@@ -1565,6 +1573,7 @@ else
     private TimeOnly? PrefScheduleStart { get; set; }
     private TimeOnly? PrefScheduleEnd { get; set; }
     private bool PrefSaving { get; set; }
+    private bool PreferencesCollapsed { get; set; }
     private List<string> SelectedDays { get; set; } = new();
     private List<DocumentTypeDto> DocumentTypes { get; set; } = new();
     private List<RecruitmentDocumentDto> Documents { get; set; } = new();
@@ -1827,6 +1836,7 @@ else
         if (Detail != null)
         {
             Preferences = await AuthApi.GetRecruitmentPreferencesAsync(Detail.Id);
+            PreferencesCollapsed = Preferences?.IsCompleted == true;
             Documents = await AuthApi.GetRecruitmentDocumentsAsync(Detail.Id);
             DocumentTypes = await AuthApi.GetDocumentTypesAsync();
             VacancyOptions = await AuthApi.GetVacancyOptionsAsync();

@@ -1,68 +1,39 @@
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using OpenToWork.WEB.Components;
 using OpenToWork.WEB.Services;
 using OpenToWork.SharedUI.Services;
-using Microsoft.AspNetCore.StaticFiles;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-builder.Services.AddAuthorization();
-builder.Services.AddAuthentication();
+// Cliente WASM: sin circuito SignalR - la app corre en el navegador y solo habla HTTP con la API.
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(sp => sp.GetRequiredService<AppAuthStateProvider>());
 
 builder.Services.AddScoped<LocalStorageService>();
-builder.Services.AddScoped<ApiAuthService>();
+// En WASM no se cifra localStorage: AesGcm no existe en el navegador y la clave seria publica.
+builder.Services.AddScoped(sp => SecureValueCipher.PassThrough());
 builder.Services.AddScoped<AppAuthStateProvider>();
 builder.Services.AddScoped(sp => new LanguageService(
     sp.GetRequiredService<Microsoft.JSInterop.IJSRuntime>(),
-    sp.GetRequiredService<IWebHostEnvironment>(),
+    sp.GetRequiredService<HttpClient>(),
     new[] { "common", "auth", "wizard", "dashboard", "vacancies", "profile", "validation", "errors", "applications" }));
-builder.Services.AddSingleton<AesEncryptionService>(sp => new AesEncryptionService(builder.Configuration["Security:AesKey"] ?? "OpenToWork-Default-Key-2024"));
-builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(sp => sp.GetRequiredService<AppAuthStateProvider>());
 
-builder.Services.AddHttpClient<ApiAuthService>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5000/");
-});
+// HttpClient por defecto: origen de la app (para assets como config/language/*.json).
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-var app = builder.Build();
+// ApiAuthService: cliente dedicado apuntando a la API del portal.
+// En produccion la API se sirve en el mismo origen (/api/*, proxy inverso de IIS a TD-API),
+// asi que no hace falta CORS ni configurar la URL. En desarrollo se usa ApiSettings:BaseUrl.
+var apiBaseUrl = builder.HostEnvironment.IsDevelopment()
+    ? builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5100/"
+    : builder.HostEnvironment.BaseAddress;
+builder.Services.AddScoped(sp => new ApiAuthService(
+    new HttpClient { BaseAddress = new Uri(apiBaseUrl) },
+    sp.GetRequiredService<LocalStorageService>(),
+    sp.GetRequiredService<ILogger<ApiAuthService>>()));
 
-// Detras de Cloudflare Tunnel (cloudflared en el mismo servidor) la peticion llega a IIS por HTTP aunque el
-// usuario use HTTPS: se respeta X-Forwarded-Proto para que UseHttpsRedirection no entre en bucle. Solo se
-// confia en proxies locales (loopback, el valor por defecto de KnownNetworks/KnownProxies).
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
-        | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
-});
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    app.UseHsts();
-}
-
-var contentTypeProvider = new FileExtensionContentTypeProvider();
-contentTypeProvider.Mappings[".webmanifest"] = "application/manifest+json";
-contentTypeProvider.Mappings[".manifest"] = "application/manifest+json";
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    ContentTypeProvider = contentTypeProvider
-});
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
-app.UseAntiforgery();
-
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-app.Run();
+await builder.Build().RunAsync();

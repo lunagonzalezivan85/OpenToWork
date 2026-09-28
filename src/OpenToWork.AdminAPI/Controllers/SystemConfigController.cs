@@ -30,6 +30,20 @@ public class SystemConfigController : AdminControllerBase
         return Ok();
     }
 
+    [HttpGet("ai")]
+    public async Task<IActionResult> GetAiSettings()
+    {
+        var result = await _configService.GetAiSettingsAsync();
+        return Ok(result);
+    }
+
+    [HttpPut("ai")]
+    public async Task<IActionResult> UpdateAiSettings([FromBody] AiSettingsDto dto)
+    {
+        await _configService.UpdateAiSettingsAsync(dto, AdminId);
+        return Ok(await _configService.GetAiSettingsAsync());
+    }
+
     [HttpGet("candidate-priority-plan")]
     public async Task<IActionResult> GetCandidatePriorityPlanEnabled()
     {

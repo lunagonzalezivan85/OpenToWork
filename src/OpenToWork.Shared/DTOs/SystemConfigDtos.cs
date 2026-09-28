@@ -46,3 +46,20 @@ public class PublicLegalIdentityDto
     public string MercantileRegistry { get; set; } = string.Empty;
     public string PrivacyEmail { get; set; } = string.Empty;
 }
+
+/// <summary>Configuracion del proveedor de IA (SY_SystemConfig, categoria "Ai"). ApiKey es write-only:
+/// nunca se devuelve al cliente (HasApiKey indica si hay una guardada). Los toggles por feature deciden
+/// en que puntos del sistema se consume la IA; todos apagados por defecto.</summary>
+public class AiSettingsDto
+{
+    public string Provider { get; set; } = string.Empty;
+    public string BaseUrl { get; set; } = string.Empty;
+    public string Model { get; set; } = string.Empty;
+    public string ApiKey { get; set; } = string.Empty;
+    public bool HasApiKey { get; set; }
+    public bool Enabled { get; set; }
+    public bool CvAnalysisEnabled { get; set; }
+    public bool CommandBarEnabled { get; set; }
+    public bool AdminSuggestionsEnabled { get; set; }
+    public bool MatchingEnabled { get; set; }
+}

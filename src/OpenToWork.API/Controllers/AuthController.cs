@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
 
@@ -16,6 +17,7 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
@@ -30,6 +32,7 @@ public class AuthController : ControllerBase
         }
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
@@ -44,6 +47,7 @@ public class AuthController : ControllerBase
         }
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto dto)
     {
@@ -77,6 +81,7 @@ public class AuthController : ControllerBase
         return Ok(new { isKnown, requiresCaptcha = !isKnown });
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
     {
@@ -84,6 +89,7 @@ public class AuthController : ControllerBase
         return Ok(new { message = "If the email exists, a reset link has been sent." });
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
     {
@@ -91,6 +97,7 @@ public class AuthController : ControllerBase
         return result ? Ok(new { message = "Password reset successfully." }) : BadRequest(new { message = "Invalid or expired token." });
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("google")]
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
     {
@@ -98,6 +105,7 @@ public class AuthController : ControllerBase
         return result != null ? Ok(result) : Unauthorized(new { message = "Invalid Google token." });
     }
 
+    [EnableRateLimiting("auth")]
     [HttpPost("verify-recaptcha")]
     public async Task<IActionResult> VerifyRecaptcha([FromBody] VerifyRecaptchaDto dto)
     {

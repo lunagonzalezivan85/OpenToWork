@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
 
@@ -15,6 +16,7 @@ public class AdminAuthController : ControllerBase
         _adminAuthService = adminAuthService;
     }
 
+    [EnableRateLimiting("admin-auth")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
