@@ -115,12 +115,12 @@ Terceros:
 
 Cada fase es independiente y se puede desplegar sola. Las fases C1 a C4 no necesitan banner. C5 y C6 solo se hacen si se decide agregar analitica o contenido de terceros.
 
-### Fase C1 — Portal sin terceros (autoalojar SweetAlert2)
+### Fase C1 — Portal sin terceros (autoalojar SweetAlert2) — HECHA (27-Sep)
 
-- [ ] Descargar SweetAlert2 en version fija a `src/OpenToWork.WEB/wwwroot/lib/sweetalert2/`.
-- [ ] `wwwroot/index.html`: rutas locales en lugar de jsdelivr.
-- [ ] `web.config`: quitar `https://cdn.jsdelivr.net` de `script-src` y `style-src`.
-- [ ] Arreglar de paso el hallazgo 6.1 (`InvokeAsync<bool>` en "Eliminar vacante").
+- [x] Descargar SweetAlert2 en version fija (11.26.25, del registro de npm con checksum verificado) a `src/OpenToWork.WEB/wwwroot/lib/sweetalert2/`.
+- [x] `wwwroot/index.html`: rutas locales en lugar de jsdelivr.
+- [x] `web.config`: quitar `https://cdn.jsdelivr.net` de `script-src` y `style-src`.
+- [x] Arreglar de paso el hallazgo 6.1 (`InvokeAsync<bool>` en "Eliminar vacante").
 
 **Criterio de cierre:** en `/my-vacancies` y `/my-vacancies/{id}` los avisos y la confirmacion de eliminar funcionan; la pestana Red del navegador no muestra ninguna peticion fuera de `tratodirecto.es`; la consola no muestra errores de CSP.
 **Esfuerzo:** pequeno (1 commit).

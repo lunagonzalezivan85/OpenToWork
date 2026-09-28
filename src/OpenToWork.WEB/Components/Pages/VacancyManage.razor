@@ -357,7 +357,8 @@ else
 
     private async Task DeleteVacancy()
     {
-        var confirmed = await JS.InvokeAsync<bool>("Swal.fire", new
+        // Swal.fire devuelve { isConfirmed, isDismissed, ... }, no un bool
+        var result = await JS.InvokeAsync<SwalResult>("Swal.fire", new
         {
             icon = "warning",
             title = Lang.T("vacancies.confirmDelete"),
@@ -368,7 +369,7 @@ else
             cancelButtonText = Lang.T("common.buttons.cancel")
         });
 
-        if (confirmed)
+        if (result?.IsConfirmed == true)
         {
             await AuthApi.DeleteVacancyAsync(Id);
             Nav.NavigateTo("/my-vacancies");
@@ -388,6 +389,8 @@ else
             timerProgressBar = true
         });
     }
+
+    private sealed record SwalResult(bool IsConfirmed);
 
     private static string GetInitials(string? name)
     {
