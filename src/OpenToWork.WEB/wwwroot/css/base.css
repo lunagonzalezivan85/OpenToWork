@@ -12,9 +12,14 @@
     --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.10);
     --shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.14);
 
+    /* Curvas de movimiento: ease-out fuerte para UI (entra rapido, frena suave);
+       ease-in-out para lo que se desplaza en pantalla. UI siempre por debajo de 300ms. */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
     --transition-fast: 0.15s ease;
-    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: 0.2s var(--ease-out);
+    --transition-slow: 0.28s var(--ease-out);
 
     --font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'Cascadia Code', 'Fira Code', monospace;
