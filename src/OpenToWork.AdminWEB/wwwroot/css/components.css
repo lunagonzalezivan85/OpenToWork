@@ -18,6 +18,12 @@
     line-height: 1;
 }
 
+/* Al pulsar, el boton se hunde un poco: confirma que el clic llego. Gana al lift del :hover. */
+.ot-btn:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: 0.1s;
+}
+
 .ot-btn--primary {
     background: var(--gradient-accent);
     color: #FFFFFF;

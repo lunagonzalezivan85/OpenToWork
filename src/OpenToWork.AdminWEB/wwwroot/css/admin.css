@@ -5955,3 +5955,11 @@ textarea.admin-input {
         grid-template-columns: 1fr;
     }
 }
+
+/* Al pulsar, los botones del admin se hunden un poco: confirma que el clic llego. */
+.admin-row-btn:active:not(:disabled),
+.admin-pill-btn:active:not(:disabled),
+.admin-icon-btn:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: 0.1s;
+}

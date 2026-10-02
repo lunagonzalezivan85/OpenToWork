@@ -16,6 +16,12 @@
     font-size: 0.95rem;
 }
 
+/* Al pulsar, el boton se hunde un poco: confirma que el clic llego. Gana al lift del :hover. */
+.ot-btn:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: 0.1s;
+}
+
 .ot-btn--primary {
     background: var(--gradient-accent);
     color: #FFFFFF;
@@ -5508,4 +5514,13 @@ a.cv-contact-item:hover {
         flex-direction: column;
         align-items: flex-start;
     }
+}
+
+/* Al pulsar, los botones propios del portal se hunden un poco: confirma que el clic llego. */
+.cmd-search-btn:active:not(:disabled),
+.chat-send-btn:active:not(:disabled),
+.wizard-auto-btn:active:not(:disabled),
+.vacancies-page-btn:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: 0.1s;
 }
