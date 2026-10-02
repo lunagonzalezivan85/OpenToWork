@@ -653,43 +653,175 @@
 }
 
 /* ===== CV Upload ===== */
-.wizard-cv-upload-zone {
+/* Zona para arrastrar o elegir el PDF. El InputFile cubre toda la zona y es transparente. */
+.cv-dropzone {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 1.5rem;
-    border: 2px dashed var(--border-color);
-    border-radius: 14px;
-    background: var(--bg-secondary);
-}
-
-.wizard-cv-upload {
-    display: flex;
-    gap: 0.5rem;
     align-items: center;
-    flex-wrap: wrap;
-}
-
-.wizard-cv-input {
-    font-size: 0.85rem;
-    flex: 1;
-    min-width: 200px;
-}
-
-.wizard-cv-input::file-selector-button {
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 2.25rem 1.5rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 16px;
     background: var(--bg-secondary);
-    color: var(--text-primary);
-    cursor: pointer;
-    margin-right: 0.6rem;
-    font-size: 0.82rem;
-    transition: background 0.15s;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
-.wizard-cv-input::file-selector-button:hover {
+.cv-dropzone:hover,
+.cv-dropzone--drag {
+    border-color: var(--accent-primary);
+    background: var(--accent-light);
+}
+
+.cv-dropzone--drag {
+    box-shadow: 0 0 0 4px var(--accent-light);
+}
+
+.cv-dropzone-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.cv-dropzone-input:disabled {
+    cursor: not-allowed;
+}
+
+.cv-dropzone-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--card-bg);
+    color: var(--accent-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-xs);
+    margin-bottom: 0.25rem;
+    pointer-events: none;
+}
+
+.cv-dropzone-title {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    pointer-events: none;
+}
+
+.cv-dropzone-link {
+    color: var(--accent-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.cv-dropzone-hint {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+/* Tarjetas de archivo: el elegido (listo para analizar) y el CV actual del perfil */
+.cv-file-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 0.85rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--card-bg);
+}
+
+.cv-file-card--selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.cv-file-icon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--danger-light, #FEF3F2);
+    color: var(--danger, #D92D20);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cv-file-icon--current {
+    background: var(--success-soft, #D1FADF);
+    color: var(--success, #059669);
+}
+
+.cv-file-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.cv-file-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cv-file-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.cv-file-remove {
+    flex-shrink: 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    padding: 0.35rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+}
+
+.cv-file-remove:hover {
     background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.cv-file-action {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.cv-upload-alert {
+    margin-top: 0.85rem;
+}
+
+@media (max-width: 560px) {
+    .cv-file-card {
+        flex-wrap: wrap;
+    }
+
+    .cv-file-action {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 .wizard-cv-link {

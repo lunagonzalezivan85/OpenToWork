@@ -170,7 +170,7 @@ public class CandidateService : ICandidateService
         YearsOfExperience = c.YearsOfExperience,
         WizardCompleted = c.WizardCompleted,
         WizardStep = c.WizardStep,
-        Experiences = c.Experiences.Where(e => !e.IsDeleted).Select(e => new CandidateExperienceDto
+        Experiences = CandidateHistoryOrder.Experiences(c.Experiences).Select(e => new CandidateExperienceDto
         {
             Id = e.Id,
             CandidateId = e.PT_CandidateId,
@@ -182,7 +182,7 @@ public class CandidateService : ICandidateService
             IsCurrentJob = e.IsCurrentJob,
             Location = e.Location
         }).ToList(),
-        Educations = c.Educations.Where(e => !e.IsDeleted).Select(e => new CandidateEducationDto
+        Educations = CandidateHistoryOrder.Educations(c.Educations).Select(e => new CandidateEducationDto
         {
             Id = e.Id,
             CandidateId = e.PT_CandidateId,

@@ -168,7 +168,7 @@ public class RecruitmentService : IRecruitmentService
                 CreatedAt = l.CreatedAt,
                 Notes = l.Notes
             }).ToList() ?? new(),
-            WorkExperiences = candidate?.Experiences?.Where(e => !e.IsDeleted).Select(e => new CandidateExperienceDto
+            WorkExperiences = (candidate?.Experiences == null ? null : CandidateHistoryOrder.Experiences(candidate.Experiences))?.Select(e => new CandidateExperienceDto
             {
                 Id = e.Id,
                 CandidateId = e.PT_CandidateId,
@@ -191,7 +191,7 @@ public class RecruitmentService : IRecruitmentService
                 CredentialId = c.CredentialId,
                 CredentialUrl = c.CredentialUrl
             }).ToList() ?? new(),
-            Educations = candidate?.Educations?.Where(e => !e.IsDeleted).Select(e => new CandidateEducationDto
+            Educations = (candidate?.Educations == null ? null : CandidateHistoryOrder.Educations(candidate.Educations))?.Select(e => new CandidateEducationDto
             {
                 Id = e.Id,
                 CandidateId = e.PT_CandidateId,
@@ -320,7 +320,7 @@ public class RecruitmentService : IRecruitmentService
                 CreatedAt = l.CreatedAt,
                 Notes = l.Notes
             }).ToList() ?? new(),
-            WorkExperiences = candidate?.Experiences?.Where(e => !e.IsDeleted).Select(e => new CandidateExperienceDto
+            WorkExperiences = (candidate?.Experiences == null ? null : CandidateHistoryOrder.Experiences(candidate.Experiences))?.Select(e => new CandidateExperienceDto
             {
                 Id = e.Id,
                 CandidateId = e.PT_CandidateId,
@@ -343,7 +343,7 @@ public class RecruitmentService : IRecruitmentService
                 CredentialId = c.CredentialId,
                 CredentialUrl = c.CredentialUrl
             }).ToList() ?? new(),
-            Educations = candidate?.Educations?.Where(e => !e.IsDeleted).Select(e => new CandidateEducationDto
+            Educations = (candidate?.Educations == null ? null : CandidateHistoryOrder.Educations(candidate.Educations))?.Select(e => new CandidateEducationDto
             {
                 Id = e.Id,
                 CandidateId = e.PT_CandidateId,

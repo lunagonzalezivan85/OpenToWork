@@ -531,8 +531,8 @@ public class ProfileService : IProfileService
         Availability = c.Availability,
         WorkAuthorization = c.WorkAuthorization,
         IsProfilePublic = c.IsProfilePublic,
-        Experiences = c.Experiences.Where(e => !e.IsDeleted).Select(MapToExperienceDto).ToList(),
-        Educations = c.Educations.Where(e => !e.IsDeleted).Select(MapToEducationDto).ToList(),
+        Experiences = CandidateHistoryOrder.Experiences(c.Experiences).Select(MapToExperienceDto).ToList(),
+        Educations = CandidateHistoryOrder.Educations(c.Educations).Select(MapToEducationDto).ToList(),
         Certifications = c.Certifications.Where(c => !c.IsDeleted).Select(MapToCertificationDto).ToList(),
         Skills = c.CandidateSkills.Where(cs => !cs.IsDeleted && !cs.Skill.IsDeleted).Select(cs => new CandidateSkillDto
         {

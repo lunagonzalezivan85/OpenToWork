@@ -77,6 +77,14 @@
         "verify": "Verify"
     },
     "cv": {
+        "dropTitle": "Drag your CV here or",
+        "dropTitleLink": "choose it from your device",
+        "dropHint": "PDF only, up to 10 MB. The AI will extract your details automatically.",
+        "readyToAnalyze": "ready to analyze",
+        "remove": "Remove file",
+        "analyze": "Analyze with AI",
+        "currentTitle": "You already have a CV on your profile",
+        "currentDesc": "If you upload a new one, the AI will update your details and you can review them before saving.",
         "upload": "Upload CV",
         "uploading": "Uploading...",
         "analyzing": "Analyzing data...",

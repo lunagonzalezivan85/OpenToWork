@@ -77,6 +77,14 @@
         "verify": "Verificar"
     },
     "cv": {
+        "dropTitle": "Arrastra aquí tu CV o",
+        "dropTitleLink": "selecciónalo desde tu equipo",
+        "dropHint": "Solo PDF, máximo 10 MB. La IA extraerá tus datos automáticamente.",
+        "readyToAnalyze": "listo para analizar",
+        "remove": "Quitar archivo",
+        "analyze": "Analizar con IA",
+        "currentTitle": "Ya tienes un CV en tu perfil",
+        "currentDesc": "Si subes uno nuevo, la IA actualizará tus datos y podrás revisarlos antes de guardar.",
         "upload": "Subir CV",
         "uploading": "Subiendo...",
         "analyzing": "Analizando datos...",

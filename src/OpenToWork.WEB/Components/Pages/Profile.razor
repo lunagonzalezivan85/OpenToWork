@@ -54,44 +54,74 @@
                         <h2 class="wizard-step-title">@Lang.T("common.wizard.step0Title")</h2>
                         <p class="wizard-step-desc">@Lang.T("common.wizard.step0Desc")</p>
 
-                        <div class="wizard-cv-upload-zone">
-                            <div class="wizard-cv-upload">
-                                <InputFile OnChange="OnCvFileSelected" accept="application/pdf" class="wizard-cv-input" />
-                                <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="UploadCv" disabled="@(!IsCvSelected || IsUploadingCv)">
-                                    @if (IsUploadingCv)
-                                    {
-                                        <span>@Lang.T("profile.cv.uploading")</span>
-                                    }
-                                    else
-                                    {
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                            <polyline points="17 8 12 3 7 8" />
-                                            <line x1="12" y1="3" x2="12" y2="15" />
-                                        </svg>
-                                        @Lang.T("profile.cv.upload")
-                                    }
+                        @* Zona de subida: el InputFile cubre toda la zona (transparente), asi sirve tanto
+                           el clic como arrastrar y soltar el PDF. *@
+                        <div class="cv-dropzone @(IsCvDragOver ? "cv-dropzone--drag" : "") @(IsCvSelected ? "cv-dropzone--ready" : "")"
+                             @ondragenter="() => IsCvDragOver = true" @ondragleave="() => IsCvDragOver = false" @ondrop="() => IsCvDragOver = false">
+                            <InputFile OnChange="OnCvFileSelected" accept="application/pdf" class="cv-dropzone-input" disabled="@IsUploadingCv"
+                                       title="@Lang.T("profile.cv.dropTitle")" />
+                            <div class="cv-dropzone-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="28" height="28">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                            </div>
+                            <p class="cv-dropzone-title">
+                                @Lang.T("profile.cv.dropTitle") <span class="cv-dropzone-link">@Lang.T("profile.cv.dropTitleLink")</span>
+                            </p>
+                            <p class="cv-dropzone-hint">@Lang.T("profile.cv.dropHint")</p>
+                        </div>
+
+                        @if (IsCvSelected && SelectedCvFile != null)
+                        {
+                            <div class="cv-file-card cv-file-card--selected">
+                                <div class="cv-file-icon">PDF</div>
+                                <div class="cv-file-info">
+                                    <span class="cv-file-name" title="@SelectedCvFile.Name">@SelectedCvFile.Name</span>
+                                    <span class="cv-file-meta">@FormatFileSize(SelectedCvFile.Size) · @Lang.T("profile.cv.readyToAnalyze")</span>
+                                </div>
+                                <button type="button" class="cv-file-remove" @onclick="ClearSelectedCv" disabled="@IsUploadingCv" aria-label="@Lang.T("profile.cv.remove")">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                                </button>
+                                <button class="ot-btn ot-btn--primary ot-btn--small cv-file-action" @onclick="UploadCv" disabled="@IsUploadingCv">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <path d="M12 3l1.9 5.8L20 10l-5 3.6L16.2 20 12 16.6 7.8 20 9 13.6 4 10l6.1-1.2z" />
+                                    </svg>
+                                    @(IsUploadingCv ? Lang.T("profile.cv.uploading") : Lang.T("profile.cv.analyze"))
                                 </button>
                             </div>
-                            @if (!string.IsNullOrEmpty(ProfileData.CvUrl))
-                            {
-                                <a href="#" @onclick="DownloadMyCvAsync" @onclick:preventDefault class="wizard-cv-link">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                        <path d="M14 2v6h6" />
+                        }
+
+                        @if (!string.IsNullOrEmpty(ProfileData.CvUrl))
+                        {
+                            <div class="cv-file-card">
+                                <div class="cv-file-icon cv-file-icon--current">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 6L9 17l-5-5" /></svg>
+                                </div>
+                                <div class="cv-file-info">
+                                    <span class="cv-file-name">@Lang.T("profile.cv.currentTitle")</span>
+                                    <span class="cv-file-meta">@Lang.T("profile.cv.currentDesc")</span>
+                                </div>
+                                <button type="button" class="ot-btn ot-btn--outline ot-btn--small cv-file-action" @onclick="DownloadMyCvAsync">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7 10 12 15 17 10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
                                     </svg>
                                     @Lang.T("profile.cv.viewCurrent")
-                                </a>
-                            }
-                            @if (CvUploadError != null)
-                            {
-                                <span class="wizard-cv-error">@CvUploadError</span>
-                            }
-                            @if (CvUploadSuccess)
-                            {
-                                <span class="wizard-cv-success">@Lang.T("profile.cv.success")</span>
-                            }
-                        </div>
+                                </button>
+                            </div>
+                        }
+
+                        @if (CvUploadError != null)
+                        {
+                            <div class="alert alert-error cv-upload-alert">@CvUploadError</div>
+                        }
+                        @if (CvUploadSuccess)
+                        {
+                            <div class="alert alert-success cv-upload-alert">@Lang.T("profile.cv.success")</div>
+                        }
                     }
 
                     @if (CurrentStep == 1)
@@ -928,6 +958,17 @@
     private string CvModalState { get; set; } = "";
     private CvParseResultDto? CvParseResult { get; set; }
     private string? PendingCvUrl { get; set; }
+    private bool IsCvDragOver { get; set; }
+
+    private void ClearSelectedCv()
+    {
+        SelectedCvFile = null;
+        IsCvSelected = false;
+        CvUploadError = null;
+    }
+
+    private static string FormatFileSize(long bytes) =>
+        bytes >= 1024 * 1024 ? $"{bytes / 1024.0 / 1024.0:F1} MB" : $"{Math.Max(1, bytes / 1024)} KB";
 
     private List<string> WizardSteps => new()
     {
