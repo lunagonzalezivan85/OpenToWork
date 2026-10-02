@@ -80,7 +80,8 @@
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     white-space: nowrap;
     flex: 1;
     min-width: 0;
@@ -362,7 +363,8 @@
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .wizard-choice-card:hover {
@@ -548,7 +550,8 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: var(--space-md);
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .wizard-timeline-card:hover {
@@ -599,7 +602,8 @@
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     flex-shrink: 0;
 }
 
@@ -626,7 +630,8 @@
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .wizard-auto-btn:hover {

@@ -184,7 +184,8 @@
     font-size: 0.88rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     width: 100%;
     font-family: var(--font-family);
 }
@@ -771,7 +772,8 @@ textarea.admin-input {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    transition: all var(--transition);
+    transition: var(--transition);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     position: relative;
     overflow: hidden;
 }
@@ -1960,7 +1962,8 @@ textarea.admin-input {
     background: var(--card-bg);
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: 0.15s;
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-row-btn:hover {
@@ -2776,7 +2779,8 @@ textarea.admin-input {
     padding: 0;
     border-radius: calc(var(--radius-md) - 2px);
     cursor: pointer;
-    transition: all var(--transition);
+    transition: var(--transition);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-view-toggle-btn:hover {
@@ -5131,7 +5135,8 @@ textarea.admin-input {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    transition: all var(--transition);
+    transition: var(--transition);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-stat-v2:hover {
@@ -5429,7 +5434,8 @@ textarea.admin-input {
     background: var(--card-bg);
     color: var(--text-primary);
     text-decoration: none;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-pill-btn:hover {
@@ -5609,7 +5615,8 @@ textarea.admin-input {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     padding: 0;
 }
 

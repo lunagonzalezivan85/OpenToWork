@@ -364,7 +364,8 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: var(--space-md);
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .profile-timeline-card:hover {
@@ -415,7 +416,8 @@
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     flex-shrink: 0;
 }
 
@@ -436,7 +438,8 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: var(--space-md);
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .profile-cert-card:hover {
@@ -646,7 +649,8 @@
     font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .vacancies-page-btn:hover {
