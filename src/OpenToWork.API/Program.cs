@@ -46,6 +46,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// En local el SMTP suele estar apagado: el codigo de verificacion del registro se escribe en el log
+// para poder probar. Nunca fuera de Development.
+if (builder.Environment.IsDevelopment())
+    builder.Configuration["Auth:LogVerificationCodes"] ??= "true";
+
 // Fuera de Development exige claves y conexion propias (ver ProductionConfigGuard).
 OpenToWork.Core.Extensions.ProductionConfigGuard.Validate(builder.Configuration, builder.Environment.IsDevelopment());
 

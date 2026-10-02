@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<SCUserRole> SC_UserRoles => Set<SCUserRole>();
     public DbSet<SCRefreshToken> SC_RefreshTokens => Set<SCRefreshToken>();
     public DbSet<SCUserDevice> SC_UserDevices => Set<SCUserDevice>();
+    public DbSet<SCEmailVerificationCode> SC_EmailVerificationCodes => Set<SCEmailVerificationCode>();
     public DbSet<PTCandidate> PT_Candidates => Set<PTCandidate>();
     public DbSet<PTCompany> PT_Companies => Set<PTCompany>();
     public DbSet<PTTempVacancy> PT_TempVacancies => Set<PTTempVacancy>();
@@ -92,6 +93,12 @@ public class AppDbContext : DbContext
             e.ToTable("SC_RefreshTokens");
             e.HasIndex(t => t.TokenHash).IsUnique();
             e.HasIndex(t => new { t.SCUserId, t.IsRevoked, t.IsDeleted });
+        });
+
+        modelBuilder.Entity<SCEmailVerificationCode>(e =>
+        {
+            e.ToTable("SC_EmailVerificationCodes");
+            e.HasIndex(c => c.Email).IsUnique();
         });
 
         modelBuilder.Entity<SCUserDevice>(e =>

@@ -20,7 +20,37 @@
         {
             <div class="alert alert-error">@ErrorMessage</div>
         }
+        @if (!string.IsNullOrEmpty(InfoMessage))
+        {
+            <div class="alert alert-success">@InfoMessage</div>
+        }
 
+        @if (AwaitingCode)
+        {
+            @* Paso 2 del candidato: la cuenta se crea solo con el codigo que llego al correo. *@
+            <p class="auth-subtitle">@Lang.T("auth.verifyEmail.subtitle") <strong>@RegisterModel.Email</strong></p>
+
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">@Lang.T("auth.verifyEmail.codeLabel")</label>
+                <input class="ot-input-field auth-code-input" @bind="EmailCode" @bind:event="oninput" inputmode="numeric"
+                       autocomplete="one-time-code" maxlength="6" placeholder="000000" />
+            </div>
+
+            <button class="ot-btn ot-btn--primary ot-btn--medium ot-btn--full-width" disabled="@(IsLoading || EmailCode.Trim().Length != 6)" @onclick="CreateCandidateAccount">
+                @(IsLoading ? Lang.T("common.labels.loading") : Lang.T("auth.register.createAccount"))
+            </button>
+
+            <div class="auth-verify-actions">
+                <button type="button" class="ot-btn ot-btn--ghost ot-btn--small" disabled="@IsLoading" @onclick="ResendCode">
+                    @Lang.T("auth.verifyEmail.resend")
+                </button>
+                <button type="button" class="ot-btn ot-btn--ghost ot-btn--small" disabled="@IsLoading" @onclick="BackToForm">
+                    @Lang.T("auth.register.editData")
+                </button>
+            </div>
+        }
+        else
+        {
         <div class="ot-input-group mb-md">
             <label class="ot-input-label">@Lang.T("auth.register.selectRole")</label>
             <div class="segmented-control">
@@ -123,6 +153,7 @@
                 @Lang.T("auth.register.legalAnd") <a href="/cookies" target="_blank" rel="noopener">@Lang.T("auth.register.legalCookies")</a>.
             </p>
         </EditForm>
+        }
 
         <p class="auth-link">
             @Lang.T("auth.register.haveAccount")
@@ -184,7 +215,7 @@
     private void SelectRole(int role)
     {
         SelectedRole = role;
-        ErrorMessage = null;
+        ErrorMessage = InfoMessage = null;
     }
 
     /// <summary>Lo que la API tambien valida; aqui se avisa antes de enviar. Devuelve el primer error.</summary>
@@ -210,6 +241,7 @@
 
     private async Task HandleRegister()
     {
+        InfoMessage = null;
         ErrorMessage = ValidateForm();
         if (ErrorMessage != null)
         {
@@ -217,13 +249,74 @@
             return;
         }
 
+        if (IsCandidate)
+            await RequestCodeAsync(showSentNotice: false);
+        else
+            await SubmitRegistrationAsync(emailCode: null);
+    }
+
+    // --- Candidato: la cuenta no se crea hasta escribir el codigo que llega al correo ---
+
+    private bool AwaitingCode { get; set; }
+    private string EmailCode { get; set; } = "";
+    private string? InfoMessage { get; set; }
+
+    private async Task RequestCodeAsync(bool showSentNotice)
+    {
         IsLoading = true;
+        ErrorMessage = InfoMessage = null;
+        try
+        {
+            var result = await AuthApi.SendRegistrationCodeAsync(RegisterModel.Email.Trim());
+            if (result.Success)
+            {
+                AwaitingCode = true;
+                EmailCode = "";
+                if (showSentNotice) InfoMessage = Lang.T("auth.verifyEmail.sent");
+                return;
+            }
+            ErrorMessage = result.Error switch
+            {
+                "email_exists" => Lang.T("auth.register.emailExists"),
+                "invalid_email" => Lang.T("auth.register.emailInvalid"),
+                "too_soon" => Lang.T("auth.verifyEmail.errorTooSoon"),
+                "send_failed" => Lang.T("auth.verifyEmail.errorSendFailed"),
+                _ => Lang.T("auth.register.errorGeneric")
+            };
+            // Correo ya registrado o invalido: hay que corregirlo en el formulario.
+            if (result.Error is "email_exists" or "invalid_email") AwaitingCode = false;
+        }
+        catch
+        {
+            ErrorMessage = Lang.T("auth.register.errorGeneric");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private Task ResendCode() => RequestCodeAsync(showSentNotice: true);
+
+    private Task CreateCandidateAccount() => SubmitRegistrationAsync(EmailCode.Trim());
+
+    private void BackToForm()
+    {
+        AwaitingCode = false;
+        EmailCode = "";
+        ErrorMessage = InfoMessage = null;
+    }
+
+    private async Task SubmitRegistrationAsync(string? emailCode)
+    {
+        IsLoading = true;
+        ErrorMessage = InfoMessage = null;
 
         try
         {
             var dto = new RegisterDto
             {
-                Email = RegisterModel.Email,
+                Email = RegisterModel.Email.Trim(),
                 Password = RegisterModel.Password,
                 PrimaryRole = SelectedRole,
                 Identification = IsCandidate ? IdentityDocumentValidator.Normalize(RegisterModel.Identification) : RegisterModel.Identification,
@@ -232,7 +325,8 @@
                 LastName = IsCandidate ? RegisterModel.LastName?.Trim() : null,
                 DocumentType = IsCandidate ? (int?)RegisterModel.DocumentType : null,
                 AcceptPrivacy = RegisterModel.AcceptPrivacy,
-                AcceptMarketing = RegisterModel.AcceptMarketing
+                AcceptMarketing = RegisterModel.AcceptMarketing,
+                EmailCode = emailCode
             };
 
             var result = await AuthApi.RegisterAsync(dto);
@@ -240,14 +334,22 @@
             if (result.Data != null)
             {
                 AuthProvider.NotifyAuthenticationStateChanged();
-                // Primero se verifica el correo (se puede dejar para despues); luego sigue el flujo de siempre.
-                var next = SelectedRole == 0 && !result.Data.User.WizardCompleted
-                    ? "/wizard"
-                    : !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : SelectedRole == 1 ? "/company-dashboard" : "/dashboard";
-                Nav.NavigateTo($"/verify-email?next={Uri.EscapeDataString(next)}");
+                if (IsCandidate)
+                {
+                    // El correo ya quedo verificado con el codigo: sigue el flujo de siempre.
+                    Nav.NavigateTo(!result.Data.User.WizardCompleted ? "/wizard"
+                        : !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/dashboard");
+                }
+                else
+                {
+                    // Empresa: verifica despues (se puede dejar para mas tarde).
+                    var next = !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/company-dashboard";
+                    Nav.NavigateTo($"/verify-email?next={Uri.EscapeDataString(next)}");
+                }
             }
             else if (result.EmailAlreadyRegistered)
             {
+                AwaitingCode = false;
                 ErrorMessage = Lang.T("auth.register.emailExists");
             }
             else

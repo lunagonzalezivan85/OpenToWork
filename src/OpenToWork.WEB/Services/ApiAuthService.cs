@@ -66,6 +66,19 @@ public class ApiAuthService
         return new RegisterResult { Data = result };
     }
 
+    /// <summary>Registro de candidato, paso 1: pide el codigo al correo (todavia no se crea la cuenta).</summary>
+    public async Task<EmailCodeResult> SendRegistrationCodeAsync(string email)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/auth/register/send-code", new RegistrationCodeRequestDto { Email = email });
+        if (response.IsSuccessStatusCode) return new EmailCodeResult(true, null);
+        return new EmailCodeResult(false, response.StatusCode switch
+        {
+            System.Net.HttpStatusCode.Conflict => "email_exists",
+            System.Net.HttpStatusCode.TooManyRequests => "too_soon",
+            _ => ReadMessage(await response.Content.ReadAsStringAsync())
+        });
+    }
+
     public async Task<EmailVerificationStatusDto?> GetEmailVerificationStatusAsync()
     {
         await SetAuthHeaderAsync();

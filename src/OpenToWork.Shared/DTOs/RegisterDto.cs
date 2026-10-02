@@ -18,6 +18,14 @@ public class RegisterDto
     public bool AcceptPrivacy { get; set; }
     /// <summary>Casilla opcional de comunicaciones comerciales (desmarcada por defecto).</summary>
     public bool AcceptMarketing { get; set; }
+
+    /// <summary>Candidato: codigo recibido en el correo (POST api/auth/register/send-code). Sin el, no se crea la cuenta.</summary>
+    public string? EmailCode { get; set; }
+}
+
+public class RegistrationCodeRequestDto
+{
+    public string Email { get; set; } = string.Empty;
 }
 
 public class VerifyEmailDto

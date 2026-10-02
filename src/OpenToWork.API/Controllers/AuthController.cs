@@ -36,6 +36,21 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>Registro de candidato, paso 1: envia el codigo al correo. La cuenta se crea en POST register con ese codigo.</summary>
+    [EnableRateLimiting("auth")]
+    [HttpPost("register/send-code")]
+    public async Task<IActionResult> SendRegistrationCode([FromBody] RegistrationCodeRequestDto dto)
+    {
+        return await _authService.SendRegistrationCodeAsync(dto.Email) switch
+        {
+            SendVerificationCodeResult.Sent => NoContent(),
+            SendVerificationCodeResult.EmailAlreadyRegistered => Conflict(new { message = "email_exists" }),
+            SendVerificationCodeResult.InvalidEmail => BadRequest(new { message = "invalid_email" }),
+            SendVerificationCodeResult.TooSoon => StatusCode(StatusCodes.Status429TooManyRequests, new { message = "too_soon" }),
+            _ => StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "send_failed" })
+        };
+    }
+
     [Authorize]
     [HttpGet("email-verification")]
     public async Task<IActionResult> GetEmailVerificationStatus()

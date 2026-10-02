@@ -74,6 +74,11 @@ public class AuthService : IAuthService
         if (existing != null)
             throw new InvalidOperationException("Email already registered");
 
+        // Candidato: la cuenta solo se crea con el codigo que se envio al correo (decision de Darwin 1-Oct).
+        SCEmailVerificationCode? pendingCode = null;
+        if (isCandidate)
+            pendingCode = await ConsumeRegistrationCodeAsync(dto.Email, dto.EmailCode);
+
         var now = DateTime.UtcNow;
         var user = new SCUser
         {
@@ -83,7 +88,7 @@ public class AuthService : IAuthService
             FullName = isCandidate ? $"{firstName} {lastName}" : null,
             Identification = identification,
             Phone = dto.Phone,
-            EmailVerified = false,
+            EmailVerified = isCandidate,
             IsActive = true,
             CreatedBy = createdBy != null ? Guid.Parse(createdBy) : null,
             PrivacyAcceptedAt = now,
@@ -116,12 +121,106 @@ public class AuthService : IAuthService
         }
 
         _context.SC_Users.Add(user);
+        if (pendingCode != null)
+            _context.SC_EmailVerificationCodes.Remove(pendingCode);
         await _context.SaveChangesAsync();
 
-        // Si el correo no sale, la cuenta igual queda creada: el usuario puede pedir otro codigo desde el portal.
-        await SendEmailVerificationCodeAsync(user.Id);
+        // Empresa: se verifica despues (no bloquea). Si el correo no sale, puede pedir otro codigo desde el portal.
+        if (!isCandidate)
+            await SendEmailVerificationCodeAsync(user.Id);
 
         return await GenerateAuthResponseAsync(user);
+    }
+
+    public async Task<SendVerificationCodeResult> SendRegistrationCodeAsync(string email)
+    {
+        var normalized = NormalizeEmail(email);
+        if (normalized.Length == 0 || normalized.Length > 256 || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(normalized))
+            return SendVerificationCodeResult.InvalidEmail;
+
+        if (await _context.SC_Users.AnyAsync(u => u.Email == normalized && !u.IsDeleted))
+            return SendVerificationCodeResult.EmailAlreadyRegistered;
+
+        var pending = await _context.SC_EmailVerificationCodes.FirstOrDefaultAsync(c => c.Email == normalized);
+        if (pending != null && DateTime.UtcNow - pending.LastSentAt < EmailCodeResendCooldown)
+            return SendVerificationCodeResult.TooSoon;
+
+        if (pending == null)
+        {
+            pending = new SCEmailVerificationCode { Email = normalized };
+            _context.SC_EmailVerificationCodes.Add(pending);
+        }
+
+        var code = NewEmailCode();
+        pending.CodeHash = HashRegistrationCode(normalized, code);
+        pending.ExpiresAt = DateTime.UtcNow.AddMinutes(EmailCodeValidityMinutes);
+        pending.LastSentAt = DateTime.UtcNow;
+        pending.Attempts = 0;
+        pending.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return await SendCodeEmailAsync(normalized, null, code)
+            ? SendVerificationCodeResult.Sent
+            : SendVerificationCodeResult.SendFailed;
+    }
+
+    /// <summary>
+    /// Comprueba el codigo del registro. Si no vale, guarda el intento fallido y lanza ArgumentException
+    /// con el motivo (el controller lo devuelve como 400). Si vale, devuelve la fila para borrarla al
+    /// crear la cuenta (en el mismo SaveChanges, asi no queda cuenta sin borrar el codigo ni al reves).
+    /// </summary>
+    private async Task<SCEmailVerificationCode> ConsumeRegistrationCodeAsync(string email, string? code)
+    {
+        var normalized = NormalizeEmail(email);
+        var pending = await _context.SC_EmailVerificationCodes.FirstOrDefaultAsync(c => c.Email == normalized);
+
+        if (pending == null || pending.ExpiresAt < DateTime.UtcNow)
+            throw new ArgumentException("El código venció o no se pidió. Pide uno nuevo.");
+        if (pending.Attempts >= EmailCodeMaxAttempts)
+            throw new ArgumentException("Demasiados intentos. Pide un código nuevo.");
+
+        var expected = Encoding.UTF8.GetBytes(pending.CodeHash);
+        var actual = Encoding.UTF8.GetBytes(HashRegistrationCode(normalized, (code ?? string.Empty).Trim()));
+        if (!CryptographicOperations.FixedTimeEquals(expected, actual))
+        {
+            pending.Attempts++;
+            await _context.SaveChangesAsync();
+            throw new ArgumentException(pending.Attempts >= EmailCodeMaxAttempts
+                ? "Demasiados intentos. Pide un código nuevo."
+                : "El código no es correcto.");
+        }
+
+        return pending;
+    }
+
+    private static string NormalizeEmail(string? email) => (email ?? string.Empty).Trim().ToLowerInvariant();
+
+    private static string NewEmailCode() => RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+
+    // Con el correo como sal (aun no hay id de usuario).
+    private string HashRegistrationCode(string normalizedEmail, string code) => _tokenCrypto.HashToken($"register:{normalizedEmail}:{code}");
+
+    /// <summary>Envia el correo con el codigo. En desarrollo, si el SMTP esta apagado, escribe el codigo en el log.</summary>
+    private async Task<bool> SendCodeEmailAsync(string toEmail, string? name, string code)
+    {
+        var html = $@"
+            <p>Hola{(string.IsNullOrWhiteSpace(name) ? "" : " " + System.Net.WebUtility.HtmlEncode(name))},</p>
+            <p>Tu código para verificar tu correo en <strong>Trato Directo</strong> es:</p>
+            <p style=""font-size:28px;font-weight:bold;letter-spacing:6px;"">{code}</p>
+            <p>Vence en {EmailCodeValidityMinutes} minutos. Si no estás creando una cuenta en Trato Directo, ignora este correo.</p>
+            <p>Saludos,<br/>Trato Directo</p>";
+        var (sent, error) = await _email.SendAsync(toEmail, name, $"{code} es tu código de verificación de Trato Directo", html);
+        if (sent) return true;
+
+        // Solo con Auth:LogVerificationCodes (lo activa Program.cs en Development): permite probar el registro sin SMTP.
+        if (_config.GetValue<bool>("Auth:LogVerificationCodes"))
+        {
+            _logger.LogWarning("[DEV] SMTP no disponible ({Error}). Codigo de verificacion para {Email}: {Code}", error, toEmail, code);
+            return true;
+        }
+
+        _logger.LogWarning("No se pudo enviar el codigo de verificacion: {Error}", error);
+        return false;
     }
 
     public async Task<EmailVerificationStatusDto?> GetEmailVerificationStatusAsync(Guid userId)
@@ -142,27 +241,16 @@ public class AuthService : IAuthService
         if (issuedAt != null && DateTime.UtcNow - issuedAt < EmailCodeResendCooldown)
             return SendVerificationCodeResult.TooSoon;
 
-        var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        var code = NewEmailCode();
         user.EmailVerificationCodeHash = HashEmailCode(user.Id, code);
         user.EmailVerificationExpiresAt = DateTime.UtcNow.AddMinutes(EmailCodeValidityMinutes);
         user.EmailVerificationAttempts = 0;
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        var name = user.Candidate?.FirstName;
-        var html = $@"
-            <p>Hola{(string.IsNullOrWhiteSpace(name) ? "" : " " + System.Net.WebUtility.HtmlEncode(name))},</p>
-            <p>Tu código para verificar tu correo en <strong>Trato Directo</strong> es:</p>
-            <p style=""font-size:28px;font-weight:bold;letter-spacing:6px;"">{code}</p>
-            <p>Vence en {EmailCodeValidityMinutes} minutos. Si no creaste una cuenta en Trato Directo, ignora este correo.</p>
-            <p>Saludos,<br/>Trato Directo</p>";
-        var (sent, error) = await _email.SendAsync(user.Email, name, $"{code} es tu código de verificación de Trato Directo", html);
-        if (!sent)
-        {
-            _logger.LogWarning("No se pudo enviar el codigo de verificacion a {UserId}: {Error}", user.Id, error);
-            return SendVerificationCodeResult.SendFailed;
-        }
-        return SendVerificationCodeResult.Sent;
+        return await SendCodeEmailAsync(user.Email, user.Candidate?.FirstName, code)
+            ? SendVerificationCodeResult.Sent
+            : SendVerificationCodeResult.SendFailed;
     }
 
     public async Task<EmailVerificationResult> VerifyEmailAsync(Guid userId, string code)
