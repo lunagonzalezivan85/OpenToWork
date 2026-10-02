@@ -778,10 +778,12 @@ textarea.admin-input {
     overflow: hidden;
 }
 
-.admin-stat-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    border-color: var(--accent-soft);
+@media (hover: hover) and (pointer: fine) {
+    .admin-stat-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+        border-color: var(--accent-soft);
+    }
 }
 
 .admin-stat-card::before {
@@ -1077,10 +1079,12 @@ textarea.admin-input {
     -webkit-tap-highlight-color: transparent;
 }
 
-.admin-clickable:hover {
-    border-color: #0B4F8A !important;
-    box-shadow: 0 4px 16px rgba(11, 79, 138, 0.12);
-    transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+    .admin-clickable:hover {
+        border-color: #0B4F8A !important;
+        box-shadow: 0 4px 16px rgba(11, 79, 138, 0.12);
+        transform: translateY(-2px);
+    }
 }
 
 .admin-bar-row.admin-clickable {
@@ -1089,11 +1093,13 @@ textarea.admin-input {
     margin: 0 -8px;
 }
 
-.admin-bar-row.admin-clickable:hover {
-    background: var(--bg-tertiary);
-    border-color: transparent !important;
-    box-shadow: none;
-    transform: none;
+@media (hover: hover) and (pointer: fine) {
+    .admin-bar-row.admin-clickable:hover {
+        background: var(--bg-tertiary);
+        border-color: transparent !important;
+        box-shadow: none;
+        transform: none;
+    }
 }
 
 /* Filter badge */
@@ -2345,8 +2351,10 @@ textarea.admin-input {
     transition: transform 0.2s ease;
 }
 
-.admin-profile-score-card:hover .admin-profile-score-circle {
-    transform: scale(1.05);
+@media (hover: hover) and (pointer: fine) {
+    .admin-profile-score-card:hover .admin-profile-score-circle {
+        transform: scale(1.05);
+    }
 }
 
 .admin-profile-score-circle--pass {
@@ -2604,9 +2612,11 @@ textarea.admin-input {
     transition: box-shadow 0.15s, transform 0.15s;
 }
 
-.admin-kanban-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .admin-kanban-card:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+    }
 }
 
 .admin-kanban-card--dismissed {
@@ -4800,10 +4810,12 @@ textarea.admin-input {
     cursor: pointer;
 }
 
-.admin-oneui-item--clickable:hover {
-    border-color: var(--accent-soft);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .admin-oneui-item--clickable:hover {
+        border-color: var(--accent-soft);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
 }
 
 .admin-oneui-avatar {
@@ -4870,9 +4882,11 @@ textarea.admin-input {
     flex-shrink: 0;
 }
 
-.admin-oneui-item--clickable:hover .admin-oneui-chevron {
-    transform: translateX(3px);
-    color: var(--accent-primary);
+@media (hover: hover) and (pointer: fine) {
+    .admin-oneui-item--clickable:hover .admin-oneui-chevron {
+        transform: translateX(3px);
+        color: var(--accent-primary);
+    }
 }
 
 .admin-oneui-match {
@@ -5106,9 +5120,11 @@ textarea.admin-input {
     transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
-.admin-cmd-send:hover {
-    background: var(--accent-hover);
-    transform: scale(1.05);
+@media (hover: hover) and (pointer: fine) {
+    .admin-cmd-send:hover {
+        background: var(--accent-hover);
+        transform: scale(1.05);
+    }
 }
 
 .admin-chip-row {
@@ -5139,10 +5155,12 @@ textarea.admin-input {
     transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
-.admin-stat-v2:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    border-color: var(--accent-soft);
+@media (hover: hover) and (pointer: fine) {
+    .admin-stat-v2:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+        border-color: var(--accent-soft);
+    }
 }
 
 .admin-stat-v2-top {
@@ -5514,8 +5532,10 @@ textarea.admin-input {
     transition: transform var(--transition-fast);
 }
 
-.admin-score-radial:hover {
-    transform: scale(1.04);
+@media (hover: hover) and (pointer: fine) {
+    .admin-score-radial:hover {
+        transform: scale(1.04);
+    }
 }
 
 .admin-score-radial-inner {

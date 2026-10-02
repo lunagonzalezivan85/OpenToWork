@@ -30,10 +30,12 @@
     box-shadow: var(--shadow-sm);
 }
 
-.ot-btn--primary:hover {
-    background: var(--accent-hover);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .ot-btn--primary:hover {
+        background: var(--accent-hover);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
 }
 
 .ot-btn--secondary {
@@ -299,10 +301,12 @@ textarea.ot-form-input {
     background-color: var(--card-bg);
 }
 
-.role-card:hover {
-    border-color: var(--accent-primary);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+    .role-card:hover {
+        border-color: var(--accent-primary);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
 }
 
 .role-card.selected {
@@ -721,10 +725,12 @@ textarea.ot-form-input {
     box-shadow: var(--shadow-sm);
 }
 
-.hero-search-btn:hover {
-    background: var(--accent-hover);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-search-btn:hover {
+        background: var(--accent-hover);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
 }
 
 .hero-search-btn-icon {
@@ -732,8 +738,10 @@ textarea.ot-form-input {
     transition: transform var(--transition-fast);
 }
 
-.hero-search-btn:hover .hero-search-btn-icon {
-    transform: translateX(3px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-search-btn:hover .hero-search-btn-icon {
+        transform: translateX(3px);
+    }
 }
 
 /* ===== Pill Badges ===== */
@@ -765,10 +773,12 @@ textarea.ot-form-input {
     border: none;
 }
 
-.hero-pill:hover {
-    background: var(--text-secondary);
-    color: #FFFFFF;
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-pill:hover {
+        background: var(--text-secondary);
+        color: #FFFFFF;
+        transform: translateY(-1px);
+    }
 }
 
 /* ===== Bento Role Cards Section ===== */
@@ -800,10 +810,12 @@ textarea.ot-form-input {
     box-shadow: var(--shadow-xs);
 }
 
-.hero-bento-card:hover {
-    border-color: var(--accent-soft);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-bento-card:hover {
+        border-color: var(--accent-soft);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-3px);
+    }
 }
 
 .hero-bento-card-icon {
@@ -863,8 +875,10 @@ textarea.ot-form-input {
     transition: transform var(--transition-fast);
 }
 
-.hero-bento-card:hover .hero-bento-card-arrow {
-    transform: translateX(4px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-bento-card:hover .hero-bento-card-arrow {
+        transform: translateX(4px);
+    }
 }
 
 .auth-layout {
@@ -984,10 +998,12 @@ textarea.ot-form-input {
     transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
-.vacancy-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    border-color: var(--accent-soft);
+@media (hover: hover) and (pointer: fine) {
+    .vacancy-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+        border-color: var(--accent-soft);
+    }
 }
 
 .vacancy-card-title {

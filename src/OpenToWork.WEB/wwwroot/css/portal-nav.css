@@ -76,9 +76,11 @@
     text-decoration: none;
 }
 
-.nav-user-avatar:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+    .nav-user-avatar:hover {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-md);
+    }
 }
 
 /* User dropdown */

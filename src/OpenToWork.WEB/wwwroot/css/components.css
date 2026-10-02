@@ -28,10 +28,12 @@
     box-shadow: var(--shadow-sm);
 }
 
-.ot-btn--primary:hover {
-    background: var(--accent-hover);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .ot-btn--primary:hover {
+        background: var(--accent-hover);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
 }
 
 .ot-btn--secondary {
@@ -306,10 +308,12 @@
     background-color: var(--card-bg);
 }
 
-.role-card:hover {
-    border-color: var(--accent-primary);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+    .role-card:hover {
+        border-color: var(--accent-primary);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
 }
 
 .role-card.selected {
@@ -829,10 +833,12 @@
     box-shadow: var(--shadow-sm);
 }
 
-.hero-search-btn:hover {
-    background: var(--accent-hover);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-search-btn:hover {
+        background: var(--accent-hover);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
 }
 
 .hero-search-btn-icon {
@@ -840,8 +846,10 @@
     transition: transform var(--transition-fast);
 }
 
-.hero-search-btn:hover .hero-search-btn-icon {
-    transform: translateX(3px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-search-btn:hover .hero-search-btn-icon {
+        transform: translateX(3px);
+    }
 }
 
 /* ===== Pill Badges ===== */
@@ -874,10 +882,12 @@
     border: none;
 }
 
-.hero-pill:hover {
-    background: var(--text-secondary);
-    color: #FFFFFF;
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-pill:hover {
+        background: var(--text-secondary);
+        color: #FFFFFF;
+        transform: translateY(-1px);
+    }
 }
 
 /* ===== Bento Role Cards Section ===== */
@@ -909,10 +919,12 @@
     box-shadow: var(--shadow-xs);
 }
 
-.hero-bento-card:hover {
-    border-color: var(--accent-soft);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-bento-card:hover {
+        border-color: var(--accent-soft);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-3px);
+    }
 }
 
 .hero-bento-card-icon {
@@ -972,8 +984,10 @@
     transition: transform var(--transition-fast);
 }
 
-.hero-bento-card:hover .hero-bento-card-arrow {
-    transform: translateX(4px);
+@media (hover: hover) and (pointer: fine) {
+    .hero-bento-card:hover .hero-bento-card-arrow {
+        transform: translateX(4px);
+    }
 }
 
 .auth-split {
@@ -1205,10 +1219,12 @@
     transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
-.vacancy-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    border-color: var(--accent-soft);
+@media (hover: hover) and (pointer: fine) {
+    .vacancy-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+        border-color: var(--accent-soft);
+    }
 }
 
 .vacancy-card-title {
@@ -1580,9 +1596,11 @@
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.dash-banner-avatar--link:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+    .dash-banner-avatar--link:hover {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-md);
+    }
 }
 
 .dash-banner-title--link {
@@ -2171,9 +2189,11 @@
     border: 1.5px solid transparent;
 }
 
-.cmd-badge:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
+@media (hover: hover) and (pointer: fine) {
+    .cmd-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
 }
 
 .cmd-badge-label {
@@ -2320,9 +2340,11 @@
     font-family: inherit;
 }
 
-.hero-slide-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+@media (hover: hover) and (pointer: fine) {
+    .hero-slide-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
 }
 
 .hero-slide-icon {
@@ -2361,9 +2383,11 @@
     opacity: 1;
 }
 
-.hero-slider-arrow:hover {
-    background: #fff;
-    transform: translateY(-50%) scale(1.1);
+@media (hover: hover) and (pointer: fine) {
+    .hero-slider-arrow:hover {
+        background: #fff;
+        transform: translateY(-50%) scale(1.1);
+    }
 }
 
 .hero-slider-arrow--prev {
@@ -3005,9 +3029,11 @@
     transition: color var(--transition-fast), transform var(--transition-fast);
 }
 
-.va-applicant-card:hover .va-applicant-arrow {
-    color: var(--info, #0066FF);
-    transform: translateX(3px);
+@media (hover: hover) and (pointer: fine) {
+    .va-applicant-card:hover .va-applicant-arrow {
+        color: var(--info, #0066FF);
+        transform: translateX(3px);
+    }
 }
 
 .va-vacancy-list {
@@ -4297,9 +4323,11 @@ a.cv-contact-item:hover {
     flex-shrink: 0;
 }
 
-.chat-send-btn:hover:not(:disabled) {
-    background: #093D6C;
-    transform: scale(1.05);
+@media (hover: hover) and (pointer: fine) {
+    .chat-send-btn:hover:not(:disabled) {
+        background: #093D6C;
+        transform: scale(1.05);
+    }
 }
 
 .chat-send-btn:disabled {
@@ -4384,10 +4412,12 @@ a.cv-contact-item:hover {
     z-index: 100;
 }
 
-.fab-btn:hover {
-    background: var(--accent-hover);
-    transform: scale(1.08);
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+@media (hover: hover) and (pointer: fine) {
+    .fab-btn:hover {
+        background: var(--accent-hover);
+        transform: scale(1.08);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+    }
 }
 
 .fab-btn:active {

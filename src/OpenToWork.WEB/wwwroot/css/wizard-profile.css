@@ -643,8 +643,10 @@
     transition: transform 0.3s ease;
 }
 
-.wizard-auto-btn:hover svg {
-    transform: rotate(180deg);
+@media (hover: hover) and (pointer: fine) {
+    .wizard-auto-btn:hover svg {
+        transform: rotate(180deg);
+    }
 }
 
 /* ===== Final Actions ===== */

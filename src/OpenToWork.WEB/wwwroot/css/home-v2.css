@@ -154,18 +154,22 @@
     flex-shrink: 0;
 }
 
-.cmd-search-btn:hover {
-    background: var(--accent-hover);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .cmd-search-btn:hover {
+        background: var(--accent-hover);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
 }
 
 .cmd-search-btn svg {
     transition: transform var(--transition-fast);
 }
 
-.cmd-search-btn:hover svg {
-    transform: translateX(3px);
+@media (hover: hover) and (pointer: fine) {
+    .cmd-search-btn:hover svg {
+        transform: translateX(3px);
+    }
 }
 
 /* ===== Category Chips ===== */
@@ -207,11 +211,13 @@
     transition: all var(--transition-fast);
 }
 
-.cmd-chip:hover {
-    background: #EFF6FF;
-    border-color: #93C5FD;
-    color: #2563EB;
-    transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+    .cmd-chip:hover {
+        background: #EFF6FF;
+        border-color: #93C5FD;
+        color: #2563EB;
+        transform: translateY(-1px);
+    }
 }
 
 .cmd-chip--active {
@@ -264,9 +270,11 @@
     max-width: 200px;
 }
 
-.home-hero-stat-card:hover {
-    transform: translateY(-3px);
-    background: rgba(255, 255, 255, 0.15);
+@media (hover: hover) and (pointer: fine) {
+    .home-hero-stat-card:hover {
+        transform: translateY(-3px);
+        background: rgba(255, 255, 255, 0.15);
+    }
 }
 
 .home-hero-stat-card--accent {
@@ -410,10 +418,12 @@
     gap: var(--space-sm);
 }
 
-.home-vacancy-card:hover {
-    border-color: var(--accent-soft);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+    .home-vacancy-card:hover {
+        border-color: var(--accent-soft);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-3px);
+    }
 }
 
 .home-vacancy-card-top {
@@ -700,9 +710,11 @@
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.home-company-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+    .home-company-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
 }
 
 /* Destacada: borde dorado + glow sutil */
@@ -1057,9 +1069,11 @@
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-.plan-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+    .plan-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
 }
 
 .plan-card--featured {

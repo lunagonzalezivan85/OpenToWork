@@ -18,10 +18,12 @@
     position: relative;
 }
 
-.bento-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-    border-color: var(--accent-soft);
+@media (hover: hover) and (pointer: fine) {
+    .bento-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+        border-color: var(--accent-soft);
+    }
 }
 
 .bento-card--small { grid-column: span 1; }
