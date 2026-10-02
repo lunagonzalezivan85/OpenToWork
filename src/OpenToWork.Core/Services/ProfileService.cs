@@ -339,6 +339,9 @@ public class ProfileService : IProfileService
         if (!string.IsNullOrEmpty(parsed.LinkedInUrl)) candidate.LinkedInUrl = parsed.LinkedInUrl;
         if (!string.IsNullOrEmpty(parsed.PortfolioUrl)) candidate.PortfolioUrl = parsed.PortfolioUrl;
         if (parsed.YearsOfExperience.HasValue) candidate.YearsOfExperience = parsed.YearsOfExperience;
+        // El telefono del CV solo rellena un hueco: nunca pisa el que el candidato escribio al registrarse.
+        if (!string.IsNullOrWhiteSpace(parsed.Phone) && string.IsNullOrWhiteSpace(candidate.Phone))
+            candidate.Phone = parsed.Phone.Trim().Length <= 20 ? parsed.Phone.Trim() : candidate.Phone;
 
         if (parsed.Availability != null)
         {
@@ -377,12 +380,9 @@ public class ProfileService : IProfileService
             cert.DeletedBy = userId;
         }
 
-        foreach (var cs in candidate.CandidateSkills.Where(s => !s.IsDeleted))
-        {
-            cs.IsDeleted = true;
-            cs.DeletedAt = DateTime.UtcNow;
-            cs.DeletedBy = userId;
-        }
+        // Las habilidades se borran de verdad: el indice unico (candidato, habilidad, IsDeleted) no admite
+        // dos copias borradas de la misma, y al aplicar un CV por tercera vez el SaveChanges fallaba (500).
+        _context.PT_CandidateSkills.RemoveRange(candidate.CandidateSkills);
 
         foreach (var exp in parsed.Experiences)
         {
@@ -438,10 +438,13 @@ public class ProfileService : IProfileService
         }
 
         var newSkills = new List<PTSkill>();
-        foreach (var skillName in parsed.Skills)
+        // La IA a veces repite una habilidad ("TPV" y "tpv"): dos filas iguales romperian el indice unico.
+        var skillNames = parsed.Skills
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+        foreach (var skillName in skillNames)
         {
-            if (string.IsNullOrWhiteSpace(skillName)) continue;
-
             var existingSkill = await _context.PT_Skills.FirstOrDefaultAsync(s => s.Name.ToLower() == skillName.ToLower());
             var skillId = existingSkill?.Id ?? Guid.Empty;
 

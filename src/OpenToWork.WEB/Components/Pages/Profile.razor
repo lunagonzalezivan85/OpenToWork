@@ -1294,11 +1294,13 @@
 
                 if (CvParseResult.Languages.Count > 0)
                 {
-                    Languages = CvParseResult.Languages.Select(l => new LanguageItem
-                    {
-                        Name = l.Name,
-                        Level = MapLanguageLevel(l.Level)
-                    }).ToList();
+                    Languages = CvParseResult.Languages
+                        .Where(l => !string.IsNullOrWhiteSpace(l.Name))
+                        .Select(l => new LanguageItem
+                        {
+                            Name = l.Name!,
+                            Level = MapLanguageLevel(l.Level)
+                        }).ToList();
                 }
 
                 CvUploadSuccess = true;

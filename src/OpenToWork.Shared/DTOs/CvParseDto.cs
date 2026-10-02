@@ -22,10 +22,12 @@ public class CvParseResultDto
     public List<CvParsedLanguage> Languages { get; set; } = new();
 }
 
+// La IA puede devolver estos textos en null: si fueran string no-nullable, [ApiController] los trata como
+// obligatorios y POST apply-cv rechaza el CV entero (400). ApplyCvDataAsync ya descarta las entradas incompletas.
 public class CvParsedExperience
 {
-    public string JobTitle { get; set; } = string.Empty;
-    public string CompanyName { get; set; } = string.Empty;
+    public string? JobTitle { get; set; } = string.Empty;
+    public string? CompanyName { get; set; } = string.Empty;
     public string? Location { get; set; }
     public string? Description { get; set; }
     public string? StartDate { get; set; }
@@ -35,8 +37,8 @@ public class CvParsedExperience
 
 public class CvParsedEducation
 {
-    public string Institution { get; set; } = string.Empty;
-    public string Degree { get; set; } = string.Empty;
+    public string? Institution { get; set; } = string.Empty;
+    public string? Degree { get; set; } = string.Empty;
     public string? FieldOfStudy { get; set; }
     public string? StartDate { get; set; }
     public string? EndDate { get; set; }
@@ -45,7 +47,7 @@ public class CvParsedEducation
 
 public class CvParsedCertification
 {
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; } = string.Empty;
     public string? Issuer { get; set; }
     public string? IssueDate { get; set; }
     public string? ExpiryDate { get; set; }
@@ -53,7 +55,7 @@ public class CvParsedCertification
 
 public class CvParsedLanguage
 {
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; } = string.Empty;
     public string? Level { get; set; }
 }
 
