@@ -67,8 +67,18 @@ public class AuthService : IAuthService
                 throw new ArgumentException("El número de documento no es válido para el tipo seleccionado.");
             identification = IdentityDocumentValidator.Normalize(identification);
         }
-        else if (dto.PrimaryRole == (int)UserRole.Company)
+
+        var companyName = dto.CompanyName?.Trim() ?? string.Empty;
+        var phone = string.IsNullOrWhiteSpace(dto.Phone) ? null : dto.Phone.Trim();
+        if (dto.PrimaryRole == (int)UserRole.Company)
         {
+            if (companyName.Length == 0)
+                throw new ArgumentException("El nombre de la empresa es obligatorio.");
+            if (companyName.Length > 200)
+                throw new ArgumentException("El nombre de la empresa es demasiado largo.");
+            if (!PhoneValidator.IsValid(phone))
+                throw new ArgumentException("El teléfono de la empresa no es válido (entre 9 y 15 dígitos).");
+            phone = PhoneValidator.Normalize(phone);
             if (string.IsNullOrWhiteSpace(identification))
                 throw new ArgumentException("El NIF de la empresa es obligatorio.");
             if (!IdentityDocumentValidator.IsValidCompanyNif(identification))
@@ -95,7 +105,7 @@ public class AuthService : IAuthService
             PrimaryRole = dto.PrimaryRole,
             FullName = isCandidate ? $"{firstName} {lastName}" : null,
             Identification = identification,
-            Phone = dto.Phone,
+            Phone = phone,
             EmailVerified = isCandidate,
             IsActive = true,
             CreatedBy = createdBy != null ? Guid.Parse(createdBy) : null,
@@ -118,7 +128,7 @@ public class AuthService : IAuthService
                 LastName = lastName,
                 Identification = identification,
                 DocumentType = dto.DocumentType,
-                Phone = dto.Phone,
+                Phone = phone,
                 WizardStep = 0,
                 WizardCompleted = false
             };
@@ -126,7 +136,14 @@ public class AuthService : IAuthService
         else if (dto.PrimaryRole == 1)
         {
             // El NIF va a la ficha de la empresa: es el que se usa en contratos y en su perfil.
-            user.Company = new PTCompany { SCUserId = user.Id, TaxId = identification };
+            user.Company = new PTCompany
+            {
+                SCUserId = user.Id,
+                Name = companyName,
+                TaxId = identification,
+                ContactEmail = user.Email,
+                ContactPhone = phone
+            };
         }
 
         _context.SC_Users.Add(user);

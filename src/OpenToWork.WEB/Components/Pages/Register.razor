@@ -80,20 +80,10 @@
                         <InputText class="ot-input-field" @bind-Value="RegisterModel.LastName" autocomplete="family-name" maxlength="100" />
                     </div>
                 </div>
-            }
 
-            <div class="ot-input-group mb-md">
-                <label class="ot-input-label">@Lang.T("common.labels.email")</label>
-                <InputText class="ot-input-field" @bind-Value="RegisterModel.Email" placeholder="@Lang.T("auth.login.emailPlaceholder")" autocomplete="email" />
-            </div>
+                @EmailField
+                @PasswordField
 
-            <div class="ot-input-group mb-md">
-                <label class="ot-input-label">@Lang.T("common.labels.password")</label>
-                <InputText type="password" class="ot-input-field" @bind-Value="RegisterModel.Password" placeholder="@Lang.T("auth.login.passwordPlaceholder")" autocomplete="new-password" />
-            </div>
-
-            @if (IsCandidate)
-            {
                 <div class="auth-field-row auth-field-row--doc">
                     <div class="ot-input-group mb-md">
                         <label class="ot-input-label">@Lang.T("auth.register.documentType")</label>
@@ -114,9 +104,17 @@
                         }
                     </div>
                 </div>
+
+                @PhoneField
             }
             else
             {
+                @* Empresa, en el orden pedido por Darwin: nombre, NIF, correo y telefono (la contrasena al final). *@
+                <div class="ot-input-group mb-md">
+                    <label class="ot-input-label">@Lang.T("auth.register.companyName")</label>
+                    <InputText class="ot-input-field" @bind-Value="RegisterModel.CompanyName" autocomplete="organization" maxlength="200" />
+                </div>
+
                 <div class="ot-input-group mb-md">
                     <label class="ot-input-label">@Lang.T("auth.register.companyNif")</label>
                     <InputText class="ot-input-field" @bind-Value="RegisterModel.Identification" @bind-Value:after="() => DocumentTouched = true"
@@ -126,12 +124,11 @@
                         <span class="ot-input-error">@Lang.T("auth.register.invalidCompanyNif")</span>
                     }
                 </div>
-            }
 
-            <div class="ot-input-group mb-md">
-                <label class="ot-input-label">@Lang.T("common.labels.phone")</label>
-                <InputText class="ot-input-field" @bind-Value="RegisterModel.Phone" autocomplete="tel" />
-            </div>
+                @EmailField
+                @PhoneField
+                @PasswordField
+            }
 
             @* Consentimientos (RGPD art. 6.1.a y 7): casillas sin marcar por defecto; la de privacidad es obligatoria,
                la comercial es opcional y no condiciona el registro. La API guarda fecha, IP y version del texto. *@
@@ -169,6 +166,22 @@
 
 @code {
     private const int MinPasswordLength = 6; // mismo minimo que AuthService.RegisterAsync
+
+    // Campos comunes; candidato y empresa los muestran en distinto orden.
+    private RenderFragment EmailField => @<div class="ot-input-group mb-md">
+        <label class="ot-input-label">@Lang.T("common.labels.email")</label>
+        <InputText class="ot-input-field" @bind-Value="RegisterModel.Email" placeholder="@Lang.T("auth.login.emailPlaceholder")" autocomplete="email" />
+    </div>;
+
+    private RenderFragment PasswordField => @<div class="ot-input-group mb-md">
+        <label class="ot-input-label">@Lang.T("common.labels.password")</label>
+        <InputText type="password" class="ot-input-field" @bind-Value="RegisterModel.Password" placeholder="@Lang.T("auth.login.passwordPlaceholder")" autocomplete="new-password" />
+    </div>;
+
+    private RenderFragment PhoneField => @<div class="ot-input-group mb-md">
+        <label class="ot-input-label">@Lang.T("common.labels.phone")</label>
+        <InputText class="ot-input-field" @bind-Value="RegisterModel.Phone" autocomplete="tel" />
+    </div>;
 
     private RegisterFormData RegisterModel { get; set; } = new();
     private int SelectedRole { get; set; } = 0;
@@ -244,10 +257,14 @@
         }
         else
         {
+            if (string.IsNullOrWhiteSpace(RegisterModel.CompanyName))
+                return Lang.T("auth.register.companyNameRequired");
             if (string.IsNullOrWhiteSpace(RegisterModel.Identification))
                 return Lang.T("auth.register.companyNifRequired");
             if (!IsCompanyNifValid)
                 return Lang.T("auth.register.invalidCompanyNif");
+            if (!PhoneValidator.IsValid(RegisterModel.Phone))
+                return Lang.T("auth.register.invalidPhone");
         }
         if (string.IsNullOrWhiteSpace(RegisterModel.Email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(RegisterModel.Email))
             return Lang.T("auth.register.emailInvalid");
@@ -343,6 +360,7 @@
                 FirstName = IsCandidate ? RegisterModel.FirstName?.Trim() : null,
                 LastName = IsCandidate ? RegisterModel.LastName?.Trim() : null,
                 DocumentType = IsCandidate ? (int?)RegisterModel.DocumentType : null,
+                CompanyName = IsCandidate ? null : RegisterModel.CompanyName?.Trim(),
                 AcceptPrivacy = RegisterModel.AcceptPrivacy,
                 AcceptMarketing = RegisterModel.AcceptMarketing,
                 EmailCode = emailCode
@@ -395,6 +413,7 @@
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public IdentityDocumentType? DocumentType { get; set; }
+        public string? CompanyName { get; set; }
         public string? Identification { get; set; }
         public string? Phone { get; set; }
         public bool AcceptPrivacy { get; set; }

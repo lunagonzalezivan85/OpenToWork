@@ -14,6 +14,9 @@ public class RegisterDto
     /// <summary>IdentityDocumentType; el numero va en Identification.</summary>
     public int? DocumentType { get; set; }
 
+    /// <summary>Solo empresa: obligatorio (PTCompany.Name). Su NIF va en Identification.</summary>
+    public string? CompanyName { get; set; }
+
     /// <summary>Casilla obligatoria "He leido y acepto la politica de privacidad".</summary>
     public bool AcceptPrivacy { get; set; }
     /// <summary>Casilla opcional de comunicaciones comerciales (desmarcada por defecto).</summary>
