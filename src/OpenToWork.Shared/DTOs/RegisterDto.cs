@@ -26,6 +26,8 @@ public class RegisterDto
 public class RegistrationCodeRequestDto
 {
     public string Email { get; set; } = string.Empty;
+    /// <summary>Opcional: solo para saludar por el nombre en el correo del codigo.</summary>
+    public string? FirstName { get; set; }
 }
 
 public class VerifyEmailDto

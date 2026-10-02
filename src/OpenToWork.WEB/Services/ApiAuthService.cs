@@ -67,9 +67,9 @@ public class ApiAuthService
     }
 
     /// <summary>Registro de candidato, paso 1: pide el codigo al correo (todavia no se crea la cuenta).</summary>
-    public async Task<EmailCodeResult> SendRegistrationCodeAsync(string email)
+    public async Task<EmailCodeResult> SendRegistrationCodeAsync(string email, string? firstName = null)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/register/send-code", new RegistrationCodeRequestDto { Email = email });
+        var response = await _httpClient.PostAsJsonAsync("api/auth/register/send-code", new RegistrationCodeRequestDto { Email = email, FirstName = firstName });
         if (response.IsSuccessStatusCode) return new EmailCodeResult(true, null);
         return new EmailCodeResult(false, response.StatusCode switch
         {

@@ -267,7 +267,7 @@
         ErrorMessage = InfoMessage = null;
         try
         {
-            var result = await AuthApi.SendRegistrationCodeAsync(RegisterModel.Email.Trim());
+            var result = await AuthApi.SendRegistrationCodeAsync(RegisterModel.Email.Trim(), RegisterModel.FirstName?.Trim());
             if (result.Success)
             {
                 AwaitingCode = true;

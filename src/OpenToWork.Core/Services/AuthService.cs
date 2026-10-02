@@ -132,7 +132,7 @@ public class AuthService : IAuthService
         return await GenerateAuthResponseAsync(user);
     }
 
-    public async Task<SendVerificationCodeResult> SendRegistrationCodeAsync(string email)
+    public async Task<SendVerificationCodeResult> SendRegistrationCodeAsync(string email, string? firstName = null)
     {
         var normalized = NormalizeEmail(email);
         if (normalized.Length == 0 || normalized.Length > 256 || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(normalized))
@@ -159,7 +159,11 @@ public class AuthService : IAuthService
         pending.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return await SendCodeEmailAsync(normalized, null, code)
+        // Solo para el saludo del correo; el nombre se valida y guarda despues, en RegisterAsync.
+        var name = firstName?.Trim();
+        if (name?.Length > 100) name = null;
+
+        return await SendCodeEmailAsync(normalized, name, code)
             ? SendVerificationCodeResult.Sent
             : SendVerificationCodeResult.SendFailed;
     }
@@ -203,12 +207,7 @@ public class AuthService : IAuthService
     /// <summary>Envia el correo con el codigo. En desarrollo, si el SMTP esta apagado, escribe el codigo en el log.</summary>
     private async Task<bool> SendCodeEmailAsync(string toEmail, string? name, string code)
     {
-        var html = $@"
-            <p>Hola{(string.IsNullOrWhiteSpace(name) ? "" : " " + System.Net.WebUtility.HtmlEncode(name))},</p>
-            <p>Tu código para verificar tu correo en <strong>Trato Directo</strong> es:</p>
-            <p style=""font-size:28px;font-weight:bold;letter-spacing:6px;"">{code}</p>
-            <p>Vence en {EmailCodeValidityMinutes} minutos. Si no estás creando una cuenta en Trato Directo, ignora este correo.</p>
-            <p>Saludos,<br/>Trato Directo</p>";
+        var html = EmailTemplates.VerificationCode(name, code, EmailCodeValidityMinutes);
         var (sent, error) = await _email.SendAsync(toEmail, name, $"{code} es tu código de verificación de Trato Directo", html);
         if (sent) return true;
 

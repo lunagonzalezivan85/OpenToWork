@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenToWork.Shared\OpenToWork.Shared.csproj" />
+    <ProjectReference Include="..\OpenToWork.Core\OpenToWork.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

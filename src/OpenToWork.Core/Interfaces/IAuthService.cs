@@ -17,7 +17,7 @@ public interface IAuthService
     Task<bool> VerifyRecaptchaAsync(string recaptchaResponse);
 
     /// <summary>Registro de candidato, paso 1: envia el codigo al correo sin crear la cuenta.</summary>
-    Task<SendVerificationCodeResult> SendRegistrationCodeAsync(string email);
+    Task<SendVerificationCodeResult> SendRegistrationCodeAsync(string email, string? firstName = null);
 
     Task<EmailVerificationStatusDto?> GetEmailVerificationStatusAsync(Guid userId);
     /// <summary>Genera un codigo nuevo y lo envia por correo.</summary>

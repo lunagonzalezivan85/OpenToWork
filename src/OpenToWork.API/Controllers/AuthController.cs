@@ -41,7 +41,7 @@ public class AuthController : ControllerBase
     [HttpPost("register/send-code")]
     public async Task<IActionResult> SendRegistrationCode([FromBody] RegistrationCodeRequestDto dto)
     {
-        return await _authService.SendRegistrationCodeAsync(dto.Email) switch
+        return await _authService.SendRegistrationCodeAsync(dto.Email, dto.FirstName) switch
         {
             SendVerificationCodeResult.Sent => NoContent(),
             SendVerificationCodeResult.EmailAlreadyRegistered => Conflict(new { message = "email_exists" }),
