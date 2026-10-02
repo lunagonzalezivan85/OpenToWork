@@ -173,3 +173,32 @@ hr {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* ============================================
+   Movimiento reducido (prefers-reduced-motion)
+   Menos movimiento, no cero: se conservan los fundidos y cambios de color
+   (ayudan a entender que paso) y los spinners (avisan de que algo carga).
+   Se quitan desplazamientos y escalas.
+   ============================================ */
+@keyframes rm-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    /* Hovers, pulsaciones, menus y barras cambian al instante en vez de desplazarse */
+    *,
+    *::before,
+    *::after {
+        transition-property: color, background-color, border-color, box-shadow, opacity, fill, stroke !important;
+    }
+
+    /* Las entradas que suben o escalan pasan a ser solo un fundido */
+    .fade-in {
+        animation-name: rm-fade;
+    }
+}
