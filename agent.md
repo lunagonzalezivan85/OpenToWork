@@ -62,3 +62,4 @@ No se propone `pick-ui-library`: está orientada a React y el proyecto es Blazor
 |---|---|---|
 | 2026-10-02 | `emil-design-eng` | Análisis inicial de diseño y motion del proyecto |
 | 2026-10-02 | `improve-animations` | Auditoría de animaciones (10 hallazgos + 3 oportunidades); pendiente elegir cuáles pasan a plan en `plans/` |
+| 2026-10-02 | `emil-design-eng` | Aplicados #1 (curvas y duraciones), #2 (solo botones y tarjetas), #3 (pulsar), #4 (movimiento reducido) y #5 (hover solo con raton) en la rama `dsiezar-motion-pulido`. Pendientes: #2 resto (inputs, nav, pestanas), #6-#10 y los modales sin animacion |
