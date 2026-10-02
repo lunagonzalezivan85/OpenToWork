@@ -76,14 +76,14 @@ public class AuthService : IAuthService
                 throw new ArgumentException("El nombre de la empresa es obligatorio.");
             if (companyName.Length > 200)
                 throw new ArgumentException("El nombre de la empresa es demasiado largo.");
-            if (!PhoneValidator.IsValid(phone))
-                throw new ArgumentException("El teléfono de la empresa no es válido (entre 9 y 15 dígitos).");
-            phone = PhoneValidator.Normalize(phone);
             if (string.IsNullOrWhiteSpace(identification))
                 throw new ArgumentException("El NIF de la empresa es obligatorio.");
             if (!IdentityDocumentValidator.IsValidCompanyNif(identification))
                 throw new ArgumentException("El NIF de la empresa no es válido.");
             identification = IdentityDocumentValidator.Normalize(identification);
+            if (!PhoneValidator.IsValid(phone))
+                throw new ArgumentException("El teléfono de la empresa no es válido (entre 9 y 15 dígitos).");
+            phone = PhoneValidator.Normalize(phone);
         }
 
         var existing = await _context.SC_Users

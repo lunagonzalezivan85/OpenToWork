@@ -109,7 +109,7 @@
             }
             else
             {
-                @* Empresa, en el orden pedido por Darwin: nombre, NIF, correo y telefono (la contrasena al final). *@
+                @* Empresa, en el orden pedido por Darwin: nombre, NIF, correo, contrasena y telefono. *@
                 <div class="ot-input-group mb-md">
                     <label class="ot-input-label">@Lang.T("auth.register.companyName")</label>
                     <InputText class="ot-input-field" @bind-Value="RegisterModel.CompanyName" autocomplete="organization" maxlength="200" />
@@ -126,8 +126,8 @@
                 </div>
 
                 @EmailField
-                @PhoneField
                 @PasswordField
+                @PhoneField
             }
 
             @* Consentimientos (RGPD art. 6.1.a y 7): casillas sin marcar por defecto; la de privacidad es obligatoria,
@@ -263,13 +263,13 @@
                 return Lang.T("auth.register.companyNifRequired");
             if (!IsCompanyNifValid)
                 return Lang.T("auth.register.invalidCompanyNif");
-            if (!PhoneValidator.IsValid(RegisterModel.Phone))
-                return Lang.T("auth.register.invalidPhone");
         }
         if (string.IsNullOrWhiteSpace(RegisterModel.Email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(RegisterModel.Email))
             return Lang.T("auth.register.emailInvalid");
         if (RegisterModel.Password.Length < MinPasswordLength)
             return string.Format(Lang.T("validation.minLength"), MinPasswordLength);
+        if (!IsCandidate && !PhoneValidator.IsValid(RegisterModel.Phone))
+            return Lang.T("auth.register.invalidPhone");
         if (!RegisterModel.AcceptPrivacy)
             return Lang.T("auth.register.privacyRequired");
         return null;
