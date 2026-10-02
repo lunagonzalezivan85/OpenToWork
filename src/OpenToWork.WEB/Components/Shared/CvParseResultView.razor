@@ -1,0 +1,124 @@
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject LanguageService Lang
+
+@* Lo que la IA saco del CV, para que el candidato lo revise antes de aplicarlo. Lo usan el perfil
+   (/profile) y la ventana de bienvenida del panel (CandidateOnboardingModal). *@
+@if (Result.Experiences.Count == 0 && Result.Educations.Count == 0
+     && Result.Certifications.Count == 0 && string.IsNullOrEmpty(Result.Title)
+     && string.IsNullOrEmpty(Result.Summary))
+{
+    <p class="cv-modal-empty">@Lang.T("profile.cv.noData")</p>
+}
+else
+{
+    @if (!string.IsNullOrEmpty(Result.Title) || !string.IsNullOrEmpty(Result.Summary))
+    {
+        <div class="cv-result-section">
+            <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionProfile")</h4>
+            @if (!string.IsNullOrEmpty(Result.Title))
+            {
+                <p class="cv-result-item"><strong>@Lang.T("profile.fields.title"):</strong> @Result.Title</p>
+            }
+            @if (!string.IsNullOrEmpty(Result.Summary))
+            {
+                <p class="cv-result-item cv-result-summary">@Result.Summary</p>
+            }
+            @if (Result.YearsOfExperience.HasValue)
+            {
+                <p class="cv-result-item"><strong>@Lang.T("profile.fields.yearsExperience"):</strong> @Result.YearsOfExperience</p>
+            }
+            @if (!string.IsNullOrEmpty(Result.City) || !string.IsNullOrEmpty(Result.Country))
+            {
+                <p class="cv-result-item"><strong>@Lang.T("profile.cv.location"):</strong> @(Result.City)@(string.IsNullOrEmpty(Result.Country) ? "" : $", {Result.Country}")</p>
+            }
+            @if (!string.IsNullOrEmpty(Result.LinkedInUrl))
+            {
+                <p class="cv-result-item"><strong>LinkedIn:</strong> @Result.LinkedInUrl</p>
+            }
+        </div>
+    }
+
+    @if (Result.Skills.Count > 0)
+    {
+        <div class="cv-result-section">
+            <h4 class="cv-result-section-title">@Lang.T("common.wizard.skills")</h4>
+            <div class="cv-result-tags">
+                @foreach (var skill in Result.Skills)
+                {
+                    <span class="cv-result-tag">@skill</span>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Result.Experiences.Count > 0)
+    {
+        <div class="cv-result-section">
+            <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionExperience") (@Result.Experiences.Count)</h4>
+            @foreach (var exp in Result.Experiences)
+            {
+                <div class="cv-result-card">
+                    <p class="cv-result-card-title">@exp.JobTitle</p>
+                    <p class="cv-result-card-subtitle">@exp.CompanyName</p>
+                    @if (!string.IsNullOrEmpty(exp.StartDate) || !string.IsNullOrEmpty(exp.EndDate))
+                    {
+                        <p class="cv-result-card-meta">@(exp.StartDate) - @(exp.IsCurrentJob ? Lang.T("profile.experience.present") : exp.EndDate)</p>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @if (Result.Educations.Count > 0)
+    {
+        <div class="cv-result-section">
+            <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionEducation") (@Result.Educations.Count)</h4>
+            @foreach (var edu in Result.Educations)
+            {
+                <div class="cv-result-card">
+                    <p class="cv-result-card-title">@edu.Degree</p>
+                    <p class="cv-result-card-subtitle">@edu.Institution</p>
+                    @if (!string.IsNullOrEmpty(edu.FieldOfStudy))
+                    {
+                        <p class="cv-result-card-meta">@edu.FieldOfStudy</p>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @if (Result.Certifications.Count > 0)
+    {
+        <div class="cv-result-section">
+            <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionCertifications") (@Result.Certifications.Count)</h4>
+            @foreach (var cert in Result.Certifications)
+            {
+                <div class="cv-result-card">
+                    <p class="cv-result-card-title">@cert.Name</p>
+                    @if (!string.IsNullOrEmpty(cert.Issuer))
+                    {
+                        <p class="cv-result-card-subtitle">@cert.Issuer</p>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @if (Result.Languages.Count > 0)
+    {
+        <div class="cv-result-section">
+            <h4 class="cv-result-section-title">@Lang.T("common.wizard.step4") (@Result.Languages.Count)</h4>
+            <div class="cv-result-tags">
+                @foreach (var lang in Result.Languages)
+                {
+                    <span class="cv-result-tag">@(lang.Name)@(string.IsNullOrEmpty(lang.Level) ? "" : $" ({lang.Level})")</span>
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public CvParseResultDto Result { get; set; } = default!;
+}

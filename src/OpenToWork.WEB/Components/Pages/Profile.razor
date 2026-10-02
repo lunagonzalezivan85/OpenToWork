@@ -826,120 +826,7 @@
                 </div>
 
                 <div class="cv-modal-body">
-                    @if (CvParseResult.Experiences.Count == 0 && CvParseResult.Educations.Count == 0
-                         && CvParseResult.Certifications.Count == 0 && string.IsNullOrEmpty(CvParseResult.Title)
-                         && string.IsNullOrEmpty(CvParseResult.Summary))
-                    {
-                        <p class="cv-modal-empty">@Lang.T("profile.cv.noData")</p>
-                    }
-                    else
-                    {
-                        @if (!string.IsNullOrEmpty(CvParseResult.Title) || !string.IsNullOrEmpty(CvParseResult.Summary))
-                        {
-                            <div class="cv-result-section">
-                                <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionProfile")</h4>
-                                @if (!string.IsNullOrEmpty(CvParseResult.Title))
-                                {
-                                    <p class="cv-result-item"><strong>@Lang.T("profile.fields.title"):</strong> @CvParseResult.Title</p>
-                                }
-                                @if (!string.IsNullOrEmpty(CvParseResult.Summary))
-                                {
-                                    <p class="cv-result-item cv-result-summary">@CvParseResult.Summary</p>
-                                }
-                                @if (CvParseResult.YearsOfExperience.HasValue)
-                                {
-                                    <p class="cv-result-item"><strong>@Lang.T("profile.fields.yearsExperience"):</strong> @CvParseResult.YearsOfExperience</p>
-                                }
-                                @if (!string.IsNullOrEmpty(CvParseResult.City) || !string.IsNullOrEmpty(CvParseResult.Country))
-                                {
-                                    <p class="cv-result-item"><strong>@Lang.T("profile.cv.location"):</strong> @(CvParseResult.City)@(string.IsNullOrEmpty(CvParseResult.Country) ? "" : $", {CvParseResult.Country}")</p>
-                                }
-                                @if (!string.IsNullOrEmpty(CvParseResult.LinkedInUrl))
-                                {
-                                    <p class="cv-result-item"><strong>LinkedIn:</strong> @CvParseResult.LinkedInUrl</p>
-                                }
-                            </div>
-                        }
-
-                        @if (CvParseResult.Skills.Count > 0)
-                        {
-                            <div class="cv-result-section">
-                                <h4 class="cv-result-section-title">@Lang.T("common.wizard.skills")</h4>
-                                <div class="cv-result-tags">
-                                    @foreach (var skill in CvParseResult.Skills)
-                                    {
-                                        <span class="cv-result-tag">@skill</span>
-                                    }
-                                </div>
-                            </div>
-                        }
-
-                        @if (CvParseResult.Experiences.Count > 0)
-                        {
-                            <div class="cv-result-section">
-                                <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionExperience") (@CvParseResult.Experiences.Count)</h4>
-                                @foreach (var exp in CvParseResult.Experiences)
-                                {
-                                    <div class="cv-result-card">
-                                        <p class="cv-result-card-title">@exp.JobTitle</p>
-                                        <p class="cv-result-card-subtitle">@exp.CompanyName</p>
-                                        @if (!string.IsNullOrEmpty(exp.StartDate) || !string.IsNullOrEmpty(exp.EndDate))
-                                        {
-                                            <p class="cv-result-card-meta">@(exp.StartDate) - @(exp.IsCurrentJob ? Lang.T("profile.experience.present") : exp.EndDate)</p>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                        }
-
-                        @if (CvParseResult.Educations.Count > 0)
-                        {
-                            <div class="cv-result-section">
-                                <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionEducation") (@CvParseResult.Educations.Count)</h4>
-                                @foreach (var edu in CvParseResult.Educations)
-                                {
-                                    <div class="cv-result-card">
-                                        <p class="cv-result-card-title">@edu.Degree</p>
-                                        <p class="cv-result-card-subtitle">@edu.Institution</p>
-                                        @if (!string.IsNullOrEmpty(edu.FieldOfStudy))
-                                        {
-                                            <p class="cv-result-card-meta">@edu.FieldOfStudy</p>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                        }
-
-                        @if (CvParseResult.Certifications.Count > 0)
-                        {
-                            <div class="cv-result-section">
-                                <h4 class="cv-result-section-title">@Lang.T("profile.cv.sectionCertifications") (@CvParseResult.Certifications.Count)</h4>
-                                @foreach (var cert in CvParseResult.Certifications)
-                                {
-                                    <div class="cv-result-card">
-                                        <p class="cv-result-card-title">@cert.Name</p>
-                                        @if (!string.IsNullOrEmpty(cert.Issuer))
-                                        {
-                                            <p class="cv-result-card-subtitle">@cert.Issuer</p>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                        }
-
-                        @if (CvParseResult.Languages.Count > 0)
-                        {
-                            <div class="cv-result-section">
-                                <h4 class="cv-result-section-title">@Lang.T("common.wizard.step4") (@CvParseResult.Languages.Count)</h4>
-                                <div class="cv-result-tags">
-                                    @foreach (var lang in CvParseResult.Languages)
-                                    {
-                                        <span class="cv-result-tag">@(lang.Name)@(string.IsNullOrEmpty(lang.Level) ? "" : $" ({lang.Level})")</span>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    }
+                    <CvParseResultView Result="CvParseResult" />
                 </div>
 
                 <div class="cv-modal-footer">
@@ -1007,6 +894,8 @@
         if (cv is { } file)
             await Js.InvokeVoidAsync("fileDownload.save", file.FileName, "application/pdf", Convert.ToBase64String(file.Content));
     }
+
+    [SupplyParameterFromQuery(Name = "step")] public int? Step { get; set; }
 
     private CandidateProfileDto? ProfileData { get; set; }
     private int CurrentStep { get; set; } = 0;
@@ -1091,7 +980,7 @@
                     var givenName = claims.TryGetValue("given_name", out var gn) ? gn.ToString() : null;
                     var familyName = claims.TryGetValue("family_name", out var fn) ? fn.ToString() : null;
                     UserName = givenName ?? UserEmail ?? "Usuario";
-                    UserInitials = GetInitials(UserName);
+                    UserInitials = NameInitials.From(UserName, familyName);
                     if (ProfileData != null && string.IsNullOrEmpty(ProfileData.FirstName))
                     {
                         ProfileData.FirstName = givenName ?? "";
@@ -1112,7 +1001,11 @@
         EditFirstName = ProfileData.FirstName;
         EditLastName = ProfileData.LastName;
         if (!string.IsNullOrWhiteSpace(ProfileData.FirstName))
-            UserInitials = GetInitials($"{ProfileData.FirstName} {ProfileData.LastName}");
+            UserInitials = NameInitials.From(ProfileData.FirstName, ProfileData.LastName);
+
+        // /profile?step=N abre directamente ese paso (lo usa "Completar perfil" del panel).
+        if (Step is >= 0 && Step < WizardSteps.Count)
+            CurrentStep = Step.Value;
         if (!string.IsNullOrEmpty(ProfileData.ProfilePictureUrl))
             PhotoDataUrl = await AuthApi.GetMyPhotoDataUrlAsync();
     }
@@ -1298,7 +1191,7 @@
             ProfileData = updated;
             EditFirstName = updated.FirstName;
             EditLastName = updated.LastName;
-            UserInitials = GetInitials($"{updated.FirstName} {updated.LastName}");
+            UserInitials = NameInitials.From(updated.FirstName, updated.LastName);
             ProfileSaved = true;
         }
     }
@@ -1306,6 +1199,10 @@
     private async Task FinishWizard()
     {
         await SaveProfileData();
+        // Antes nada marcaba el alta como terminada desde aqui: el panel seguia pidiendo "Completa tu
+        // perfil" y los retos tecnicos (que piden WizardCompleted) quedaban bloqueados.
+        if (ProfileSaved)
+            await AuthApi.UpdateWizardStepAsync(new UpdateCandidateWizardDto { WizardStep = 1, WizardCompleted = true });
     }
 
     private void OnCvFileSelected(InputFileChangeEventArgs e)
@@ -1442,14 +1339,6 @@
     {
         ShowCvModal = false;
         CvModalState = "";
-    }
-
-    private static string GetInitials(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return "U";
-        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 1) return parts[0][..1].ToUpper();
-        return (parts[0][..1] + parts[1][..1]).ToUpper();
     }
 
     private static string TruncateText(string? text, int max)

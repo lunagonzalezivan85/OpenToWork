@@ -446,7 +446,9 @@
                     else
                         UserName = UserEmail;
 
-                    UserInitials = GetInitials(UserName);
+                    // Candidato: primer nombre + primer apellido. Empresa: iniciales de su nombre, como antes.
+                    var familyName = claims.TryGetValue("family_name", out var fn) ? fn.ToString() : null;
+                    UserInitials = IsCompany ? GetInitials(UserName) : NameInitials.From(UserName, familyName);
                 }
 
                 try

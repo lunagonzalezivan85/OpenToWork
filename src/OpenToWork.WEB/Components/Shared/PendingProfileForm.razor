@@ -1,0 +1,207 @@
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+
+@* Solo los datos que le faltan al perfil (ProfileCompletion.Missing), para no repetir la carga desde
+   cero. Los datos sueltos se escriben aqui mismo; CV, experiencia y educacion llevan a su paso del perfil. *@
+@if (Missing.Count == 0)
+{
+    <p class="pending-done">@Lang.T("dashboard.pending.nothingMissing")</p>
+}
+else
+{
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="alert alert-error">@Error</div>
+    }
+
+    <div class="pending-grid">
+        @if (Has(ProfileCompletion.FirstName))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("common.labels.firstName")</label>
+                <input class="ot-input-field" @bind="Form.FirstName" maxlength="100" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.LastName))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("auth.register.lastNames")</label>
+                <input class="ot-input-field" @bind="Form.LastName" maxlength="100" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.Identification))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("auth.register.documentNumber")</label>
+                <input class="ot-input-field" @bind="Form.Identification" maxlength="20" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.Phone))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("common.labels.phone")</label>
+                <input class="ot-input-field" type="tel" @bind="Form.Phone" maxlength="20" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.BirthDate))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("common.labels.birthDate")</label>
+                <input class="ot-input-field" type="date" @bind="Form.BirthDate" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.Title))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("profile.fields.title")</label>
+                <input class="ot-input-field" @bind="Form.Title" maxlength="150" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.Country))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("common.labels.country")</label>
+                <input class="ot-input-field" @bind="Form.Country" maxlength="100" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.City))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("common.labels.city")</label>
+                <input class="ot-input-field" @bind="Form.City" maxlength="100" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.YearsOfExperience))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">@Lang.T("profile.fields.yearsExperience")</label>
+                <input class="ot-input-field" type="number" min="0" max="60" @bind="Form.YearsOfExperience" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.LinkedIn))
+        {
+            <div class="ot-input-group">
+                <label class="ot-input-label">LinkedIn</label>
+                <input class="ot-input-field" type="url" @bind="Form.LinkedInUrl" placeholder="https://www.linkedin.com/in/..." maxlength="300" />
+            </div>
+        }
+        @if (Has(ProfileCompletion.Summary))
+        {
+            <div class="ot-input-group pending-grid-full">
+                <label class="ot-input-label">@Lang.T("common.labels.summary")</label>
+                <textarea class="ot-input-field" rows="3" @bind="Form.Summary" maxlength="2000"></textarea>
+            </div>
+        }
+    </div>
+
+    @if (Has(ProfileCompletion.Cv) || Has(ProfileCompletion.Experience) || Has(ProfileCompletion.Education))
+    {
+        <div class="pending-links">
+            <p class="pending-links-title">@Lang.T("dashboard.pending.alsoMissing")</p>
+            @if (Has(ProfileCompletion.Cv))
+            {
+                <a class="pending-link" href="/profile?step=0">@Lang.T("dashboard.pending.cv")</a>
+            }
+            @if (Has(ProfileCompletion.Experience))
+            {
+                <a class="pending-link" href="/profile?step=2">@Lang.T("dashboard.pending.experience")</a>
+            }
+            @if (Has(ProfileCompletion.Education))
+            {
+                <a class="pending-link" href="/profile?step=5">@Lang.T("dashboard.pending.education")</a>
+            }
+        </div>
+    }
+}
+
+<div class="cv-modal-footer-buttons pending-actions">
+    @if (OnCancel.HasDelegate)
+    {
+        <button type="button" class="ot-btn ot-btn--secondary" disabled="@IsSaving" @onclick="OnCancel">@CancelLabel</button>
+    }
+    <button type="button" class="ot-btn ot-btn--primary" disabled="@IsSaving" @onclick="SaveAsync">
+        @(IsSaving ? Lang.T("common.labels.loading") : SaveLabel)
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CandidateDto Candidate { get; set; } = default!;
+    /// <summary>Recibe el candidato recargado tras guardar (null si no se pudo recargar).</summary>
+    [Parameter] public EventCallback<CandidateDto?> OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public string SaveLabel { get; set; } = "";
+    [Parameter] public string CancelLabel { get; set; } = "";
+
+    private List<string> Missing { get; set; } = new();
+    private PendingForm Form { get; set; } = new();
+    private bool IsSaving { get; set; }
+    private string? Error { get; set; }
+
+    private bool Has(string key) => Missing.Contains(key);
+
+    protected override void OnParametersSet()
+    {
+        Missing = ProfileCompletion.Missing(Candidate);
+    }
+
+    private async Task SaveAsync()
+    {
+        Error = null;
+
+        // Solo se envia lo que se escribio: los campos null no se tocan en el API (actualizacion parcial).
+        var dto = new UpdateCandidateProfileDto
+        {
+            FirstName = Clean(Form.FirstName),
+            LastName = Clean(Form.LastName),
+            Identification = Clean(Form.Identification),
+            Phone = Clean(Form.Phone),
+            BirthDate = Form.BirthDate,
+            Title = Clean(Form.Title),
+            Summary = Clean(Form.Summary),
+            Country = Clean(Form.Country),
+            City = Clean(Form.City),
+            YearsOfExperience = Form.YearsOfExperience is >= 0 and <= 60 ? Form.YearsOfExperience : null,
+            LinkedInUrl = Clean(Form.LinkedInUrl)
+        };
+
+        IsSaving = true;
+        try
+        {
+            var anyValue = dto.FirstName != null || dto.LastName != null || dto.Identification != null || dto.Phone != null
+                || dto.BirthDate != null || dto.Title != null || dto.Summary != null || dto.Country != null || dto.City != null
+                || dto.YearsOfExperience != null || dto.LinkedInUrl != null;
+
+            if (anyValue && await AuthApi.UpdateProfileAsync(dto) == null)
+            {
+                Error = Lang.T("errors.generic");
+                return;
+            }
+
+            Form = new PendingForm();
+            await OnSaved.InvokeAsync(await AuthApi.GetCandidateProfileAsync());
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private class PendingForm
+    {
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Identification { get; set; }
+        public string? Phone { get; set; }
+        public DateTime? BirthDate { get; set; }
+        public string? Title { get; set; }
+        public string? Summary { get; set; }
+        public string? Country { get; set; }
+        public string? City { get; set; }
+        public int? YearsOfExperience { get; set; }
+        public string? LinkedInUrl { get; set; }
+    }
+}

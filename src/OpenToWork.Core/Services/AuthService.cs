@@ -460,6 +460,10 @@ public class AuthService : IAuthService
             new(ClaimTypes.NameIdentifier, user.Id.ToString())
         };
 
+        // Apellido del candidato: el avatar del menu muestra primer nombre + primer apellido.
+        if (!string.IsNullOrWhiteSpace(user.Candidate?.LastName))
+            claims.Add(new Claim(JwtRegisteredClaimNames.FamilyName, user.Candidate.LastName));
+
         foreach (var role in user.UserRoles)
         {
             claims.Add(new Claim(ClaimTypes.Role, ((OpenToWork.Shared.Enums.UserRole)role.Role).ToString()));

@@ -1,6 +1,33 @@
 {
     "title": "Dashboard",
     "welcome": "Hola",
+    "onboarding": {
+        "welcomeTitle": "¡Te damos la bienvenida, {0}!",
+        "welcomeTitleNoName": "¡Te damos la bienvenida!",
+        "welcomeText": "Sube tu CV y nuestra IA completará tu perfil por ti. Después solo tendrás que revisarlo.",
+        "uploadCv": "Subir mi CV",
+        "pdfHint": "Formato PDF, hasta 10 MB.",
+        "manual": "No tengo CV: completar manualmente",
+        "reviewTitle": "Revisa lo que encontró la IA",
+        "reviewText": "Comprueba que los datos de tu CV estén bien. Si confirmas, se guardan en tu perfil.",
+        "otherCv": "Subir otro CV",
+        "confirmData": "Confirmar datos",
+        "pendingTitle": "Solo faltan unos datos",
+        "pendingText": "Completa lo que tu CV no incluía. Puedes dejarlo para después.",
+        "finish": "Confirmar e ir a mi panel"
+    },
+    "pending": {
+        "title": "Completa tu perfil",
+        "nothingMissing": "¡Tu perfil está completo!",
+        "alsoMissing": "También falta, en tu perfil:",
+        "cv": "Subir mi CV",
+        "experience": "Añadir experiencia laboral",
+        "education": "Añadir formación",
+        "save": "Guardar",
+        "later": "Más tarde",
+        "completeText": "Tu perfil tiene todos los datos.",
+        "completeBadge": "Perfil completado"
+    },
     "stats": {
         "profileCompletion": "Perfil completado",
         "activeVacancies": "Vacantes activas",

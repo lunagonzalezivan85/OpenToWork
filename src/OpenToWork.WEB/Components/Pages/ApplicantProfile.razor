@@ -25,7 +25,7 @@
         <!-- Header Card 100% -->
         <div class="cv-card cv-header-card">
             <div class="cv-header-top">
-                <div class="cv-avatar">@(GetInitials($"{Profile.FirstName} {Profile.LastName}"))</div>
+                <div class="cv-avatar">@(NameInitials.From(Profile.FirstName, Profile.LastName, "?"))</div>
                 <div class="cv-header-info">
                     <h1 class="cv-name">@Profile.FirstName @Profile.LastName</h1>
                     <p class="cv-title">@(Profile.Title ?? "Sin titulo profesional")</p>
@@ -322,14 +322,6 @@
         return string.Join(", ", parts);
     }
 
-    private static string GetInitials(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return "?";
-        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0) return "?";
-        if (parts.Length == 1) return parts[0][..1].ToUpper();
-        return (parts[0][..1] + parts[1][..1]).ToUpper();
-    }
 
     private static string GetAvailabilityLabel(int? availability) => availability switch
     {

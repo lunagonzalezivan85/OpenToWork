@@ -1,0 +1,192 @@
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+@* Ventana del primer ingreso del candidato (pedido de Darwin, 1-Oct; sustituye al antiguo /wizard):
+   subir el CV -> la IA lo analiza -> el candidato revisa lo extraido -> completa lo que falte -> panel.
+   Sin CV: "Completar manualmente" lleva al perfil por pasos. *@
+<div class="cv-modal-overlay">
+    @* Fuera del switch a proposito: si el InputFile desaparece al pasar a "analizando", Blazor ya no
+       puede leer el archivo y la subida falla. *@
+    <InputFile id="onboarding-cv-input" class="onboarding-file-input" OnChange="OnCvSelected" accept="application/pdf" />
+    <div class="cv-modal onboarding-modal">
+        @switch (State)
+        {
+            case "welcome":
+                <div class="cv-modal-body onboarding-welcome">
+                    <div class="onboarding-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3" />
+                        </svg>
+                    </div>
+                    <h3 class="cv-modal-title">@WelcomeTitle</h3>
+                    <p class="cv-modal-desc">@Lang.T("dashboard.onboarding.welcomeText")</p>
+
+                    @if (!string.IsNullOrEmpty(Error))
+                    {
+                        <div class="alert alert-error">@Error</div>
+                    }
+
+                    <label class="ot-btn ot-btn--primary ot-btn--medium onboarding-upload" for="onboarding-cv-input">
+                        @Lang.T("dashboard.onboarding.uploadCv")
+                    </label>
+                    <p class="onboarding-hint">@Lang.T("dashboard.onboarding.pdfHint")</p>
+
+                    <button type="button" class="ot-btn ot-btn--ghost ot-btn--small" @onclick="CompleteManuallyAsync">
+                        @Lang.T("dashboard.onboarding.manual")
+                    </button>
+                </div>
+                break;
+
+            case "analyzing":
+                <div class="cv-modal-loading">
+                    <div class="cv-modal-spinner"></div>
+                    <h3 class="cv-modal-title">@Lang.T("profile.cv.analyzing")</h3>
+                    <p class="cv-modal-desc">@Lang.T("profile.cv.analyzingDesc")</p>
+                </div>
+                break;
+
+            case "results":
+                <div class="cv-modal-header">
+                    <h3 class="cv-modal-title">@Lang.T("dashboard.onboarding.reviewTitle")</h3>
+                </div>
+                <div class="cv-modal-body">
+                    <p class="cv-modal-desc">@Lang.T("dashboard.onboarding.reviewText")</p>
+                    <CvParseResultView Result="ParseResult!" />
+                </div>
+                <div class="cv-modal-footer">
+                    <div class="cv-modal-footer-buttons">
+                        <button class="ot-btn ot-btn--secondary" @onclick="BackToWelcome">@Lang.T("dashboard.onboarding.otherCv")</button>
+                        <button class="ot-btn ot-btn--primary" @onclick="ApplyCvAsync">@Lang.T("dashboard.onboarding.confirmData")</button>
+                    </div>
+                </div>
+                break;
+
+            case "applying":
+                <div class="cv-modal-loading">
+                    <div class="cv-modal-spinner"></div>
+                    <h3 class="cv-modal-title">@Lang.T("profile.cv.applyingData")</h3>
+                </div>
+                break;
+
+            case "pending":
+                <div class="cv-modal-header">
+                    <h3 class="cv-modal-title">@Lang.T("dashboard.onboarding.pendingTitle")</h3>
+                </div>
+                <div class="cv-modal-body">
+                    <p class="cv-modal-desc">@Lang.T("dashboard.onboarding.pendingText")</p>
+                    <PendingProfileForm Candidate="Current" OnSaved="FinishAsync"
+                                        SaveLabel="@Lang.T("dashboard.onboarding.finish")" />
+                </div>
+                break;
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CandidateDto Candidate { get; set; } = default!;
+    /// <summary>Al terminar (CV aplicado y datos confirmados). Recibe el candidato actualizado.</summary>
+    [Parameter] public EventCallback<CandidateDto> OnFinished { get; set; }
+
+    private const long MaxCvBytes = 10 * 1024 * 1024; // mismo limite que el perfil
+
+    private string State { get; set; } = "welcome";
+    private string? Error { get; set; }
+    private CvParseResultDto? ParseResult { get; set; }
+    private string? CvUrl { get; set; }
+    // Candidato tras aplicar el CV (el parametro no se pisa desde dentro).
+    private CandidateDto? Reloaded { get; set; }
+    private CandidateDto Current => Reloaded ?? Candidate;
+
+    private string WelcomeTitle => string.IsNullOrWhiteSpace(Candidate.FirstName)
+        ? Lang.T("dashboard.onboarding.welcomeTitleNoName")
+        : string.Format(Lang.T("dashboard.onboarding.welcomeTitle"), Candidate.FirstName.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0]);
+
+    private async Task OnCvSelected(InputFileChangeEventArgs e)
+    {
+        Error = null;
+        if (e.File.ContentType != "application/pdf")
+        {
+            Error = Lang.T("profile.cv.onlyPdf");
+            return;
+        }
+        if (e.File.Size > MaxCvBytes)
+        {
+            Error = Lang.T("profile.cv.tooLarge");
+            return;
+        }
+
+        State = "analyzing";
+        StateHasChanged();
+        try
+        {
+            var result = await AuthApi.UploadCvAsync(e.File);
+            if (result?.ParsedData == null)
+            {
+                BackToWelcome();
+                Error = Lang.T("profile.cv.error");
+                return;
+            }
+            ParseResult = result.ParsedData;
+            CvUrl = result.CvUrl;
+            State = "results";
+        }
+        catch
+        {
+            BackToWelcome();
+            Error = Lang.T("profile.cv.error");
+        }
+    }
+
+    private async Task ApplyCvAsync()
+    {
+        if (ParseResult == null || string.IsNullOrEmpty(CvUrl)) return;
+
+        State = "applying";
+        StateHasChanged();
+        try
+        {
+            var applied = await AuthApi.ApplyCvAsync(CvUrl, ParseResult);
+            var reloaded = applied == null ? null : await AuthApi.GetCandidateProfileAsync();
+            if (reloaded == null)
+            {
+                BackToWelcome();
+                Error = Lang.T("profile.cv.error");
+                return;
+            }
+            Reloaded = reloaded;
+            State = "pending";
+        }
+        catch
+        {
+            BackToWelcome();
+            Error = Lang.T("profile.cv.error");
+        }
+    }
+
+    private async Task FinishAsync(CandidateDto? updated)
+    {
+        // Alta terminada: no vuelve a salir esta ventana y se habilitan los retos tecnicos (piden WizardCompleted).
+        await AuthApi.UpdateWizardStepAsync(new UpdateCandidateWizardDto { WizardStep = 1, WizardCompleted = true });
+        await OnFinished.InvokeAsync(updated ?? Current);
+    }
+
+    private async Task CompleteManuallyAsync()
+    {
+        // WizardStep = 1: la ventana ya se mostro y no vuelve a salir. El alta se da por terminada al
+        // finalizar el perfil por pasos (Profile.razor, FinishWizard).
+        await AuthApi.UpdateWizardStepAsync(new UpdateCandidateWizardDto { WizardStep = 1, WizardCompleted = false });
+        Nav.NavigateTo("/profile");
+    }
+
+    private void BackToWelcome()
+    {
+        State = "welcome";
+        ParseResult = null;
+        CvUrl = null;
+    }
+}

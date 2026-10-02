@@ -50,9 +50,33 @@
                 <h3>@Lang.T("dashboard.wizardPrompt.title")</h3>
                 <p>@Lang.T("dashboard.wizardPrompt.message")</p>
             </div>
-            <button class="ot-btn ot-btn--primary" @onclick="GoToWizard">
+            <button class="ot-btn ot-btn--primary" @onclick="OpenPending">
                 @Lang.T("dashboard.wizardPrompt.button")
             </button>
+        </div>
+    }
+
+    @if (ShowOnboarding && CandidateProfile != null)
+    {
+        <CandidateOnboardingModal Candidate="CandidateProfile" OnFinished="OnOnboardingFinished" />
+    }
+
+    @if (ShowPending && CandidateProfile != null)
+    {
+        @* "Completar perfil": solo los datos pendientes, no la carga desde cero *@
+        <div class="cv-modal-overlay">
+            <div class="cv-modal">
+                <div class="cv-modal-header">
+                    <h3 class="cv-modal-title">@Lang.T("dashboard.pending.title") (@ProfileCompletion%)</h3>
+                    <button class="cv-modal-close" @onclick="ClosePending" aria-label="@Lang.T("common.buttons.close")">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <div class="cv-modal-body">
+                    <PendingProfileForm Candidate="CandidateProfile" OnSaved="OnPendingSaved" OnCancel="ClosePending"
+                                        SaveLabel="@Lang.T("dashboard.pending.save")" CancelLabel="@Lang.T("dashboard.pending.later")" />
+                </div>
+            </div>
         </div>
     }
 
@@ -71,13 +95,20 @@
                 </div>
                 <div class="dash-chart-info">
                     <p class="dash-chart-info-text">
-                        @(ProfileCompletion < 100 ? Lang.T("dashboard.wizardPrompt.message") : "¡Perfil completo!")
+                        @(ProfileCompletion < 100 ? Lang.T("dashboard.wizardPrompt.message") : Lang.T("dashboard.pending.completeText"))
                     </p>
                     @if (ProfileCompletion < 100)
                     {
-                        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="GoToWizard">
-                            @Lang.T("dashboard.wizardPrompt.button")
+                        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="OpenPending">
+                            @Lang.T("dashboard.actions.completeProfile")
                         </button>
+                    }
+                    else
+                    {
+                        <span class="dash-profile-complete-badge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M20 6L9 17l-5-5" /></svg>
+                            @Lang.T("dashboard.pending.completeBadge")
+                        </span>
                     }
                 </div>
             </div>
@@ -394,17 +425,17 @@
 
         if (CandidateProfile != null)
         {
-            ShowWizardPrompt = !CandidateProfile.WizardCompleted;
-            ProfileCompletion = CalculateProfileCompletion(CandidateProfile);
+            ApplyCandidate(CandidateProfile);
             UserName = !string.IsNullOrEmpty(CandidateProfile.FirstName) ? CandidateProfile.FirstName : (jwtName ?? "Usuario");
-            UserInitials = GetInitials($"{CandidateProfile.FirstName} {CandidateProfile.LastName}".Trim());
+            // Primer ingreso: la ventana de bienvenida (subir CV o completar a mano) sale una sola vez.
+            ShowOnboarding = !CandidateProfile.WizardCompleted && CandidateProfile.WizardStep == 0;
         }
         else
         {
             ShowWizardPrompt = true;
             ProfileCompletion = 0;
             UserName = jwtName ?? "Usuario";
-            UserInitials = GetInitials(UserName);
+            UserInitials = NameInitials.From(UserName, null);
         }
 
         var (vacancies, total) = await AuthApi.SearchVacanciesAsync(new SearchVacancyDto { Page = 1, PageSize = 4 });
@@ -488,29 +519,37 @@
         _ => "dash-verification-pill--pending"
     };
 
-    private static int CalculateProfileCompletion(CandidateDto c)
+    // --- Primer ingreso y "Completar perfil" ---
+
+    private bool ShowOnboarding { get; set; }
+    private bool ShowPending { get; set; }
+
+    private void ApplyCandidate(CandidateDto c)
     {
-        int filled = 0;
-        int total = 15;
-        if (!string.IsNullOrEmpty(c.FirstName)) filled++;
-        if (!string.IsNullOrEmpty(c.LastName)) filled++;
-        if (!string.IsNullOrEmpty(c.Identification)) filled++;
-        if (!string.IsNullOrEmpty(c.Phone)) filled++;
-        if (c.BirthDate.HasValue) filled++;
-        if (!string.IsNullOrEmpty(c.Title)) filled++;
-        if (!string.IsNullOrEmpty(c.Summary)) filled++;
-        if (!string.IsNullOrEmpty(c.Country)) filled++;
-        if (!string.IsNullOrEmpty(c.City)) filled++;
-        if (!string.IsNullOrEmpty(c.CvUrl)) filled++;
-        if (!string.IsNullOrEmpty(c.LinkedInUrl)) filled++;
-        if (c.YearsOfExperience.HasValue) filled++;
-        if (c.Experiences != null && c.Experiences.Count > 0) filled++;
-        if (c.Educations != null && c.Educations.Count > 0) filled++;
-        if (c.WizardCompleted) filled++;
-        return (int)Math.Round((double)filled / total * 100);
+        CandidateProfile = c;
+        ShowWizardPrompt = !c.WizardCompleted;
+        ProfileCompletion = OpenToWork.Shared.Helpers.ProfileCompletion.Percent(c);
+        UserInitials = NameInitials.From(c.FirstName, c.LastName);
     }
 
-    private void GoToWizard() => Nav.NavigateTo("/profile");
+    private async Task OnOnboardingFinished(CandidateDto updated)
+    {
+        ShowOnboarding = false;
+        updated.WizardCompleted = true;
+        ApplyCandidate(updated);
+        await LoadScoreDataAsync();
+    }
+
+    private void OpenPending() => ShowPending = true;
+    private void ClosePending() => ShowPending = false;
+
+    private void OnPendingSaved(CandidateDto? updated)
+    {
+        if (updated != null) ApplyCandidate(updated);
+        ShowPending = false;
+    }
+
+    private void GoToWizard() => OpenPending();
     private void GoToProfile() => Nav.NavigateTo("/profile");
     private void GoToPlans() => Nav.NavigateTo("/plans");
     private void GoToVerification() => Nav.NavigateTo("/verification-request");
@@ -535,12 +574,4 @@
         };
     }
 
-    private static string GetInitials(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return "U";
-        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 0) return "U";
-        if (parts.Length == 1) return parts[0][..1].ToUpper();
-        return (parts[0][..1] + parts[1][..1]).ToUpper();
-    }
 }

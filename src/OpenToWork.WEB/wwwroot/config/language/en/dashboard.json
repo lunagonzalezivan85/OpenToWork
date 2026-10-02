@@ -1,6 +1,33 @@
 {
     "title": "Dashboard",
     "welcome": "Hello",
+    "onboarding": {
+        "welcomeTitle": "Welcome, {0}!",
+        "welcomeTitleNoName": "Welcome!",
+        "welcomeText": "Upload your CV and our AI will fill in your profile for you. Then you just review it.",
+        "uploadCv": "Upload my CV",
+        "pdfHint": "PDF format, up to 10 MB.",
+        "manual": "I don't have a CV: fill in manually",
+        "reviewTitle": "Review what the AI found",
+        "reviewText": "Check that the data from your CV is correct. If you confirm, it is saved to your profile.",
+        "otherCv": "Upload another CV",
+        "confirmData": "Confirm data",
+        "pendingTitle": "Just a few details left",
+        "pendingText": "Fill in what your CV didn't include. You can leave it for later.",
+        "finish": "Confirm and go to my dashboard"
+    },
+    "pending": {
+        "title": "Complete your profile",
+        "nothingMissing": "Your profile is complete!",
+        "alsoMissing": "Also missing, in your profile:",
+        "cv": "Upload my CV",
+        "experience": "Add work experience",
+        "education": "Add education",
+        "save": "Save",
+        "later": "Later",
+        "completeText": "Your profile has all the details.",
+        "completeBadge": "Profile completed"
+    },
     "stats": {
         "profileCompletion": "Profile completion",
         "activeVacancies": "Active vacancies",

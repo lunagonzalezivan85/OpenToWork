@@ -1242,3 +1242,124 @@
         flex-direction: column;
     }
 }
+
+/* ===== Primer ingreso del candidato (CandidateOnboardingModal) ===== */
+.onboarding-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.85rem;
+    padding: 2rem 1.75rem;
+}
+
+.onboarding-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    background: var(--accent-light, #E8F0F7);
+    color: var(--accent-primary, #0B4F8A);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.onboarding-welcome .alert {
+    width: 100%;
+    margin: 0;
+}
+
+.onboarding-upload {
+    position: relative;
+    min-width: 220px;
+    justify-content: center;
+    cursor: pointer;
+    margin-top: 0.5rem;
+}
+
+/* El InputFile esta oculto; el boton es una etiqueta (for) que abre el selector */
+.onboarding-file-input {
+    display: none;
+}
+
+.onboarding-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted, #98A2B3);
+    margin: -0.35rem 0 0.25rem;
+}
+
+/* ===== "Completar perfil": solo los datos pendientes (PendingProfileForm) ===== */
+.pending-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem 1rem;
+    margin-top: 1rem;
+}
+
+.pending-grid-full {
+    grid-column: 1 / -1;
+}
+
+.pending-grid > .ot-input-group {
+    min-width: 0;
+}
+
+.pending-links {
+    margin-top: 1.1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    background: var(--bg-tertiary, #F9FAFB);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: center;
+}
+
+.pending-links-title {
+    width: 100%;
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary, #101828);
+}
+
+.pending-link {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--accent-primary, #0B4F8A);
+    text-decoration: none;
+}
+
+.pending-link:hover {
+    text-decoration: underline;
+}
+
+.pending-done {
+    text-align: center;
+    color: var(--text-secondary, #475467);
+    padding: 1rem 0;
+    margin: 0;
+}
+
+.pending-actions {
+    margin-top: 1.25rem;
+}
+
+@media (max-width: 520px) {
+    .pending-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Panel: perfil al 100 % */
+.dash-profile-complete-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: var(--success-soft, #D1FADF);
+    color: var(--success, #059669);
+    font-size: 0.82rem;
+    font-weight: 700;
+}

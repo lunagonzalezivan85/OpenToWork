@@ -373,8 +373,9 @@
                 AuthProvider.NotifyAuthenticationStateChanged();
                 if (IsCandidate)
                 {
-                    // El correo ya quedo verificado con el codigo: sigue el flujo de siempre.
-                    Nav.NavigateTo(!result.Data.User.WizardCompleted ? "/wizard"
+                    // El correo ya quedo verificado con el codigo. En el panel sale la ventana de bienvenida
+                    // (subir el CV o completar a mano) la primera vez.
+                    Nav.NavigateTo(!result.Data.User.WizardCompleted ? "/dashboard"
                         : !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/dashboard");
                 }
                 else
