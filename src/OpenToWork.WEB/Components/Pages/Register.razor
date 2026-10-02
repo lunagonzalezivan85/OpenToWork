@@ -1,6 +1,8 @@
 @page "/register"
 @layout OpenToWork.WEB.Components.Layout.AuthLayout
 @using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@using OpenToWork.Shared.Validation
 @using OpenToWork.WEB.Services
 @inject ApiAuthService AuthApi
 @inject AppAuthStateProvider AuthProvider
@@ -35,37 +37,90 @@
         </div>
 
         <EditForm Model="RegisterModel" OnValidSubmit="HandleRegister">
+
+            @if (IsCandidate)
+            {
+                <div class="auth-field-row">
+                    <div class="ot-input-group mb-md">
+                        <label class="ot-input-label">@Lang.T("common.labels.firstName")</label>
+                        <InputText class="ot-input-field" @bind-Value="RegisterModel.FirstName" autocomplete="given-name" maxlength="100" />
+                    </div>
+                    <div class="ot-input-group mb-md">
+                        <label class="ot-input-label">@Lang.T("auth.register.lastNames")</label>
+                        <InputText class="ot-input-field" @bind-Value="RegisterModel.LastName" autocomplete="family-name" maxlength="100" />
+                    </div>
+                </div>
+            }
+
             <div class="ot-input-group mb-md">
                 <label class="ot-input-label">@Lang.T("common.labels.email")</label>
-                <InputText class="ot-input-field" @bind-Value="RegisterModel.Email" placeholder="@Lang.T("auth.login.emailPlaceholder")" />
-                <ValidationMessage For="@(() => RegisterModel.Email)" class="ot-input-error" />
+                <InputText class="ot-input-field" @bind-Value="RegisterModel.Email" placeholder="@Lang.T("auth.login.emailPlaceholder")" autocomplete="email" />
             </div>
 
             <div class="ot-input-group mb-md">
                 <label class="ot-input-label">@Lang.T("common.labels.password")</label>
-                <InputText type="password" class="ot-input-field" @bind-Value="RegisterModel.Password" placeholder="@Lang.T("auth.login.passwordPlaceholder")" />
-                <ValidationMessage For="@(() => RegisterModel.Password)" class="ot-input-error" />
+                <InputText type="password" class="ot-input-field" @bind-Value="RegisterModel.Password" placeholder="@Lang.T("auth.login.passwordPlaceholder")" autocomplete="new-password" />
             </div>
 
-            <div class="ot-input-group mb-md">
-                <label class="ot-input-label">@Lang.T("common.labels.identification")</label>
-                <InputText class="ot-input-field" @bind-Value="RegisterModel.Identification" />
-            </div>
+            @if (IsCandidate)
+            {
+                <div class="auth-field-row auth-field-row--doc">
+                    <div class="ot-input-group mb-md">
+                        <label class="ot-input-label">@Lang.T("auth.register.documentType")</label>
+                        <InputSelect class="ot-input-field" @bind-Value="RegisterModel.DocumentType">
+                            <option value="">@Lang.T("auth.register.documentTypeSelect")</option>
+                            <option value="@IdentityDocumentType.Dni">DNI</option>
+                            <option value="@IdentityDocumentType.Nie">NIE</option>
+                            <option value="@IdentityDocumentType.Passport">@Lang.T("auth.register.passport")</option>
+                        </InputSelect>
+                    </div>
+                    <div class="ot-input-group mb-md">
+                        <label class="ot-input-label">@Lang.T("auth.register.documentNumber")</label>
+                        <InputText class="ot-input-field" @bind-Value="RegisterModel.Identification" @bind-Value:after="() => DocumentTouched = true"
+                                   placeholder="@DocumentPlaceholder" disabled="@(RegisterModel.DocumentType == null)" maxlength="20" />
+                        @if (ShowDocumentError)
+                        {
+                            <span class="ot-input-error">@DocumentHint</span>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="ot-input-group mb-md">
+                    <label class="ot-input-label">@Lang.T("common.labels.identification")</label>
+                    <InputText class="ot-input-field" @bind-Value="RegisterModel.Identification" />
+                </div>
+            }
 
             <div class="ot-input-group mb-md">
                 <label class="ot-input-label">@Lang.T("common.labels.phone")</label>
-                <InputText class="ot-input-field" @bind-Value="RegisterModel.Phone" />
+                <InputText class="ot-input-field" @bind-Value="RegisterModel.Phone" autocomplete="tel" />
             </div>
 
-            <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium ot-btn--full-width" disabled="@IsLoading">
+            @* Consentimientos (RGPD art. 6.1.a y 7): casillas sin marcar por defecto; la de privacidad es obligatoria,
+               la comercial es opcional y no condiciona el registro. La API guarda fecha, IP y version del texto. *@
+            <label class="auth-consent">
+                <InputCheckbox @bind-Value="RegisterModel.AcceptPrivacy" />
+                <span>
+                    @Lang.T("auth.register.consentPrivacyPrefix")
+                    <a href="/privacy" target="_blank" rel="noopener">@Lang.T("auth.register.legalPrivacy")</a>
+                    <span class="auth-consent-required">*</span>
+                </span>
+            </label>
+            <label class="auth-consent">
+                <InputCheckbox @bind-Value="RegisterModel.AcceptMarketing" />
+                <span>@Lang.T("auth.register.consentMarketing")</span>
+            </label>
+
+            <button type="submit" class="ot-btn ot-btn--primary ot-btn--medium ot-btn--full-width mt-md" disabled="@IsLoading">
                 @(IsLoading ? Lang.T("common.labels.loading") : Lang.T("common.buttons.register"))
             </button>
 
-            @* Aviso de primera capa (RGPD art. 13): informa y enlaza los textos legales; no es una casilla de consentimiento *@
+            @* Aviso informativo de terminos y cookies (la privacidad ya se acepta en su casilla) *@
             <p class="auth-legal">
                 @Lang.T("auth.register.legalPrefix") <a href="/terms" target="_blank" rel="noopener">@Lang.T("auth.register.legalTerms")</a>
-                @Lang.T("auth.register.legalAnd") <a href="/privacy" target="_blank" rel="noopener">@Lang.T("auth.register.legalPrivacy")</a>
-                @Lang.T("auth.register.legalAndCookies") <a href="/cookies" target="_blank" rel="noopener">@Lang.T("auth.register.legalCookies")</a>.
+                @Lang.T("auth.register.legalAnd") <a href="/cookies" target="_blank" rel="noopener">@Lang.T("auth.register.legalCookies")</a>.
             </p>
         </EditForm>
 
@@ -77,12 +132,38 @@
 </div>
 
 @code {
+    private const int MinPasswordLength = 6; // mismo minimo que AuthService.RegisterAsync
+
     private RegisterFormData RegisterModel { get; set; } = new();
     private int SelectedRole { get; set; } = 0;
     private bool IsLoading { get; set; }
     private string? ErrorMessage { get; set; }
     private string? ReturnUrl { get; set; }
+    private bool DocumentTouched { get; set; }
     private string LoginLink => string.IsNullOrEmpty(ReturnUrl) ? "/login" : $"/login?returnUrl={Uri.EscapeDataString(ReturnUrl)}";
+
+    private bool IsCandidate => SelectedRole == 0;
+
+    private bool IsDocumentValid => RegisterModel.DocumentType is { } type
+        && IdentityDocumentValidator.IsValid(type, RegisterModel.Identification);
+
+    // El aviso aparece al salir del campo con algo escrito, no mientras se empieza a teclear.
+    private bool ShowDocumentError => DocumentTouched && !string.IsNullOrWhiteSpace(RegisterModel.Identification) && !IsDocumentValid;
+
+    private string DocumentPlaceholder => RegisterModel.DocumentType switch
+    {
+        IdentityDocumentType.Dni => "12345678Z",
+        IdentityDocumentType.Nie => "X1234567L",
+        IdentityDocumentType.Passport => "PAA123456",
+        _ => ""
+    };
+
+    private string DocumentHint => RegisterModel.DocumentType switch
+    {
+        IdentityDocumentType.Dni => Lang.T("auth.register.invalidDni"),
+        IdentityDocumentType.Nie => Lang.T("auth.register.invalidNie"),
+        _ => Lang.T("auth.register.invalidPassport")
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,12 +184,40 @@
     private void SelectRole(int role)
     {
         SelectedRole = role;
+        ErrorMessage = null;
+    }
+
+    /// <summary>Lo que la API tambien valida; aqui se avisa antes de enviar. Devuelve el primer error.</summary>
+    private string? ValidateForm()
+    {
+        if (IsCandidate)
+        {
+            if (string.IsNullOrWhiteSpace(RegisterModel.FirstName) || string.IsNullOrWhiteSpace(RegisterModel.LastName))
+                return Lang.T("auth.register.nameRequired");
+            if (RegisterModel.DocumentType == null)
+                return Lang.T("auth.register.documentTypeRequired");
+            if (!IsDocumentValid)
+                return DocumentHint;
+        }
+        if (string.IsNullOrWhiteSpace(RegisterModel.Email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(RegisterModel.Email))
+            return Lang.T("auth.register.emailInvalid");
+        if (RegisterModel.Password.Length < MinPasswordLength)
+            return string.Format(Lang.T("validation.minLength"), MinPasswordLength);
+        if (!RegisterModel.AcceptPrivacy)
+            return Lang.T("auth.register.privacyRequired");
+        return null;
     }
 
     private async Task HandleRegister()
     {
+        ErrorMessage = ValidateForm();
+        if (ErrorMessage != null)
+        {
+            DocumentTouched = true;
+            return;
+        }
+
         IsLoading = true;
-        ErrorMessage = null;
 
         try
         {
@@ -117,8 +226,13 @@
                 Email = RegisterModel.Email,
                 Password = RegisterModel.Password,
                 PrimaryRole = SelectedRole,
-                Identification = RegisterModel.Identification,
-                Phone = RegisterModel.Phone
+                Identification = IsCandidate ? IdentityDocumentValidator.Normalize(RegisterModel.Identification) : RegisterModel.Identification,
+                Phone = RegisterModel.Phone,
+                FirstName = IsCandidate ? RegisterModel.FirstName?.Trim() : null,
+                LastName = IsCandidate ? RegisterModel.LastName?.Trim() : null,
+                DocumentType = IsCandidate ? (int?)RegisterModel.DocumentType : null,
+                AcceptPrivacy = RegisterModel.AcceptPrivacy,
+                AcceptMarketing = RegisterModel.AcceptMarketing
             };
 
             var result = await AuthApi.RegisterAsync(dto);
@@ -126,10 +240,11 @@
             if (result.Data != null)
             {
                 AuthProvider.NotifyAuthenticationStateChanged();
-                if (SelectedRole == 0 && !result.Data.User.WizardCompleted)
-                    Nav.NavigateTo("/wizard");
-                else
-                    Nav.NavigateTo(!string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : SelectedRole == 1 ? "/company-dashboard" : "/dashboard");
+                // Primero se verifica el correo (se puede dejar para despues); luego sigue el flujo de siempre.
+                var next = SelectedRole == 0 && !result.Data.User.WizardCompleted
+                    ? "/wizard"
+                    : !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : SelectedRole == 1 ? "/company-dashboard" : "/dashboard";
+                Nav.NavigateTo($"/verify-email?next={Uri.EscapeDataString(next)}");
             }
             else if (result.EmailAlreadyRegistered)
             {
@@ -137,7 +252,7 @@
             }
             else
             {
-                ErrorMessage = Lang.T("auth.register.errorGeneric");
+                ErrorMessage = result.ValidationError ?? Lang.T("auth.register.errorGeneric");
             }
         }
         catch
@@ -150,17 +265,18 @@
         }
     }
 
+    // Sin DataAnnotations: los avisos salen traducidos desde ValidateForm.
     public class RegisterFormData
     {
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.EmailAddress]
         public string Email { get; set; } = string.Empty;
-
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.MinLength(6)]
         public string Password { get; set; } = string.Empty;
 
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public IdentityDocumentType? DocumentType { get; set; }
         public string? Identification { get; set; }
         public string? Phone { get; set; }
+        public bool AcceptPrivacy { get; set; }
+        public bool AcceptMarketing { get; set; }
     }
 }

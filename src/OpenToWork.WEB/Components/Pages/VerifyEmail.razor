@@ -1,0 +1,130 @@
+@page "/verify-email"
+@layout OpenToWork.WEB.Components.Layout.AuthLayout
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+@* Verificacion del correo con el codigo de 6 digitos enviado al registrarse. No bloquea: se puede dejar
+   para despues y el panel lo recuerda con un aviso hasta que se verifique. *@
+<PageTitle>@Lang.T("auth.verifyEmail.title")</PageTitle>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <h1 class="auth-title">@Lang.T("auth.verifyEmail.title")</h1>
+
+        @if (Email == null)
+        {
+            <p class="auth-subtitle">@Lang.T("common.labels.loading")</p>
+        }
+        else
+        {
+            <p class="auth-subtitle">@Lang.T("auth.verifyEmail.subtitle") <strong>@Email</strong></p>
+
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="alert alert-error">@ErrorMessage</div>
+            }
+            @if (!string.IsNullOrEmpty(InfoMessage))
+            {
+                <div class="alert alert-success">@InfoMessage</div>
+            }
+
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">@Lang.T("auth.verifyEmail.codeLabel")</label>
+                <input class="ot-input-field auth-code-input" @bind="Code" @bind:event="oninput" inputmode="numeric"
+                       autocomplete="one-time-code" maxlength="6" placeholder="000000" />
+            </div>
+
+            <button class="ot-btn ot-btn--primary ot-btn--medium ot-btn--full-width" disabled="@(IsBusy || Code.Trim().Length != 6)" @onclick="VerifyAsync">
+                @(IsBusy ? Lang.T("common.labels.loading") : Lang.T("auth.verifyEmail.verify"))
+            </button>
+
+            <div class="auth-verify-actions">
+                <button type="button" class="ot-btn ot-btn--ghost ot-btn--small" disabled="@IsBusy" @onclick="ResendAsync">
+                    @Lang.T("auth.verifyEmail.resend")
+                </button>
+                <button type="button" class="ot-btn ot-btn--ghost ot-btn--small" @onclick="Continue">
+                    @Lang.T("auth.verifyEmail.later")
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "next")] public string? Next { get; set; }
+
+    private string? Email { get; set; }
+    private string Code { get; set; } = "";
+    private bool IsBusy { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string? InfoMessage { get; set; }
+
+    // Solo rutas internas, igual que returnUrl en login/registro.
+    private string NextUrl => !string.IsNullOrEmpty(Next) && Next.StartsWith("/") && !Next.StartsWith("//") ? Next : "/dashboard";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        var status = await AuthApi.GetEmailVerificationStatusAsync();
+        if (status == null)
+        {
+            Nav.NavigateTo("/login", replace: true);
+            return;
+        }
+        if (status.EmailVerified)
+        {
+            Nav.NavigateTo(NextUrl, replace: true);
+            return;
+        }
+        Email = status.Email;
+    }
+
+    private async Task VerifyAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = InfoMessage = null;
+        var result = await AuthApi.VerifyEmailCodeAsync(Code.Trim());
+        IsBusy = false;
+
+        if (result.Success)
+        {
+            Nav.NavigateTo(NextUrl);
+            return;
+        }
+        ErrorMessage = ErrorText(result.Error);
+    }
+
+    private async Task ResendAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = InfoMessage = null;
+        var result = await AuthApi.SendEmailVerificationCodeAsync();
+        IsBusy = false;
+
+        if (result.Success)
+        {
+            Code = "";
+            InfoMessage = Lang.T("auth.verifyEmail.sent");
+        }
+        else
+        {
+            ErrorMessage = ErrorText(result.Error);
+        }
+    }
+
+    private string ErrorText(string? error) => error switch
+    {
+        "invalid" => Lang.T("auth.verifyEmail.errorInvalid"),
+        "expired" => Lang.T("auth.verifyEmail.errorExpired"),
+        "too_many_attempts" => Lang.T("auth.verifyEmail.errorTooManyAttempts"),
+        "too_soon" => Lang.T("auth.verifyEmail.errorTooSoon"),
+        "send_failed" => Lang.T("auth.verifyEmail.errorSendFailed"),
+        _ => Lang.T("errors.generic")
+    };
+
+    private void Continue() => Nav.NavigateTo(NextUrl);
+}

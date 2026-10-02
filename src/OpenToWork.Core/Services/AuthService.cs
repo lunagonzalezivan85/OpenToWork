@@ -5,10 +5,14 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
 using OpenToWork.Models.Entities;
+using OpenToWork.Shared;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
+using OpenToWork.Shared.Validation;
 
 namespace OpenToWork.Core.Services;
 
@@ -18,41 +22,93 @@ public class AuthService : IAuthService
     private readonly IConfiguration _config;
     private readonly ITokenCryptoService _tokenCrypto;
     private readonly IGoogleTokenValidator _googleTokenValidator;
+    private readonly IEmailService _email;
+    private readonly ILogger<AuthService> _logger;
 
-    public AuthService(AppDbContext context, IConfiguration config, ITokenCryptoService tokenCrypto, IGoogleTokenValidator googleTokenValidator)
+    private const int MinPasswordLength = 6;
+    private const int EmailCodeValidityMinutes = 15;
+    private const int EmailCodeMaxAttempts = 5;
+    private static readonly TimeSpan EmailCodeResendCooldown = TimeSpan.FromMinutes(1);
+
+    public AuthService(AppDbContext context, IConfiguration config, ITokenCryptoService tokenCrypto, IGoogleTokenValidator googleTokenValidator,
+        IEmailService email, ILogger<AuthService> logger)
     {
         _context = context;
         _config = config;
         _tokenCrypto = tokenCrypto;
         _googleTokenValidator = googleTokenValidator;
+        _email = email;
+        _logger = logger;
     }
 
-    public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, string? createdBy = null)
+    public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, string? createdBy = null, string? consentIp = null)
     {
+        var isCandidate = dto.PrimaryRole == (int)UserRole.Candidate;
+        var firstName = dto.FirstName?.Trim() ?? string.Empty;
+        var lastName = dto.LastName?.Trim() ?? string.Empty;
+        var identification = string.IsNullOrWhiteSpace(dto.Identification) ? null : dto.Identification.Trim();
+
+        // El formulario ya avisa de todo esto; aqui se repite porque la API es la que manda.
+        if (string.IsNullOrWhiteSpace(dto.Email) || !dto.Email.Contains('@'))
+            throw new ArgumentException("El correo electrónico no es válido.");
+        if (string.IsNullOrEmpty(dto.Password) || dto.Password.Length < MinPasswordLength)
+            throw new ArgumentException($"La contraseña debe tener al menos {MinPasswordLength} caracteres.");
+        if (!dto.AcceptPrivacy)
+            throw new ArgumentException("Debes aceptar la política de privacidad.");
+        if (isCandidate)
+        {
+            if (firstName.Length == 0 || lastName.Length == 0)
+                throw new ArgumentException("El nombre y los apellidos son obligatorios.");
+            if (firstName.Length > 100 || lastName.Length > 100)
+                throw new ArgumentException("El nombre o los apellidos son demasiado largos.");
+            if (dto.DocumentType is not int docType || !Enum.IsDefined(typeof(IdentityDocumentType), docType))
+                throw new ArgumentException("Selecciona el tipo de documento.");
+            if (!IdentityDocumentValidator.IsValid((IdentityDocumentType)docType, identification))
+                throw new ArgumentException("El número de documento no es válido para el tipo seleccionado.");
+            identification = IdentityDocumentValidator.Normalize(identification);
+        }
+
         var existing = await _context.SC_Users
             .FirstOrDefaultAsync(u => u.Email == dto.Email && !u.IsDeleted);
 
         if (existing != null)
             throw new InvalidOperationException("Email already registered");
 
+        var now = DateTime.UtcNow;
         var user = new SCUser
         {
-            Email = dto.Email,
+            Email = dto.Email.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
             PrimaryRole = dto.PrimaryRole,
-            Identification = dto.Identification,
+            FullName = isCandidate ? $"{firstName} {lastName}" : null,
+            Identification = identification,
             Phone = dto.Phone,
             EmailVerified = false,
             IsActive = true,
-            CreatedBy = createdBy != null ? Guid.Parse(createdBy) : null
+            CreatedBy = createdBy != null ? Guid.Parse(createdBy) : null,
+            PrivacyAcceptedAt = now,
+            PrivacyPolicyVersion = LegalVersions.Privacy,
+            ConsentIp = consentIp,
+            MarketingConsent = dto.AcceptMarketing,
+            MarketingConsentAt = now
         };
 
         user.UserRoles.Add(new SCUserRole { Role = dto.PrimaryRole, SCUserId = user.Id });
         user.UserPreference = new SYUserPreference { SCUserId = user.Id, Theme = "navy", Language = "es" };
 
-        if (dto.PrimaryRole == 0)
+        if (isCandidate)
         {
-            user.Candidate = new PTCandidate { SCUserId = user.Id, WizardStep = 0, WizardCompleted = false };
+            user.Candidate = new PTCandidate
+            {
+                SCUserId = user.Id,
+                FirstName = firstName,
+                LastName = lastName,
+                Identification = identification,
+                DocumentType = dto.DocumentType,
+                Phone = dto.Phone,
+                WizardStep = 0,
+                WizardCompleted = false
+            };
         }
         else if (dto.PrimaryRole == 1)
         {
@@ -62,8 +118,85 @@ public class AuthService : IAuthService
         _context.SC_Users.Add(user);
         await _context.SaveChangesAsync();
 
+        // Si el correo no sale, la cuenta igual queda creada: el usuario puede pedir otro codigo desde el portal.
+        await SendEmailVerificationCodeAsync(user.Id);
+
         return await GenerateAuthResponseAsync(user);
     }
+
+    public async Task<EmailVerificationStatusDto?> GetEmailVerificationStatusAsync(Guid userId)
+    {
+        var user = await _context.SC_Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+        return user == null ? null : new EmailVerificationStatusDto { Email = user.Email, EmailVerified = user.EmailVerified };
+    }
+
+    public async Task<SendVerificationCodeResult> SendEmailVerificationCodeAsync(Guid userId)
+    {
+        var user = await _context.SC_Users
+            .Include(u => u.Candidate)
+            .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted && u.IsActive);
+        if (user == null) return SendVerificationCodeResult.UserNotFound;
+        if (user.EmailVerified) return SendVerificationCodeResult.AlreadyVerified;
+
+        var issuedAt = user.EmailVerificationExpiresAt?.AddMinutes(-EmailCodeValidityMinutes);
+        if (issuedAt != null && DateTime.UtcNow - issuedAt < EmailCodeResendCooldown)
+            return SendVerificationCodeResult.TooSoon;
+
+        var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+        user.EmailVerificationCodeHash = HashEmailCode(user.Id, code);
+        user.EmailVerificationExpiresAt = DateTime.UtcNow.AddMinutes(EmailCodeValidityMinutes);
+        user.EmailVerificationAttempts = 0;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        var name = user.Candidate?.FirstName;
+        var html = $@"
+            <p>Hola{(string.IsNullOrWhiteSpace(name) ? "" : " " + System.Net.WebUtility.HtmlEncode(name))},</p>
+            <p>Tu código para verificar tu correo en <strong>Trato Directo</strong> es:</p>
+            <p style=""font-size:28px;font-weight:bold;letter-spacing:6px;"">{code}</p>
+            <p>Vence en {EmailCodeValidityMinutes} minutos. Si no creaste una cuenta en Trato Directo, ignora este correo.</p>
+            <p>Saludos,<br/>Trato Directo</p>";
+        var (sent, error) = await _email.SendAsync(user.Email, name, $"{code} es tu código de verificación de Trato Directo", html);
+        if (!sent)
+        {
+            _logger.LogWarning("No se pudo enviar el codigo de verificacion a {UserId}: {Error}", user.Id, error);
+            return SendVerificationCodeResult.SendFailed;
+        }
+        return SendVerificationCodeResult.Sent;
+    }
+
+    public async Task<EmailVerificationResult> VerifyEmailAsync(Guid userId, string code)
+    {
+        var user = await _context.SC_Users.FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted && u.IsActive);
+        if (user == null) return EmailVerificationResult.UserNotFound;
+        if (user.EmailVerified) return EmailVerificationResult.AlreadyVerified;
+        if (user.EmailVerificationCodeHash == null || user.EmailVerificationExpiresAt == null || user.EmailVerificationExpiresAt < DateTime.UtcNow)
+            return EmailVerificationResult.Expired;
+        if (user.EmailVerificationAttempts >= EmailCodeMaxAttempts)
+            return EmailVerificationResult.TooManyAttempts;
+
+        var expected = Encoding.UTF8.GetBytes(user.EmailVerificationCodeHash);
+        var actual = Encoding.UTF8.GetBytes(HashEmailCode(user.Id, (code ?? string.Empty).Trim()));
+        if (!CryptographicOperations.FixedTimeEquals(expected, actual))
+        {
+            user.EmailVerificationAttempts++;
+            await _context.SaveChangesAsync();
+            return user.EmailVerificationAttempts >= EmailCodeMaxAttempts
+                ? EmailVerificationResult.TooManyAttempts
+                : EmailVerificationResult.Invalid;
+        }
+
+        user.EmailVerified = true;
+        user.EmailVerificationCodeHash = null;
+        user.EmailVerificationExpiresAt = null;
+        user.EmailVerificationAttempts = 0;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return EmailVerificationResult.Verified;
+    }
+
+    // Con el id del usuario como sal: el mismo codigo de 6 digitos da hashes distintos en cada cuenta.
+    private string HashEmailCode(Guid userId, string code) => _tokenCrypto.HashToken($"{userId:N}:{code}");
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {

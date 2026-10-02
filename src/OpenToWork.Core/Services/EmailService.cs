@@ -38,7 +38,9 @@ public class EmailService : IEmailService
             message.Subject = subject;
             message.Body = new BodyBuilder { HtmlBody = htmlBody }.ToMessageBody();
 
-            using var client = new SmtpClient();
+            // MailKit espera 2 min por defecto: con un SMTP caido, el registro (que envia el codigo
+            // de verificacion) se quedaria colgado ese tiempo.
+            using var client = new SmtpClient { Timeout = 20_000 };
             var socketOptions = settings.UseSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto;
             await client.ConnectAsync(settings.Host, settings.Port, socketOptions);
 

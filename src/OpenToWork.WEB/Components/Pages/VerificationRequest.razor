@@ -572,24 +572,9 @@
         };
     }
 
-    private static bool IsValidDni(string? dni)
-    {
-        if (string.IsNullOrWhiteSpace(dni)) return false;
-        dni = dni.Trim().ToUpperInvariant();
-        if (!System.Text.RegularExpressions.Regex.IsMatch(dni, @"^\d{8}[A-Z]$")) return false;
-        var number = int.Parse(dni[..8]);
-        return dni[8] == "TRWAGMYFPDXBNJZSQVHLCKE"[number % 23];
-    }
+    private static bool IsValidDni(string? dni) => OpenToWork.Shared.Validation.IdentityDocumentValidator.IsValidDni(dni);
 
-    private static bool IsValidNie(string? nie)
-    {
-        if (string.IsNullOrWhiteSpace(nie)) return false;
-        nie = nie.Trim().ToUpperInvariant();
-        if (!System.Text.RegularExpressions.Regex.IsMatch(nie, @"^[XYZ]\d{7}[A-Z]$")) return false;
-        var prefix = nie[0] switch { 'X' => 0, 'Y' => 1, 'Z' => 2, _ => 0 };
-        var number = int.Parse($"{prefix}{nie.Substring(1, 7)}");
-        return nie[8] == "TRWAGMYFPDXBNJZSQVHLCKE"[number % 23];
-    }
+    private static bool IsValidNie(string? nie) => OpenToWork.Shared.Validation.IdentityDocumentValidator.IsValidNie(nie);
 
     private static bool IsValidPhone(string? phone)
         => !string.IsNullOrWhiteSpace(phone)

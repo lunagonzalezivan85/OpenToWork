@@ -11,7 +11,12 @@ public class RegisterResult
 {
     public AuthResponseDto? Data { get; set; }
     public bool EmailAlreadyRegistered { get; set; }
+    /// <summary>Motivo del rechazo de la API (400) cuando un dato no es valido.</summary>
+    public string? ValidationError { get; set; }
 }
+
+/// <summary>Resultado de verificar o reenviar el codigo del correo. Error = clave corta de la API (invalid, expired...).</summary>
+public record EmailCodeResult(bool Success, string? Error);
 
 public record PublishVacancyResult(bool Success, string? Error);
 
@@ -50,11 +55,57 @@ public class ApiAuthService
         {
             var error = await response.Content.ReadAsStringAsync();
             _logger.LogWarning("Register failed: {Error}", error);
-            return new RegisterResult { EmailAlreadyRegistered = response.StatusCode == System.Net.HttpStatusCode.Conflict };
+            return new RegisterResult
+            {
+                EmailAlreadyRegistered = response.StatusCode == System.Net.HttpStatusCode.Conflict,
+                ValidationError = response.StatusCode == System.Net.HttpStatusCode.BadRequest ? ReadMessage(error) : null
+            };
         }
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         if (result != null) await PersistAuthAsync(result);
         return new RegisterResult { Data = result };
+    }
+
+    public async Task<EmailVerificationStatusDto?> GetEmailVerificationStatusAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/auth/email-verification");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<EmailVerificationStatusDto>();
+    }
+
+    public async Task<EmailCodeResult> SendEmailVerificationCodeAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync("api/auth/email-verification/send", null);
+        if (response.IsSuccessStatusCode) return new EmailCodeResult(true, null);
+        return new EmailCodeResult(false, response.StatusCode == System.Net.HttpStatusCode.TooManyRequests
+            ? "too_soon"
+            : ReadMessage(await response.Content.ReadAsStringAsync()));
+    }
+
+    public async Task<EmailCodeResult> VerifyEmailCodeAsync(string code)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync("api/auth/email-verification/verify", new VerifyEmailDto { Code = code });
+        if (response.IsSuccessStatusCode) return new EmailCodeResult(true, null);
+        return new EmailCodeResult(false, response.StatusCode == System.Net.HttpStatusCode.TooManyRequests
+            ? "too_many_attempts"
+            : ReadMessage(await response.Content.ReadAsStringAsync()));
+    }
+
+    /// <summary>Lee { "message": "..." } del cuerpo de error; null si no tiene esa forma.</summary>
+    private static string? ReadMessage(string body)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(body);
+            return doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : null;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
     }
 
     public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)

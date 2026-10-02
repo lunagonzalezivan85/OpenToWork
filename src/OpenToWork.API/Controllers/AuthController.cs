@@ -23,13 +23,64 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var result = await _authService.RegisterAsync(dto);
+            var result = await _authService.RegisterAsync(dto, consentIp: HttpContext.Connection.RemoteIpAddress?.ToString());
             return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
         }
+    }
+
+    [Authorize]
+    [HttpGet("email-verification")]
+    public async Task<IActionResult> GetEmailVerificationStatus()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var status = await _authService.GetEmailVerificationStatusAsync(userId.Value);
+        return status != null ? Ok(status) : NotFound();
+    }
+
+    [Authorize]
+    [EnableRateLimiting("auth")]
+    [HttpPost("email-verification/send")]
+    public async Task<IActionResult> SendEmailVerificationCode()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        return await _authService.SendEmailVerificationCodeAsync(userId.Value) switch
+        {
+            SendVerificationCodeResult.Sent or SendVerificationCodeResult.AlreadyVerified => NoContent(),
+            SendVerificationCodeResult.TooSoon => StatusCode(StatusCodes.Status429TooManyRequests, new { message = "too_soon" }),
+            SendVerificationCodeResult.SendFailed => StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "send_failed" }),
+            _ => NotFound()
+        };
+    }
+
+    // Rate limit por IP ademas del maximo de intentos por codigo: 6 digitos no aguantan fuerza bruta sin limites.
+    [Authorize]
+    [EnableRateLimiting("auth")]
+    [HttpPost("email-verification/verify")]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        return await _authService.VerifyEmailAsync(userId.Value, dto.Code) switch
+        {
+            EmailVerificationResult.Verified or EmailVerificationResult.AlreadyVerified => NoContent(),
+            EmailVerificationResult.Invalid => BadRequest(new { message = "invalid" }),
+            EmailVerificationResult.Expired => BadRequest(new { message = "expired" }),
+            EmailVerificationResult.TooManyAttempts => BadRequest(new { message = "too_many_attempts" }),
+            _ => NotFound()
+        };
     }
 
     [EnableRateLimiting("auth")]

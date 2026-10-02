@@ -45,6 +45,30 @@ public class SCUser : BaseEntity
 
     public DateTime? PasswordResetExpiresAt { get; set; }
 
+    /// <summary>Hash del codigo de 6 digitos enviado por correo (nunca el codigo en claro).</summary>
+    [MaxLength(256)]
+    public string? EmailVerificationCodeHash { get; set; }
+
+    public DateTime? EmailVerificationExpiresAt { get; set; }
+
+    /// <summary>Intentos fallidos con el codigo vigente; al llegar al maximo hay que pedir otro.</summary>
+    public int EmailVerificationAttempts { get; set; }
+
+    // Traza de consentimiento del registro (RGPD art. 7.1): fecha, IP y version del texto aceptado.
+    public DateTime? PrivacyAcceptedAt { get; set; }
+
+    [MaxLength(20)]
+    public string? PrivacyPolicyVersion { get; set; }
+
+    [MaxLength(50)]
+    public string? ConsentIp { get; set; }
+
+    /// <summary>Comunicaciones comerciales (ofertas, noticias). Opcional y revocable.</summary>
+    public bool MarketingConsent { get; set; }
+
+    /// <summary>Fecha del ultimo cambio de MarketingConsent (alta o retirada).</summary>
+    public DateTime? MarketingConsentAt { get; set; }
+
     public virtual ICollection<SCUserRole> UserRoles { get; set; } = new List<SCUserRole>();
     public virtual ICollection<SCRefreshToken> RefreshTokens { get; set; } = new List<SCRefreshToken>();
     public virtual ICollection<SCUserDevice> UserDevices { get; set; } = new List<SCUserDevice>();

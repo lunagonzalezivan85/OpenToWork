@@ -36,6 +36,8 @@ public class PTCandidate : BaseEntity
 
     [MaxLength(50)]
     public string? Identification { get; set; }
+    /// <summary>IdentityDocumentType (DNI/NIE/Pasaporte) del numero en Identification. Null en cuentas anteriores al 1-Oct.</summary>
+    public int? DocumentType { get; set; }
 
     [MaxLength(20)]
     public string? Phone { get; set; }

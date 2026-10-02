@@ -5086,6 +5086,81 @@ a.cv-contact-item:hover {
     color: var(--accent-primary);
 }
 
+/* Registro: dos campos por fila (nombre/apellidos, tipo/numero de documento); una columna en movil */
+.auth-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.auth-field-row--doc {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+}
+
+.auth-field-row > .ot-input-group {
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    .auth-field-row,
+    .auth-field-row--doc {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+/* Casillas de consentimiento del registro (mismo patron que .verif-consent) */
+.auth-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.auth-consent input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--accent-primary);
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.auth-consent a {
+    color: var(--accent-primary);
+}
+
+.auth-consent-required {
+    color: var(--danger);
+}
+
+/* Verificacion del correo */
+.dash-email-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+}
+
+.auth-code-input {
+    font-size: 1.4rem;
+    letter-spacing: 0.4em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.auth-verify-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
 @media (max-width: 640px) {
     .legal-doc {
         padding: var(--space-md);
