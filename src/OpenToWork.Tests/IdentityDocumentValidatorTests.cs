@@ -58,6 +58,30 @@ public class IdentityDocumentValidatorTests
     public void Pasaporte_Invalido(string value) =>
         Assert.False(IdentityDocumentValidator.IsValid(IdentityDocumentType.Passport, value));
 
+    [Theory]
+    [InlineData("12345678Z")]      // autonomo con DNI
+    [InlineData("X1234567L")]      // autonomo con NIE
+    [InlineData("B12345674")]      // S.L.: control obligatoriamente digito
+    [InlineData("A58818501")]      // S.A.
+    [InlineData("Q2826000H")]      // organismo publico: control obligatoriamente letra
+    [InlineData("G1234567D")]      // asociacion: acepta letra...
+    [InlineData("G12345674")]      // ...o digito
+    [InlineData("b-12345674")]     // minuscula y guion
+    public void NifEmpresa_Valido(string value) =>
+        Assert.True(IdentityDocumentValidator.IsValidCompanyNif(value));
+
+    [Theory]
+    [InlineData("B12345675")]      // control incorrecto
+    [InlineData("B1234567D")]      // S.L. con letra de control (debe ser digito)
+    [InlineData("Q28260008")]      // organismo con digito (debe ser letra)
+    [InlineData("I12345674")]      // I no es un tipo de entidad
+    [InlineData("12345678A")]      // DNI con letra incorrecta
+    [InlineData("B123456")]        // corto
+    [InlineData("")]
+    [InlineData(null)]
+    public void NifEmpresa_Invalido(string? value) =>
+        Assert.False(IdentityDocumentValidator.IsValidCompanyNif(value));
+
     [Fact]
     public void Normalize_QuitaSeparadoresYPasaAMayusculas() =>
         Assert.Equal("X1234567L", IdentityDocumentValidator.Normalize(" x.1234567-l "));

@@ -118,8 +118,13 @@
             else
             {
                 <div class="ot-input-group mb-md">
-                    <label class="ot-input-label">@Lang.T("common.labels.identification")</label>
-                    <InputText class="ot-input-field" @bind-Value="RegisterModel.Identification" />
+                    <label class="ot-input-label">@Lang.T("auth.register.companyNif")</label>
+                    <InputText class="ot-input-field" @bind-Value="RegisterModel.Identification" @bind-Value:after="() => DocumentTouched = true"
+                               placeholder="B12345674" maxlength="20" />
+                    @if (ShowCompanyNifError)
+                    {
+                        <span class="ot-input-error">@Lang.T("auth.register.invalidCompanyNif")</span>
+                    }
                 </div>
             }
 
@@ -181,6 +186,9 @@
     // El aviso aparece al salir del campo con algo escrito, no mientras se empieza a teclear.
     private bool ShowDocumentError => DocumentTouched && !string.IsNullOrWhiteSpace(RegisterModel.Identification) && !IsDocumentValid;
 
+    private bool IsCompanyNifValid => IdentityDocumentValidator.IsValidCompanyNif(RegisterModel.Identification);
+    private bool ShowCompanyNifError => DocumentTouched && !string.IsNullOrWhiteSpace(RegisterModel.Identification) && !IsCompanyNifValid;
+
     private string DocumentPlaceholder => RegisterModel.DocumentType switch
     {
         IdentityDocumentType.Dni => "12345678Z",
@@ -214,8 +222,12 @@
 
     private void SelectRole(int role)
     {
+        if (role == SelectedRole) return;
         SelectedRole = role;
         ErrorMessage = InfoMessage = null;
+        // El numero de un DNI/NIE de candidato no sirve como NIF de empresa (ni al reves): se empieza vacio.
+        RegisterModel.Identification = null;
+        DocumentTouched = false;
     }
 
     /// <summary>Lo que la API tambien valida; aqui se avisa antes de enviar. Devuelve el primer error.</summary>
@@ -229,6 +241,13 @@
                 return Lang.T("auth.register.documentTypeRequired");
             if (!IsDocumentValid)
                 return DocumentHint;
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(RegisterModel.Identification))
+                return Lang.T("auth.register.companyNifRequired");
+            if (!IsCompanyNifValid)
+                return Lang.T("auth.register.invalidCompanyNif");
         }
         if (string.IsNullOrWhiteSpace(RegisterModel.Email) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(RegisterModel.Email))
             return Lang.T("auth.register.emailInvalid");
@@ -319,7 +338,7 @@
                 Email = RegisterModel.Email.Trim(),
                 Password = RegisterModel.Password,
                 PrimaryRole = SelectedRole,
-                Identification = IsCandidate ? IdentityDocumentValidator.Normalize(RegisterModel.Identification) : RegisterModel.Identification,
+                Identification = IdentityDocumentValidator.Normalize(RegisterModel.Identification),
                 Phone = RegisterModel.Phone,
                 FirstName = IsCandidate ? RegisterModel.FirstName?.Trim() : null,
                 LastName = IsCandidate ? RegisterModel.LastName?.Trim() : null,

@@ -67,6 +67,14 @@ public class AuthService : IAuthService
                 throw new ArgumentException("El número de documento no es válido para el tipo seleccionado.");
             identification = IdentityDocumentValidator.Normalize(identification);
         }
+        else if (dto.PrimaryRole == (int)UserRole.Company)
+        {
+            if (string.IsNullOrWhiteSpace(identification))
+                throw new ArgumentException("El NIF de la empresa es obligatorio.");
+            if (!IdentityDocumentValidator.IsValidCompanyNif(identification))
+                throw new ArgumentException("El NIF de la empresa no es válido.");
+            identification = IdentityDocumentValidator.Normalize(identification);
+        }
 
         var existing = await _context.SC_Users
             .FirstOrDefaultAsync(u => u.Email == dto.Email && !u.IsDeleted);
@@ -117,7 +125,8 @@ public class AuthService : IAuthService
         }
         else if (dto.PrimaryRole == 1)
         {
-            user.Company = new PTCompany { SCUserId = user.Id };
+            // El NIF va a la ficha de la empresa: es el que se usa en contratos y en su perfil.
+            user.Company = new PTCompany { SCUserId = user.Id, TaxId = identification };
         }
 
         _context.SC_Users.Add(user);

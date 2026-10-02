@@ -44,4 +44,40 @@ public static class IdentityDocumentValidator
     /// <summary>Letras y numeros; el formato cambia segun el pais, asi que solo se acota la longitud.</summary>
     public static bool IsValidPassport(string? value) =>
         Regex.IsMatch(Normalize(value), @"^[A-Z0-9]{5,20}$");
+
+    /// <summary>
+    /// NIF de una empresa en el registro. Se aceptan los tres formatos reales: autonomo con DNI
+    /// (8 digitos + letra), autonomo extranjero con NIE, y sociedad (letra + 7 digitos + control,
+    /// el antiguo CIF: una S.L. tiene B12345674, no 8 digitos + letra).
+    /// </summary>
+    public static bool IsValidCompanyNif(string? value) =>
+        IsValidDni(value) || IsValidNie(value) || IsValidEntityNif(value);
+
+    /// <summary>NIF de persona juridica (antiguo CIF): letra de tipo de entidad + 7 digitos + digito o letra de control.</summary>
+    public static bool IsValidEntityNif(string? value)
+    {
+        var nif = Normalize(value);
+        if (!Regex.IsMatch(nif, @"^[ABCDEFGHJNPQRSUVW]\d{7}[0-9A-J]$")) return false;
+
+        // Digitos en posicion impar (1a, 3a, 5a, 7a) se doblan y se suman sus cifras; los pares se suman tal cual.
+        var sum = 0;
+        for (var i = 0; i < 7; i++)
+        {
+            var d = nif[i + 1] - '0';
+            sum += i % 2 == 0 ? (d * 2 / 10) + (d * 2 % 10) : d;
+        }
+        var control = (10 - sum % 10) % 10;
+        var digit = (char)('0' + control);
+        var letter = "JABCDEFGHI"[control];
+
+        // Segun el tipo de entidad el control es obligatoriamente letra (P, Q, R, S, N, W),
+        // obligatoriamente digito (A, B, E, H) o cualquiera de los dos (el resto).
+        var last = nif[8];
+        return nif[0] switch
+        {
+            'P' or 'Q' or 'R' or 'S' or 'N' or 'W' => last == letter,
+            'A' or 'B' or 'E' or 'H' => last == digit,
+            _ => last == digit || last == letter
+        };
+    }
 }
