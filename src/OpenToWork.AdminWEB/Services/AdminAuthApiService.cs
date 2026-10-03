@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using OpenToWork.Shared.Challenges;
 using OpenToWork.Shared.DTOs;
 using OpenToWork.Shared.Enums;
 using OpenToWork.SharedUI.Services;
@@ -1594,4 +1595,80 @@ public class AdminAuthApiService
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<ContractPaymentDto>();
     }
+
+    // ---------------- Retos y competencias (api/admin/challenges) ----------------
+    // Devuelven (valor, error): error = mensajes del servidor o "forbidden"/"generic".
+
+    public Task<(List<CompetencyDto>?, string?)> GetChallengeCompetenciesAsync() =>
+        ChallengeCallAsync<List<CompetencyDto>>(HttpMethod.Get, "api/admin/challenges/competencies");
+
+    public Task<(ChallengeActionResultDto?, string?)> SaveChallengeCompetencyAsync(Guid? id, SaveCompetencyDto dto) =>
+        id == null
+            ? ChallengeCallAsync<ChallengeActionResultDto>(HttpMethod.Post, "api/admin/challenges/competencies", dto)
+            : ChallengeCallAsync<ChallengeActionResultDto>(HttpMethod.Put, $"api/admin/challenges/competencies/{id}", dto);
+
+    public Task<(List<ChallengeJobTypeConfigDto>?, string?)> GetChallengeJobTypesAsync() =>
+        ChallengeCallAsync<List<ChallengeJobTypeConfigDto>>(HttpMethod.Get, "api/admin/challenges/job-types");
+
+    public Task<(ChallengeActionResultDto?, string?)> SaveChallengeJobTypeAsync(Guid id, SaveChallengeJobTypeDto dto) =>
+        ChallengeCallAsync<ChallengeActionResultDto>(HttpMethod.Put, $"api/admin/challenges/job-types/{id}", dto);
+
+    public Task<(List<ChallengeListItemDto>?, string?)> GetChallengesAsync() =>
+        ChallengeCallAsync<List<ChallengeListItemDto>>(HttpMethod.Get, "api/admin/challenges");
+
+    public Task<(ChallengeEditDto?, string?)> GetChallengeAsync(Guid id) =>
+        ChallengeCallAsync<ChallengeEditDto>(HttpMethod.Get, $"api/admin/challenges/{id}");
+
+    public Task<(ChallengeActionResultDto?, string?)> SaveChallengeAsync(Guid? id, SaveChallengeDto dto) =>
+        id == null
+            ? ChallengeCallAsync<ChallengeActionResultDto>(HttpMethod.Post, "api/admin/challenges", dto)
+            : ChallengeCallAsync<ChallengeActionResultDto>(HttpMethod.Put, $"api/admin/challenges/{id}", dto);
+
+    /// <summary>action: duplicate | publish | archive | restore.</summary>
+    public Task<(ChallengeActionResultDto?, string?)> ChallengeActionAsync(Guid id, string action) =>
+        ChallengeCallAsync<ChallengeActionResultDto>(HttpMethod.Post, $"api/admin/challenges/{id}/{action}");
+
+    public Task<(ChallengeActionResultDto?, string?)> DeleteChallengeAsync(Guid id) =>
+        ChallengeCallAsync<ChallengeActionResultDto>(HttpMethod.Delete, $"api/admin/challenges/{id}");
+
+    public Task<(PracticeFeedbackDto?, string?)> PreviewChallengeActivityAsync(PreviewEvaluateDto dto) =>
+        ChallengeCallAsync<PracticeFeedbackDto>(HttpMethod.Post, "api/admin/challenges/preview", dto);
+
+    public Task<(SeedResultDto?, string?)> SeedChallengesAsync() =>
+        ChallengeCallAsync<SeedResultDto>(HttpMethod.Post, "api/admin/challenges/seed");
+
+    public Task<(List<ReviewQueueItemDto>?, string?)> GetChallengeReviewQueueAsync(bool includeCompleted) =>
+        ChallengeCallAsync<List<ReviewQueueItemDto>>(HttpMethod.Get, $"api/admin/challenges/reviews?includeCompleted={includeCompleted}");
+
+    public Task<(ReviewDetailDto?, string?)> GetChallengeReviewAsync(Guid attemptId) =>
+        ChallengeCallAsync<ReviewDetailDto>(HttpMethod.Get, $"api/admin/challenges/reviews/{attemptId}");
+
+    public Task<(ReviewDetailDto?, string?)> SaveChallengeReviewAsync(Guid attemptId, SaveReviewDto dto) =>
+        ChallengeCallAsync<ReviewDetailDto>(HttpMethod.Put, $"api/admin/challenges/reviews/{attemptId}", dto);
+
+    public Task<(List<AttemptResultDto>?, string?)> GetCandidateChallengeResultsAsync(Guid candidateUserId) =>
+        ChallengeCallAsync<List<AttemptResultDto>>(HttpMethod.Get, $"api/admin/challenges/candidates/{candidateUserId}/results");
+
+    private async Task<(T?, string?)> ChallengeCallAsync<T>(HttpMethod method, string url, object? body = null)
+    {
+        try
+        {
+            await SetAuthHeaderAsync();
+            using var request = new HttpRequestMessage(method, url);
+            if (body != null) request.Content = JsonContent.Create(body);
+            using var response = await _httpClient.SendAsync(request);
+            var text = await response.Content.ReadAsStringAsync();
+            if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.BadRequest && typeof(T) == typeof(ChallengeActionResultDto))
+                return (JsonSerializer.Deserialize<T>(text, ChallengeReadOptions), null); // 400 de accion trae Errors
+            if (response.StatusCode is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized) return (default, "forbidden");
+            try { return (default, JsonDocument.Parse(text).RootElement.GetProperty("error").GetString() ?? "generic"); }
+            catch { return (default, "generic"); }
+        }
+        catch (Exception)
+        {
+            return (default, "generic");
+        }
+    }
+
+    private static readonly JsonSerializerOptions ChallengeReadOptions = new(JsonSerializerDefaults.Web);
 }

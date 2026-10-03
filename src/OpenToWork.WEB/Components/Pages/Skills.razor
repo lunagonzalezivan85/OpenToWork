@@ -1,0 +1,157 @@
+@page "/skills"
+@using OpenToWork.Shared.Challenges
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+@* "Demuestra tus habilidades": catalogo por puesto + historial propio. *@
+
+<PageTitle>@Lang.T("challenges.title")</PageTitle>
+
+<div class="page-container">
+    <div class="dash-banner-card">
+        <div class="dash-banner-info">
+            <h1 class="dash-banner-title">@Lang.T("challenges.title")</h1>
+            <p class="dash-banner-role">@Lang.T("challenges.subtitle")</p>
+        </div>
+    </div>
+
+    <div class="chp-tabs" role="group">
+        <button class="chp-tab" aria-pressed="@(_showHistory ? "false" : "true")" @onclick="() => _showHistory = false">@Lang.T("challenges.tabChallenges")</button>
+        <button class="chp-tab" aria-pressed="@(_showHistory ? "true" : "false")" @onclick="ShowHistoryAsync">@Lang.T("challenges.tabHistory")</button>
+    </div>
+
+    @if (_error != null)
+    {
+        <div class="bento-card bento-card--full"><p>@Lang.T($"challenges.errors.{_error}")</p></div>
+    }
+    else if (!_showHistory)
+    {
+        @if (_jobTypes == null)
+        {
+            <p class="chp-muted">@Lang.T("challenges.loading")</p>
+        }
+        else if (_jobTypes.Count == 0)
+        {
+            <div class="bento-card bento-card--full"><p>@Lang.T("challenges.noJobs")</p></div>
+        }
+        else
+        {
+            <p class="chp-muted" id="chp-job-label">@Lang.T("challenges.chooseJob")</p>
+            <div class="chp-tabs" role="group" aria-labelledby="chp-job-label">
+                @foreach (var jt in _jobTypes)
+                {
+                    <button class="chp-tab" aria-pressed="@(jt.Id == _jobTypeId ? "true" : "false")" @onclick="() => SelectJobAsync(jt.Id)">@jt.Name (@jt.ChallengeCount)</button>
+                }
+            </div>
+            @if (_jobTypes.FirstOrDefault(j => j.Id == _jobTypeId)?.Description is { Length: > 0 } desc)
+            {
+                <p class="chp-muted" style="margin-bottom:16px;">@desc</p>
+            }
+
+            @if (_cards == null)
+            {
+                <p class="chp-muted">@Lang.T("challenges.loading")</p>
+            }
+            else if (_cards.Count == 0)
+            {
+                <p>@Lang.T("challenges.empty")</p>
+            }
+            else
+            {
+                <div class="chp-grid">
+                    @foreach (var c in _cards)
+                    {
+                        <button class="chp-card" @onclick="@(() => Nav.NavigateTo($"/skills/{c.ChallengeId}"))">
+                            <div class="chp-meta">
+                                <span class="chp-chip chp-chip--accent">@Lang.T($"challenges.level.{c.Level}")</span>
+                                <span class="chp-chip">@string.Format(Lang.T("challenges.minutes"), c.EstimatedMinutes)</span>
+                                <span class="chp-chip">@string.Format(Lang.T("challenges.activities"), c.ActivityCount)</span>
+                                @if (c.CandidateStatus != "notStarted")
+                                {
+                                    <span class="chp-chip @(c.CandidateStatus == "reviewed" || c.CandidateStatus == "submitted" ? "chp-chip--ok" : "chp-chip--warn")">@Lang.T($"challenges.status.{c.CandidateStatus}")</span>
+                                }
+                            </div>
+                            <h3>@c.Title</h3>
+                            <p>@c.Situation</p>
+                            @if (c.Competencies.Count > 0)
+                            {
+                                <div class="chp-meta">
+                                    @foreach (var comp in c.Competencies) { <span class="chp-chip">@comp</span> }
+                                </div>
+                            }
+                        </button>
+                    }
+                </div>
+            }
+        }
+    }
+    else
+    {
+        @if (_history == null)
+        {
+            <p class="chp-muted">@Lang.T("challenges.loading")</p>
+        }
+        else if (_history.Count == 0)
+        {
+            <div class="bento-card bento-card--full"><p>@Lang.T("challenges.historyEmpty")</p></div>
+        }
+        else
+        {
+            <div class="chp-grid">
+                @foreach (var h in _history)
+                {
+                    <button class="chp-card" @onclick="@(() => Nav.NavigateTo($"/skills/result/{h.AttemptId}"))">
+                        <div class="chp-meta">
+                            <span class="chp-chip @(h.Mode == AttemptMode.Evaluation ? "chp-chip--accent" : "")">@Lang.T($"challenges.mode.{h.Mode}")</span>
+                            @if (h.Mode == AttemptMode.Evaluation)
+                            {
+                                <span class="chp-chip @(h.ReviewStatus is ReviewStatus.Pending or ReviewStatus.InProgress ? "chp-chip--warn" : "chp-chip--ok")">@Lang.T($"challenges.review.{h.ReviewStatus}")</span>
+                            }
+                        </div>
+                        <h3>@h.ChallengeTitle</h3>
+                        <p>@h.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @Score(h)</p>
+                    </button>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<ChallengeJobTypeDto>? _jobTypes;
+    private List<ChallengeCardDto>? _cards;
+    private List<AttemptResultDto>? _history;
+    private Guid _jobTypeId;
+    private bool _showHistory;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0) await Lang.InitializeAsync();
+        var (types, error) = await AuthApi.GetChallengeJobTypesAsync();
+        if (error != null) { _error = error; return; }
+        _jobTypes = types ?? new();
+        if (_jobTypes.Count > 0) await SelectJobAsync(_jobTypes[0].Id);
+    }
+
+    private async Task SelectJobAsync(Guid id)
+    {
+        _jobTypeId = id;
+        _cards = null;
+        var (cards, _) = await AuthApi.GetChallengeCatalogAsync(id);
+        _cards = cards ?? new();
+    }
+
+    private async Task ShowHistoryAsync()
+    {
+        _showHistory = true;
+        if (_history != null) return;
+        var (h, _) = await AuthApi.GetChallengeHistoryAsync();
+        _history = h ?? new();
+    }
+
+    private static string Score(AttemptResultDto h) =>
+        h.CompletePercent is { } c ? $"{c:0.#} %" : h.AutoPercent is { } a ? $"{a:0.#} %*" : "—";
+}

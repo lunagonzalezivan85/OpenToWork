@@ -1,0 +1,219 @@
+@page "/skills/attempt/{Id:guid}"
+@using OpenToWork.Shared.Challenges
+@using OpenToWork.SharedUI.Components
+@using OpenToWork.WEB.Services
+@implements IDisposable
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+@* Intento en curso. Las respuestas se guardan en el servidor (autoguardado 1,5 s tras cada cambio y
+   al cambiar de actividad), asi que recargar o volver mas tarde retoma donde se dejo. *@
+
+<PageTitle>@(_view?.Title ?? Lang.T("challenges.title"))</PageTitle>
+
+<div class="page-container">
+    @if (_error != null && _view == null)
+    {
+        <div class="bento-card bento-card--full"><p>@Lang.T($"challenges.errors.{_error}")</p></div>
+    }
+    else if (_view == null)
+    {
+        <p class="chp-muted">@Lang.T("challenges.loading")</p>
+    }
+    else
+    {
+        var act = _view.Activities[_index];
+        <div class="bento-card bento-card--full" style="display:flex;flex-direction:column;gap:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <div>
+                    <span class="chp-chip @(_view.Mode == AttemptMode.Evaluation ? "chp-chip--accent" : "")">@Lang.T($"challenges.mode.{_view.Mode}")</span>
+                    <strong style="margin-left:8px;">@_view.Title</strong>
+                </div>
+                <span class="chp-muted" aria-live="polite">@SaveStatus</span>
+            </div>
+            <div class="chp-progress" role="progressbar" aria-valuemin="0" aria-valuemax="@_view.Activities.Count" aria-valuenow="@(_index + 1)"
+                 aria-label="@string.Format(Lang.T("challenges.attempt.of"), _index + 1, _view.Activities.Count)">
+                <span style="width:@((_index + 1) * 100 / _view.Activities.Count)%"></span>
+            </div>
+            <nav class="chp-steps" aria-label="@Lang.T("challenges.activities")">
+                @for (var i = 0; i < _view.Activities.Count; i++)
+                {
+                    var step = i;
+                    var done = IsAnswered(_view.Activities[step]);
+                    <button class="chp-step @(step == _index ? "chp-step--current" : done ? "chp-step--done" : "")"
+                            aria-current="@(step == _index ? "step" : null)"
+                            aria-label="@string.Format(Lang.T("challenges.attempt.goToActivity"), step + 1)"
+                            @onclick="() => GoToAsync(step)">@(step + 1)</button>
+                }
+            </nav>
+            <p class="chp-muted" style="margin:0;">@string.Format(Lang.T("challenges.attempt.of"), _index + 1, _view.Activities.Count)</p>
+
+            <ChallengeActivity @key="act.Key" Activity="act" Response="Resp(act.Key)" OnChanged="() => Changed(act.Key)" ReadOnly="_view.Status == AttemptStatus.Submitted" />
+
+            @if (_view.Mode == AttemptMode.Practice && _feedback.TryGetValue(act.Key, out var fb))
+            {
+                <div class="chp-feedback" role="status">
+                    @if (fb.AutoPercent is { } p) { <p style="margin:0 0 6px;font-weight:700;">@string.Format(Lang.T("challenges.attempt.feedbackScore"), p.ToString("0.#"))</p> }
+                    @if (!string.IsNullOrWhiteSpace(fb.Explanation)) { <p style="margin:0;white-space:pre-line;">@fb.Explanation</p> }
+                    @if (fb.HasHumanPart) { <p class="chp-muted" style="margin:6px 0 0;">@Lang.T("challenges.attempt.feedbackHuman")</p> }
+                </div>
+            }
+
+            @if (_saveError)
+            {
+                <p role="alert" style="color:var(--danger);margin:0;">@Lang.T("challenges.attempt.saveError")</p>
+            }
+
+            @if (_confirming)
+            {
+                <div class="chp-feedback" role="alertdialog" aria-labelledby="chp-confirm">
+                    <p id="chp-confirm" style="margin:0 0 6px;font-weight:700;">@Lang.T("challenges.attempt.submitConfirm")</p>
+                    @if (Unanswered > 0) { <p style="margin:0 0 10px;">@string.Format(Lang.T("challenges.attempt.unanswered"), Unanswered)</p> }
+                    <div class="chp-nav">
+                        <button class="ot-btn ot-btn--outline" @onclick="() => _confirming = false">@Lang.T("challenges.attempt.cancel")</button>
+                        <button class="ot-btn ot-btn--primary" disabled="@_busy" @onclick="SubmitAsync">@Lang.T("challenges.attempt.submit")</button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="chp-nav">
+                    <button class="ot-btn ot-btn--outline" disabled="@(_index == 0 || _busy)" @onclick="() => GoToAsync(_index - 1)">@Lang.T("challenges.attempt.prev")</button>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        @if (_view.Mode == AttemptMode.Practice)
+                        {
+                            <button class="ot-btn ot-btn--outline" disabled="@_busy" @onclick="() => SaveAsync(act.Key, force: true)">@Lang.T("challenges.attempt.check")</button>
+                        }
+                        @if (_index < _view.Activities.Count - 1)
+                        {
+                            <button class="ot-btn ot-btn--primary" disabled="@_busy" @onclick="() => GoToAsync(_index + 1)">@Lang.T("challenges.attempt.next")</button>
+                        }
+                        else
+                        {
+                            <button class="ot-btn ot-btn--primary" disabled="@_busy" @onclick="ConfirmAsync">@Lang.T("challenges.attempt.toSubmit")</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private AttemptViewDto? _view;
+    private readonly Dictionary<string, ChallengeResponse> _responses = new();
+    private readonly Dictionary<string, PracticeFeedbackDto> _feedback = new();
+    private readonly HashSet<string> _dirty = new();
+    private int _index;
+    private string? _error;
+    private bool _busy, _saving, _saveError, _confirming;
+    private DateTime? _savedAt;
+    private CancellationTokenSource? _debounce;
+
+    private string SaveStatus => _saving ? Lang.T("challenges.attempt.saving")
+        : _savedAt is { } t ? string.Format(Lang.T("challenges.attempt.saved"), t.ToLocalTime().ToString("HH:mm")) : "";
+
+    private int Unanswered => _view?.Activities.Count(a => !IsAnswered(a)) ?? 0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Lang._translations.Count == 0) await Lang.InitializeAsync();
+        var (view, error) = await AuthApi.GetChallengeAttemptAsync(Id);
+        if (view == null) { _error = error; return; }
+        if (view.Status == AttemptStatus.Submitted) { Nav.NavigateTo($"/skills/result/{Id}", replace: true); return; }
+        _view = view;
+        foreach (var (key, saved) in view.Answers)
+        {
+            _responses[key] = saved.Response;
+            if (saved.Feedback != null) _feedback[key] = saved.Feedback;
+        }
+        // Retoma en la primera actividad sin responder.
+        var first = view.Activities.FindIndex(a => !IsAnswered(a));
+        _index = first < 0 ? 0 : first;
+    }
+
+    private ChallengeResponse Resp(string key) =>
+        _responses.TryGetValue(key, out var r) ? r : _responses[key] = new ChallengeResponse();
+
+    private void Changed(string key)
+    {
+        _dirty.Add(key);
+        _feedback.Remove(key); // la explicacion era de la respuesta anterior
+        _debounce?.Cancel();
+        _debounce = new CancellationTokenSource();
+        var token = _debounce.Token;
+        _ = Task.Delay(1500, token).ContinueWith(async t =>
+        {
+            if (!t.IsCanceled) await InvokeAsync(async () => { await SaveAsync(key); StateHasChanged(); });
+        }, TaskScheduler.Default);
+    }
+
+    private async Task SaveAsync(string key, bool force = false)
+    {
+        if (_view == null || (!force && !_dirty.Contains(key))) return;
+        _saving = true;
+        _dirty.Remove(key);
+        var (result, _) = await AuthApi.SaveChallengeAnswerAsync(_view.AttemptId, key, Resp(key));
+        _saving = false;
+        if (result == null) { _dirty.Add(key); _saveError = true; return; }
+        _saveError = false;
+        _savedAt = result.SavedAt;
+        if (result.Feedback != null && _view.Mode == AttemptMode.Practice) _feedback[key] = result.Feedback;
+    }
+
+    private async Task SaveAllDirtyAsync()
+    {
+        _debounce?.Cancel();
+        foreach (var key in _dirty.ToList()) await SaveAsync(key);
+    }
+
+    private async Task GoToAsync(int index)
+    {
+        if (_view == null || index < 0 || index >= _view.Activities.Count) return;
+        _busy = true;
+        await SaveAllDirtyAsync();
+        _busy = false;
+        _index = index;
+        _confirming = false;
+    }
+
+    private async Task ConfirmAsync()
+    {
+        _busy = true;
+        await SaveAllDirtyAsync();
+        _busy = false;
+        _confirming = true;
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_view == null) return;
+        _busy = true;
+        await SaveAllDirtyAsync();
+        if (_saveError) { _busy = false; _confirming = false; return; } // no se entrega con respuestas sin guardar
+        var (result, error) = await AuthApi.SubmitChallengeAttemptAsync(_view.AttemptId);
+        _busy = false;
+        if (result != null) Nav.NavigateTo($"/skills/result/{_view.AttemptId}");
+        else { _error = error; _saveError = true; _confirming = false; }
+    }
+
+    /// <summary>Igual que ChallengeScoring.IsAnswered, pero sobre la vista del candidato.</summary>
+    private bool IsAnswered(ActivityViewDto a)
+    {
+        if (!_responses.TryGetValue(a.Key, out var r)) return false; // no la ha abierto
+        return a.ResponseType switch
+        {
+            ChallengeResponseType.Ordering => r.OrderedKeys.Count == a.Options.Count,
+            ChallengeResponseType.Numeric => r.NumericValues.Values.Any(v => !string.IsNullOrWhiteSpace(v)),
+            ChallengeResponseType.ShortText => !string.IsNullOrWhiteSpace(r.Text),
+            ChallengeResponseType.ActionsWithJustification => r.SelectedKeys.Count > 0 && !string.IsNullOrWhiteSpace(r.Text),
+            ChallengeResponseType.ErrorDetection => true, // abierta = respondida ("no hay errores" vale)
+            _ => r.SelectedKeys.Count > 0
+        };
+    }
+
+    public void Dispose() => _debounce?.Cancel();
+}

@@ -1,0 +1,1459 @@
+{
+  "competencies": [
+    { "slug": "priorizacion", "name": "Priorización", "description": "Decide qué atender primero cuando coinciden varias tareas, según urgencia, seguridad e impacto en el cliente." },
+    { "slug": "coordinacion", "name": "Coordinación", "description": "Se apoya en el equipo, reparte tareas y mantiene informadas a sala, barra y cocina." },
+    { "slug": "precision", "name": "Precisión", "description": "Trabaja con datos exactos y no improvisa garantías sin comprobarlas." },
+    { "slug": "comunicacion", "name": "Comunicación", "description": "Explica con claridad y respeto qué pasa y qué se va a hacer, a clientes y compañeros." },
+    { "slug": "atencion-detalle", "name": "Atención al detalle", "description": "Detecta diferencias entre lo pedido, lo anotado y lo cobrado." },
+    { "slug": "calculo-aplicado", "name": "Cálculo aplicado", "description": "Calcula importes, cantidades y porcentajes del trabajo diario con exactitud." },
+    { "slug": "organizacion", "name": "Organización", "description": "Planifica el orden de trabajo y la preparación previa para que el servicio fluya." },
+    { "slug": "comprension-tecnica", "name": "Comprensión técnica", "description": "Entiende fichas de preparación y sus implicaciones en sabor, tiempo y calidad." },
+    { "slug": "control-producto", "name": "Control de producto", "description": "Controla dosis, rendimientos, mermas y costes del producto." },
+    { "slug": "planificacion", "name": "Planificación", "description": "Ordena tareas y dependencias, y anticipa recursos y tiempos." },
+    { "slug": "claridad", "name": "Claridad", "description": "Transmite instrucciones breves, concretas y fáciles de seguir." },
+    { "slug": "trazabilidad", "name": "Trazabilidad", "description": "Documenta y comprueba movimientos para poder reconstruir lo que ha pasado." },
+    { "slug": "criterio-operativo", "name": "Criterio operativo", "description": "Toma decisiones razonables con la información disponible y comprueba antes de concluir." },
+    { "slug": "interpretacion-economica", "name": "Interpretación económica", "description": "Lee ventas, costes y ratios del negocio y entiende qué significan." },
+    { "slug": "diagnostico", "name": "Diagnóstico", "description": "Distingue hechos de hipótesis y elige qué comprobar antes de actuar." },
+    { "slug": "ejecucion", "name": "Ejecución", "description": "Convierte prioridades en acciones con responsable, plazo e indicador." },
+    { "slug": "revision", "name": "Revisión", "description": "Contrasta documentos y requisitos para encontrar contradicciones a tiempo." },
+    { "slug": "resolucion-incidencias", "name": "Resolución de incidencias", "description": "Reacciona ante imprevistos con una alternativa viable y coordinada." }
+  ],
+  "jobTypes": [
+    {
+      "name": "Camarero/a", "aliases": ["Camarero", "Camarera"], "levelName": "Personal Operativo",
+      "description": "Atención en sala: tomar comandas, servir, cobrar y resolver lo que surja durante el servicio.",
+      "competencies": ["priorizacion", "coordinacion", "precision", "comunicacion", "atencion-detalle", "calculo-aplicado"]
+    },
+    {
+      "name": "Barman / Bartender", "aliases": ["Bartender", "Barman"], "levelName": "Encargados y Tecnicos",
+      "description": "Barra: preparación de bebidas según ficha, organización de la barra y control de producto.",
+      "competencies": ["organizacion", "comprension-tecnica", "comunicacion", "precision", "control-producto"]
+    },
+    {
+      "name": "Responsable de local", "aliases": ["Encargado/a de local", "Encargado de local"], "levelName": "Responsables y Cualificados",
+      "description": "Coordina el turno, reparte funciones, resuelve incidencias y revisa el cierre de caja.",
+      "competencies": ["coordinacion", "planificacion", "claridad", "calculo-aplicado", "trazabilidad", "criterio-operativo"]
+    },
+    {
+      "name": "Gerente de restaurante", "aliases": ["Gerente", "Director/a de restaurante"], "levelName": "Responsables y Cualificados",
+      "description": "Gestiona la cuenta de resultados, prioriza mejoras y define responsables e indicadores.",
+      "competencies": ["interpretacion-economica", "diagnostico", "planificacion", "ejecucion"]
+    },
+    {
+      "name": "Coordinador/a de eventos", "aliases": ["Coordinador de eventos", "Coordinadora de eventos"], "levelName": "Responsables y Cualificados",
+      "description": "Planifica y coordina eventos: tareas, proveedores, presupuesto y comunicación con el cliente.",
+      "competencies": ["planificacion", "revision", "calculo-aplicado", "resolucion-incidencias", "comunicacion"]
+    }
+  ],
+  "challenges": [
+    {
+      "slug": "camarero-seccion-llena",
+      "jobTypes": ["Camarero/a"],
+      "definition": {
+        "title": "Tu sección está llena",
+        "situation": "Viernes a las 21:30. Llevas seis mesas y varias cosas pasan a la vez: una copa rota, platos en el pase, una consulta sobre alergias y un cliente molesto por la espera.",
+        "level": "Basic",
+        "estimatedMinutes": 12,
+        "instructions": "Vas a vivir unos minutos de un servicio real en tres pantallas. Lee el contexto de cada una, consulta los documentos que aparecen y responde. Puedes volver atrás antes de entregar. No hay cuenta atrás: tómate el tiempo que necesites.",
+        "deliverable": "Un orden de prioridades, una actuación ante una consulta de alergias con su justificación y lo que dirías a un cliente que reclama.",
+        "allowedTools": "Puedes tomar notas en papel. No necesitas calculadora ni consultar fuentes externas.",
+        "assessmentDescription": "El orden de prioridades se valora según la seguridad de las personas, la calidad del plato y el impacto en el cliente; se aceptan varios órdenes razonables. La actuación sobre alergias se corrige automáticamente y tu justificación la revisa una persona del equipo con una rúbrica. La respuesta al cliente también la revisa una persona: se valora el contenido (informar, disculparse, proponer una solución), no la ortografía ni el estilo.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 7,
+        "competencyFeedback": [
+          { "competencyId": "comp:priorizacion", "strengthText": "Ordenas bien las urgencias: primero la seguridad y lo que pierde calidad, después lo que puede esperar.", "practiceText": "Practica a ordenar tareas simultáneas: atiende primero riesgos para las personas y platos que se estropean." },
+          { "competencyId": "comp:coordinacion", "strengthText": "Te apoyas en el equipo y en cocina para resolver lo que no puedes hacer solo.", "practiceText": "Repasa cuándo pedir ayuda a compañeros o al encargado en un pico de trabajo." },
+          { "competencyId": "comp:precision", "strengthText": "No das por buena una información que no has comprobado, sobre todo con alergias.", "practiceText": "Ante alergias, comprueba siempre con la ficha de alérgenos y con cocina antes de responder." },
+          { "competencyId": "comp:comunicacion", "strengthText": "Informas al cliente con claridad y le das una solución concreta.", "practiceText": "Practica a explicar qué ha pasado, cuánto falta y qué le ofreces al cliente." }
+        ],
+        "activities": [
+          {
+            "key": "prioridades",
+            "title": "Cinco cosas a la vez",
+            "context": "Acabas de salir de cocina con las manos vacías. En tu sección pasa todo esto al mismo tiempo.",
+            "prompt": "Ordena de lo primero a lo último cómo atenderías estas situaciones. Arrastra las tarjetas o usa los botones Subir y Bajar.",
+            "template": "Cards",
+            "responseType": "Ordering",
+            "resources": [],
+            "options": [
+              { "key": "cuenta", "text": "La mesa 4 pide la cuenta: tienen que coger un tren en 25 minutos." },
+              { "key": "agua", "text": "La mesa 7 acaba de sentarse y pide agua y la carta." },
+              { "key": "copa", "text": "En la mesa 2 se ha roto una copa y hay cristales en el suelo, junto al paso de servicio." },
+              { "key": "pase", "text": "Cocina avisa: los principales de la mesa 9 están en el pase y se enfrían." },
+              { "key": "cafes", "text": "La mesa 5 pregunta si ya pueden pedir cafés y postres." }
+            ],
+            "conversation": [],
+            "scoring": {
+              "orderingMode": "PrecedencePairs",
+              "precedences": [
+                { "before": "copa", "after": "agua" },
+                { "before": "copa", "after": "cafes" },
+                { "before": "pase", "after": "agua" },
+                { "before": "pase", "after": "cafes" },
+                { "before": "cuenta", "after": "cafes" }
+              ]
+            },
+            "autoWeight": 2,
+            "autoCompetencies": [ { "competencyId": "comp:priorizacion", "weight": 2 }, { "competencyId": "comp:coordinacion", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Los cristales en una zona de paso son un riesgo para clientes y equipo: se retiran o se señalizan y se pide ayuda de inmediato. Los platos del pase pierden calidad en minutos. La cuenta de la mesa con prisa va antes que los cafés. El agua y la carta de una mesa recién sentada pueden esperar un poco (o pedir a un compañero que las lleve). Hay varios órdenes razonables entre la copa, el pase y la cuenta.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "alergias",
+            "title": "Una consulta sobre alergias",
+            "context": "En la mesa 3, una clienta te pregunta por el postre para su hija. Tienes la carta de postres en la mano.",
+            "prompt": "Elige cómo actúas y explica en pocas líneas por qué.",
+            "template": "Conversation",
+            "responseType": "ActionsWithJustification",
+            "resources": [
+              {
+                "key": "carta-postres", "title": "Carta de postres (alérgenos declarados)", "kind": "Carta", "text": "",
+                "columns": ["Postre", "Alérgenos declarados", "Precio"],
+                "rows": [
+                  { "key": "p1", "cells": ["Tarta de queso", "Lácteos, huevo, gluten", "6,00 €"] },
+                  { "key": "p2", "cells": ["Pastel de zanahoria", "Gluten, huevo, lácteos. Consultar trazas en cocina", "6,50 €"] },
+                  { "key": "p3", "cells": ["Sorbete de limón", "Sin alérgenos declarados", "5,00 €"] }
+                ],
+                "footer": "La ficha completa de alérgenos e ingredientes está en cocina. Esta noche está de turno el jefe de cocina."
+              }
+            ],
+            "options": [
+              { "key": "a", "text": "Le digo que el pastel de zanahoria no lleva frutos secos y que puede tomarlo tranquila." },
+              { "key": "b", "text": "Le explico que lo compruebo ahora con el jefe de cocina y con la ficha de alérgenos antes de servir nada, y mientras le cuento qué otras opciones hay." },
+              { "key": "c", "text": "Le digo que creo que no lleva, y que si quiere le quitamos la cobertura." },
+              { "key": "d", "text": "Le digo que no puedo saberlo y que mejor no pida postre." }
+            ],
+            "conversation": [
+              { "speaker": "Clienta", "text": "Mi hija es alérgica a los frutos secos. ¿El pastel de zanahoria lleva nueces o algo así?" }
+            ],
+            "scoring": {
+              "optionCredits": [
+                { "optionKey": "a", "credit": 0 },
+                { "optionKey": "b", "credit": 1 },
+                { "optionKey": "c", "credit": 0 },
+                { "optionKey": "d", "credit": 0.25 }
+              ],
+              "allowMultipleSelection": false
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:precision", "weight": 1 }, { "competencyId": "comp:comunicacion", "weight": 1 } ],
+            "rubric": [
+              {
+                "key": "verificacion", "title": "Verificación antes de responder", "competencyId": "comp:precision", "weight": 2,
+                "levels": [
+                  "Da por buena una información no comprobada o garantiza que no hay riesgo.",
+                  "Menciona que hay que tener cuidado, pero no dice cómo ni con quién lo comprobaría.",
+                  "Indica que lo comprueba con cocina o con la ficha, sin explicar qué hará si no hay certeza.",
+                  "Comprueba con el jefe de cocina y la ficha de alérgenos antes de servir y explica por qué no improvisa.",
+                  "Además de comprobarlo, prevé las trazas o la contaminación cruzada y que, si no hay certeza, no se sirve ese postre."
+                ]
+              },
+              {
+                "key": "trato", "title": "Trato e información a la clienta", "competencyId": "comp:comunicacion", "weight": 1,
+                "levels": [
+                  "No informa a la clienta o la deja sin respuesta.",
+                  "Informa de forma confusa o sin ofrecer nada mientras comprueba.",
+                  "Informa de que va a comprobarlo, sin ofrecer alternativas.",
+                  "Informa con claridad de lo que va a hacer y ofrece alternativas mientras tanto.",
+                  "Informa, ofrece alternativas seguras y confirma después la respuesta antes de servir."
+                ]
+              }
+            ],
+            "practiceExplanation": "Con alergias no se improvisa: la carta dice \"consultar trazas en cocina\", así que la única respuesta segura es comprobarlo con la persona responsable y con la ficha antes de servir. Decir que no se puede saber y no ofrecer nada deja a la clienta sin solución.",
+            "maxTextLength": 500
+          },
+          {
+            "key": "reclamacion",
+            "title": "Un plato que no llega",
+            "context": "La mesa 6 te llama. Antes de ir, cocina te pasa una nota.",
+            "prompt": "Escribe lo que le dirías al cliente (máximo 400 caracteres). No se valora la ortografía ni el estilo, sino lo que haces y lo que le ofreces.",
+            "template": "Conversation",
+            "responseType": "ShortText",
+            "resources": [
+              { "key": "nota-cocina", "title": "Nota de cocina", "kind": "Nota", "text": "Mesa 6: el pescado se ha tenido que repetir porque se pasó de punto. Sale en 8 minutos.", "columns": [], "rows": [], "footer": "" },
+              { "key": "politica", "title": "Política de la casa", "kind": "Nota", "text": "Ante retrasos de más de 20 minutos, el camarero puede ofrecer una bebida o un postre por cuenta de la casa, avisando al encargado.", "columns": [], "rows": [], "footer": "" }
+            ],
+            "options": [],
+            "conversation": [
+              { "speaker": "Cliente", "text": "Llevamos 35 minutos esperando el principal y las mesas de al lado, que llegaron después, ya están comiendo." }
+            ],
+            "scoring": {},
+            "autoWeight": 0,
+            "autoCompetencies": [],
+            "rubric": [
+              {
+                "key": "informa", "title": "Reconoce el problema e informa", "competencyId": "comp:comunicacion", "weight": 1,
+                "levels": [
+                  "No reconoce el retraso, culpa al cliente o a cocina delante del cliente.",
+                  "Se disculpa de forma genérica sin explicar qué pasa ni cuánto falta.",
+                  "Se disculpa e indica que el plato está saliendo, sin un tiempo concreto.",
+                  "Se disculpa, explica brevemente que se ha repetido el plato para servirlo bien y da el tiempo (unos 8 minutos).",
+                  "Lo anterior y además confirma que volverá a avisar si cambia algo y comprueba que la mesa está atendida mientras."
+                ]
+              },
+              {
+                "key": "solucion", "title": "Propone una solución", "competencyId": "comp:coordinacion", "weight": 1,
+                "levels": [
+                  "No ofrece nada o promete algo que no puede cumplir.",
+                  "Ofrece algo poco adecuado o sin contar con la política de la casa.",
+                  "Ofrece una bebida o un postre, sin coordinarlo con el encargado.",
+                  "Ofrece una bebida o un postre según la política y avisa al encargado.",
+                  "Lo anterior y además coordina con cocina para que el plato salga en cuanto esté y se asegura de que no se repita."
+                ]
+              }
+            ],
+            "practiceExplanation": "Una buena respuesta reconoce el retraso, explica sin culpar a nadie que el plato se ha repetido para servirlo en su punto, da un tiempo concreto (unos 8 minutos) y, como el retraso supera 20 minutos, ofrece una bebida o un postre avisando al encargado.",
+            "maxTextLength": 400
+          }
+        ]
+      }
+    },
+    {
+      "slug": "camarero-comanda-sin-errores",
+      "jobTypes": ["Camarero/a"],
+      "definition": {
+        "title": "Una comanda sin errores",
+        "situation": "La mesa 12 (cuatro personas) va a pedir la cuenta. Antes, compruebas que el ticket coincide con lo que anotaste y calculas el importe correcto.",
+        "level": "Basic",
+        "estimatedMinutes": 10,
+        "instructions": "Compara la comanda que anotaste con el ticket que ha salido de caja, decide qué haces y calcula la cuenta correcta con la carta de precios. Los precios llevan el IVA incluido.",
+        "deliverable": "Las líneas del ticket con errores, tu actuación antes de cobrar y los importes de la cuenta corregida.",
+        "allowedTools": "Puedes usar calculadora y papel.",
+        "assessmentDescription": "Todas las respuestas se corrigen automáticamente. En la detección de errores cada línea correcta suma y cada línea marcada sin error resta (sin bajar de cero). En los cálculos se admite una diferencia de un céntimo por redondeo.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 7,
+        "competencyFeedback": [
+          { "competencyId": "comp:atencion-detalle", "strengthText": "Detectas las diferencias entre lo pedido y lo cobrado.", "practiceText": "Repasa el ticket línea a línea comparando cantidades y modificaciones con la comanda." },
+          { "competencyId": "comp:calculo-aplicado", "strengthText": "Calculas importes, bases e IVA sin errores.", "practiceText": "Practica a calcular la base imponible dividiendo el total entre 1,10 cuando el IVA (10 %) está incluido." },
+          { "competencyId": "comp:coordinacion", "strengthText": "Avisas a cocina a tiempo para evitar que salga un plato mal.", "practiceText": "Cuando detectes un error que afecta a un plato, avisa a cocina antes de que salga." }
+        ],
+        "activities": [
+          {
+            "key": "errores-ticket",
+            "title": "Compara comanda y ticket",
+            "context": "Esta es la comanda que tomaste en la mesa 12 y el ticket que ha impreso la caja.",
+            "prompt": "Marca en el ticket las líneas que no coinciden con la comanda. Si crees que no hay errores, no marques ninguna.",
+            "template": "Document",
+            "responseType": "ErrorDetection",
+            "resources": [
+              {
+                "key": "comanda", "title": "Comanda anotada (mesa 12, 4 personas)", "kind": "Comanda", "text": "",
+                "columns": ["Cant.", "Producto", "Notas"],
+                "rows": [
+                  { "key": "c1", "cells": ["1", "Ensalada de temporada", "Sin cebolla"] },
+                  { "key": "c2", "cells": ["2", "Croquetas caseras (ración)", ""] },
+                  { "key": "c3", "cells": ["1", "Entrecot", "Al punto"] },
+                  { "key": "c4", "cells": ["1", "Lubina a la plancha", ""] },
+                  { "key": "c5", "cells": ["2", "Agua mineral 50 cl", ""] },
+                  { "key": "c6", "cells": ["1", "Copa de vino tinto de la casa", ""] }
+                ],
+                "footer": ""
+              },
+              {
+                "key": "ticket", "title": "Ticket de caja", "kind": "Ticket", "text": "",
+                "columns": ["Cant.", "Producto", "Precio ud.", "Importe"],
+                "rows": [
+                  { "key": "t1", "cells": ["1", "Ensalada de temporada (con cebolla)", "9,50 €", "9,50 €"] },
+                  { "key": "t2", "cells": ["3", "Croquetas caseras (ración)", "8,00 €", "24,00 €"] },
+                  { "key": "t3", "cells": ["1", "Entrecot (al punto)", "22,00 €", "22,00 €"] },
+                  { "key": "t4", "cells": ["1", "Lubina a la plancha", "19,50 €", "19,50 €"] },
+                  { "key": "t5", "cells": ["2", "Agua mineral 50 cl", "2,50 €", "5,00 €"] },
+                  { "key": "t6", "cells": ["1", "Copa de vino tinto de la casa", "3,80 €", "3,80 €"] }
+                ],
+                "footer": "Total: 83,80 € (IVA incluido)"
+              }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": { "errorResourceKey": "ticket", "correctKeys": ["t1", "t2"], "multipleMode": "Partial" },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:atencion-detalle", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Hay dos errores: la ensalada aparece \"con cebolla\" cuando se pidió sin cebolla (modificación), y se cobran 3 raciones de croquetas cuando se pidieron 2 (cantidad). El resto coincide.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "antes-de-cobrar",
+            "title": "Antes de cobrar",
+            "context": "Cocina recibió la misma información que el ticket. La ensalada todavía no ha salido; los demás platos ya están servidos.",
+            "prompt": "¿Qué haces primero?",
+            "template": "Document",
+            "responseType": "SingleChoice",
+            "resources": [
+              { "key": "estado", "title": "Estado de la mesa 12", "kind": "Nota", "text": "Servido: croquetas, entrecot, lubina, aguas y vino. Pendiente: ensalada de temporada (en preparación).", "columns": [], "rows": [], "footer": "" }
+            ],
+            "options": [
+              { "key": "a", "text": "Cobrar lo que marca el ticket: ya está impreso." },
+              { "key": "b", "text": "Avisar a cocina de que la ensalada va sin cebolla antes de que salga, y corregir después el ticket." },
+              { "key": "c", "text": "Corregir solo el importe de las croquetas en el ticket." },
+              { "key": "d", "text": "Preguntar a la mesa si les importa que la ensalada lleve cebolla." }
+            ],
+            "conversation": [],
+            "scoring": {
+              "optionCredits": [
+                { "optionKey": "a", "credit": 0 },
+                { "optionKey": "b", "credit": 1 },
+                { "optionKey": "c", "credit": 0.25 },
+                { "optionKey": "d", "credit": 0.25 }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:coordinacion", "weight": 1 }, { "competencyId": "comp:atencion-detalle", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Lo urgente es evitar que salga un plato que el cliente pidió de otra forma: se avisa a cocina mientras aún se puede. Después se corrigen las dos líneas del ticket antes de cobrar.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "cuenta",
+            "title": "Calcula la cuenta correcta",
+            "context": "Con la comanda corregida, prepara la cuenta. Los precios de la carta incluyen el IVA del 10 %.",
+            "prompt": "Calcula el total, la base imponible, la cuota de IVA y lo que paga cada persona si dividen a partes iguales. Redondea a dos decimales.",
+            "template": "CalcSheet",
+            "responseType": "Numeric",
+            "resources": [
+              {
+                "key": "carta", "title": "Carta (precios con IVA incluido)", "kind": "Carta", "text": "",
+                "columns": ["Producto", "Precio"],
+                "rows": [
+                  { "key": "r1", "cells": ["Ensalada de temporada", "9,50 €"] },
+                  { "key": "r2", "cells": ["Croquetas caseras (ración)", "8,00 €"] },
+                  { "key": "r3", "cells": ["Entrecot", "22,00 €"] },
+                  { "key": "r4", "cells": ["Lubina a la plancha", "19,50 €"] },
+                  { "key": "r5", "cells": ["Agua mineral 50 cl", "2,50 €"] },
+                  { "key": "r6", "cells": ["Copa de vino tinto de la casa", "3,80 €"] }
+                ],
+                "footer": ""
+              },
+              { "key": "reglas", "title": "Cómo se calcula", "kind": "Nota", "text": "Comanda correcta: 1 ensalada, 2 croquetas, 1 entrecot, 1 lubina, 2 aguas y 1 copa de vino. Base imponible = Total / 1,10. Cuota de IVA = Total - Base. Redondea cada resultado a 2 decimales.", "columns": [], "rows": [], "footer": "" }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": {
+              "numericFields": [
+                { "key": "total", "label": "Total de la cuenta", "unit": "€", "expected": 75.80, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 2 },
+                { "key": "base", "label": "Base imponible", "unit": "€", "expected": 68.91, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "iva", "label": "Cuota de IVA (10 %)", "unit": "€", "expected": 6.89, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "persona", "label": "Importe por persona (4 personas)", "unit": "€", "expected": 18.95, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 1 }
+              ]
+            },
+            "autoWeight": 2,
+            "autoCompetencies": [ { "competencyId": "comp:calculo-aplicado", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Total: 9,50 + 2 × 8,00 + 22,00 + 19,50 + 2 × 2,50 + 3,80 = 75,80 €. Base: 75,80 / 1,10 = 68,91 €. IVA: 75,80 - 68,91 = 6,89 €. Por persona: 75,80 / 4 = 18,95 €.",
+            "maxTextLength": 600
+          }
+        ]
+      }
+    },
+    {
+      "slug": "bartender-organiza-barra",
+      "jobTypes": ["Barman / Bartender"],
+      "definition": {
+        "title": "Organiza la barra",
+        "situation": "Entra una ronda variada para la mesa 3 justo cuando falta hielo picado y se acaba la lima.",
+        "level": "Intermediate",
+        "estimatedMinutes": 12,
+        "instructions": "Consulta las fichas de preparación y el estado de la barra. Planifica la ronda, decide qué debería estar preparado antes del servicio y resuelve la falta de un ingrediente. Esta simulación no evalúa tu destreza manual: valora cómo organizas y decides.",
+        "deliverable": "El orden de trabajo de la ronda, la preparación previa necesaria y tu actuación ante la falta de lima con su justificación.",
+        "allowedTools": "Puedes tomar notas. Las fichas de preparación están en cada actividad.",
+        "assessmentDescription": "El orden de trabajo se valora con relaciones de prioridad (se aceptan varios órdenes válidos). En la preparación previa cada opción correcta suma y cada incorrecta resta. La elección ante la falta de lima se corrige automáticamente y tu justificación la revisa una persona con una rúbrica.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 7,
+        "competencyFeedback": [
+          { "competencyId": "comp:organizacion", "strengthText": "Planificas la ronda para que todo salga a la vez y en su punto.", "practiceText": "Practica a ordenar las elaboraciones: primero lo que necesita preparación, al final lo que pierde calidad rápido." },
+          { "competencyId": "comp:comprension-tecnica", "strengthText": "Entiendes las fichas y lo que cambia al sustituir un ingrediente.", "practiceText": "Repasa cómo afecta cada ingrediente al resultado y qué preparaciones aguantan hechas con antelación." },
+          { "competencyId": "comp:comunicacion", "strengthText": "Avisas al cliente de los cambios y le das opciones.", "practiceText": "Cuando cambies una receta, explícalo al cliente antes de prepararla." }
+        ],
+        "activities": [
+          {
+            "key": "orden-ronda",
+            "title": "Planifica la ronda",
+            "context": "Ronda de la mesa 3: 2 gin tonic, 1 mojito, 2 cervezas de barril y 1 zumo de naranja natural. No queda hielo picado en la cubitera y las copas balón están en el lavavajillas (salen en 1 minuto).",
+            "prompt": "Ordena las tareas de la primera a la última.",
+            "template": "Cards",
+            "responseType": "Ordering",
+            "resources": [
+              {
+                "key": "fichas", "title": "Fichas de preparación", "kind": "Ficha técnica", "text": "",
+                "columns": ["Bebida", "Preparación"],
+                "rows": [
+                  { "key": "f1", "cells": ["Mojito", "Majar 8 hojas de hierbabuena, 2 cucharaditas de azúcar y media lima; añadir hielo picado, 50 ml de ron blanco y completar con soda."] },
+                  { "key": "f2", "cells": ["Gin tonic", "Copa balón enfriada con hielo; 50 ml de ginebra, 200 ml de tónica y piel de limón."] },
+                  { "key": "f3", "cells": ["Zumo de naranja natural", "Exprimir 3 naranjas al momento."] },
+                  { "key": "f4", "cells": ["Cerveza de barril", "Tirar en vaso enfriado, en dos tiempos."] }
+                ],
+                "footer": "Picar hielo lleva unos 2 minutos."
+              }
+            ],
+            "options": [
+              { "key": "hielo", "text": "Picar hielo" },
+              { "key": "copas", "text": "Sacar y enfriar las copas balón" },
+              { "key": "mojito", "text": "Preparar el mojito" },
+              { "key": "gin", "text": "Preparar los gin tonic" },
+              { "key": "zumo", "text": "Exprimir el zumo" },
+              { "key": "cervezas", "text": "Tirar las cervezas" },
+              { "key": "servir", "text": "Servir la ronda completa" }
+            ],
+            "conversation": [],
+            "scoring": {
+              "orderingMode": "PrecedencePairs",
+              "precedences": [
+                { "before": "hielo", "after": "mojito" },
+                { "before": "copas", "after": "gin" },
+                { "before": "mojito", "after": "cervezas" },
+                { "before": "gin", "after": "cervezas" },
+                { "before": "mojito", "after": "servir" },
+                { "before": "gin", "after": "servir" },
+                { "before": "zumo", "after": "servir" },
+                { "before": "cervezas", "after": "servir" }
+              ]
+            },
+            "autoWeight": 2,
+            "autoCompetencies": [ { "competencyId": "comp:organizacion", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "El hielo picado y las copas condicionan el mojito y los gin tonic, así que van antes. Las cervezas pierden espuma y temperatura en poco tiempo: se tiran al final, justo antes de servir la ronda completa. El zumo puede hacerse en cualquier momento antes de servir.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "mise-en-place",
+            "title": "Preparación previa",
+            "context": "Para la próxima noche quieres que una ronda así salga más rápido.",
+            "prompt": "Selecciona todo lo que debería estar preparado antes de abrir. Atención: cada opción correcta suma y cada opción incorrecta resta.",
+            "template": "Cards",
+            "responseType": "MultipleChoice",
+            "resources": [],
+            "options": [
+              { "key": "hielo", "text": "Hielo picado en reserva, en recipiente aislado" },
+              { "key": "limas", "text": "Limas lavadas y cortadas en cuartos para el turno" },
+              { "key": "hierbabuena", "text": "Hierbabuena limpia y conservada en agua fría" },
+              { "key": "copas", "text": "Copas y vasos limpios y enfriados" },
+              { "key": "zumo", "text": "Zumo de naranja exprimido cuatro horas antes" },
+              { "key": "cervezas", "text": "Cervezas tiradas por adelantado" },
+              { "key": "jarra", "text": "Gin tonic mezclados en jarra antes del servicio" }
+            ],
+            "conversation": [],
+            "scoring": { "correctKeys": ["hielo", "limas", "hierbabuena", "copas"], "multipleMode": "Partial" },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:organizacion", "weight": 1 }, { "competencyId": "comp:comprension-tecnica", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Hielo, cítricos cortados, hierbas conservadas y cristalería fría adelantan trabajo sin perder calidad. El zumo natural, las cervezas tiradas o los combinados mezclados con antelación pierden aroma, gas o temperatura.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "sin-lima",
+            "title": "Se acaba la lima",
+            "context": "Vas a preparar el mojito y descubres que no queda lima fresca. Hay limones frescos y un envase de zumo de lima abierto hace 10 días.",
+            "prompt": "Elige qué haces y justifica tu decisión en pocas líneas.",
+            "template": "Conversation",
+            "responseType": "ActionsWithJustification",
+            "resources": [],
+            "options": [
+              { "key": "a", "text": "Preparo el mojito con limón sin decir nada." },
+              { "key": "b", "text": "Aviso al cliente de que no queda lima y le ofrezco el mojito con limón (explicándole que cambia un poco el sabor) u otro cóctel." },
+              { "key": "c", "text": "Le digo que no hay mojito." },
+              { "key": "d", "text": "Uso el zumo de lima envasado que está abierto desde hace 10 días." }
+            ],
+            "conversation": [
+              { "speaker": "Camarero de sala", "text": "La mesa 3 pregunta si el mojito tarda mucho." }
+            ],
+            "scoring": {
+              "optionCredits": [
+                { "optionKey": "a", "credit": 0 },
+                { "optionKey": "b", "credit": 1 },
+                { "optionKey": "c", "credit": 0.25 },
+                { "optionKey": "d", "credit": 0 }
+              ],
+              "allowMultipleSelection": false
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:comunicacion", "weight": 1 }, { "competencyId": "comp:comprension-tecnica", "weight": 1 } ],
+            "rubric": [
+              {
+                "key": "alternativa", "title": "Alternativa técnicamente adecuada", "competencyId": "comp:comprension-tecnica", "weight": 1,
+                "levels": [
+                  "Propone una alternativa inadecuada (producto en mal estado o cambio oculto).",
+                  "Propone un cambio sin valorar cómo afecta al resultado.",
+                  "Propone una alternativa válida sin explicar la diferencia.",
+                  "Propone una alternativa válida y explica qué cambia en sabor o equilibrio.",
+                  "Lo anterior y además ajusta la receta (por ejemplo, azúcar o cantidad de cítrico) y prevé reponer lima para el resto del turno."
+                ]
+              },
+              {
+                "key": "aviso", "title": "Comunicación con el cliente y la sala", "competencyId": "comp:comunicacion", "weight": 1,
+                "levels": [
+                  "No informa del cambio al cliente.",
+                  "Informa tarde o de forma confusa.",
+                  "Informa del cambio sin ofrecer opciones.",
+                  "Informa antes de prepararlo y ofrece opciones al cliente a través de sala.",
+                  "Lo anterior y además avisa al equipo de que no queda lima para que no se ofrezcan más mojitos sin aviso."
+                ]
+              }
+            ],
+            "practiceExplanation": "El cliente debe saber que su cóctel cambia antes de prepararlo. Ofrecer el mojito con limón (avisando del cambio de sabor) u otro cóctel respeta su decisión. Un zumo envasado abierto hace 10 días no es una opción segura ni de calidad.",
+            "maxTextLength": 500
+          }
+        ]
+      }
+    },
+    {
+      "slug": "bartender-controla-coste",
+      "jobTypes": ["Barman / Bartender"],
+      "definition": {
+        "title": "Controla el coste",
+        "situation": "La dirección quiere saber cuánto cuesta realmente un gin tonic, cuántas copas salen de una botella y por qué se gasta más ginebra de la esperada.",
+        "level": "Intermediate",
+        "estimatedMinutes": 15,
+        "instructions": "Trabaja con la ficha técnica y los precios de compra. Calcula costes y rendimientos y revisa un control de preparación. Esta simulación no evalúa tu destreza manual: valora el cálculo y el control de producto.",
+        "deliverable": "Coste por copa, porcentaje de coste, rendimiento de la botella y las preparaciones que se desvían de la ficha técnica.",
+        "allowedTools": "Puedes usar calculadora y papel.",
+        "assessmentDescription": "Los cálculos se corrigen automáticamente con una tolerancia de un céntimo (o de 0,2 puntos en porcentajes). En la revisión del control, cada línea correcta suma y cada línea marcada sin desviación resta.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 7,
+        "competencyFeedback": [
+          { "competencyId": "comp:precision", "strengthText": "Calculas costes y rendimientos con exactitud.", "practiceText": "Practica a convertir unidades (cl a ml) y a calcular el coste por dosis." },
+          { "competencyId": "comp:control-producto", "strengthText": "Detectas las desviaciones que encarecen cada copa.", "practiceText": "Repasa cómo una dosis servida a ojo o un extra no previsto cambia el coste." }
+        ],
+        "activities": [
+          {
+            "key": "coste-copa",
+            "title": "Coste por copa",
+            "context": "Ficha técnica y precios de compra del gin tonic.",
+            "prompt": "Calcula el coste de la ginebra por copa, el coste total por copa, el precio de venta sin IVA y el porcentaje de coste sobre el precio de venta sin IVA.",
+            "template": "CalcSheet",
+            "responseType": "Numeric",
+            "resources": [
+              {
+                "key": "ficha", "title": "Ficha técnica: gin tonic", "kind": "Ficha técnica", "text": "",
+                "columns": ["Ingrediente", "Cantidad"],
+                "rows": [
+                  { "key": "i1", "cells": ["Ginebra", "50 ml"] },
+                  { "key": "i2", "cells": ["Tónica", "200 ml (1 botellín)"] },
+                  { "key": "i3", "cells": ["Piel de limón", "1 tira"] },
+                  { "key": "i4", "cells": ["Hielo", "1 copa"] }
+                ],
+                "footer": ""
+              },
+              {
+                "key": "precios", "title": "Precios de compra (sin IVA)", "kind": "Tabla", "text": "",
+                "columns": ["Producto", "Precio"],
+                "rows": [
+                  { "key": "q1", "cells": ["Botella de ginebra 70 cl", "14,00 €"] },
+                  { "key": "q2", "cells": ["Botellín de tónica 200 ml", "0,55 €"] },
+                  { "key": "q3", "cells": ["Limón (rinde 10 tiras de piel)", "0,30 €"] },
+                  { "key": "q4", "cells": ["Hielo por copa", "0,10 €"] }
+                ],
+                "footer": "Precio de venta en carta: 9,00 € con IVA del 10 % incluido."
+              },
+              { "key": "formulas", "title": "Cómo se calcula", "kind": "Nota", "text": "70 cl = 700 ml. Precio sin IVA = precio con IVA / 1,10. Porcentaje de coste = coste por copa / precio sin IVA × 100. Redondea los importes a 2 decimales y el porcentaje a 1 decimal.", "columns": [], "rows": [], "footer": "" }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": {
+              "numericFields": [
+                { "key": "ginebra", "label": "Coste de la ginebra por copa", "unit": "€", "expected": 1.00, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "coste", "label": "Coste total por copa", "unit": "€", "expected": 1.68, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "venta", "label": "Precio de venta sin IVA", "unit": "€", "expected": 8.18, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "porcentaje", "label": "Porcentaje de coste", "unit": "%", "expected": 20.5, "tolerance": 0.2, "toleranceType": "Absolute", "decimals": 1, "weight": 1 }
+              ]
+            },
+            "autoWeight": 2,
+            "autoCompetencies": [ { "competencyId": "comp:precision", "weight": 1 }, { "competencyId": "comp:control-producto", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Ginebra: 14,00 / 700 × 50 = 1,00 €. Coste total: 1,00 + 0,55 + 0,03 (0,30 / 10) + 0,10 = 1,68 €. Precio sin IVA: 9,00 / 1,10 = 8,18 €. Porcentaje de coste: 1,68 / 8,18 × 100 = 20,5 %.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "rendimiento",
+            "title": "Rendimiento de la botella",
+            "context": "En barra se estima una merma del 2 % del volumen de cada botella (goteo, restos y evaporación).",
+            "prompt": "Calcula las copas teóricas, los mililitros útiles, las copas completas que salen realmente y el coste real de ginebra por copa.",
+            "template": "CalcSheet",
+            "responseType": "Numeric",
+            "resources": [
+              { "key": "datos", "title": "Datos", "kind": "Nota", "text": "Botella de 70 cl (700 ml) a 14,00 € sin IVA. Dosis según ficha: 50 ml. Merma estimada: 2 % del volumen. Mililitros útiles = 700 × (1 - 0,02). Copas completas = parte entera de (ml útiles / 50). Coste real por copa = 14,00 / (ml útiles / 50), redondeado a 2 decimales.", "columns": [], "rows": [], "footer": "" }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": {
+              "numericFields": [
+                { "key": "teoricas", "label": "Copas teóricas por botella", "unit": "copas", "expected": 14, "tolerance": 0, "toleranceType": "Absolute", "decimals": 0, "weight": 1 },
+                { "key": "utiles", "label": "Mililitros útiles", "unit": "ml", "expected": 686, "tolerance": 0.5, "toleranceType": "Absolute", "decimals": 0, "weight": 1 },
+                { "key": "completas", "label": "Copas completas reales", "unit": "copas", "expected": 13, "tolerance": 0, "toleranceType": "Absolute", "decimals": 0, "weight": 1 },
+                { "key": "real", "label": "Coste real de ginebra por copa", "unit": "€", "expected": 1.02, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 1 }
+              ]
+            },
+            "autoWeight": 2,
+            "autoCompetencies": [ { "competencyId": "comp:control-producto", "weight": 2 }, { "competencyId": "comp:precision", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Teóricas: 700 / 50 = 14 copas. Útiles: 700 × 0,98 = 686 ml. Completas: 686 / 50 = 13,72, es decir 13 copas. Coste real: 14,00 / 13,72 = 1,02 € por copa.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "desviaciones",
+            "title": "Revisa el control de preparación",
+            "context": "Se han observado seis gin tonic preparados durante el turno.",
+            "prompt": "Marca las copas cuya preparación se desvía de la ficha técnica (50 ml de ginebra, 200 ml de tónica, piel de limón y hielo).",
+            "template": "Document",
+            "responseType": "ErrorDetection",
+            "resources": [
+              {
+                "key": "control", "title": "Control de preparación (viernes, 23:00)", "kind": "Tabla", "text": "",
+                "columns": ["Copa", "Ginebra", "Tónica", "Limón", "Observación"],
+                "rows": [
+                  { "key": "r1", "cells": ["1", "50 ml (medida)", "200 ml", "Sí", ""] },
+                  { "key": "r2", "cells": ["2", "70 ml aprox.", "200 ml", "Sí", "Servida a ojo, sin medidor"] },
+                  { "key": "r3", "cells": ["3", "50 ml (medida)", "200 ml", "Sí", ""] },
+                  { "key": "r4", "cells": ["4", "50 ml (medida)", "200 ml", "No", "Sin piel de limón"] },
+                  { "key": "r5", "cells": ["5", "50 ml (medida)", "400 ml", "Sí", "Se abrieron dos botellines"] },
+                  { "key": "r6", "cells": ["6", "50 ml (medida)", "200 ml", "Sí", ""] }
+                ],
+                "footer": ""
+              }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": { "errorResourceKey": "control", "correctKeys": ["r2", "r4", "r5"], "multipleMode": "Partial" },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:control-producto", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "La copa 2 lleva unos 70 ml servidos a ojo (un 40 % más de ginebra), la copa 4 no lleva la piel de limón de la ficha y en la copa 5 se usaron dos botellines de tónica. Las tres se desvían de la ficha técnica.",
+            "maxTextLength": 600
+          }
+        ]
+      }
+    },
+    {
+      "slug": "responsable-reorganiza-turno",
+      "jobTypes": ["Responsable de local"],
+      "definition": {
+        "title": "Reorganiza el turno",
+        "situation": "Una hora antes de abrir, un camarero avisa de que no viene. Tienes la sala casi llena, un grupo de 12 y, más tarde, retrasos en sala y cocina.",
+        "level": "Intermediate",
+        "estimatedMinutes": 15,
+        "instructions": "Consulta el cuadrante y las reservas. Redistribuye funciones, decide qué atender primero cuando lleguen los retrasos y prepara un briefing breve para el equipo.",
+        "deliverable": "La nueva distribución del turno, el orden de actuación ante los retrasos y un briefing de máximo 500 caracteres.",
+        "allowedTools": "Puedes tomar notas en papel.",
+        "assessmentDescription": "La redistribución se corrige automáticamente; algunas opciones son parcialmente válidas. El orden de actuación se valora con relaciones de prioridad (se aceptan varios órdenes). El briefing lo revisa una persona con una rúbrica: se valora la claridad y el contenido, no la ortografía.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 7,
+        "competencyFeedback": [
+          { "competencyId": "comp:coordinacion", "strengthText": "Repartes funciones aprovechando a cada persona sin descubrir puestos clave.", "practiceText": "Practica a cubrir una ausencia sin dejar sin cubrir barra ni cocina." },
+          { "competencyId": "comp:planificacion", "strengthText": "Anticipas los picos del turno y te adelantas a los retrasos.", "practiceText": "Revisa las reservas y los picos antes de decidir: el grupo grande marca el turno." },
+          { "competencyId": "comp:claridad", "strengthText": "Tus instrucciones son breves y concretas: cada persona sabe qué hacer.", "practiceText": "En un briefing, di quién hace qué, a qué hora y cuál es la prioridad del turno." }
+        ],
+        "activities": [
+          {
+            "key": "redistribuir",
+            "title": "Cubre la ausencia",
+            "context": "Luis, camarero de sala interior, avisa de que está enfermo. Reservas: 60 cubiertos en sala interior (incluido un grupo de 12 a las 21:00) y 30 en terraza.",
+            "prompt": "¿Cómo redistribuyes el turno?",
+            "template": "Cards",
+            "responseType": "SingleChoice",
+            "resources": [
+              {
+                "key": "cuadrante", "title": "Cuadrante de la cena", "kind": "Tabla", "text": "",
+                "columns": ["Persona", "Puesto", "Zona"],
+                "rows": [
+                  { "key": "e1", "cells": ["Ana", "Camarera", "Terraza"] },
+                  { "key": "e2", "cells": ["Luis", "Camarero (ausente)", "Sala interior"] },
+                  { "key": "e3", "cells": ["Marta", "Barra", "Barra"] },
+                  { "key": "e4", "cells": ["Javi", "Ayudante de camarero (runner)", "Sala y terraza"] },
+                  { "key": "e5", "cells": ["Carlos", "Cocinero", "Cocina"] },
+                  { "key": "e6", "cells": ["Elena", "Ayudante de cocina", "Cocina"] },
+                  { "key": "e7", "cells": ["Tú", "Responsable de local", "Todo el local"] }
+                ],
+                "footer": "Javi lleva dos años como ayudante y conoce la carta."
+              }
+            ],
+            "options": [
+              { "key": "a", "text": "Javi pasa a atender la sala interior como camarero; tú haces de runner y apoyas al grupo en su llegada; Ana sigue en terraza." },
+              { "key": "b", "text": "Ana pasa a la sala interior y se cierra la terraza esta noche." },
+              { "key": "c", "text": "Marta deja la barra para atender la sala; cada camarero prepara sus bebidas." },
+              { "key": "d", "text": "No se cambia nada: Ana atiende la terraza y también la sala interior." }
+            ],
+            "conversation": [],
+            "scoring": {
+              "optionCredits": [
+                { "optionKey": "a", "credit": 1 },
+                { "optionKey": "b", "credit": 0.5 },
+                { "optionKey": "c", "credit": 0.25 },
+                { "optionKey": "d", "credit": 0 }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:coordinacion", "weight": 1 }, { "competencyId": "comp:planificacion", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Javi conoce la carta y puede cubrir la sala; tú asumes el apoyo de runner y el pico del grupo, y se mantienen la terraza y la barra. Cerrar la terraza es defendible si no hubiera otra opción, pero supone perder 30 cubiertos reservados. Sacar a Marta de barra descubre un puesto clave.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "retrasos",
+            "title": "Las 21:15",
+            "context": "A las 21:15 te llegan varias cosas a la vez.",
+            "prompt": "Ordena qué atiendes primero y qué después.",
+            "template": "Cards",
+            "responseType": "Ordering",
+            "resources": [],
+            "options": [
+              { "key": "grupo", "text": "El grupo de 12 lleva 25 minutos sin entrantes." },
+              { "key": "cocina", "text": "Cocina: se ha acabado la guarnición de patata; la siguiente tanda tarda 10 minutos." },
+              { "key": "cuenta", "text": "La mesa 14 lleva 10 minutos esperando la cuenta." },
+              { "key": "barra", "text": "Barra acumula 8 comandas de bebida." },
+              { "key": "proveedor", "text": "Llama un proveedor para cerrar el pedido de mañana." }
+            ],
+            "conversation": [],
+            "scoring": {
+              "orderingMode": "PrecedencePairs",
+              "precedences": [
+                { "before": "cocina", "after": "grupo" },
+                { "before": "grupo", "after": "proveedor" },
+                { "before": "cocina", "after": "proveedor" },
+                { "before": "cuenta", "after": "proveedor" },
+                { "before": "barra", "after": "proveedor" }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:planificacion", "weight": 1 }, { "competencyId": "comp:coordinacion", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Hablar primero con cocina te da el tiempo real para informar al grupo. Cuenta y barra se pueden resolver o delegar en paralelo. La llamada del proveedor no afecta al servicio de esta noche: se devuelve después.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "briefing",
+            "title": "Briefing de cinco minutos",
+            "context": "Faltan 15 minutos para abrir. Reúnes al equipo.",
+            "prompt": "Escribe el briefing que darías (máximo 500 caracteres): quién hace qué, prioridades del turno y cómo os coordináis.",
+            "template": "Conversation",
+            "responseType": "ShortText",
+            "resources": [],
+            "options": [],
+            "conversation": [
+              { "speaker": "Ana", "text": "¿Cómo nos organizamos hoy sin Luis?" }
+            ],
+            "scoring": {},
+            "autoWeight": 0,
+            "autoCompetencies": [],
+            "rubric": [
+              {
+                "key": "funciones", "title": "Funciones asignadas", "competencyId": "comp:coordinacion", "weight": 1,
+                "levels": [
+                  "No asigna funciones o las asignaciones dejan puestos sin cubrir.",
+                  "Asigna funciones de forma incompleta o contradictoria.",
+                  "Asigna las funciones principales, pero deja dudas (por ejemplo, quién atiende al grupo).",
+                  "Cada persona sabe su zona y su función, incluido quién se encarga del grupo de 12.",
+                  "Lo anterior y además prevé cómo se cubren los picos y quién avisa si algo se retrasa."
+                ]
+              },
+              {
+                "key": "prioridades", "title": "Prioridades del turno", "competencyId": "comp:planificacion", "weight": 1,
+                "levels": [
+                  "No menciona prioridades.",
+                  "Menciona prioridades genéricas sin relación con esta noche.",
+                  "Menciona el grupo de 12 o la falta de personal, sin concretar qué implica.",
+                  "Concreta las prioridades de esta noche (grupo a las 21:00, sala con una persona menos).",
+                  "Lo anterior y además anticipa qué hacer si hay retrasos en cocina o en barra."
+                ]
+              },
+              {
+                "key": "claridad", "title": "Claridad del mensaje", "competencyId": "comp:claridad", "weight": 1,
+                "levels": [
+                  "El mensaje no se entiende o no sirve para actuar.",
+                  "Es largo o desordenado; cuesta saber qué hacer.",
+                  "Se entiende, aunque mezcla información o le sobran detalles.",
+                  "Es breve, ordenado y fácil de seguir.",
+                  "Es breve, ordenado y además confirma que todos lo han entendido o reparte una consigna clara de comunicación durante el turno."
+                ]
+              }
+            ],
+            "practiceExplanation": "Un buen briefing dice en pocas frases quién cubre la sala interior, quién apoya al grupo de 12 a las 21:00, que la terraza y la barra siguen igual, y cómo avisar de retrasos (por ejemplo, cocina avisa a sala y sala informa a la mesa).",
+            "maxTextLength": 500
+          }
+        ]
+      }
+    },
+    {
+      "slug": "responsable-revisa-cierre",
+      "jobTypes": ["Responsable de local"],
+      "definition": {
+        "title": "Revisa el cierre",
+        "situation": "Al cerrar la caja falta efectivo. Antes de sacar conclusiones, revisas el informe del terminal, la hoja de cierre y el arqueo.",
+        "level": "Intermediate",
+        "estimatedMinutes": 15,
+        "instructions": "Calcula el efectivo esperado y el descuadre, revisa la hoja de cierre en busca de incidencias y elige las comprobaciones que harías antes de atribuir una causa. Todos los datos son ficticios.",
+        "deliverable": "Los importes del arqueo, las incidencias de la hoja de cierre y las comprobaciones previas con su justificación.",
+        "allowedTools": "Puedes usar calculadora y papel.",
+        "assessmentDescription": "Los cálculos se corrigen automáticamente (tolerancia de un céntimo; 0,05 puntos en el porcentaje). En la hoja de cierre y en las comprobaciones, cada opción correcta suma y cada incorrecta resta. Tu justificación la revisa una persona con una rúbrica.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 7,
+        "competencyFeedback": [
+          { "competencyId": "comp:calculo-aplicado", "strengthText": "Calculas el efectivo esperado y el descuadre sin errores.", "practiceText": "Practica la fórmula: fondo inicial + efectivo de ventas - retiradas = efectivo esperado." },
+          { "competencyId": "comp:trazabilidad", "strengthText": "Exiges que cada movimiento esté documentado y firmado.", "practiceText": "Revisa qué movimientos de caja deben llevar justificante, motivo y firma." },
+          { "competencyId": "comp:criterio-operativo", "strengthText": "Compruebas antes de atribuir una causa.", "practiceText": "Antes de culpar a alguien, recuenta, revisa anulaciones y justificantes." }
+        ],
+        "activities": [
+          {
+            "key": "arqueo",
+            "title": "Calcula el descuadre",
+            "context": "Datos del informe del terminal (informe Z) y del recuento al cierre.",
+            "prompt": "Calcula el efectivo esperado en el cajón, la diferencia (contado menos esperado) y el descuadre en porcentaje sobre el efectivo de ventas, en valor absoluto.",
+            "template": "CalcSheet",
+            "responseType": "Numeric",
+            "resources": [
+              {
+                "key": "informe-z", "title": "Informe Z del terminal", "kind": "Ticket", "text": "",
+                "columns": ["Concepto", "Importe"],
+                "rows": [
+                  { "key": "z1", "cells": ["Ventas totales", "2.480,00 €"] },
+                  { "key": "z2", "cells": ["Cobrado con tarjeta", "1.890,50 €"] },
+                  { "key": "z3", "cells": ["Cobrado en efectivo", "589,50 €"] },
+                  { "key": "z4", "cells": ["Fondo de caja inicial", "200,00 €"] },
+                  { "key": "z5", "cells": ["Retirada a caja fuerte durante el turno", "300,00 €"] }
+                ],
+                "footer": "Efectivo contado al cierre: 471,30 €"
+              },
+              { "key": "formula", "title": "Cómo se calcula", "kind": "Nota", "text": "Efectivo esperado = fondo inicial + cobrado en efectivo - retiradas. Diferencia = contado - esperado (negativa si falta dinero). Porcentaje = |diferencia| / cobrado en efectivo × 100, redondeado a 2 decimales.", "columns": [], "rows": [], "footer": "" }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": {
+              "numericFields": [
+                { "key": "esperado", "label": "Efectivo esperado", "unit": "€", "expected": 489.50, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "diferencia", "label": "Diferencia (contado - esperado)", "unit": "€", "expected": -18.20, "tolerance": 0.01, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "porcentaje", "label": "Descuadre sobre el efectivo de ventas", "unit": "%", "expected": 3.09, "tolerance": 0.05, "toleranceType": "Absolute", "decimals": 2, "weight": 1 }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:calculo-aplicado", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Esperado: 200,00 + 589,50 - 300,00 = 489,50 €. Diferencia: 471,30 - 489,50 = -18,20 € (faltan 18,20 €). Porcentaje: 18,20 / 589,50 × 100 = 3,09 %.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "hoja-cierre",
+            "title": "Revisa la hoja de cierre",
+            "context": "Esta es la hoja de cierre que ha rellenado el turno.",
+            "prompt": "Marca las líneas que muestran una incidencia o un registro incorrecto.",
+            "template": "Document",
+            "responseType": "ErrorDetection",
+            "resources": [
+              {
+                "key": "hoja", "title": "Hoja de cierre del turno", "kind": "Tabla", "text": "",
+                "columns": ["Línea", "Registro"],
+                "rows": [
+                  { "key": "c1", "cells": ["1", "Fondo de caja anotado: 150,00 € (el informe Z indica 200,00 €)"] },
+                  { "key": "c2", "cells": ["2", "Retirada a caja fuerte de 300,00 € con justificante firmado por quien la hizo"] },
+                  { "key": "c3", "cells": ["3", "Anulación de un ticket de 32,00 € sin motivo ni firma del responsable"] },
+                  { "key": "c4", "cells": ["4", "Tres invitaciones registradas con mesa y motivo"] },
+                  { "key": "c5", "cells": ["5", "Total del datáfono: 1.890,50 €, coincide con el informe Z"] },
+                  { "key": "c6", "cells": ["6", "Propinas en efectivo mezcladas en el cajón, sin contar por separado"] }
+                ],
+                "footer": ""
+              }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": { "errorResourceKey": "hoja", "correctKeys": ["c1", "c3", "c6"], "multipleMode": "Partial" },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:trazabilidad", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "El fondo anotado no coincide con el del terminal, la anulación no tiene motivo ni firma y las propinas mezcladas impiden saber cuánto efectivo es de ventas. La retirada, las invitaciones y el datáfono están bien documentados.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "comprobaciones",
+            "title": "Antes de atribuir una causa",
+            "context": "El camarero del turno ya se ha ido. El gerente te pide una explicación.",
+            "prompt": "Selecciona las comprobaciones que harías antes de atribuir el descuadre a una persona y justifica brevemente tu criterio. Cada opción correcta suma y cada incorrecta resta.",
+            "template": "Cards",
+            "responseType": "ActionsWithJustification",
+            "resources": [],
+            "options": [
+              { "key": "recontar", "text": "Recontar el efectivo con otra persona como testigo" },
+              { "key": "anulaciones", "text": "Revisar anulaciones, invitaciones y tickets sin cobrar del turno" },
+              { "key": "retirada", "text": "Comprobar el justificante de la retirada a caja fuerte" },
+              { "key": "propinas", "text": "Separar y contar las propinas mezcladas en el cajón" },
+              { "key": "nomina", "text": "Descontar el descuadre de la nómina del camarero del turno" },
+              { "key": "preguntar", "text": "Llamar al camarero para que explique la diferencia, sin revisar nada antes" }
+            ],
+            "conversation": [],
+            "scoring": { "correctKeys": ["recontar", "anulaciones", "retirada", "propinas"], "multipleMode": "Partial", "allowMultipleSelection": true },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:criterio-operativo", "weight": 1 }, { "competencyId": "comp:trazabilidad", "weight": 1 } ],
+            "rubric": [
+              {
+                "key": "criterio", "title": "Comprueba antes de concluir", "competencyId": "comp:criterio-operativo", "weight": 1,
+                "levels": [
+                  "Atribuye la causa a una persona sin comprobar nada.",
+                  "Propone alguna comprobación, pero ya da por hecha una causa.",
+                  "Propone comprobaciones razonables sin explicar por qué ni en qué orden.",
+                  "Explica por qué comprueba antes de atribuir y qué puede explicar la diferencia (anulación, fondo mal anotado, propinas).",
+                  "Lo anterior y además propone cómo evitar que se repita (registro firmado de anulaciones, contar propinas aparte)."
+                ]
+              },
+              {
+                "key": "documentacion", "title": "Trazabilidad y documentación", "competencyId": "comp:trazabilidad", "weight": 1,
+                "levels": [
+                  "No menciona documentación ni registros.",
+                  "Menciona revisar \"los papeles\" sin concretar.",
+                  "Concreta algún registro (informe Z, hoja de cierre) sin relacionarlo con la diferencia.",
+                  "Relaciona los registros con la diferencia y deja constancia de las comprobaciones.",
+                  "Lo anterior y además propone que el resultado se documente con testigo y se comunique con transparencia."
+                ]
+              }
+            ],
+            "practiceExplanation": "Antes de atribuir una causa se recuenta con testigo y se revisan los movimientos: la anulación sin firma, el fondo mal anotado y las propinas mezcladas pueden explicar la diferencia. Descontar de la nómina o acusar sin revisar no es una actuación adecuada.",
+            "maxTextLength": 600
+          }
+        ]
+      }
+    },
+    {
+      "slug": "gerente-vendemos-mas",
+      "jobTypes": ["Gerente de restaurante"],
+      "definition": {
+        "title": "Vendemos más, ganamos menos",
+        "situation": "Este mes las ventas han subido un 11 %, pero el resultado ha bajado. La propiedad quiere entender por qué antes de tomar decisiones.",
+        "level": "Advanced",
+        "estimatedMinutes": 20,
+        "instructions": "Interpreta la cuenta del mes, distingue lo que dicen los datos de lo que son suposiciones y elige qué comprobar y qué hacer. Todos los datos son ficticios.",
+        "deliverable": "Los ratios principales, los hechos que muestran los datos y las comprobaciones y acciones prioritarias con su justificación.",
+        "allowedTools": "Puedes usar calculadora y una hoja de cálculo.",
+        "assessmentDescription": "Los ratios se corrigen automáticamente (tolerancia de 0,1 puntos o 1 €). En hechos y acciones cada opción correcta suma y cada incorrecta resta. Tu justificación la revisa una persona con una rúbrica; se aceptan razonamientos distintos si están bien fundamentados.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 14,
+        "competencyFeedback": [
+          { "competencyId": "comp:interpretacion-economica", "strengthText": "Lees la cuenta del mes y sus ratios con soltura.", "practiceText": "Practica a calcular el coste de compras y de personal sobre ventas y a comparar periodos." },
+          { "competencyId": "comp:diagnostico", "strengthText": "Separas hechos de hipótesis y eliges qué comprobar antes de actuar.", "practiceText": "Antes de decidir, separa lo que muestran los datos de lo que supones." }
+        ],
+        "activities": [
+          {
+            "key": "ratios",
+            "title": "Interpreta la cuenta del mes",
+            "context": "Comparativa del mes anterior y del mes actual.",
+            "prompt": "Calcula, para el mes actual, el porcentaje de compras sobre ventas, el porcentaje de personal sobre ventas, el resultado operativo y su variación respecto al mes anterior.",
+            "template": "CalcSheet",
+            "responseType": "Numeric",
+            "resources": [
+              {
+                "key": "cuenta", "title": "Cuenta del mes (euros, sin IVA)", "kind": "Tabla", "text": "",
+                "columns": ["Concepto", "Mes anterior", "Mes actual"],
+                "rows": [
+                  { "key": "v", "cells": ["Ventas netas", "82.000", "91.500"] },
+                  { "key": "c", "cells": ["Compras de materia prima", "24.600", "31.100"] },
+                  { "key": "p", "cells": ["Coste de personal", "27.900", "30.200"] },
+                  { "key": "o", "cells": ["Otros gastos (alquiler, suministros...)", "12.000", "13.900"] },
+                  { "key": "d", "cells": ["Descuentos e invitaciones (ya restados de las ventas)", "1.200", "3.900"] },
+                  { "key": "m", "cells": ["Mermas registradas (incluidas en compras)", "800", "2.300"] }
+                ],
+                "footer": "Resultado operativo = ventas netas - compras - personal - otros gastos."
+              },
+              { "key": "reglas", "title": "Cómo se calcula", "kind": "Nota", "text": "Porcentaje sobre ventas = concepto / ventas netas × 100, redondeado a 1 decimal. Descuentos y mermas son informativos: ya están reflejados en ventas y en compras. Variación = resultado actual - resultado anterior.", "columns": [], "rows": [], "footer": "" }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": {
+              "numericFields": [
+                { "key": "compras", "label": "Compras sobre ventas (mes actual)", "unit": "%", "expected": 34.0, "tolerance": 0.1, "toleranceType": "Absolute", "decimals": 1, "weight": 1 },
+                { "key": "personal", "label": "Personal sobre ventas (mes actual)", "unit": "%", "expected": 33.0, "tolerance": 0.1, "toleranceType": "Absolute", "decimals": 1, "weight": 1 },
+                { "key": "resultado", "label": "Resultado operativo (mes actual)", "unit": "€", "expected": 16300, "tolerance": 1, "toleranceType": "Absolute", "decimals": 0, "weight": 1 },
+                { "key": "variacion", "label": "Variación del resultado", "unit": "€", "expected": -1200, "tolerance": 1, "toleranceType": "Absolute", "decimals": 0, "weight": 1 }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:interpretacion-economica", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Compras: 31.100 / 91.500 = 34,0 % (antes 30,0 %). Personal: 30.200 / 91.500 = 33,0 %. Resultado: 91.500 - 31.100 - 30.200 - 13.900 = 16.300 €. El mes anterior: 82.000 - 24.600 - 27.900 - 12.000 = 17.500 €. Variación: -1.200 €.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "hechos",
+            "title": "Hechos o hipótesis",
+            "context": "En la reunión se han dicho varias cosas. Usa la cuenta del mes.",
+            "prompt": "Selecciona solo las afirmaciones que son hechos que muestran los datos (no suposiciones). Cada opción correcta suma y cada incorrecta resta.",
+            "template": "Document",
+            "responseType": "MultipleChoice",
+            "resources": [
+              {
+                "key": "cuenta2", "title": "Cuenta del mes (euros, sin IVA)", "kind": "Tabla", "text": "",
+                "columns": ["Concepto", "Mes anterior", "Mes actual"],
+                "rows": [
+                  { "key": "v", "cells": ["Ventas netas", "82.000", "91.500"] },
+                  { "key": "c", "cells": ["Compras de materia prima", "24.600", "31.100"] },
+                  { "key": "p", "cells": ["Coste de personal", "27.900", "30.200"] },
+                  { "key": "d", "cells": ["Descuentos e invitaciones", "1.200", "3.900"] },
+                  { "key": "m", "cells": ["Mermas registradas", "800", "2.300"] }
+                ],
+                "footer": ""
+              }
+            ],
+            "options": [
+              { "key": "h1", "text": "Las compras sobre ventas han subido unos 4 puntos." },
+              { "key": "h2", "text": "Los descuentos e invitaciones se han multiplicado por más de tres." },
+              { "key": "h3", "text": "El cocinero nuevo desperdicia producto." },
+              { "key": "h4", "text": "Las mermas registradas casi se han triplicado." },
+              { "key": "h5", "text": "Los proveedores han subido sus precios." },
+              { "key": "h6", "text": "Hay robos en la barra." }
+            ],
+            "conversation": [],
+            "scoring": { "correctKeys": ["h1", "h2", "h4"], "multipleMode": "Partial" },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:diagnostico", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Las compras pasan del 30,0 % al 34,0 % de las ventas, los descuentos pasan de 1.200 a 3.900 € (×3,25) y las mermas de 800 a 2.300 € (×2,9): son hechos. Que el cocinero desperdicie, que suban los proveedores o que haya robos son hipótesis que habría que comprobar.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "acciones",
+            "title": "Qué comprobar y qué hacer",
+            "context": "Tienes una semana para traer conclusiones a la propiedad.",
+            "prompt": "Selecciona las comprobaciones y acciones prioritarias y justifica brevemente por qué. Cada opción correcta suma y cada incorrecta resta.",
+            "template": "Cards",
+            "responseType": "ActionsWithJustification",
+            "resources": [],
+            "options": [
+              { "key": "escandallos", "text": "Revisar escandallos y precios de compra de los productos de mayor coste" },
+              { "key": "invitaciones", "text": "Auditar el registro de invitaciones: quién las autoriza y por qué" },
+              { "key": "mermas", "text": "Implantar un registro diario de mermas por partida" },
+              { "key": "inventario", "text": "Comparar el consumo teórico con el inventario real de los productos más caros" },
+              { "key": "subir-precios", "text": "Subir un 10 % toda la carta de inmediato" },
+              { "key": "despedir", "text": "Reducir personal de cocina esta misma semana" }
+            ],
+            "conversation": [],
+            "scoring": { "correctKeys": ["escandallos", "invitaciones", "mermas", "inventario"], "multipleMode": "Partial", "allowMultipleSelection": true },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:diagnostico", "weight": 1 } ],
+            "rubric": [
+              {
+                "key": "relacion", "title": "Relaciona las acciones con los datos", "competencyId": "comp:interpretacion-economica", "weight": 1,
+                "levels": [
+                  "No relaciona las acciones con ningún dato.",
+                  "Relaciona alguna acción con un dato de forma incorrecta.",
+                  "Relaciona las acciones con los datos de forma general.",
+                  "Relaciona cada acción con el dato que la justifica (compras, descuentos, mermas).",
+                  "Lo anterior y además estima el impacto de cada causa sobre la caída del resultado."
+                ]
+              },
+              {
+                "key": "comprobar", "title": "Comprueba antes de decidir", "competencyId": "comp:diagnostico", "weight": 1,
+                "levels": [
+                  "Propone decisiones drásticas sin comprobar.",
+                  "Mezcla comprobaciones con decisiones precipitadas.",
+                  "Propone comprobaciones razonables sin orden ni plazo.",
+                  "Prioriza comprobar antes de decidir y explica qué confirmaría o descartaría cada hipótesis.",
+                  "Lo anterior y además define qué decisión tomaría según el resultado de cada comprobación."
+                ]
+              }
+            ],
+            "practiceExplanation": "Los datos apuntan a compras, descuentos y mermas. Primero se comprueba (escandallos, invitaciones, mermas, inventario) y después se decide. Subir toda la carta o reducir personal sin conocer la causa puede empeorar el problema.",
+            "maxTextLength": 700
+          }
+        ]
+      }
+    },
+    {
+      "slug": "gerente-proximos-30-dias",
+      "jobTypes": ["Gerente de restaurante"],
+      "definition": {
+        "title": "Mejora los próximos 30 días",
+        "situation": "Con el diagnóstico del mes, la propiedad te pide un plan concreto para los próximos 30 días.",
+        "level": "Advanced",
+        "estimatedMinutes": 20,
+        "instructions": "Prioriza las iniciativas propuestas, elige cómo medir el avance y redacta un plan breve con responsables e indicadores.",
+        "deliverable": "Un orden de prioridades, un indicador y un plan de máximo 700 caracteres.",
+        "allowedTools": "Puedes usar papel o una hoja de cálculo.",
+        "assessmentDescription": "El orden se valora con relaciones de prioridad (se aceptan varios órdenes). El indicador se corrige automáticamente; algunas opciones son parcialmente válidas. El plan lo revisa una persona con una rúbrica: se valora que sea viable, con responsables, plazos e indicadores.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 14,
+        "competencyFeedback": [
+          { "competencyId": "comp:planificacion", "strengthText": "Priorizas lo que más impacto tiene en el resultado a corto plazo.", "practiceText": "Ordena las iniciativas por impacto en el resultado y esfuerzo necesario." },
+          { "competencyId": "comp:ejecucion", "strengthText": "Tus planes tienen responsable, plazo e indicador.", "practiceText": "Cada acción del plan necesita un responsable, un plazo y una forma de medirla." }
+        ],
+        "activities": [
+          {
+            "key": "prioridades",
+            "title": "Prioriza las iniciativas",
+            "context": "Diagnóstico: compras del 30 % al 34 % de las ventas, descuentos e invitaciones ×3 y mermas casi ×3.",
+            "prompt": "Ordena las iniciativas de la más prioritaria a la menos.",
+            "template": "Cards",
+            "responseType": "Ordering",
+            "resources": [],
+            "options": [
+              { "key": "invitaciones", "text": "Fijar quién autoriza las invitaciones y registrar el motivo" },
+              { "key": "escandallos", "text": "Revisar los escandallos de los 10 platos más vendidos" },
+              { "key": "web", "text": "Rediseñar la web del restaurante" },
+              { "key": "mermas", "text": "Implantar un registro diario de mermas por partida" },
+              { "key": "decoracion", "text": "Cambiar la decoración del comedor" }
+            ],
+            "conversation": [],
+            "scoring": {
+              "orderingMode": "PrecedencePairs",
+              "precedences": [
+                { "before": "invitaciones", "after": "web" },
+                { "before": "invitaciones", "after": "decoracion" },
+                { "before": "escandallos", "after": "web" },
+                { "before": "escandallos", "after": "decoracion" },
+                { "before": "mermas", "after": "web" },
+                { "before": "mermas", "after": "decoracion" }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:planificacion", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Las tres primeras atacan directamente las causas del diagnóstico y tienen efecto en semanas. La web y la decoración pueden tener sentido más adelante, pero no corrigen el resultado en 30 días. El orden entre las tres primeras es flexible.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "indicador",
+            "title": "Cómo medirlo",
+            "context": "Una de las acciones es controlar las mermas.",
+            "prompt": "¿Qué indicador usarías para seguir esa acción durante los 30 días?",
+            "template": "Cards",
+            "responseType": "SingleChoice",
+            "resources": [],
+            "options": [
+              { "key": "a", "text": "Mermas sobre compras (%), semanal y por partida" },
+              { "key": "b", "text": "Número de reseñas positivas" },
+              { "key": "c", "text": "Ventas totales del mes" },
+              { "key": "d", "text": "Mermas totales en euros al final del mes" }
+            ],
+            "conversation": [],
+            "scoring": {
+              "optionCredits": [
+                { "optionKey": "a", "credit": 1 },
+                { "optionKey": "b", "credit": 0 },
+                { "optionKey": "c", "credit": 0 },
+                { "optionKey": "d", "credit": 0.5 }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:ejecucion", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Un porcentaje semanal y por partida permite reaccionar a tiempo y compararlo aunque cambien las ventas. El total en euros a fin de mes mide lo mismo, pero llega tarde para corregir.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "plan",
+            "title": "Tu plan de 30 días",
+            "context": "La propietaria te escribe.",
+            "prompt": "Responde con tu plan (máximo 700 caracteres): tres acciones, quién se encarga, en qué plazo y cómo se medirá cada una.",
+            "template": "Conversation",
+            "responseType": "ShortText",
+            "resources": [],
+            "options": [],
+            "conversation": [
+              { "speaker": "Propietaria", "text": "Mándame en pocas líneas el plan para este mes: qué vais a hacer, quién y cómo sabremos si funciona." }
+            ],
+            "scoring": {},
+            "autoWeight": 0,
+            "autoCompetencies": [],
+            "rubric": [
+              {
+                "key": "viabilidad", "title": "Acciones viables y prioritarias", "competencyId": "comp:planificacion", "weight": 1,
+                "levels": [
+                  "Propone acciones que no tienen relación con el diagnóstico o no son realizables.",
+                  "Propone acciones relacionadas, pero poco realistas en 30 días.",
+                  "Propone acciones viables, sin priorizar.",
+                  "Propone tres acciones viables y relacionadas con las causas, en un orden razonable.",
+                  "Lo anterior y además prevé obstáculos o recursos necesarios para cumplirlas."
+                ]
+              },
+              {
+                "key": "responsables", "title": "Responsables, plazos e indicadores", "competencyId": "comp:ejecucion", "weight": 1,
+                "levels": [
+                  "No indica responsables, plazos ni indicadores.",
+                  "Indica solo uno de los tres elementos.",
+                  "Indica responsables y plazos, pero indicadores vagos.",
+                  "Cada acción tiene responsable, plazo e indicador medible.",
+                  "Lo anterior y además fija cuándo se revisa el avance y qué se hará si no mejora."
+                ]
+              }
+            ],
+            "practiceExplanation": "Un buen plan nombra tres acciones ligadas al diagnóstico (invitaciones, escandallos, mermas), un responsable para cada una (por ejemplo, jefe de cocina para mermas), un plazo (semana 1, semana 2...) y un indicador medible (porcentaje de mermas sobre compras, invitaciones registradas y autorizadas...).",
+            "maxTextLength": 700
+          }
+        ]
+      }
+    },
+    {
+      "slug": "eventos-80-personas",
+      "jobTypes": ["Coordinador/a de eventos"],
+      "definition": {
+        "title": "Prepara un evento de 80 personas",
+        "situation": "Comida de empresa para 80 personas el sábado. Tienes la ficha interna, el correo del cliente y un presupuesto que no cuadra.",
+        "level": "Intermediate",
+        "estimatedMinutes": 18,
+        "instructions": "Ordena las tareas teniendo en cuenta sus dependencias, revisa los requisitos en busca de contradicciones y ajusta el presupuesto. Todos los datos son ficticios.",
+        "deliverable": "El orden de tareas, las contradicciones detectadas y los cálculos del presupuesto.",
+        "allowedTools": "Puedes usar calculadora y papel.",
+        "assessmentDescription": "El orden se valora con relaciones de dependencia (se aceptan varios órdenes válidos). En la revisión cada línea correcta suma y cada línea marcada sin contradicción resta. Los cálculos se corrigen automáticamente con una tolerancia de 5 céntimos.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 7,
+        "competencyFeedback": [
+          { "competencyId": "comp:planificacion", "strengthText": "Respetas las dependencias entre tareas.", "practiceText": "Antes de pedir material o montar, confirma asistentes y menú." },
+          { "competencyId": "comp:revision", "strengthText": "Encuentras las contradicciones entre documentos a tiempo.", "practiceText": "Compara línea a línea la ficha interna con lo que pide el cliente." },
+          { "competencyId": "comp:calculo-aplicado", "strengthText": "Ajustas el presupuesto con cálculos correctos.", "practiceText": "Practica a calcular totales con y sin IVA y el precio máximo por persona." }
+        ],
+        "activities": [
+          {
+            "key": "tareas",
+            "title": "Ordena las tareas",
+            "context": "Faltan diez días para el evento.",
+            "prompt": "Ordena las tareas de la primera a la última.",
+            "template": "Cards",
+            "responseType": "Ordering",
+            "resources": [],
+            "options": [
+              { "key": "asistentes", "text": "Confirmar el número final de asistentes" },
+              { "key": "menu", "text": "Cerrar el menú y las alergias con cocina" },
+              { "key": "material", "text": "Pedir mantelería y menaje" },
+              { "key": "montaje", "text": "Montar la sala" },
+              { "key": "briefing", "text": "Hacer el briefing con el equipo" },
+              { "key": "recepcion", "text": "Recibir a los invitados" }
+            ],
+            "conversation": [],
+            "scoring": {
+              "orderingMode": "PrecedencePairs",
+              "precedences": [
+                { "before": "asistentes", "after": "menu" },
+                { "before": "asistentes", "after": "material" },
+                { "before": "menu", "after": "briefing" },
+                { "before": "material", "after": "montaje" },
+                { "before": "montaje", "after": "recepcion" },
+                { "before": "briefing", "after": "recepcion" }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:planificacion", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "El número de asistentes condiciona el menú y el material. El material se necesita para montar, y el briefing requiere el menú cerrado. Montaje y briefing deben estar hechos antes de recibir a los invitados. Hay varios órdenes válidos que respetan estas dependencias.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "contradicciones",
+            "title": "Revisa los requisitos",
+            "context": "Has pasado a una tabla la ficha interna y lo que dice el último correo del cliente. El salón debe quedar libre a las 18:00.",
+            "prompt": "Marca las líneas donde hay una contradicción que debes aclarar con el cliente.",
+            "template": "Document",
+            "responseType": "ErrorDetection",
+            "resources": [
+              {
+                "key": "requisitos", "title": "Requisitos: ficha interna frente a correo del cliente", "kind": "Tabla", "text": "",
+                "columns": ["Requisito", "Ficha interna", "Correo del cliente"],
+                "rows": [
+                  { "key": "r1", "cells": ["Inicio del cóctel", "13:30", "13:00"] },
+                  { "key": "r2", "cells": ["Asistentes", "80", "80"] },
+                  { "key": "r3", "cells": ["Menús vegetarianos", "6", "8"] },
+                  { "key": "r4", "cells": ["Menús sin gluten", "2", "2"] },
+                  { "key": "r5", "cells": ["DJ", "16:00 a 18:00", "16:00 a 18:30"] },
+                  { "key": "r6", "cells": ["Barra libre", "1 hora tras la comida", "1 hora tras la comida"] }
+                ],
+                "footer": "El salón debe quedar libre a las 18:00."
+              }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": { "errorResourceKey": "requisitos", "correctKeys": ["r1", "r3", "r5"], "multipleMode": "Partial" },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:revision", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "No coinciden la hora del cóctel (13:30 frente a 13:00) ni el número de menús vegetarianos (6 frente a 8), y el DJ hasta las 18:30 choca con que el salón debe quedar libre a las 18:00.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "presupuesto",
+            "title": "Ajusta el presupuesto",
+            "context": "El cliente dispone de 4.800 € con IVA incluido.",
+            "prompt": "Calcula el total sin IVA, el total con IVA, el exceso sobre el presupuesto y el precio máximo del menú por persona para no superarlo (manteniendo barra libre y DJ).",
+            "template": "CalcSheet",
+            "responseType": "Numeric",
+            "resources": [
+              {
+                "key": "tarifas", "title": "Tarifas (sin IVA)", "kind": "Presupuesto", "text": "",
+                "columns": ["Servicio", "Precio"],
+                "rows": [
+                  { "key": "s1", "cells": ["Menú (por persona)", "48,00 €"] },
+                  { "key": "s2", "cells": ["Barra libre 1 hora (por persona)", "9,00 €"] },
+                  { "key": "s3", "cells": ["DJ (precio cerrado)", "450,00 €"] }
+                ],
+                "footer": "IVA aplicable: 10 % a todos los servicios. Asistentes: 80."
+              },
+              { "key": "reglas", "title": "Cómo se calcula", "kind": "Nota", "text": "Total con IVA = total sin IVA × 1,10. Exceso = total con IVA - 4.800. Precio máximo del menú = (4.800 / 1,10 - barra libre - DJ) / 80. Redondea a 2 decimales.", "columns": [], "rows": [], "footer": "" }
+            ],
+            "options": [],
+            "conversation": [],
+            "scoring": {
+              "numericFields": [
+                { "key": "sin-iva", "label": "Total sin IVA", "unit": "€", "expected": 5010, "tolerance": 0.05, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "con-iva", "label": "Total con IVA", "unit": "€", "expected": 5511, "tolerance": 0.05, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "exceso", "label": "Exceso sobre el presupuesto", "unit": "€", "expected": 711, "tolerance": 0.05, "toleranceType": "Absolute", "decimals": 2, "weight": 1 },
+                { "key": "max-menu", "label": "Precio máximo del menú por persona", "unit": "€", "expected": 39.92, "tolerance": 0.05, "toleranceType": "Absolute", "decimals": 2, "weight": 1 }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:calculo-aplicado", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Sin IVA: 80 × 48 + 80 × 9 + 450 = 5.010 €. Con IVA: 5.010 × 1,10 = 5.511 €. Exceso: 5.511 - 4.800 = 711 €. Máximo por menú: (4.800 / 1,10 - 720 - 450) / 80 = (4.363,64 - 1.170) / 80 = 39,92 €.",
+            "maxTextLength": 600
+          }
+        ]
+      }
+    },
+    {
+      "slug": "eventos-proveedor-retrasa",
+      "jobTypes": ["Coordinador/a de eventos"],
+      "definition": {
+        "title": "Un proveedor se retrasa",
+        "situation": "Faltan 45 minutos para que empiece la comida de 80 personas y el proveedor de sillas avisa de que llega tarde.",
+        "level": "Intermediate",
+        "estimatedMinutes": 15,
+        "instructions": "Decide qué hacer primero, elige una contingencia viable con los recursos disponibles y escribe el mensaje al cliente. Todos los datos son ficticios.",
+        "deliverable": "El orden de actuación, la contingencia elegida y un mensaje al cliente de máximo 500 caracteres.",
+        "allowedTools": "Puedes tomar notas en papel.",
+        "assessmentDescription": "El orden se valora con relaciones de prioridad (se aceptan varios órdenes). La contingencia se corrige automáticamente; algunas opciones son parcialmente válidas. El mensaje lo revisa una persona con una rúbrica: se valora la transparencia y el plan, no la ortografía.",
+        "allowPractice": true,
+        "allowEvaluation": true,
+        "maxEvaluationAttempts": 2,
+        "retryCooldownDays": 7,
+        "competencyFeedback": [
+          { "competencyId": "comp:resolucion-incidencias", "strengthText": "Encuentras una alternativa viable con los recursos que tienes.", "practiceText": "Ante un imprevisto, combina recursos propios y de terceros antes de retrasar el evento." },
+          { "competencyId": "comp:comunicacion", "strengthText": "Informas al cliente con transparencia y con un plan concreto.", "practiceText": "Cuando informes de un problema, explica también qué vais a hacer y cuándo." }
+        ],
+        "activities": [
+          {
+            "key": "orden",
+            "title": "13:15: las sillas llegan tarde",
+            "context": "El proveedor avisa de que las 80 sillas llegarán a las 14:30. El cóctel (de pie) empieza a las 13:30 y la comida, sentados, a las 14:00.",
+            "prompt": "Ordena las acciones de la primera a la última.",
+            "template": "Cards",
+            "responseType": "Ordering",
+            "resources": [
+              {
+                "key": "recursos", "title": "Recursos disponibles", "kind": "Nota", "text": "",
+                "columns": ["Recurso", "Detalle"],
+                "rows": [
+                  { "key": "x1", "cells": ["Almacén propio", "40 sillas apilables limpias"] },
+                  { "key": "x2", "cells": ["Proveedor local", "Puede traer 50 sillas a las 13:50, con un recargo de 120 €"] },
+                  { "key": "x3", "cells": ["Barra", "20 taburetes altos"] }
+                ],
+                "footer": ""
+              }
+            ],
+            "options": [
+              { "key": "cocina", "text": "Avisar al responsable de cocina y sala del posible retraso" },
+              { "key": "local", "text": "Confirmar con el proveedor local las 50 sillas para las 13:50" },
+              { "key": "almacen", "text": "Sacar y montar las 40 sillas del almacén" },
+              { "key": "cliente", "text": "Informar al cliente de la situación y del plan" },
+              { "key": "ajuste", "text": "Si hace falta, retrasar 15 minutos la comida coordinándolo con cocina" },
+              { "key": "reclamar", "text": "Reclamar al proveedor original la penalización por retraso" }
+            ],
+            "conversation": [],
+            "scoring": {
+              "orderingMode": "PrecedencePairs",
+              "precedences": [
+                { "before": "local", "after": "cliente" },
+                { "before": "cocina", "after": "ajuste" },
+                { "before": "local", "after": "reclamar" },
+                { "before": "almacen", "after": "reclamar" },
+                { "before": "cliente", "after": "reclamar" }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:resolucion-incidencias", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "Conviene asegurar la alternativa antes de informar al cliente, para darle un plan concreto. Cocina debe saberlo antes de mover la hora de la comida. La reclamación al proveedor no es urgente: se hace cuando el evento está resuelto.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "contingencia",
+            "title": "Elige la contingencia",
+            "context": "Tienes los recursos de la actividad anterior.",
+            "prompt": "¿Qué contingencia eliges?",
+            "template": "Cards",
+            "responseType": "SingleChoice",
+            "resources": [],
+            "options": [
+              { "key": "a", "text": "Usar las 40 sillas propias y las 50 del proveedor local, y cancelar o reducir la entrega tardía" },
+              { "key": "b", "text": "Esperar a las sillas originales y retrasar la comida hasta las 14:45" },
+              { "key": "c", "text": "Servir la comida de pie" },
+              { "key": "d", "text": "Usar las 40 sillas propias y los 20 taburetes de barra para el resto" }
+            ],
+            "conversation": [],
+            "scoring": {
+              "optionCredits": [
+                { "optionKey": "a", "credit": 1 },
+                { "optionKey": "b", "credit": 0.25 },
+                { "optionKey": "c", "credit": 0 },
+                { "optionKey": "d", "credit": 0.5 }
+              ]
+            },
+            "autoWeight": 1,
+            "autoCompetencies": [ { "competencyId": "comp:resolucion-incidencias", "weight": 1 } ],
+            "rubric": [],
+            "practiceExplanation": "40 propias + 50 del proveedor local cubren a los 80 a tiempo (13:50) por un coste conocido. Los taburetes no sirven para una comida sentados y no llegan a 80. Retrasar 45 minutos afecta a todo el evento.",
+            "maxTextLength": 600
+          },
+          {
+            "key": "mensaje",
+            "title": "Mensaje al cliente",
+            "context": "El cliente te escribe por mensaje.",
+            "prompt": "Escribe tu respuesta (máximo 500 caracteres). No se valora la ortografía ni el estilo, sino que el mensaje sea transparente y explique el plan.",
+            "template": "Conversation",
+            "responseType": "ShortText",
+            "resources": [],
+            "options": [],
+            "conversation": [
+              { "speaker": "Cliente", "text": "Hola, ¿todo listo? Los invitados empiezan a llegar a las 13:30." }
+            ],
+            "scoring": {},
+            "autoWeight": 0,
+            "autoCompetencies": [],
+            "rubric": [
+              {
+                "key": "transparencia", "title": "Transparencia", "competencyId": "comp:comunicacion", "weight": 1,
+                "levels": [
+                  "Oculta el problema o da información falsa.",
+                  "Menciona un problema de forma vaga o alarmante.",
+                  "Informa del retraso sin explicar cómo afecta al evento.",
+                  "Informa con claridad del retraso, de que está resuelto y de que no afecta al horario (o de cuánto lo afecta).",
+                  "Lo anterior con un tono que transmite control y ofreciendo un punto de contacto si necesita algo."
+                ]
+              },
+              {
+                "key": "plan", "title": "Plan y tiempos", "competencyId": "comp:resolucion-incidencias", "weight": 1,
+                "levels": [
+                  "No da ningún plan.",
+                  "Da un plan poco viable o sin tiempos.",
+                  "Da un plan viable sin tiempos concretos.",
+                  "Explica el plan (sillas propias y del proveedor local) con tiempos concretos.",
+                  "Lo anterior y además prevé qué pasa si algo vuelve a fallar y confirma cuándo volverá a informar."
+                ]
+              }
+            ],
+            "practiceExplanation": "Un buen mensaje reconoce el imprevisto, explica que ya está resuelto con sillas propias y de otro proveedor (llegan a las 13:50), confirma que el horario se mantiene y ofrece un contacto por si necesita algo.",
+            "maxTextLength": 500
+          }
+        ]
+      }
+    }
+  ]
+}

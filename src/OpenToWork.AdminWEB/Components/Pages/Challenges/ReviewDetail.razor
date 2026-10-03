@@ -1,0 +1,180 @@
+@page "/challenges/reviews/{AttemptId:guid}"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.Challenges
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+@* Revision de un intento: consignas y rubricas de la version exacta que hizo el candidato. *@
+
+<PageTitle>@L("reviewTitle")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@(_d?.ChallengeTitle ?? L("reviewTitle"))</h1>
+        @if (_d != null)
+        {
+            <p class="admin-page-header-subtitle">
+                <a href="/candidates/profile/@_d.CandidateUserId">@_d.CandidateName</a> · v@(_d.VersionNumber) · @_d.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                · <span class="admin-status @(_d.ReviewStatus == ReviewStatus.Completed ? "admin-status--success" : "admin-status--draft")">@L($"review.{_d.ReviewStatus}")</span>
+            </p>
+        }
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/challenges/reviews")'>@L("back")</button>
+    </div>
+</div>
+
+@if (_message != null)
+{
+    <div class="alert @(_messageOk ? "alert-success" : "alert-error")" role="status">@_message</div>
+}
+
+@if (_d == null)
+{
+    @if (_message == null) { <div class="admin-loading">@Lang.T("admin.common.loading")</div> }
+}
+else
+{
+    var locked = _d.ReviewStatus == ReviewStatus.Completed;
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@L("resultSoFar")</h3>
+        <p>@L("autoPart"): <strong>@(_d.Result.AutoPercent?.ToString("0.#") ?? "—") %</strong>
+            · @L("complete"): <strong>@(_d.Result.CompletePercent?.ToString("0.#") ?? "—") %</strong></p>
+        <ul class="chp-list">
+            @foreach (var c in _d.Result.Competencies) { <li>@c.Name: @(c.Percent?.ToString("0.#") ?? "—") %@(c.IsComplete ? "" : " *")</li> }
+        </ul>
+    </div>
+
+    @foreach (var a in _d.Answers)
+    {
+        var act = a.Activity;
+        <div class="admin-profile-section">
+            <h3 class="admin-profile-section-title">@act.Title <span class="admin-status admin-status--neutral">@L($"responses.{act.ResponseType}")</span></h3>
+            <p class="chp-muted" style="white-space:pre-line;">@act.Prompt</p>
+            @if (a.Response == null)
+            {
+                <p><em>@L("notAnswered")</em></p>
+            }
+            else
+            {
+                @if (a.AutoPercent is { } p) { <p>@L("autoPart"): <strong>@p.ToString("0.#") %</strong></p> }
+                @if (a.Response.SelectedKeys.Count > 0)
+                {
+                    <p>@L("selected"): @string.Join(" · ", a.Response.SelectedKeys.Select(k => OptionText(act, k)))</p>
+                }
+                @if (a.Response.OrderedKeys.Count > 0)
+                {
+                    <p>@L("order"): @string.Join(" → ", a.Response.OrderedKeys.Select(k => OptionText(act, k)))</p>
+                }
+                @if (a.Response.NumericValues.Count > 0)
+                {
+                    <p>@string.Join(" · ", a.Response.NumericValues.Select(kv => $"{act.Scoring.NumericFields.FirstOrDefault(f => f.Key == kv.Key)?.Label ?? kv.Key}: {kv.Value}"))</p>
+                }
+                @if (!string.IsNullOrWhiteSpace(a.Response.Text))
+                {
+                    <blockquote class="chp-feedback" style="white-space:pre-line;">@a.Response.Text</blockquote>
+                }
+            }
+
+            @if (ChallengeRules.HasHumanPart(act.ResponseType) && a.Response != null && !string.IsNullOrWhiteSpace(a.Response.Text))
+            {
+                @foreach (var c in act.Rubric)
+                {
+                    var score = ScoreFor(act.Key, c.Key);
+                    <fieldset class="admin-profile-section" disabled="@locked">
+                        <legend style="font-weight:600;">@c.Title <span class="chp-muted">· @(_d.CompetencyNames.GetValueOrDefault(c.CompetencyId, "?")) · @L("weight") @c.Weight</span></legend>
+                        @for (var lv = 0; lv < c.Levels.Count; lv++)
+                        {
+                            var level = lv;
+                            <label class="chx-option @(score.Score == level && score.Set ? "chx-option--on" : "")" style="margin-bottom:6px;">
+                                <input type="radio" name="@($"{act.Key}-{c.Key}")" checked="@(score.Set && score.Score == level)" @onchange="() => SetScore(act.Key, c.Key, level)" />
+                                <span><strong>@level</strong> — @c.Levels[level]</span>
+                            </label>
+                        }
+                        <input class="ot-input-field" placeholder="@L("criterionComment")" value="@score.Comment" @onchange="e => SetComment(act.Key, c.Key, e.Value?.ToString())" />
+                    </fieldset>
+                }
+            }
+        </div>
+    }
+
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@L("generalComment")</h3>
+        <p class="chp-muted">@L("generalCommentHelp")</p>
+        <textarea class="ot-input-field" rows="3" style="width:100%;" maxlength="2000" disabled="@locked" @bind="_comment"></textarea>
+        @if (!locked)
+        {
+            <div style="display:flex;gap:8px;margin-top:10px;">
+                <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick="() => SaveAsync(false)">@L("saveProgress")</button>
+                <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@_busy" @onclick="() => SaveAsync(true)">@L("completeReview")</button>
+            </div>
+        }
+        else if (_d.ReviewerName != null)
+        {
+            <p class="chp-muted">@string.Format(L("reviewedBy"), _d.ReviewerName)</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid AttemptId { get; set; }
+
+    private ReviewDetailDto? _d;
+    private List<ReviewScoreDto> _scores = new();
+    private string? _comment;
+    private string? _message;
+    private bool _messageOk, _busy;
+
+    private string L(string key) => Lang.T($"challenges.admin.{key}");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Lang._translations.Count == 0) await Lang.InitializeAsync();
+        var (d, error) = await AuthApi.GetChallengeReviewAsync(AttemptId);
+        if (d == null) { Show(L(error is "forbidden" or "notFound" ? error : "genericError"), false); return; }
+        Load(d);
+    }
+
+    private void Load(ReviewDetailDto d)
+    {
+        _d = d;
+        _scores = d.Scores;
+        _comment = d.GeneralComment;
+    }
+
+    private (bool Set, int Score, string? Comment) ScoreFor(string activity, string criterion) =>
+        _scores.FirstOrDefault(s => s.ActivityKey == activity && s.CriterionKey == criterion) is { } s ? (true, s.Score, s.Comment) : (false, 0, null);
+
+    private ReviewScoreDto Entry(string activity, string criterion)
+    {
+        var s = _scores.FirstOrDefault(x => x.ActivityKey == activity && x.CriterionKey == criterion);
+        if (s == null) { s = new ReviewScoreDto { ActivityKey = activity, CriterionKey = criterion, Score = -1 }; _scores.Add(s); }
+        return s;
+    }
+
+    private void SetScore(string activity, string criterion, int level) => Entry(activity, criterion).Score = level;
+
+    private void SetComment(string activity, string criterion, string? comment) => Entry(activity, criterion).Comment = comment;
+
+    private static string OptionText(ActivityDefinition a, string key) =>
+        a.Options.FirstOrDefault(o => o.Key == key)?.Text
+        ?? (a.Resources.SelectMany(r => r.Rows).FirstOrDefault(r => r.Key == key) is { } row ? string.Join(" ", row.Cells) : key);
+
+    private async Task SaveAsync(bool complete)
+    {
+        _busy = true;
+        // Un comentario sin puntuacion (-1) no se envia como puntuacion.
+        var dto = new SaveReviewDto { Scores = _scores.Where(s => s.Score >= 0).ToList(), GeneralComment = _comment, Complete = complete };
+        var (d, error) = await AuthApi.SaveChallengeReviewAsync(AttemptId, dto);
+        _busy = false;
+        if (d != null) { Load(d); Show(L(complete ? "reviewCompleted" : "saved"), true); }
+        else Show(L(error is "incomplete" or "alreadyCompleted" or "forbidden" ? error : "genericError"), false);
+    }
+
+    private void Show(string text, bool ok)
+    {
+        _message = text;
+        _messageOk = ok;
+    }
+}

@@ -25,4 +25,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="OpenToWork.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Contenido inicial de "Retos y competencias" (datos; lo carga ChallengeSeeder desde el admin) -->
+    <EmbeddedResource Include="Challenges/Seed/challenges-hosteleria.json" LogicalName="OpenToWork.Core.Challenges.Seed.challenges-hosteleria.json" />
+  </ItemGroup>
 </Project>

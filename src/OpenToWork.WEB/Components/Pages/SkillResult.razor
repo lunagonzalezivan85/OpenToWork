@@ -1,0 +1,105 @@
+@page "/skills/result/{Id:guid}"
+@using OpenToWork.Shared.Challenges
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>@Lang.T("challenges.result.title")</PageTitle>
+
+<div class="page-container">
+    <div class="dash-banner-card">
+        <div class="dash-banner-info">
+            <h1 class="dash-banner-title">@(_r?.ChallengeTitle ?? Lang.T("challenges.result.title"))</h1>
+            @if (_r != null)
+            {
+                <p class="dash-banner-role">@Lang.T($"challenges.mode.{_r.Mode}") · @string.Format(Lang.T("challenges.version"), _r.VersionNumber) · @_r.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+            }
+        </div>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo("/skills"))">@Lang.T("challenges.result.backToChallenges")</button>
+    </div>
+
+    @if (_error != null)
+    {
+        <div class="bento-card bento-card--full"><p>@Lang.T($"challenges.errors.{(_error == "notSubmitted" ? "generic" : _error)}")</p></div>
+    }
+    else if (_r == null)
+    {
+        <p class="chp-muted">@Lang.T("challenges.loading")</p>
+    }
+    else
+    {
+        <div class="bento-grid">
+            <div class="bento-card">
+                @if (_r.CompletePercent is { } complete)
+                {
+                    <span class="bento-card-title">@Lang.T("challenges.result.complete")</span>
+                    <div class="chp-score">@complete.ToString("0.#") %</div>
+                }
+                else
+                {
+                    <span class="bento-card-title">@Lang.T("challenges.result.partial")</span>
+                    <div class="chp-score">@(_r.AutoPercent?.ToString("0.#") ?? "—") %</div>
+                    @if (_r.PendingReviewItems > 0)
+                    {
+                        <p class="chp-feedback" style="margin-top:12px;">@string.Format(Lang.T("challenges.result.pendingReview"), _r.PendingReviewItems)</p>
+                    }
+                }
+                <p class="chp-muted" style="margin-top:12px;">@string.Format(Lang.T("challenges.result.duration"), Math.Max(1, _r.DurationSeconds / 60))</p>
+                <p class="chp-muted">@(_r.Mode == AttemptMode.Practice ? Lang.T("challenges.result.practiceNote") : Lang.T("challenges.result.notComparable"))</p>
+            </div>
+
+            <div class="bento-card">
+                <span class="bento-card-title">@Lang.T("challenges.result.competencies")</span>
+                <div class="chp-bars" style="margin-top:12px;">
+                    @foreach (var c in _r.Competencies)
+                    {
+                        <div class="chp-bar-row">
+                            <span>@c.Name</span>
+                            <div class="chp-bar" aria-hidden="true"><span style="width:@((int)(c.Percent ?? 0))%"></span></div>
+                            <span>@(c.Percent is { } p ? $"{p:0.#} %" : "")@(c.IsComplete ? "" : (c.Percent == null ? Lang.T("challenges.result.pending") : "*"))</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (_r.Strengths.Count > 0)
+            {
+                <div class="bento-card">
+                    <span class="bento-card-title">@Lang.T("challenges.result.strengths")</span>
+                    <ul class="chp-list">@foreach (var s in _r.Strengths) { <li>@s</li> }</ul>
+                </div>
+            }
+            @if (_r.ToPractice.Count > 0)
+            {
+                <div class="bento-card">
+                    <span class="bento-card-title">@Lang.T("challenges.result.toPractice")</span>
+                    <ul class="chp-list">@foreach (var s in _r.ToPractice) { <li>@s</li> }</ul>
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(_r.ReviewerComment))
+            {
+                <div class="bento-card bento-card--full">
+                    <span class="bento-card-title">@Lang.T("challenges.result.reviewerComment")</span>
+                    <p style="white-space:pre-line;">@_r.ReviewerComment</p>
+                </div>
+            }
+            <div class="bento-card bento-card--full chp-nav">
+                <button class="ot-btn ot-btn--outline" @onclick="@(() => Nav.NavigateTo($"/skills/{_r.ChallengeId}"))">@Lang.T("challenges.result.retry")</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private AttemptResultDto? _r;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Lang._translations.Count == 0) await Lang.InitializeAsync();
+        (_r, _error) = await AuthApi.GetChallengeResultAsync(Id);
+    }
+}

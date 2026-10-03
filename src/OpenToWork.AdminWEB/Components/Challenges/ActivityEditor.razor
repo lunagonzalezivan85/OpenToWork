@@ -1,0 +1,413 @@
+@using OpenToWork.Shared.Challenges
+@using OpenToWork.SharedUI.Components
+@using OpenToWork.AdminWEB.Services
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+
+@* Editor de una actividad. Edita Activity en sitio; la validacion completa la hace el servidor al
+   guardar/publicar (ChallengeRules.Validate) y la pagina muestra sus mensajes. *@
+
+<div class="admin-form-grid">
+    <div class="admin-form-field">
+        <label class="admin-form-label">@L("key")</label>
+        <input class="ot-input-field" @bind="A.Key" />
+    </div>
+    <div class="admin-form-field">
+        <label class="admin-form-label">@L("activityTitle")</label>
+        <input class="ot-input-field" @bind="A.Title" />
+    </div>
+    <div class="admin-form-field">
+        <label class="admin-form-label">@L("template")</label>
+        <select class="ot-input-field" value="@A.Template" @onchange="e => SetTemplate(e.Value?.ToString())">
+            @foreach (var t in Enum.GetValues<ChallengeTemplate>()) { <option value="@t">@L($"templates.{t}")</option> }
+        </select>
+    </div>
+    <div class="admin-form-field">
+        <label class="admin-form-label">@L("responseType")</label>
+        <select class="ot-input-field" @bind="A.ResponseType">
+            @foreach (var r in ChallengeRules.CompatibleResponses[A.Template]) { <option value="@r">@L($"responses.{r}")</option> }
+        </select>
+    </div>
+    <div class="admin-form-field admin-form-field--full">
+        <label class="admin-form-label">@L("context")</label>
+        <textarea class="ot-input-field" rows="2" @bind="A.Context"></textarea>
+    </div>
+    <div class="admin-form-field admin-form-field--full">
+        <label class="admin-form-label">@L("prompt")</label>
+        <textarea class="ot-input-field" rows="2" @bind="A.Prompt"></textarea>
+    </div>
+</div>
+
+@* ---------- Conversacion ---------- *@
+@if (A.Template == ChallengeTemplate.Conversation)
+{
+    <h4 class="admin-section-title">@L("conversation")</h4>
+    @foreach (var line in A.Conversation.ToList())
+    {
+        <div class="admin-inline-form">
+            <input class="ot-input-field" style="max-width:160px;" placeholder="@L("speaker")" @bind="line.Speaker" />
+            <input class="ot-input-field" style="flex:1;" placeholder="@L("text")" @bind="line.Text" />
+            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => A.Conversation.Remove(line)">✕</button>
+        </div>
+    }
+    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => A.Conversation.Add(new ConversationLine { Speaker = L("customer") })'>+ @L("addLine")</button>
+}
+
+@* ---------- Recursos ---------- *@
+<h4 class="admin-section-title">@L("resources")</h4>
+@foreach (var r in A.Resources.ToList())
+{
+    <div class="admin-profile-section">
+        <div class="admin-form-grid">
+            <div class="admin-form-field"><label class="admin-form-label">@L("key")</label><input class="ot-input-field" @bind="r.Key" /></div>
+            <div class="admin-form-field"><label class="admin-form-label">@L("resourceTitle")</label><input class="ot-input-field" @bind="r.Title" /></div>
+            <div class="admin-form-field"><label class="admin-form-label">@L("kind")</label><input class="ot-input-field" placeholder="@L("kindPlaceholder")" @bind="r.Kind" /></div>
+            <div class="admin-form-field"><label class="admin-form-label">@L("columns")</label>
+                <input class="ot-input-field" placeholder="@L("columnsPlaceholder")" value="@string.Join(", ", r.Columns)" @onchange="e => r.Columns = SplitCsv(e.Value?.ToString())" /></div>
+            <div class="admin-form-field admin-form-field--full"><label class="admin-form-label">@L("resourceText")</label><textarea class="ot-input-field" rows="2" @bind="r.Text"></textarea></div>
+            <div class="admin-form-field admin-form-field--full"><label class="admin-form-label">@L("rows")</label>
+                <textarea class="ot-input-field" rows="4" style="font-family:monospace;" placeholder="@L("rowsPlaceholder")"
+                          value="@RowsToText(r)" @onchange="e => r.Rows = TextToRows(e.Value?.ToString())"></textarea></div>
+            <div class="admin-form-field admin-form-field--full"><label class="admin-form-label">@L("footer")</label><input class="ot-input-field" @bind="r.Footer" /></div>
+        </div>
+        <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => A.Resources.Remove(r)">@L("removeResource")</button>
+    </div>
+}
+<button class="ot-btn ot-btn--outline ot-btn--small" @onclick="AddResource">+ @L("addResource")</button>
+
+@* ---------- Opciones y clave ---------- *@
+@if (NeedsOptions)
+{
+    <h4 class="admin-section-title">@L(A.ResponseType == ChallengeResponseType.Ordering ? "itemsToOrder" : "options")</h4>
+    @if (A.ResponseType == ChallengeResponseType.ActionsWithJustification)
+    {
+        <label class="admin-form-label"><input type="checkbox" @bind="S.AllowMultipleSelection" /> @L("allowMultiple")</label>
+    }
+    @if (UsesSet)
+    {
+        <label class="admin-form-label">@L("multipleMode")
+            <select class="ot-input-field" style="max-width:260px;" @bind="S.MultipleMode">
+                <option value="@MultipleChoiceScoring.Partial">@L("modePartial")</option>
+                <option value="@MultipleChoiceScoring.Exact">@L("modeExact")</option>
+            </select>
+        </label>
+    }
+    <table class="ot-table">
+        <thead><tr><th>@L("key")</th><th>@L("text")</th><th>@(UsesCredits ? L("credit") : UsesSet ? L("correct") : "")</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var o in A.Options.ToList())
+            {
+                <tr>
+                    <td style="width:110px;"><input class="ot-input-field" value="@o.Key" @onchange="e => RenameOption(o, e.Value?.ToString())" /></td>
+                    <td><input class="ot-input-field" @bind="o.Text" /></td>
+                    <td style="width:120px;">
+                        @if (UsesCredits)
+                        {
+                            <input class="ot-input-field" type="number" min="0" max="1" step="0.25" value="@CreditOf(o.Key)" @onchange="e => SetCredit(o.Key, e.Value?.ToString())" />
+                        }
+                        else if (UsesSet)
+                        {
+                            <input type="checkbox" checked="@S.CorrectKeys.Contains(o.Key)" @onchange="() => ToggleCorrect(o.Key)" />
+                        }
+                    </td>
+                    <td style="width:50px;"><button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => RemoveOption(o)">✕</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="AddOption">+ @L("addOption")</button>
+}
+
+@if (A.ResponseType == ChallengeResponseType.Ordering)
+{
+    <h4 class="admin-section-title">@L("orderingKey")</h4>
+    <select class="ot-input-field" style="max-width:320px;" @bind="S.OrderingMode">
+        <option value="@OrderingScoring.PrecedencePairs">@L("orderingPairs")</option>
+        <option value="@OrderingScoring.AcceptedSequences">@L("orderingSequences")</option>
+    </select>
+    @if (S.OrderingMode == OrderingScoring.PrecedencePairs)
+    {
+        <p class="chp-muted">@L("orderingPairsHelp")</p>
+        @foreach (var p in S.Precedences.ToList())
+        {
+            <div class="admin-inline-form">
+                <select class="ot-input-field" @bind="p.Before">@OptionItems()</select>
+                <span>@L("before")</span>
+                <select class="ot-input-field" @bind="p.After">@OptionItems()</select>
+                <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => S.Precedences.Remove(p)">✕</button>
+            </div>
+        }
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => S.Precedences.Add(new PrecedencePair())">+ @L("addPair")</button>
+    }
+    else
+    {
+        <p class="chp-muted">@L("orderingSequencesHelp")</p>
+        @foreach (var seq in S.AcceptedSequences.ToList())
+        {
+            <div class="admin-inline-form">
+                <span style="flex:1;">@string.Join(" → ", seq)</span>
+                <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => S.AcceptedSequences.Remove(seq)">✕</button>
+            </div>
+        }
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => S.AcceptedSequences.Add(A.Options.Select(o => o.Key).ToList())">+ @L("addCurrentOrder")</button>
+    }
+}
+
+@if (A.ResponseType == ChallengeResponseType.ErrorDetection)
+{
+    <h4 class="admin-section-title">@L("errorKey")</h4>
+    <select class="ot-input-field" style="max-width:320px;" @bind="S.ErrorResourceKey">
+        <option value="">—</option>
+        @foreach (var r in A.Resources) { <option value="@r.Key">@r.Title</option> }
+    </select>
+    <label class="admin-form-label">@L("multipleMode")
+        <select class="ot-input-field" style="max-width:260px;" @bind="S.MultipleMode">
+            <option value="@MultipleChoiceScoring.Partial">@L("modePartial")</option>
+            <option value="@MultipleChoiceScoring.Exact">@L("modeExact")</option>
+        </select>
+    </label>
+    @if (A.Resources.FirstOrDefault(r => r.Key == S.ErrorResourceKey) is { } errRes)
+    {
+        @foreach (var row in errRes.Rows)
+        {
+            <label class="admin-form-label" style="display:block;">
+                <input type="checkbox" checked="@S.CorrectKeys.Contains(row.Key)" @onchange="() => ToggleCorrect(row.Key)" />
+                <code>@row.Key</code> — @string.Join(" · ", row.Cells)
+            </label>
+        }
+    }
+}
+
+@if (A.ResponseType == ChallengeResponseType.Numeric)
+{
+    <h4 class="admin-section-title">@L("numericFields")</h4>
+    <div class="admin-table-wrapper">
+        <table class="ot-table">
+            <thead><tr><th>@L("key")</th><th>@L("label")</th><th>@L("unit")</th><th>@L("expected")</th><th>@L("tolerance")</th><th>@L("toleranceType")</th><th>@L("decimals")</th><th>@L("weight")</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var f in S.NumericFields.ToList())
+                {
+                    <tr>
+                        <td><input class="ot-input-field" style="width:90px;" @bind="f.Key" /></td>
+                        <td><input class="ot-input-field" @bind="f.Label" /></td>
+                        <td><input class="ot-input-field" style="width:70px;" @bind="f.Unit" /></td>
+                        <td><input class="ot-input-field" type="number" step="any" style="width:100px;" @bind="f.Expected" /></td>
+                        <td><input class="ot-input-field" type="number" step="any" min="0" style="width:90px;" @bind="f.Tolerance" /></td>
+                        <td><select class="ot-input-field" @bind="f.ToleranceType">
+                            <option value="@ToleranceType.Absolute">@L("absolute")</option>
+                            <option value="@ToleranceType.Percent">%</option>
+                        </select></td>
+                        <td><input class="ot-input-field" type="number" min="0" max="4" style="width:60px;" @bind="f.Decimals" /></td>
+                        <td><input class="ot-input-field" type="number" step="any" min="0" style="width:70px;" @bind="f.Weight" /></td>
+                        <td><button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => S.NumericFields.Remove(f)">✕</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => S.NumericFields.Add(new NumericField { Key = NextKey(S.NumericFields.Select(x => x.Key), "campo"), Unit = "EUR" })'>+ @L("addField")</button>
+}
+
+@* ---------- Peso y competencias de la parte automatica ---------- *@
+@if (ChallengeRules.HasAutoPart(A.ResponseType))
+{
+    <h4 class="admin-section-title">@L("autoPart")</h4>
+    <div class="admin-inline-form">
+        <label class="admin-form-label">@L("autoWeight")
+            <input class="ot-input-field" type="number" step="any" min="0" style="width:90px;" @bind="A.AutoWeight" />
+        </label>
+    </div>
+    @foreach (var cw in A.AutoCompetencies.ToList())
+    {
+        <div class="admin-inline-form">
+            <select class="ot-input-field" @bind="cw.CompetencyId">@CompetencyItems()</select>
+            <input class="ot-input-field" type="number" step="any" min="0" style="width:90px;" title="@L("weight")" @bind="cw.Weight" />
+            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => A.AutoCompetencies.Remove(cw)">✕</button>
+        </div>
+    }
+    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => A.AutoCompetencies.Add(new CompetencyWeight { CompetencyId = Competencies.FirstOrDefault()?.Id ?? Guid.Empty })">+ @L("addCompetency")</button>
+}
+
+@* ---------- Rubrica ---------- *@
+@if (ChallengeRules.HasHumanPart(A.ResponseType))
+{
+    <h4 class="admin-section-title">@L("rubric")</h4>
+    <label class="admin-form-label">@L("maxTextLength")
+        <input class="ot-input-field" type="number" min="50" max="3000" style="width:110px;" @bind="A.MaxTextLength" />
+    </label>
+    @foreach (var c in A.Rubric.ToList())
+    {
+        <div class="admin-profile-section">
+            <div class="admin-form-grid">
+                <div class="admin-form-field"><label class="admin-form-label">@L("key")</label><input class="ot-input-field" @bind="c.Key" /></div>
+                <div class="admin-form-field"><label class="admin-form-label">@L("criterion")</label><input class="ot-input-field" @bind="c.Title" /></div>
+                <div class="admin-form-field"><label class="admin-form-label">@L("competency")</label><select class="ot-input-field" @bind="c.CompetencyId">@CompetencyItems()</select></div>
+                <div class="admin-form-field"><label class="admin-form-label">@L("weight")</label><input class="ot-input-field" type="number" step="any" min="0" @bind="c.Weight" /></div>
+                @for (var lv = 0; lv < ChallengeRules.RubricLevels; lv++)
+                {
+                    var level = lv;
+                    <div class="admin-form-field admin-form-field--full">
+                        <label class="admin-form-label">@string.Format(L("rubricLevel"), level)</label>
+                        <input class="ot-input-field" value="@c.Levels[level]" @onchange='e => c.Levels[level] = e.Value?.ToString() ?? ""' />
+                    </div>
+                }
+            </div>
+            <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => A.Rubric.Remove(c)">@L("removeCriterion")</button>
+        </div>
+    }
+    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="AddCriterion">+ @L("addCriterion")</button>
+}
+
+<h4 class="admin-section-title">@L("practiceExplanation")</h4>
+<textarea class="ot-input-field" rows="3" style="width:100%;" @bind="A.PracticeExplanation"></textarea>
+
+@* ---------- Vista previa ---------- *@
+<div style="margin-top:12px;">
+    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="TogglePreview">@L(_preview ? "hidePreview" : "showPreview")</button>
+</div>
+@if (_preview)
+{
+    <div class="admin-profile-section" style="margin-top:12px;">
+        <ChallengeActivity @key="_previewKey" Activity="ActivityViewDto.From(A)" Response="_previewResponse" />
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="EvaluatePreviewAsync">@L("evaluate")</button>
+            <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ResetPreview">@L("reset")</button>
+            @if (_previewResult != null)
+            {
+                <span>@(_previewResult.AutoPercent is { } p ? $"{p:0.#} %" : L("onlyHuman"))</span>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_previewResult?.Explanation))
+        {
+            <p class="chp-feedback" style="margin-top:8px;">@_previewResult.Explanation</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public ActivityDefinition A { get; set; } = null!;
+    [Parameter] public List<CompetencyDto> Competencies { get; set; } = new();
+
+    private ScoringRule S => A.Scoring;
+    private bool _preview;
+    private ChallengeResponse _previewResponse = new();
+    private PracticeFeedbackDto? _previewResult;
+    private int _previewKey;
+
+    private string L(string key) => Lang.T($"challenges.admin.{key}");
+
+    protected override void OnParametersSet()
+    {
+        foreach (var c in A.Rubric) while (c.Levels.Count < ChallengeRules.RubricLevels) c.Levels.Add("");
+    }
+
+    private bool NeedsOptions => A.ResponseType is ChallengeResponseType.SingleChoice or ChallengeResponseType.MultipleChoice
+        or ChallengeResponseType.Ordering or ChallengeResponseType.ActionsWithJustification;
+    private bool UsesCredits => A.ResponseType == ChallengeResponseType.SingleChoice
+        || A.ResponseType == ChallengeResponseType.ActionsWithJustification && !S.AllowMultipleSelection;
+    private bool UsesSet => A.ResponseType == ChallengeResponseType.MultipleChoice
+        || A.ResponseType == ChallengeResponseType.ActionsWithJustification && S.AllowMultipleSelection;
+
+    private RenderFragment OptionItems() => __builder =>
+    {
+        <option value="">—</option>
+        @foreach (var o in A.Options) { <option value="@o.Key">@o.Key · @o.Text</option> }
+    };
+
+    private RenderFragment CompetencyItems() => __builder =>
+    {
+        @foreach (var c in Competencies) { <option value="@c.Id">@c.Name@(c.IsActive ? "" : " (inactiva)")</option> }
+    };
+
+    private void SetTemplate(string? value)
+    {
+        if (!Enum.TryParse<ChallengeTemplate>(value, out var t)) return;
+        A.Template = t;
+        if (!ChallengeRules.IsCompatible(t, A.ResponseType)) A.ResponseType = ChallengeRules.CompatibleResponses[t][0];
+    }
+
+    private void AddOption() => A.Options.Add(new OptionDefinition { Key = NextKey(A.Options.Select(o => o.Key), "o") });
+
+    private void RemoveOption(OptionDefinition o)
+    {
+        A.Options.Remove(o);
+        S.OptionCredits.RemoveAll(c => c.OptionKey == o.Key);
+        S.CorrectKeys.Remove(o.Key);
+        S.Precedences.RemoveAll(p => p.Before == o.Key || p.After == o.Key);
+        S.AcceptedSequences.Clear(); // ya no contienen todos los elementos
+    }
+
+    /// <summary>Renombrar una clave la cambia tambien en la clave de correccion.</summary>
+    private void RenameOption(OptionDefinition o, string? value)
+    {
+        var newKey = (value ?? "").Trim();
+        if (newKey == o.Key || newKey == "") return;
+        foreach (var c in S.OptionCredits.Where(c => c.OptionKey == o.Key)) c.OptionKey = newKey;
+        for (var i = 0; i < S.CorrectKeys.Count; i++) if (S.CorrectKeys[i] == o.Key) S.CorrectKeys[i] = newKey;
+        foreach (var p in S.Precedences) { if (p.Before == o.Key) p.Before = newKey; if (p.After == o.Key) p.After = newKey; }
+        foreach (var seq in S.AcceptedSequences) for (var i = 0; i < seq.Count; i++) if (seq[i] == o.Key) seq[i] = newKey;
+        o.Key = newKey;
+    }
+
+    private decimal CreditOf(string key) => S.OptionCredits.FirstOrDefault(c => c.OptionKey == key)?.Credit ?? 0;
+
+    private void SetCredit(string key, string? value)
+    {
+        if (!decimal.TryParse(value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var v)) return;
+        S.OptionCredits.RemoveAll(c => c.OptionKey == key);
+        S.OptionCredits.Add(new OptionCredit { OptionKey = key, Credit = Math.Clamp(v, 0, 1) });
+    }
+
+    private void ToggleCorrect(string key)
+    {
+        if (!S.CorrectKeys.Remove(key)) S.CorrectKeys.Add(key);
+    }
+
+    private void AddResource() => A.Resources.Add(new ResourceDefinition { Key = NextKey(A.Resources.Select(r => r.Key), "doc") });
+
+    private void AddCriterion() => A.Rubric.Add(new RubricCriterion
+    {
+        Key = NextKey(A.Rubric.Select(c => c.Key), "c"),
+        CompetencyId = Competencies.FirstOrDefault()?.Id ?? Guid.Empty
+    });
+
+    private static string NextKey(IEnumerable<string> existing, string prefix)
+    {
+        var set = existing.ToHashSet();
+        var i = 1;
+        while (set.Contains($"{prefix}{i}")) i++;
+        return $"{prefix}{i}";
+    }
+
+    private static List<string> SplitCsv(string? text) =>
+        (text ?? "").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+
+    /// <summary>Una fila por linea: "clave | celda | celda".</summary>
+    private static string RowsToText(ResourceDefinition r) =>
+        string.Join("\n", r.Rows.Select(row => string.Join(" | ", new[] { row.Key }.Concat(row.Cells))));
+
+    private static List<ResourceRow> TextToRows(string? text) =>
+        (text ?? "").Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Split('|', StringSplitOptions.TrimEntries))
+            .Select(parts => new ResourceRow { Key = parts[0], Cells = parts.Skip(1).ToList() })
+            .ToList();
+
+    private void TogglePreview()
+    {
+        _preview = !_preview;
+        ResetPreview();
+    }
+
+    private void ResetPreview()
+    {
+        _previewResponse = new ChallengeResponse();
+        _previewResult = null;
+        _previewKey++;
+    }
+
+    private async Task EvaluatePreviewAsync()
+    {
+        var (result, _) = await AuthApi.PreviewChallengeActivityAsync(new PreviewEvaluateDto { Activity = A, Response = _previewResponse });
+        _previewResult = result;
+    }
+}

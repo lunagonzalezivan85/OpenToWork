@@ -20,7 +20,7 @@ builder.Services.AddScoped<AppAuthStateProvider>();
 builder.Services.AddScoped(sp => new LanguageService(
     sp.GetRequiredService<Microsoft.JSInterop.IJSRuntime>(),
     sp.GetRequiredService<HttpClient>(),
-    new[] { "common", "auth", "wizard", "dashboard", "vacancies", "profile", "validation", "errors", "applications" }));
+    new[] { "common", "auth", "wizard", "dashboard", "vacancies", "profile", "validation", "errors", "applications", "challenges" }));
 
 // HttpClient por defecto: origen de la app (para assets como config/language/*.json).
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });

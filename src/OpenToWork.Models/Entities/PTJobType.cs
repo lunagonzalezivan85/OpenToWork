@@ -25,6 +25,10 @@ public class PTJobType : BaseEntity
 
     public bool IsActive { get; set; } = true;
 
+    /// <summary>Descripcion del cargo en "Demuestra tus habilidades" (editable en Retos y competencias).</summary>
+    [MaxLength(500)]
+    public string? Description { get; set; }
+
     public virtual ICollection<PTJobTypePrice> Prices { get; set; } = new List<PTJobTypePrice>();
 
     public virtual ICollection<PTJobTypeSkill> DefaultSkills { get; set; } = new List<PTJobTypeSkill>();

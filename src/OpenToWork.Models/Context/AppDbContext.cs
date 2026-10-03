@@ -61,6 +61,16 @@ public class AppDbContext : DbContext
     public DbSet<PTJobType> PT_JobTypes => Set<PTJobType>();
     public DbSet<PTJobTypePrice> PT_JobTypePrices => Set<PTJobTypePrice>();
     public DbSet<PTJobTypeSkill> PT_JobTypeSkills => Set<PTJobTypeSkill>();
+
+    // Retos de hosteleria (docs/dsiezar/retos-hosteleria.md)
+    public DbSet<PTCompetency> PT_Competencies => Set<PTCompetency>();
+    public DbSet<PTJobTypeCompetency> PT_JobTypeCompetencies => Set<PTJobTypeCompetency>();
+    public DbSet<PTChallenge> PT_Challenges => Set<PTChallenge>();
+    public DbSet<PTChallengeJobType> PT_ChallengeJobTypes => Set<PTChallengeJobType>();
+    public DbSet<PTChallengeVersion> PT_ChallengeVersions => Set<PTChallengeVersion>();
+    public DbSet<PTChallengeAttempt> PT_ChallengeAttempts => Set<PTChallengeAttempt>();
+    public DbSet<PTChallengeAnswer> PT_ChallengeAnswers => Set<PTChallengeAnswer>();
+    public DbSet<PTChallengeReview> PT_ChallengeReviews => Set<PTChallengeReview>();
     public DbSet<PTPromoCode> PT_PromoCodes => Set<PTPromoCode>();
     public DbSet<PTPromoCodeRedemption> PT_PromoCodeRedemptions => Set<PTPromoCodeRedemption>();
 
@@ -407,6 +417,61 @@ public class AppDbContext : DbContext
             e.HasIndex(vs => new { vs.PT_VacancyId, vs.PT_SkillId, vs.IsDeleted }).IsUnique();
             e.HasIndex(vs => new { vs.PT_SkillId, vs.IsDeleted });
             e.Property(vs => vs.IsRequired).HasDefaultValue(true);
+        });
+
+        // ---- Retos de hosteleria ----
+        modelBuilder.Entity<PTCompetency>(e =>
+        {
+            e.ToTable("PT_Competencies");
+            e.HasIndex(c => c.Slug).IsUnique();
+        });
+        modelBuilder.Entity<PTJobTypeCompetency>(e =>
+        {
+            e.ToTable("PT_JobTypeCompetencies");
+            e.HasIndex(x => new { x.PT_JobTypeId, x.PT_CompetencyId, x.IsDeleted }).IsUnique();
+            e.HasOne(x => x.JobType).WithMany().HasForeignKey(x => x.PT_JobTypeId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Competency).WithMany().HasForeignKey(x => x.PT_CompetencyId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<PTChallenge>(e =>
+        {
+            e.ToTable("PT_Challenges");
+            e.HasIndex(c => c.Slug).IsUnique();
+            e.HasIndex(c => c.Status);
+        });
+        modelBuilder.Entity<PTChallengeJobType>(e =>
+        {
+            e.ToTable("PT_ChallengeJobTypes");
+            e.HasIndex(x => new { x.PT_ChallengeId, x.PT_JobTypeId, x.IsDeleted }).IsUnique();
+            e.HasOne(x => x.Challenge).WithMany(c => c.JobTypes).HasForeignKey(x => x.PT_ChallengeId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.JobType).WithMany().HasForeignKey(x => x.PT_JobTypeId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<PTChallengeVersion>(e =>
+        {
+            e.ToTable("PT_ChallengeVersions");
+            e.HasIndex(x => new { x.PT_ChallengeId, x.VersionNumber }).IsUnique();
+            e.HasOne(x => x.Challenge).WithMany(c => c.Versions).HasForeignKey(x => x.PT_ChallengeId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<PTChallengeAttempt>(e =>
+        {
+            e.ToTable("PT_ChallengeAttempts");
+            e.HasIndex(x => new { x.PT_CandidateId, x.PT_ChallengeId, x.Mode, x.Status });
+            e.HasIndex(x => x.ReviewStatus);
+            // Restrict: nunca se borra en cascada contenido referenciado por intentos.
+            e.HasOne(x => x.Candidate).WithMany().HasForeignKey(x => x.PT_CandidateId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Challenge).WithMany().HasForeignKey(x => x.PT_ChallengeId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Version).WithMany().HasForeignKey(x => x.PT_ChallengeVersionId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<PTChallengeAnswer>(e =>
+        {
+            e.ToTable("PT_ChallengeAnswers");
+            e.HasIndex(x => new { x.PT_ChallengeAttemptId, x.ActivityKey }).IsUnique();
+            e.HasOne(x => x.Attempt).WithMany(a => a.Answers).HasForeignKey(x => x.PT_ChallengeAttemptId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<PTChallengeReview>(e =>
+        {
+            e.ToTable("PT_ChallengeReviews");
+            e.HasIndex(x => x.PT_ChallengeAttemptId).IsUnique();
+            e.HasOne(x => x.Attempt).WithMany().HasForeignKey(x => x.PT_ChallengeAttemptId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<PTJobTypeSkill>(e =>

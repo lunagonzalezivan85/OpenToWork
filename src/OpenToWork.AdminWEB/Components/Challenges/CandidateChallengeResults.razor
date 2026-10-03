@@ -1,0 +1,54 @@
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.Challenges
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+
+@* Evaluaciones de retos entregadas por el candidato (las practicas son privadas y no salen aqui). *@
+@if (_results is { Count: > 0 })
+{
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@L("candidateResults") (@_results.Count)</h3>
+        <p class="chp-muted">@L("notComparable")</p>
+        @foreach (var r in _results)
+        {
+            <div class="admin-profile-section">
+                <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                    <strong>@r.ChallengeTitle <span class="chp-muted">v@(r.VersionNumber)</span></strong>
+                    <span>
+                        <span class="admin-status @(r.ReviewStatus is ReviewStatus.Pending or ReviewStatus.InProgress ? "admin-status--draft" : "admin-status--success")">@L($"review.{r.ReviewStatus}")</span>
+                        <a href="/challenges/reviews/@r.AttemptId" style="margin-left:8px;">@L(r.ReviewStatus is ReviewStatus.Pending or ReviewStatus.InProgress ? "reviewAction" : "view")</a>
+                    </span>
+                </div>
+                <p class="chp-muted" style="margin:4px 0;">@r.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @string.Join(", ", r.JobTypes)</p>
+                <p style="margin:4px 0;">
+                    @if (r.CompletePercent is { } c) { <span>@L("complete"): <strong>@c.ToString("0.#") %</strong></span> }
+                    else { <span>@L("autoPart"): <strong>@(r.AutoPercent?.ToString("0.#") ?? "—") %</strong> · @string.Format(L("pendingN"), r.PendingReviewItems)</span> }
+                </p>
+                <div class="chp-bars">
+                    @foreach (var comp in r.Competencies)
+                    {
+                        <div class="chp-bar-row">
+                            <span>@comp.Name</span>
+                            <div class="chp-bar" aria-hidden="true"><span style="width:@((int)(comp.Percent ?? 0))%"></span></div>
+                            <span>@(comp.Percent?.ToString("0.#") ?? "—") %@(comp.IsComplete ? "" : " *")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Guid UserId { get; set; }
+
+    private List<AttemptResultDto>? _results;
+
+    private string L(string key) => Lang.T($"challenges.admin.{key}");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var (r, _) = await AuthApi.GetCandidateChallengeResultsAsync(UserId);
+        _results = r;
+    }
+}

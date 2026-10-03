@@ -18,7 +18,7 @@ builder.Services.AddScoped<AdminAuthStateProvider>();
 builder.Services.AddScoped(sp => new LanguageService(
     sp.GetRequiredService<Microsoft.JSInterop.IJSRuntime>(),
     builder.Environment.WebRootPath,
-    new[] { "admin" }));
+    new[] { "admin", "challenges" }));
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(sp => sp.GetRequiredService<AdminAuthStateProvider>());
 
 builder.Services.AddHttpClient<AdminAuthApiService>(client =>

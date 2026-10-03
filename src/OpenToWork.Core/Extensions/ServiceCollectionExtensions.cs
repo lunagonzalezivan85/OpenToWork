@@ -20,6 +20,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IAlertService, AlertService>();
+        // Retos de hosteleria (docs/dsiezar/retos-hosteleria.md)
+        services.AddScoped<IChallengeService, ChallengeService>();
         services.AddScoped<ICvParserService, CvParserService>();
         services.AddHttpClient<ICvParserService, CvParserService>();
         services.AddScoped<IValidationService, ValidationService>();
@@ -85,6 +87,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IWarrantyReplacementService, WarrantyReplacementService>();
         services.AddScoped<ISystemConfigService, SystemConfigService>();
         services.AddScoped<IEmailService, EmailService>();
+        // Retos de hosteleria (docs/dsiezar/retos-hosteleria.md)
+        services.AddScoped<IChallengeAdminService, ChallengeAdminService>();
+        services.AddScoped<IChallengeService, ChallengeService>();
+        services.AddScoped<IChallengeReviewService, ChallengeReviewService>();
 
         return services;
     }
