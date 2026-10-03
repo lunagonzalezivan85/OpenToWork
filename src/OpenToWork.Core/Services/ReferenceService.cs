@@ -27,8 +27,12 @@ public class ReferenceService : IReferenceService
         _tokenCrypto = tokenCrypto;
     }
 
-    public async Task<CandidateReferenceDto> AddReferenceAsync(Guid candidateId, CreateReferenceDto dto)
+    public async Task<CandidateReferenceDto> AddReferenceAsync(Guid candidateId, CreateReferenceDto dto, string? clientIp = null)
     {
+        // Sin la declaracion no hay base para guardar ni contactar a un tercero (RGPD).
+        if (!dto.ContactAuthorized)
+            throw new ArgumentException("Debes declarar que informaste a la persona de referencia y cuentas con su autorizacion.");
+
         var candidateExists = await _context.PT_Candidates.AnyAsync(c => c.Id == candidateId && !c.IsDeleted);
         if (!candidateExists) throw new InvalidOperationException("Candidate not found");
 
@@ -40,7 +44,9 @@ public class ReferenceService : IReferenceService
             Phone = dto.Phone,
             Email = dto.Email,
             Relationship = dto.Relationship,
-            Status = (int)ReferenceStatus.Pending
+            Status = (int)ReferenceStatus.Pending,
+            ContactAuthorizationAt = DateTime.UtcNow,
+            ContactAuthorizationIp = clientIp
         };
 
         _context.PT_CandidateReferences.Add(reference);

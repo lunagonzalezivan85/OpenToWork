@@ -52,4 +52,14 @@ public class PTCandidateReference : BaseEntity
 
     /// <summary>Cuando se disparo SendReferenceRequestAsync.</summary>
     public DateTime? SentAt { get; set; }
+
+    /// <summary>
+    /// Traza (RGPD) de la declaracion del candidato: informo a esta persona de que Trato Directo
+    /// podria contactarla para verificar su experiencia y cuenta con su autorizacion. Null en las
+    /// referencias creadas antes de exigir la declaracion.
+    /// </summary>
+    public DateTime? ContactAuthorizationAt { get; set; }
+
+    [MaxLength(50)]
+    public string? ContactAuthorizationIp { get; set; }
 }

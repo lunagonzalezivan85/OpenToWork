@@ -9,7 +9,7 @@ namespace OpenToWork.Core.Interfaces;
 /// </summary>
 public interface IReferenceService
 {
-    Task<CandidateReferenceDto> AddReferenceAsync(Guid candidateId, CreateReferenceDto dto);
+    Task<CandidateReferenceDto> AddReferenceAsync(Guid candidateId, CreateReferenceDto dto, string? clientIp = null);
 
     /// <summary>
     /// candidateId es el dueno esperado (dueno del perfil autenticado) - devuelve null si la

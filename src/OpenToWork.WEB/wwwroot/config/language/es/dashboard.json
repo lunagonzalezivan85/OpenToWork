@@ -122,7 +122,12 @@
         "rating": "Calificación",
         "feedback": "Comentario",
         "empty": "Todavía no agregaste ninguna referencia.",
-        "minimumHint": "Se recomiendan al menos 3 referencias."
+        "minimumHint": "Se recomiendan al menos 3 referencias.",
+        "authorizationDeclaration": "Declaro que he informado a las personas cuyos datos facilito como referencias profesionales sobre la posibilidad de que Trato Directo contacte con ellas para verificar información relacionada con mi experiencia laboral y mi candidatura, y que cuento con su autorización para facilitar dichos datos y realizar ese contacto.",
+        "authorizationInfo": "El tratamiento de los datos de las personas de referencia se realizará exclusivamente para la finalidad de comprobación de referencias profesionales, de acuerdo con la",
+        "privacyPolicy": "política de privacidad de Trato Directo",
+        "authorizationRequired": "Para agregar la referencia, marca la casilla de declaración.",
+        "addError": "No se pudo agregar la referencia. Inténtalo de nuevo."
     },
     "skillTests": {
         "title": "Retos Técnicos",

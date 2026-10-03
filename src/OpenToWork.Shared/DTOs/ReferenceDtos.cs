@@ -7,6 +7,11 @@ public class CreateReferenceDto
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public int Relationship { get; set; }
+    /// <summary>
+    /// Casilla "Declaro que he informado a las personas cuyos datos facilito como referencias...".
+    /// Obligatoria: sin ella el servicio rechaza la referencia.
+    /// </summary>
+    public bool ContactAuthorized { get; set; }
 }
 
 public class CandidateReferenceDto
