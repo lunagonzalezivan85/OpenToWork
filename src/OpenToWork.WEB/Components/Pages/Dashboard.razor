@@ -422,8 +422,10 @@
         {
             ApplyCandidate(CandidateProfile);
             UserName = !string.IsNullOrEmpty(CandidateProfile.FirstName) ? CandidateProfile.FirstName : (jwtName ?? "Usuario");
-            // Primer ingreso: la ventana de bienvenida (subir CV o completar a mano) sale una sola vez.
-            ShowOnboarding = !CandidateProfile.WizardCompleted && CandidateProfile.WizardStep == 0;
+            // Primer ingreso: la ventana de bienvenida (subir CV o completar a mano) sale una sola vez,
+            // y no si ya hay CV (p. ej. alta hecha por un reclutador desde el admin con su CV).
+            ShowOnboarding = !CandidateProfile.WizardCompleted && CandidateProfile.WizardStep == 0
+                             && string.IsNullOrEmpty(CandidateProfile.CvUrl);
         }
         else
         {
