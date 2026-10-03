@@ -281,7 +281,16 @@
     color: var(--text-primary);
     font-size: 0.85rem;
     font-weight: 600;
-    animation: chip-pop 0.3s ease;
+    transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+
+/* Entrada del chip al anadirlo: transicion (no keyframes) para que anadir varios seguidos no reinicie
+   la animacion, y sin rebote: encaja con un portal profesional. */
+@starting-style {
+    .wizard-position-chip {
+        opacity: 0;
+        transform: scale(0.95);
+    }
 }
 
 .wizard-position-chip--primary {
@@ -327,16 +336,10 @@
     flex: 1;
 }
 
-@keyframes chip-pop {
-    0% { transform: scale(0.8); opacity: 0; }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); opacity: 1; }
-}
-
 /* ===== Dynamic Location Field ===== */
 .wizard-location-field {
     margin-top: var(--space-md);
-    animation: field-slide 0.3s ease;
+    animation: field-slide 0.2s var(--ease-out);
 }
 
 @keyframes field-slide {
@@ -894,7 +897,7 @@
     display: flex;
     flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-    animation: cvSlideUp 0.25s ease;
+    animation: cvSlideUp 0.25s var(--ease-out);
 }
 
 @keyframes cvSlideUp {
@@ -1263,12 +1266,12 @@
 }
 
 .wizard-summary-tag--highlight {
-    animation: highlight-pulse 0.6s ease;
+    animation: highlight-pulse 0.4s var(--ease-out);
 }
 
 @keyframes highlight-pulse {
-    0% { background: var(--accent-primary); color: #FFFFFF; transform: scale(1.05); }
-    100% { background: var(--bg-tertiary); color: var(--text-primary); transform: scale(1); }
+    0% { background: var(--accent-primary); color: #FFFFFF; }
+    100% { background: var(--bg-tertiary); color: var(--text-primary); }
 }
 
 .wizard-summary-location {

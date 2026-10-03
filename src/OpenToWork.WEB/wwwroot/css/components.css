@@ -4467,7 +4467,7 @@ a.cv-contact-item:hover {
     display: flex;
     flex-direction: column;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
-    animation: fab-slide-up 0.25s ease;
+    animation: fab-slide-up 0.25s var(--ease-out);
     overflow: hidden;
 }
 
@@ -4671,7 +4671,7 @@ a.cv-contact-item:hover {
     font-size: 0.875rem;
     font-weight: 600;
     z-index: 150;
-    animation: fab-toast-in 0.3s ease;
+    animation: fab-toast-in 0.25s var(--ease-out);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 

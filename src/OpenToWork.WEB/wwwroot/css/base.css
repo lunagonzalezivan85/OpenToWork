@@ -419,13 +419,8 @@ hr {
     .fab-modal,
     .fab-toast,
     .cv-modal,
-    .wizard-position-chip,
     .wizard-location-field {
         animation-name: rm-fade !important;
-    }
-
-    .wizard-summary-tag--highlight {
-        animation-name: highlight-pulse-rm !important;
     }
 
     /* Pulso de reconexion: el anillo que crece desaparece; el punto queda quieto */
@@ -433,10 +428,4 @@ hr {
     .reconnect-pulse-dot {
         animation: none;
     }
-}
-
-/* Igual que highlight-pulse pero sin la escala: solo el cambio de color */
-@keyframes highlight-pulse-rm {
-    0% { background: var(--accent-primary); color: #FFFFFF; }
-    100% { background: var(--bg-tertiary); color: var(--text-primary); }
 }
