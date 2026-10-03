@@ -72,7 +72,8 @@
     color: rgba(245, 247, 250, 0.65);
     font-size: 0.88rem;
     font-weight: 500;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     text-decoration: none;
     -webkit-tap-highlight-color: transparent;
 }
@@ -97,7 +98,8 @@
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.05);
     flex-shrink: 0;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-nav-item:hover .admin-nav-icon-squircle {
@@ -1575,7 +1577,8 @@ textarea.admin-input {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-sort-dir:hover {
@@ -1602,7 +1605,8 @@ textarea.admin-input {
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: 0.2s;
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-chip:hover {
@@ -2217,7 +2221,8 @@ textarea.admin-input {
     color: var(--accent-primary);
     cursor: pointer;
     flex-shrink: 0;
-    transition: all 0.2s ease;
+    transition: 0.2s ease;
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-pipeline-step-note:hover {
@@ -2834,7 +2839,8 @@ textarea.admin-input {
     color: var(--text-muted);
     font-weight: 700;
     font-size: 0.85rem;
-    transition: all 0.2s;
+    transition: 0.2s;
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-stepper-item--active .admin-stepper-circle {
@@ -4803,7 +4809,8 @@ textarea.admin-input {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: var(--radius-lg);
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-oneui-item--clickable {
@@ -5067,7 +5074,8 @@ textarea.admin-input {
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-cmd-suggest:hover {
@@ -5270,7 +5278,8 @@ textarea.admin-input {
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .admin-ai-action:hover {

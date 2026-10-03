@@ -71,7 +71,8 @@
     font-size: 0.82rem;
     letter-spacing: -0.02em;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     flex-shrink: 0;
     text-decoration: none;
 }
@@ -97,7 +98,8 @@
     opacity: 0;
     visibility: hidden;
     transform: translateY(-4px);
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity, visibility;
     z-index: 1000;
 }
 
@@ -117,7 +119,8 @@
     font-size: 0.88rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     text-decoration: none;
     background: none;
     border: none;
@@ -213,7 +216,8 @@
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .notif-sidebar-close:hover {

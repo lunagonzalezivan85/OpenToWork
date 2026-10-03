@@ -61,7 +61,7 @@ else
                         {
                             <div style="position: absolute; top: 16px; left: 50%; width: 100%; height: 2px; background: @(isDone ? "#0066FF" : "#E8F1FF"); z-index: 0;"></div>
                         }
-                        <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; z-index: 1; background: @(isDone ? "#0066FF" : isActive ? "#0066FF" : "#F1F5F9"); color: @(isDone || isActive ? "#FFFFFF" : "#778DA9"); border: 2px solid @(isDone || isActive ? "#0066FF" : "#CBD5E1"); transition: all 0.2s;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; z-index: 1; background: @(isDone ? "#0066FF" : isActive ? "#0066FF" : "#F1F5F9"); color: @(isDone || isActive ? "#FFFFFF" : "#778DA9"); border: 2px solid @(isDone || isActive ? "#0066FF" : "#CBD5E1"); transition: 0.2s; transition-property: color, background-color, border-color, box-shadow, transform, opacity;">
                             @(isDone ? "\u2713" : (i + 1).ToString())
                         </div>
                         <span style="margin-top: 0.4rem; font-size: 0.7rem; text-align: center; color: @(isActive ? "#0066FF" : isDone ? "#0B132B" : "#778DA9"); font-weight: @(isActive ? "600" : "400"); line-height: 1.2;">
@@ -234,7 +234,7 @@ else
                             var accentColor = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
                             var accentBg = pi == 0 ? "#F1F5F9" : pi == 1 ? "#E8F1FF" : "#F0F7FF";
                             var accentBorder = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
-                            <div @onclick="() => SelectJobLevel(card.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1.25rem 1rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: all 0.2s; display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden;">
+                            <div @onclick="() => SelectJobLevel(card.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1.25rem 1rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: 0.2s; transition-property: color, background-color, border-color, box-shadow, transform, opacity; display: flex; flex-direction: column; gap: 0.5rem; position: relative; overflow: hidden;">
                                 @if (isSelected)
                                 {
                                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: @accentBorder;"></div>
@@ -479,7 +479,7 @@ else
                             var accentColor = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
                             var accentBg = pi == 0 ? "#F1F5F9" : pi == 1 ? "#E8F1FF" : "#F0F7FF";
                             var accentBorder = pi == 0 ? "#3A506B" : pi == 1 ? "#0066FF" : "#0B132B";
-                            <div @onclick="() => SelectAdvanceJobLevel(card.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1rem 0.75rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: all 0.2s; display: flex; flex-direction: column; gap: 0.35rem; position: relative; overflow: hidden;">
+                            <div @onclick="() => SelectAdvanceJobLevel(card.Id)" style="border: 2px solid @(isSelected ? accentBorder : "#E8F1FF"); border-radius: 12px; padding: 1rem 0.75rem; cursor: pointer; background: @(isSelected ? accentBg : "#FFFFFF"); transition: 0.2s; transition-property: color, background-color, border-color, box-shadow, transform, opacity; display: flex; flex-direction: column; gap: 0.35rem; position: relative; overflow: hidden;">
                                 @if (isSelected)
                                 {
                                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: @accentBorder;"></div>

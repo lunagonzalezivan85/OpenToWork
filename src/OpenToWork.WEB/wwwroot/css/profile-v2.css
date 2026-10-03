@@ -177,7 +177,8 @@
     font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
     text-align: left;
     width: 100%;
 }
@@ -278,7 +279,8 @@
     color: var(--text-primary);
     font-family: var(--font-family);
     font-size: 0.9rem;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .profile-form-input:focus {
@@ -567,7 +569,8 @@
     font-size: 0.82rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
 }
 
 .vacancies-clear-all:hover {
