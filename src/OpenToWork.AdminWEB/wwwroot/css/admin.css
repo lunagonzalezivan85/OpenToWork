@@ -5983,3 +5983,27 @@ textarea.admin-input {
     transform: scale(0.97);
     transition-duration: 0.1s;
 }
+
+/* Video de presentacion del candidato (CandidateProfile.razor) */
+.admin-modal.admin-video-modal {
+    max-width: 760px;
+    width: 92vw;
+}
+
+.admin-video-player {
+    width: 100%;
+    max-height: 60vh;
+    aspect-ratio: 16 / 9;
+    background: #0B132B;
+    border-radius: var(--radius-md);
+}
+
+.admin-video-note {
+    margin: 0.75rem 0 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.admin-video-note--error {
+    color: var(--error, #dc2626);
+}

@@ -157,6 +157,13 @@ else
                         @Lang.T("admin.profile.downloadCv")
                     </a>
                 }
+                @if (Profile.HasPresentationVideo)
+                {
+                    <a href="#" @onclick="OpenVideoAsync" @onclick:preventDefault class="admin-pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+                        @Lang.T("admin.profile.presentationVideo")
+                    </a>
+                }
                 <a href="mailto:@Profile.Email" class="admin-pill-btn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     @Lang.T("admin.profile.contact")
@@ -164,6 +171,35 @@ else
             </div>
         </div>
     </div>
+
+    @if (ShowVideo)
+    {
+        @* Video de presentacion: se descarga con candidate-video.js por /media/... (no por el circuito). *@
+        <div class="admin-modal-overlay" @onclick="CloseVideoAsync">
+            <div class="admin-modal admin-video-modal" @onclick:stopPropagation>
+                <div class="admin-modal-title">@Lang.T("admin.profile.presentationVideo")</div>
+                <video @ref="VideoPlayer" class="admin-video-player" controls playsinline></video>
+                @if (VideoState == "loading")
+                {
+                    <p class="admin-video-note">@Lang.T("admin.profile.presentationVideoLoading")</p>
+                }
+                else if (VideoState == "error")
+                {
+                    <p class="admin-video-note admin-video-note--error">@Lang.T("admin.profile.presentationVideoError")</p>
+                }
+                <p class="admin-video-note">
+                    @if (Profile.PresentationVideoUploadedAt.HasValue)
+                    {
+                        <span>@Lang.T("admin.profile.presentationVideoUploaded") @Profile.PresentationVideoUploadedAt.Value.ToLocalTime().ToString("dd MMM yyyy HH:mm") · </span>
+                    }
+                    @Lang.T("admin.profile.presentationVideoNote")
+                </p>
+                <div class="admin-modal-actions">
+                    <button class="admin-pill-btn" @onclick="CloseVideoAsync">@Lang.T("admin.common.close")</button>
+                </div>
+            </div>
+        </div>
+    }
 
     @* === Tabs === *@
     <div class="admin-tabs">
@@ -935,6 +971,29 @@ else
         var cv = await AuthApi.GetCandidateCvAsync(UserId);
         if (cv is { } file)
             await Js.InvokeVoidAsync("fileDownload.save", file.FileName, "application/pdf", Convert.ToBase64String(file.Content));
+    }
+
+    // --- Video de presentacion ---
+    private ElementReference VideoPlayer;
+    private bool ShowVideo { get; set; }
+    private string VideoState { get; set; } = "";   // loading | ready | error
+
+    private async Task OpenVideoAsync()
+    {
+        ShowVideo = true;
+        VideoState = "loading";
+        StateHasChanged();   // el <video> tiene que existir antes de pasarlo a JS
+
+        var token = await AuthApi.GetAccessTokenAsync();
+        var ok = await Js.InvokeAsync<bool>("candidateVideo.load", VideoPlayer, UserId, token);
+        VideoState = ok ? "ready" : "error";
+    }
+
+    private async Task CloseVideoAsync()
+    {
+        ShowVideo = false;
+        VideoState = "";
+        await Js.InvokeVoidAsync("candidateVideo.release");
     }
 
     [Parameter] public Guid UserId { get; set; }

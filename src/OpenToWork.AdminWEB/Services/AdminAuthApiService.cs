@@ -1053,6 +1053,12 @@ public class AdminAuthApiService
         return await ReadResultAsync<DeliveryDto>(response);
     }
 
+    /// <summary>
+    /// Token del admin (descifrado) para las descargas grandes que hace JavaScript a traves de
+    /// /media/... (video de presentacion), sin pasar el archivo por el circuito de Blazor.
+    /// </summary>
+    public async Task<string?> GetAccessTokenAsync() => await _localStorage.GetItemAsync("otwadmin-token");
+
     public async Task SetAuthHeaderAsync()
     {
         var token = await _localStorage.GetItemAsync("otwadmin-token");
