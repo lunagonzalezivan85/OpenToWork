@@ -52,7 +52,24 @@
                             </select>
                         </div>
                     </div>
-                    <button class="ot-btn ot-btn--primary" @onclick="AddReferenceAsync" disabled="@(string.IsNullOrWhiteSpace(NewRef.ContactName) || IsBusy)">
+
+                    @* Declaracion obligatoria por cada referencia: desmarcada por defecto y se vuelve a
+                       desmarcar tras agregar, porque cada persona de referencia debe estar informada. *@
+                    <label class="verif-consent">
+                        <input type="checkbox" @bind="NewRef.ContactAuthorized" />
+                        <span>@Lang.T("dashboard.references.authorizationDeclaration")</span>
+                    </label>
+                    <p class="dash-chart-info-text">
+                        @Lang.T("dashboard.references.authorizationInfo")
+                        <a href="/privacy" target="_blank">@Lang.T("dashboard.references.privacyPolicy")</a>.
+                    </p>
+
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <p class="dash-chart-info-text" style="color: var(--error, #dc2626);">@ErrorMessage</p>
+                    }
+
+                    <button class="ot-btn ot-btn--primary" @onclick="AddReferenceAsync" disabled="@(string.IsNullOrWhiteSpace(NewRef.ContactName) || !NewRef.ContactAuthorized || IsBusy)">
                         @Lang.T("dashboard.references.add")
                     </button>
                 </div>
@@ -132,6 +149,7 @@
     private Dictionary<Guid, string> ShareLinks { get; set; } = new();
     private Guid? CopiedId { get; set; }
     private bool IsBusy { get; set; }
+    private string? ErrorMessage { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,8 +178,23 @@
     private async Task AddReferenceAsync()
     {
         if (CandidateId == null || IsBusy || string.IsNullOrWhiteSpace(NewRef.ContactName)) return;
+        if (!NewRef.ContactAuthorized)
+        {
+            ErrorMessage = Lang.T("dashboard.references.authorizationRequired");
+            return;
+        }
+
         IsBusy = true;
-        await AuthApi.AddReferenceAsync(CandidateId.Value, NewRef);
+        ErrorMessage = null;
+        var created = await AuthApi.AddReferenceAsync(CandidateId.Value, NewRef);
+        if (created == null)
+        {
+            // Se conserva lo escrito para que el candidato no tenga que volver a teclearlo.
+            ErrorMessage = Lang.T("dashboard.references.addError");
+            IsBusy = false;
+            return;
+        }
+
         NewRef = new();
         await LoadReferencesAsync();
         IsBusy = false;

@@ -122,7 +122,12 @@
         "rating": "Rating",
         "feedback": "Feedback",
         "empty": "You haven't added any references yet.",
-        "minimumHint": "At least 3 references are recommended."
+        "minimumHint": "At least 3 references are recommended.",
+        "authorizationDeclaration": "I declare that I have informed the people whose details I provide as professional references that Trato Directo may contact them to verify information about my work experience and my application, and that I have their permission to provide those details and for that contact to take place.",
+        "authorizationInfo": "The personal data of reference contacts will be processed solely to check professional references, in accordance with the",
+        "privacyPolicy": "Trato Directo privacy policy",
+        "authorizationRequired": "To add the reference, tick the declaration box.",
+        "addError": "The reference could not be added. Please try again."
     },
     "skillTests": {
         "title": "Skill Tests",

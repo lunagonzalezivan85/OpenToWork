@@ -180,8 +180,15 @@ public class CandidatesController : ControllerBase
         var myCandidate = await _candidateService.GetCandidateByUserIdAsync(userId.Value);
         if (myCandidate == null || myCandidate.Id != id) return Forbid();
 
-        var result = await _referenceService.AddReferenceAsync(id, dto);
-        return Ok(result);
+        try
+        {
+            var result = await _referenceService.AddReferenceAsync(id, dto, HttpContext.Connection.RemoteIpAddress?.ToString());
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     /// <summary>
