@@ -50,6 +50,10 @@
 
             @switch (State)
             {
+                case "disabled":
+                    <p class="dash-chart-info-text">@Lang.T("profile.video.disabled")</p>
+                    break;
+
                 case "current":
                     <p class="dash-chart-info-text">@Lang.T("profile.video.currentText")</p>
                     <div class="pv-actions">
@@ -94,13 +98,22 @@
                     </div>
                     break;
 
+                case "compressing":
+                    <div class="pv-progress"><div class="pv-progress-fill" style="width: @(Progress)%"></div></div>
+                    <p class="dash-chart-info-text">@Lang.T("profile.video.compressing") @(Progress)%</p>
+                    <p class="onboarding-hint">@Lang.T("profile.video.compressingHint")</p>
+                    break;
+
                 case "uploading":
                     <div class="pv-progress"><div class="pv-progress-fill" style="width: @(Progress)%"></div></div>
                     <p class="dash-chart-info-text">@Lang.T("profile.video.uploading") @(Progress)%</p>
                     break;
             }
 
-            <p class="pv-privacy">@Lang.T("profile.video.privacy")</p>
+            @if (State != "disabled")
+            {
+                <p class="pv-privacy">@Lang.T("profile.video.privacy")</p>
+            }
         </div>
     </div>
 </div>
@@ -110,7 +123,7 @@
     private ElementReference FileInput;
     private DotNetObjectReference<PresentationVideo>? SelfRef;
 
-    // loading | current | choose | camera | recording | review | uploading
+    // loading | disabled | current | choose | camera | recording | review | compressing | uploading
     private string State { get; set; } = "loading";
     private bool HadVideo { get; set; }
     private bool CanRecord { get; set; }
@@ -139,6 +152,14 @@
         if (candidate == null)
         {
             Nav.NavigateTo("/login?returnUrl=/presentation-video");
+            return;
+        }
+
+        // Opcion apagada en la configuracion del admin: no se puede grabar ni ver (el equipo conserva los videos).
+        if (!await AuthApi.GetPresentationVideosEnabledAsync())
+        {
+            State = "disabled";
+            StateHasChanged();
             return;
         }
 
@@ -246,6 +267,19 @@
     {
         Error = null;
         Progress = 0;
+        State = "compressing";
+        StateHasChanged();
+
+        // Archivos del movil: se recomprimen a 480p en el navegador antes de subir (lo grabado ya lo esta).
+        var compressed = await Js.InvokeAsync<JsResult>("presentationVideo.compressPending", SelfRef);
+        if (!compressed.Ok)
+        {
+            Error = Lang.T(compressed.Error == "compress" ? "profile.video.errorCompress" : "profile.video.errorSize");
+            State = "review";
+            return;
+        }
+
+        Progress = 0;
         State = "uploading";
         StateHasChanged();
 
@@ -267,6 +301,13 @@
         await Js.InvokeVoidAsync("presentationVideo.discardPending");
         HadVideo = true;
         State = await LoadCurrentAsync() ? "current" : "choose";
+    }
+
+    [JSInvokable]
+    public void OnCompressProgress(int percent)
+    {
+        Progress = percent;
+        StateHasChanged();
     }
 
     [JSInvokable]

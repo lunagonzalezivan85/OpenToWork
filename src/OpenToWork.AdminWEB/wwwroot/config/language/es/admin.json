@@ -41,6 +41,7 @@
     "companyProfile": "Datos de la Empresa",
     "plans": "Planes",
     "emailSettings": "Notificaciones Email",
+    "presentationVideos": "Vídeos de candidatos",
     "createUsers": "Crear usuarios",
     "security": "Seguridad",
     "auditLog": "Auditoría",
@@ -489,6 +490,15 @@
     "columnAction": "Acción",
     "columnEntity": "Entidad",
     "columnDate": "Fecha"
+  },
+  "presentationVideos": {
+    "title": "Vídeos de candidatos",
+    "subtitle": "Vídeo de presentación de 1 minuto que el candidato graba o sube desde su panel.",
+    "toggle": "Activar vídeos de presentación",
+    "toggleHint": "Encendido: el candidato ve la opción \"Mejorar presentación\" y puede grabar o subir su vídeo. Apagado: no la ve ni puede subir; los vídeos ya guardados se conservan y el equipo los sigue viendo en la ficha del candidato.",
+    "usageTitle": "Espacio en el servidor",
+    "videos": "vídeos",
+    "usageHint": "Cada vídeo se recomprime en el navegador del candidato a 480p (unos 5 MB por minuto) y solo se guarda uno por candidato."
   },
   "common": {
     "email": "Correo",

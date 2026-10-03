@@ -17,13 +17,15 @@ public class ProfileController : ControllerBase
     private readonly ICvStorage _cvStorage;
     private readonly IProfilePhotoStorage _photoStorage;
     private readonly IPresentationVideoStorage _videoStorage;
+    private readonly ISystemConfigService _configService;
     private readonly ILogger<ProfileController> _logger;
 
-    public ProfileController(IProfileService profileService, ICvParserService cvParserService, IWebHostEnvironment env, ICvStorage cvStorage, IProfilePhotoStorage photoStorage, IPresentationVideoStorage videoStorage, ILogger<ProfileController> logger)
+    public ProfileController(IProfileService profileService, ICvParserService cvParserService, IWebHostEnvironment env, ICvStorage cvStorage, IProfilePhotoStorage photoStorage, IPresentationVideoStorage videoStorage, ISystemConfigService configService, ILogger<ProfileController> logger)
     {
         _cvStorage = cvStorage;
         _photoStorage = photoStorage;
         _videoStorage = videoStorage;
+        _configService = configService;
         _profileService = profileService;
         _cvParserService = cvParserService;
         _env = env;
@@ -127,13 +129,20 @@ public class ProfileController : ControllerBase
         return Ok(new { profilePictureUrl = photoUrl });
     }
 
+    /// <summary>Si la opcion de videos de presentacion esta encendida (configuracion del admin).</summary>
+    [HttpGet("video/enabled")]
+    public async Task<IActionResult> GetVideoEnabled() =>
+        Ok(new { enabled = await _configService.GetPresentationVideosEnabledAsync() });
+
     /// <summary>Video de presentacion propio. Almacenamiento privado (IPresentationVideoStorage): solo
-    /// lo ven el candidato y el equipo de Trato Directo desde el admin. Con rangos para poder avanzar.</summary>
+    /// lo ven el candidato y el equipo de Trato Directo desde el admin. Con rangos para poder avanzar.
+    /// Con la opcion apagada el candidato no lo ve (el equipo si, desde el admin).</summary>
     [HttpGet("video")]
     public async Task<IActionResult> GetMyVideo()
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+        if (!await _configService.GetPresentationVideosEnabledAsync()) return NotFound();
 
         var video = _videoStorage.ResolveForOwner(await _profileService.GetPresentationVideoAsync(userId.Value), userId.Value);
         return video == null ? NotFound() : PhysicalFile(video.Value.Path, video.Value.ContentType, enableRangeProcessing: true);
@@ -149,8 +158,11 @@ public class ProfileController : ControllerBase
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
+        if (!await _configService.GetPresentationVideosEnabledAsync())
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Los videos de presentacion no estan disponibles." });
+
         if (file == null || file.Length == 0) return BadRequest(new { message = "No se recibio ningun video." });
-        if (file.Length > PresentationVideoStorage.MaxBytes) return BadRequest(new { message = "El video no puede superar 95 MB." });
+        if (file.Length > PresentationVideoStorage.MaxBytes) return BadRequest(new { message = "El video no puede superar 20 MB." });
 
         await using var stream = file.OpenReadStream();
         var header = new byte[PresentationVideoStorage.HeaderBytes];

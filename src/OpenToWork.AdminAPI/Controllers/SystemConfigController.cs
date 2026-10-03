@@ -10,10 +10,12 @@ namespace OpenToWork.AdminAPI.Controllers;
 public class SystemConfigController : AdminControllerBase
 {
     private readonly ISystemConfigService _configService;
+    private readonly IPresentationVideoStorage _videoStorage;
 
-    public SystemConfigController(ISystemConfigService configService)
+    public SystemConfigController(ISystemConfigService configService, IPresentationVideoStorage videoStorage)
     {
         _configService = configService;
+        _videoStorage = videoStorage;
     }
 
     [HttpGet]
@@ -42,6 +44,26 @@ public class SystemConfigController : AdminControllerBase
     {
         await _configService.UpdateAiSettingsAsync(dto, AdminId);
         return Ok(await _configService.GetAiSettingsAsync());
+    }
+
+    /// <summary>Interruptor de videos de presentacion y espacio que ocupan los guardados.</summary>
+    [HttpGet("presentation-videos")]
+    public async Task<IActionResult> GetPresentationVideos()
+    {
+        var (count, bytes) = _videoStorage.GetUsage();
+        return Ok(new PresentationVideoSettingsDto
+        {
+            Enabled = await _configService.GetPresentationVideosEnabledAsync(),
+            VideoCount = count,
+            TotalBytes = bytes
+        });
+    }
+
+    [HttpPut("presentation-videos")]
+    public async Task<IActionResult> SetPresentationVideos([FromBody] SetFeatureFlagDto dto)
+    {
+        await _configService.SetPresentationVideosEnabledAsync(dto.Enabled, AdminId);
+        return Ok();
     }
 
     [HttpGet("candidate-priority-plan")]

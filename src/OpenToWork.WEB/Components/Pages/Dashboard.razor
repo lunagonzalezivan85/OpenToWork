@@ -312,17 +312,20 @@
             </div>
         </div>
 
-        <div class="bento-card dash-action-card" @onclick="GoToRecordVideo" style="cursor: pointer;">
-            <div class="dash-action-icon dash-action-icon--purple">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
-                    <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" />
-                </svg>
+        @if (PresentationVideosEnabled)
+        {
+            <div class="bento-card dash-action-card" @onclick="GoToRecordVideo" style="cursor: pointer;">
+                <div class="dash-action-icon dash-action-icon--purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                        <path d="M23 7l-7 5 7 5V7zM14 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" />
+                    </svg>
+                </div>
+                <div class="dash-action-content">
+                    <span class="dash-action-title">@Lang.T(CandidateProfile?.HasPresentationVideo == true ? "dashboard.actions.viewVideo" : "dashboard.actions.recordVideo")</span>
+                    <span class="dash-action-desc">@Lang.T(CandidateProfile?.HasPresentationVideo == true ? "dashboard.actions.viewVideoDesc" : "dashboard.actions.recordVideoDesc")</span>
+                </div>
             </div>
-            <div class="dash-action-content">
-                <span class="dash-action-title">@Lang.T(CandidateProfile?.HasPresentationVideo == true ? "dashboard.actions.viewVideo" : "dashboard.actions.recordVideo")</span>
-                <span class="dash-action-desc">@Lang.T(CandidateProfile?.HasPresentationVideo == true ? "dashboard.actions.viewVideoDesc" : "dashboard.actions.recordVideoDesc")</span>
-            </div>
-        </div>
+        }
 
         <div class="bento-card dash-action-card" @onclick="GoToVacancies" style="cursor: pointer;">
             <div class="dash-action-icon dash-action-icon--orange">
@@ -373,6 +376,8 @@
     private bool ShowWizardPrompt { get; set; }
     private bool EmailNotVerified { get; set; }
     private bool CandidatePlanFeatureEnabled { get; set; }
+    /// <summary>Configuracion del admin: si esta apagado no se muestra "Mejorar presentacion".</summary>
+    private bool PresentationVideosEnabled { get; set; }
     private int ProfileCompletion { get; set; }
     private int VacanciesCount { get; set; }
     private int RequestsCount { get; set; }
@@ -445,6 +450,7 @@
         }
 
         CandidatePlanFeatureEnabled = await AuthApi.GetCandidatePlanFeatureEnabledAsync();
+        PresentationVideosEnabled = await AuthApi.GetPresentationVideosEnabledAsync();
     }
 
     private async Task LoadScoreDataAsync()

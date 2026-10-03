@@ -205,6 +205,21 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<PresentationVideoSettingsDto?> GetPresentationVideoSettingsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/system-config/presentation-videos");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<PresentationVideoSettingsDto>();
+    }
+
+    public async Task<bool> SetPresentationVideosEnabledAsync(bool enabled)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync("api/admin/system-config/presentation-videos", new { Enabled = enabled });
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<bool> GetCandidatePriorityPlanEnabledAsync()
     {
         await SetAuthHeaderAsync();

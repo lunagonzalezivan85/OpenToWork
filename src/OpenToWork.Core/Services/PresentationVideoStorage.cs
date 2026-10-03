@@ -7,10 +7,11 @@ namespace OpenToWork.Core.Services;
 public class PresentationVideoStorage : IPresentationVideoStorage
 {
     /// <summary>
-    /// 95 MB: un minuto grabado con el movil ronda 60-130 MB en 1080p, y Cloudflare corta las peticiones
-    /// a 100 MB. Tambien hay que permitirlo en IIS (requestLimits en los web.config del WEB y del API).
+    /// 20 MB: el navegador recomprime todo (grabado o subido) a 480p y ~800 kbps antes de subirlo, ~5 MB por
+    /// minuto (presentation-video.js). El margen cubre 75 s y la variacion de cada codec. Queda por debajo
+    /// del limite por defecto de IIS (~30 MB), asi que no hace falta tocar los web.config.
     /// </summary>
-    public const long MaxBytes = 95_000_000;
+    public const long MaxBytes = 20_000_000;
 
     /// <summary>Bytes del principio del archivo que hacen falta para reconocer el formato.</summary>
     public const int HeaderBytes = 16;
@@ -73,5 +74,11 @@ public class PresentationVideoStorage : IPresentationVideoStorage
     {
         var resolved = ResolveForOwner(videoUrl, ownerUserId);
         if (resolved != null) File.Delete(resolved.Value.Path);
+    }
+
+    public (int Count, long Bytes) GetUsage()
+    {
+        var files = new DirectoryInfo(_dir).GetFiles("video_*");
+        return (files.Length, files.Sum(f => f.Length));
     }
 }

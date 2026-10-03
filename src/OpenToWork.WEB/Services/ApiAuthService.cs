@@ -622,6 +622,16 @@ public class ApiAuthService
     }
 
     /// <summary>Foto de perfil propia como data URL (esta en almacenamiento privado del API, no es una URL publica).</summary>
+    /// <summary>Si el admin tiene encendida la opcion de videos de presentacion.</summary>
+    public async Task<bool> GetPresentationVideosEnabledAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/profile/video/enabled");
+        if (!response.IsSuccessStatusCode) return false;
+        var result = await response.Content.ReadFromJsonAsync<CandidatePlanFeatureResponse>();
+        return result?.Enabled ?? false;
+    }
+
     /// <summary>Borra el video de presentacion propio. La subida y la reproduccion las hace
     /// presentation-video.js directamente (ver GetApiAccessAsync).</summary>
     public async Task<bool> DeletePresentationVideoAsync()

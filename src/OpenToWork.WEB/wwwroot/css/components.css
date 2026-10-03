@@ -1927,11 +1927,13 @@
 .dash-verification-pill--failed { background: var(--danger-light); color: var(--danger); }
 
 /* Action Cards */
-/* Acciones rapidas del panel del candidato: 3 tarjetas, en escritorio una fila sin hueco.
-   Por debajo de 1024px manda responsive.css (2 y 1 columnas). */
+/* Acciones rapidas del panel del candidato: 2 o 3 tarjetas (el video depende de la configuracion),
+   en escritorio una fila sin hueco. Por debajo de 1024px manda responsive.css (2 y 1 columnas). */
 @media (min-width: 1025px) {
     .bento-grid.dash-actions-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: none;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
     }
 }
 

@@ -18,4 +18,7 @@ public interface IPresentationVideoStorage
     (string Path, string ContentType)? ResolveForOwner(string? videoUrl, Guid ownerUserId);
 
     void Delete(string? videoUrl, Guid ownerUserId);
+
+    /// <summary>Videos guardados y espacio que ocupan en disco (para vigilarlo desde la configuracion del admin).</summary>
+    (int Count, long Bytes) GetUsage();
 }

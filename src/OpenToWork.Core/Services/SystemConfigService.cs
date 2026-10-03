@@ -38,6 +38,7 @@ public class SystemConfigService : ISystemConfigService
     public const string FeaturesCategory = "Features";
     public const string CandidatePriorityPlanEnabled = "feature_candidate_priority_plan_enabled";
     public const string CompanyPlansEnabled = "feature_company_plans_enabled";
+    public const string PresentationVideosEnabled = "feature_presentation_videos_enabled";
 
     public const string AiCategory = "Ai";
     public const string AiProvider = "ai_provider";
@@ -332,6 +333,42 @@ public class SystemConfigService : ISystemConfigService
 
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(staffId, "SetCompanyPlansEnabled", "SY_SystemConfig", null, enabled.ToString(), null);
+    }
+
+    public async Task<bool> GetPresentationVideosEnabledAsync()
+    {
+        var config = await _context.SY_SystemConfig
+            .FirstOrDefaultAsync(c => !c.IsDeleted && c.Key == PresentationVideosEnabled);
+
+        return config != null && bool.TryParse(config.Value, out var enabled) && enabled;
+    }
+
+    public async Task SetPresentationVideosEnabledAsync(bool enabled, Guid staffId)
+    {
+        var config = await _context.SY_SystemConfig
+            .FirstOrDefaultAsync(c => !c.IsDeleted && c.Key == PresentationVideosEnabled);
+
+        if (config == null)
+        {
+            _context.SY_SystemConfig.Add(new SYSystemConfig
+            {
+                Key = PresentationVideosEnabled,
+                Value = enabled.ToString(),
+                Category = FeaturesCategory,
+                Description = "Permite a los candidatos grabar o subir un video de presentacion de 1 minuto. Apagado: no ven la opcion; los videos ya subidos se conservan y el equipo los sigue viendo.",
+                IsActive = true,
+                CreatedBy = staffId
+            });
+        }
+        else
+        {
+            config.Value = enabled.ToString();
+            config.UpdatedAt = DateTime.UtcNow;
+            config.UpdatedBy = staffId;
+        }
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(staffId, "SetPresentationVideosEnabled", "SY_SystemConfig", null, enabled.ToString(), null);
     }
 
     public async Task SetCandidatePriorityPlanEnabledAsync(bool enabled, Guid staffId)
