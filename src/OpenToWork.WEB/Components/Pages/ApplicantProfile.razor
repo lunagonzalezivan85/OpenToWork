@@ -268,6 +268,37 @@
                         </div>
                     </div>
                 }
+
+                @* Retos de hosteleria: solo el resultado de evaluaciones entregadas, nunca las respuestas.
+                   El API solo responde si TD entrego este candidato a la empresa (misma regla que el CV). *@
+                @if (ChallengeResults is { Count: > 0 })
+                {
+                    <div class="cv-card">
+                        <h2 class="cv-section-title">@Lang.T("challenges.company.title")</h2>
+                        <p class="chp-muted">@Lang.T("challenges.result.notComparable")</p>
+                        @foreach (var r in ChallengeResults)
+                        {
+                            <div style="margin-top:12px;">
+                                <strong>@r.ChallengeTitle</strong>
+                                <span class="chp-muted"> · @r.SubmittedAt?.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                                <p style="margin:4px 0;">
+                                    @if (r.CompletePercent is { } c) { <span>@Lang.T("challenges.result.complete"): <strong>@c.ToString("0.#") %</strong></span> }
+                                    else { <span>@Lang.T("challenges.result.partial"): <strong>@(r.AutoPercent?.ToString("0.#") ?? "—") %</strong> · @Lang.T("challenges.review.Pending")</span> }
+                                </p>
+                                <div class="chp-bars">
+                                    @foreach (var comp in r.Competencies)
+                                    {
+                                        <div class="chp-bar-row">
+                                            <span>@comp.Name</span>
+                                            <div class="chp-bar" aria-hidden="true"><span style="width:@((int)(comp.Percent ?? 0))%"></span></div>
+                                            <span>@(comp.Percent?.ToString("0.#") ?? "—") %@(comp.IsComplete ? "" : " *")</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
     }
@@ -291,6 +322,7 @@
     }
 
     [Parameter] public string CandidateId { get; set; } = "";
+    private List<OpenToWork.Shared.Challenges.CompanyChallengeResultDto>? ChallengeResults;
     private bool Loading { get; set; } = true;
     private CandidateProfileDto? Profile { get; set; }
 
@@ -304,6 +336,7 @@
             try
             {
                 Profile = await AuthApi.GetCandidateProfileByIdAsync(id);
+                if (Profile != null) (ChallengeResults, _) = await AuthApi.GetCandidateChallengeResultsForCompanyAsync(Profile.Id);
             }
             catch
             {

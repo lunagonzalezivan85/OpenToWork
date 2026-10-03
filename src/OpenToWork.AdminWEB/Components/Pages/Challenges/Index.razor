@@ -1,0 +1,250 @@
+@page "/challenges"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.Challenges
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>@L("title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@L("title")</h1>
+        <p class="admin-page-header-subtitle">@L("subtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/challenges/reviews")'>@L("reviewsTitle")</button>
+        @if (_isSuperAdmin)
+        {
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick="SeedAsync">@L("seed")</button>
+        }
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick='() => Nav.NavigateTo("/challenges/new")'>+ @L("newChallenge")</button>
+    </div>
+</div>
+
+<div class="admin-tabs" role="tablist">
+    @foreach (var t in new[] { "challenges", "competencies", "jobTypes" })
+    {
+        <button class="admin-tab @(_tab == t ? "admin-tab--active" : "")" role="tab" aria-selected="@(_tab == t)" @onclick="() => _tab = t">@L($"tabs.{t}")</button>
+    }
+</div>
+
+@if (_message != null)
+{
+    <div class="alert @(_messageOk ? "alert-success" : "alert-error")" role="status" style="white-space:pre-line;">@_message</div>
+}
+
+@if (_tab == "challenges")
+{
+    @if (_challenges == null)
+    {
+        <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+    }
+    else if (_challenges.Count == 0)
+    {
+        <div class="admin-empty"><div class="admin-empty-text">@L("emptyChallenges")</div></div>
+    }
+    else
+    {
+        <div class="admin-table-wrapper">
+            <table class="ot-table">
+                <thead><tr><th>@L("titleField")</th><th>@L("jobTypes")</th><th>@L("statusCol")</th><th>@L("activities")</th><th>@L("attempts")</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var c in _challenges)
+                    {
+                        <tr>
+                            <td><a href="/challenges/@c.Id">@c.Title</a></td>
+                            <td>@string.Join(", ", c.JobTypes)</td>
+                            <td>
+                                <span class="admin-status @ChallengeEditor.StatusClass(c.Status)">@L($"status.{c.Status}")</span>
+                                @if (c.LatestVersion is { } v) { <span class="chp-muted"> v@(v)</span> }
+                                @if (c.HasDraftChanges && c.LatestVersion != null) { <span class="admin-status admin-status--info">@L("unpublishedChanges")</span> }
+                            </td>
+                            <td>@c.ActivityCount</td>
+                            <td>@c.AttemptCount</td>
+                            <td>
+                                <div class="admin-table-actions">
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo($"/challenges/{c.Id}")'>@Lang.T("admin.common.edit")</button>
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick='() => ActAsync(c.Id, "duplicate")'>@L("duplicate")</button>
+                                    @if (_isSuperAdmin && c.Status != ChallengeStatus.Archived && (c.HasDraftChanges || c.Status == ChallengeStatus.Draft))
+                                    {
+                                        <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@_busy" @onclick='() => ActAsync(c.Id, "publish")'>@L("publish")</button>
+                                    }
+                                    @if (_isSuperAdmin && c.Status == ChallengeStatus.Published)
+                                    {
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick='() => ActAsync(c.Id, "archive")'>@L("archive")</button>
+                                    }
+                                    @if (_isSuperAdmin && c.Status == ChallengeStatus.Archived)
+                                    {
+                                        <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick='() => ActAsync(c.Id, "restore")'>@L("restore")</button>
+                                    }
+                                    @if (c.LatestVersion == null && c.AttemptCount == 0)
+                                    {
+                                        <button class="ot-btn ot-btn--danger ot-btn--small" disabled="@_busy" @onclick="() => DeleteAsync(c)">@Lang.T("admin.common.delete")</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+else if (_tab == "competencies")
+{
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@(_compEditId == null ? L("newCompetency") : Lang.T("admin.common.edit"))</h3>
+        <div class="admin-inline-form" style="flex-wrap:wrap;">
+            <input class="ot-input-field" style="max-width:240px;" placeholder="@L("name")" @bind="_compForm.Name" />
+            <input class="ot-input-field" style="flex:1;min-width:240px;" placeholder="@L("description")" @bind="_compForm.Description" />
+            <input class="ot-input-field" type="number" style="width:80px;" title="@L("order")" @bind="_compForm.SortOrder" />
+            <label class="admin-form-label"><input type="checkbox" @bind="_compForm.IsActive" /> @L("active")</label>
+            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@_busy" @onclick="SaveCompetencyAsync">@L("save")</button>
+            @if (_compEditId != null) { <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ResetCompetency">@L("cancel")</button> }
+        </div>
+    </div>
+    <table class="ot-table">
+        <thead><tr><th>@L("name")</th><th>@L("description")</th><th>@L("usedIn")</th><th>@L("statusCol")</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var c in _competencies)
+            {
+                <tr>
+                    <td>@c.Name</td>
+                    <td>@c.Description</td>
+                    <td>@c.UsedInChallenges</td>
+                    <td><span class="admin-status @(c.IsActive ? "admin-status--active" : "admin-status--inactive")">@L(c.IsActive ? "active" : "inactive")</span></td>
+                    <td><button class="ot-btn ot-btn--outline ot-btn--small" @onclick="() => EditCompetency(c)">@Lang.T("admin.common.edit")</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p class="chp-muted">@L("jobTypesHelp")</p>
+    @foreach (var jt in _jobTypes)
+    {
+        <details class="admin-profile-section">
+            <summary style="cursor:pointer;font-weight:600;">@jt.Name <span class="chp-muted">· @jt.LevelName · @string.Format(L("challengesN"), jt.ChallengeTitles.Count)</span></summary>
+            <div class="admin-form-field admin-form-field--full" style="margin-top:10px;">
+                <label class="admin-form-label">@L("description")</label>
+                <textarea class="ot-input-field" rows="2" @bind="jt.Description"></textarea>
+            </div>
+            <label class="admin-form-label">@L("competencies")</label>
+            <div class="admin-chip-row">
+                @foreach (var c in _competencies.Where(c => c.IsActive || jt.CompetencyIds.Contains(c.Id)))
+                {
+                    var on = jt.CompetencyIds.Contains(c.Id);
+                    <button class="admin-chip @(on ? "admin-chip--active" : "")" aria-pressed="@on"
+                            @onclick="() => { if (!jt.CompetencyIds.Remove(c.Id)) jt.CompetencyIds.Add(c.Id); }">@c.Name</button>
+                }
+            </div>
+            @if (jt.ChallengeTitles.Count > 0) { <p class="chp-muted">@string.Join(" · ", jt.ChallengeTitles)</p> }
+            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@_busy" @onclick="() => SaveJobTypeAsync(jt)">@L("save")</button>
+        </details>
+    }
+}
+
+@code {
+    private string _tab = "challenges";
+    private List<ChallengeListItemDto>? _challenges;
+    private List<CompetencyDto> _competencies = new();
+    private List<ChallengeJobTypeConfigDto> _jobTypes = new();
+    private SaveCompetencyDto _compForm = new();
+    private Guid? _compEditId;
+    private bool _isSuperAdmin, _busy, _messageOk;
+    private string? _message;
+
+    private string L(string key) => Lang.T($"challenges.admin.{key}");
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0) await Lang.InitializeAsync();
+        _isSuperAdmin = int.TryParse(await LocalStorage.GetItemAsync("otwadmin-staff-role"), out var role) && role == 0;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        var (list, error) = await AuthApi.GetChallengesAsync();
+        _challenges = list ?? new();
+        if (error != null) Show(L(error == "forbidden" ? "forbidden" : "genericError"), false);
+        var (comps, _) = await AuthApi.GetChallengeCompetenciesAsync();
+        _competencies = comps ?? new();
+        var (types, _) = await AuthApi.GetChallengeJobTypesAsync();
+        _jobTypes = types ?? new();
+    }
+
+    private async Task ActAsync(Guid id, string action)
+    {
+        _busy = true;
+        var (result, error) = await AuthApi.ChallengeActionAsync(id, action);
+        _busy = false;
+        if (result?.Success == true)
+        {
+            Show(L($"done.{action}"), true);
+            if (action == "duplicate" && result.Id is { } copy) { Nav.NavigateTo($"/challenges/{copy}"); return; }
+        }
+        else Show(result?.Errors.Count > 0 ? string.Join("\n", result.Errors) : L(error == "forbidden" ? "forbidden" : "genericError"), false);
+        await ReloadAsync();
+    }
+
+    private async Task DeleteAsync(ChallengeListItemDto c)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", string.Format(L("confirmDelete"), c.Title))) return;
+        _busy = true;
+        var (result, _) = await AuthApi.DeleteChallengeAsync(c.Id);
+        _busy = false;
+        Show(result?.Success == true ? L("done.delete") : result?.Errors.FirstOrDefault() ?? L("genericError"), result?.Success == true);
+        await ReloadAsync();
+    }
+
+    private async Task SeedAsync()
+    {
+        _busy = true;
+        var (r, error) = await AuthApi.SeedChallengesAsync();
+        _busy = false;
+        if (r == null) { Show(L(error == "forbidden" ? "forbidden" : "genericError"), false); return; }
+        var summary = string.Format(L("seedResult"), r.CompetenciesCreated, r.JobTypesCreated, r.ChallengesCreated, r.ChallengesPublished, r.ChallengesSkipped);
+        Show(r.Errors.Count == 0 ? summary : summary + "\n" + string.Join("\n", r.Errors), r.Errors.Count == 0);
+        await ReloadAsync();
+    }
+
+    private void EditCompetency(CompetencyDto c)
+    {
+        _compEditId = c.Id;
+        _compForm = new SaveCompetencyDto { Name = c.Name, Description = c.Description, IsActive = c.IsActive, SortOrder = c.SortOrder };
+    }
+
+    private void ResetCompetency()
+    {
+        _compEditId = null;
+        _compForm = new SaveCompetencyDto();
+    }
+
+    private async Task SaveCompetencyAsync()
+    {
+        _busy = true;
+        var (r, _) = await AuthApi.SaveChallengeCompetencyAsync(_compEditId, _compForm);
+        _busy = false;
+        if (r?.Success == true) { Show(L("saved"), true); ResetCompetency(); await ReloadAsync(); }
+        else Show(r?.Errors.FirstOrDefault() ?? L("genericError"), false);
+    }
+
+    private async Task SaveJobTypeAsync(ChallengeJobTypeConfigDto jt)
+    {
+        _busy = true;
+        var (r, _) = await AuthApi.SaveChallengeJobTypeAsync(jt.Id, new SaveChallengeJobTypeDto { Description = jt.Description, CompetencyIds = jt.CompetencyIds });
+        _busy = false;
+        Show(r?.Success == true ? L("saved") : r?.Errors.FirstOrDefault() ?? L("genericError"), r?.Success == true);
+    }
+
+    private void Show(string text, bool ok)
+    {
+        _message = text;
+        _messageOk = ok;
+    }
+}

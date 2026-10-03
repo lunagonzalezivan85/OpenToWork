@@ -1,0 +1,260 @@
+@page "/challenges/new"
+@page "/challenges/{Id:guid}"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.AdminWEB.Components.Challenges
+@using OpenToWork.Shared.Challenges
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+@* Editor de un reto. Guardar = borrador (los candidatos siguen viendo la ultima version publicada);
+   Publicar (solo SuperAdmin) congela el borrador como version nueva. *@
+
+<PageTitle>@L("editorTitle")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@(string.IsNullOrWhiteSpace(_def?.Title) ? L("newChallenge") : _def!.Title)</h1>
+        @if (_edit != null)
+        {
+            <p class="admin-page-header-subtitle">
+                <span class="admin-status @StatusClass(_edit.Status)">@L($"status.{_edit.Status}")</span>
+                @if (_edit.LatestVersion is { } v) { <span> · @string.Format(L("versionN"), v)</span> }
+                @if (_edit.HasDraftChanges && _edit.LatestVersion != null) { <span> · @L("unpublishedChanges")</span> }
+                <span> · @string.Format(L("attemptsN"), _edit.AttemptCount)</span>
+            </p>
+        }
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo("/challenges")'>@L("back")</button>
+        <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@_busy" @onclick="SaveAsync">@L("saveDraft")</button>
+        @if (_isSuperAdmin && Id != null)
+        {
+            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@(_busy || _edit?.ValidationErrors.Count > 0)" @onclick="PublishAsync">@L("publish")</button>
+        }
+    </div>
+</div>
+
+@if (_message != null)
+{
+    <div class="alert @(_messageOk ? "alert-success" : "alert-error")" role="status">@_message</div>
+}
+@if (_errors.Count > 0)
+{
+    <div class="admin-profile-section" role="alert">
+        <h3 class="admin-profile-section-title" style="color:var(--danger);">@L("validationTitle")</h3>
+        <ul>@foreach (var e in _errors) { <li>@e</li> }</ul>
+    </div>
+}
+
+@if (_def == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else
+{
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@L("general")</h3>
+        <div class="admin-form-grid">
+            <div class="admin-form-field admin-form-field--full"><label class="admin-form-label">@L("titleField")</label><input class="ot-input-field" @bind="_def.Title" /></div>
+            <div class="admin-form-field admin-form-field--full"><label class="admin-form-label">@L("situation")</label><textarea class="ot-input-field" rows="2" @bind="_def.Situation"></textarea></div>
+            <div class="admin-form-field"><label class="admin-form-label">@L("level")</label>
+                <select class="ot-input-field" @bind="_def.Level">
+                    @foreach (var lv in Enum.GetValues<ChallengeLevel>()) { <option value="@lv">@L($"levels.{lv}")</option> }
+                </select></div>
+            <div class="admin-form-field"><label class="admin-form-label">@L("minutes")</label><input class="ot-input-field" type="number" min="1" max="120" @bind="_def.EstimatedMinutes" /></div>
+            <div class="admin-form-field admin-form-field--full"><label class="admin-form-label">@L("instructions")</label><textarea class="ot-input-field" rows="3" @bind="_def.Instructions"></textarea></div>
+            <div class="admin-form-field"><label class="admin-form-label">@L("deliverable")</label><textarea class="ot-input-field" rows="2" @bind="_def.Deliverable"></textarea></div>
+            <div class="admin-form-field"><label class="admin-form-label">@L("tools")</label><textarea class="ot-input-field" rows="2" @bind="_def.AllowedTools"></textarea></div>
+            <div class="admin-form-field admin-form-field--full"><label class="admin-form-label">@L("assessment")</label><textarea class="ot-input-field" rows="2" @bind="_def.AssessmentDescription"></textarea></div>
+        </div>
+    </div>
+
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@L("modes")</h3>
+        <div class="admin-inline-form" style="flex-wrap:wrap;">
+            <label class="admin-form-label"><input type="checkbox" @bind="_def.AllowPractice" /> @L("allowPractice")</label>
+            <label class="admin-form-label"><input type="checkbox" @bind="_def.AllowEvaluation" /> @L("allowEvaluation")</label>
+            <label class="admin-form-label">@L("maxAttempts") <input class="ot-input-field" type="number" min="1" max="5" style="width:80px;" @bind="_def.MaxEvaluationAttempts" /></label>
+            <label class="admin-form-label">@L("cooldown") <input class="ot-input-field" type="number" min="0" max="90" style="width:80px;" @bind="_def.RetryCooldownDays" /></label>
+        </div>
+    </div>
+
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@L("jobTypes")</h3>
+        <div class="admin-chip-row">
+            @foreach (var jt in _jobTypes)
+            {
+                var on = _jobTypeIds.Contains(jt.Id);
+                <button class="admin-chip @(on ? "admin-chip--active" : "")" aria-pressed="@on" @onclick="() => ToggleJobType(jt.Id)">@jt.Name</button>
+            }
+        </div>
+    </div>
+
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@L("activities") (@_def.Activities.Count)</h3>
+        @for (var i = 0; i < _def.Activities.Count; i++)
+        {
+            var index = i;
+            var a = _def.Activities[index];
+            <details class="admin-profile-section" open="@(_openKey == a.Key)">
+                <summary style="cursor:pointer;font-weight:600;">@(index + 1). @(string.IsNullOrWhiteSpace(a.Title) ? a.Key : a.Title)
+                    <span class="admin-status admin-status--neutral" style="margin-left:8px;">@L($"templates.{a.Template}") · @L($"responses.{a.ResponseType}")</span>
+                </summary>
+                <div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap;">
+                    <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(index == 0)" @onclick="() => MoveActivity(index, -1)">↑ @L("moveUp")</button>
+                    <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@(index == _def.Activities.Count - 1)" @onclick="() => MoveActivity(index, 1)">↓ @L("moveDown")</button>
+                    <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => _def.Activities.RemoveAt(index)">@L("removeActivity")</button>
+                </div>
+                <ActivityEditor @key="a" A="a" Competencies="_competencies" />
+            </details>
+        }
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="AddActivity">+ @L("addActivity")</button>
+    </div>
+
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@L("feedbackTexts")</h3>
+        <p class="chp-muted">@L("feedbackTextsHelp")</p>
+        @foreach (var compId in UsedCompetencyIds())
+        {
+            var fb = _def.CompetencyFeedback.FirstOrDefault(f => f.CompetencyId == compId);
+            if (fb == null) { fb = new CompetencyFeedback { CompetencyId = compId }; _def.CompetencyFeedback.Add(fb); }
+            <div class="admin-form-grid">
+                <div class="admin-form-field admin-form-field--full"><strong>@(_competencies.FirstOrDefault(c => c.Id == compId)?.Name ?? "?")</strong></div>
+                <div class="admin-form-field"><label class="admin-form-label">@L("strengthText")</label><textarea class="ot-input-field" rows="2" @bind="fb.StrengthText"></textarea></div>
+                <div class="admin-form-field"><label class="admin-form-label">@L("practiceText")</label><textarea class="ot-input-field" rows="2" @bind="fb.PracticeText"></textarea></div>
+            </div>
+        }
+    </div>
+
+    @if (_edit?.History.Count > 0)
+    {
+        <div class="admin-profile-section">
+            <h3 class="admin-profile-section-title">@L("history")</h3>
+            <ul>@foreach (var h in _edit.History) { <li>@h.At.ToLocalTime().ToString("dd/MM/yyyy HH:mm") · @h.Action · @h.By</li> }</ul>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private ChallengeEditDto? _edit;
+    private ChallengeDefinition? _def;
+    private List<Guid> _jobTypeIds = new();
+    private List<ChallengeJobTypeConfigDto> _jobTypes = new();
+    private List<CompetencyDto> _competencies = new();
+    private List<string> _errors = new();
+    private string? _message;
+    private bool _messageOk;
+    private bool _busy;
+    private bool _isSuperAdmin;
+    private string? _openKey;
+
+    private string L(string key) => Lang.T($"challenges.admin.{key}");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Lang._translations.Count == 0) await Lang.InitializeAsync();
+        _isSuperAdmin = int.TryParse(await LocalStorage.GetItemAsync("otwadmin-staff-role"), out var role) && role == 0;
+        var (jobTypes, _) = await AuthApi.GetChallengeJobTypesAsync();
+        _jobTypes = jobTypes ?? new();
+        var (competencies, _) = await AuthApi.GetChallengeCompetenciesAsync();
+        _competencies = competencies ?? new();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (Id == null)
+        {
+            _def ??= new ChallengeDefinition();
+            return;
+        }
+        var (edit, error) = await AuthApi.GetChallengeAsync(Id.Value);
+        if (edit == null) { ShowMessage(error == "forbidden" ? L("forbidden") : L("notFound"), false); return; }
+        _edit = edit;
+        _def = edit.Definition;
+        _jobTypeIds = edit.JobTypeIds;
+        _errors = edit.ValidationErrors;
+    }
+
+    private void ToggleJobType(Guid id)
+    {
+        if (!_jobTypeIds.Remove(id)) _jobTypeIds.Add(id);
+    }
+
+    private void AddActivity()
+    {
+        var keys = _def!.Activities.Select(a => a.Key).ToHashSet();
+        var n = 1;
+        while (keys.Contains($"a{n}")) n++;
+        var a = new ActivityDefinition { Key = $"a{n}", Template = ChallengeTemplate.Cards, ResponseType = ChallengeResponseType.SingleChoice };
+        _def.Activities.Add(a);
+        _openKey = a.Key;
+    }
+
+    private void MoveActivity(int index, int delta)
+    {
+        var list = _def!.Activities;
+        var target = index + delta;
+        (list[index], list[target]) = (list[target], list[index]);
+    }
+
+    private IEnumerable<Guid> UsedCompetencyIds() =>
+        _def!.Activities.SelectMany(a => a.AutoCompetencies.Select(c => c.CompetencyId).Concat(a.Rubric.Select(r => r.CompetencyId)))
+            .Where(id => id != Guid.Empty).Distinct();
+
+    private async Task SaveAsync()
+    {
+        if (_def == null) return;
+        _busy = true;
+        // Textos de resultado de competencias que ya no se usan: fuera (si no, la validacion los rechaza).
+        var used = UsedCompetencyIds().ToHashSet();
+        _def.CompetencyFeedback.RemoveAll(f => !used.Contains(f.CompetencyId));
+        var (result, error) = await AuthApi.SaveChallengeAsync(Id, new SaveChallengeDto { JobTypeIds = _jobTypeIds, Definition = _def });
+        _busy = false;
+        if (result?.Success == true)
+        {
+            ShowMessage(L("saved"), true);
+            if (Id == null) { Nav.NavigateTo($"/challenges/{result.Id}"); return; }
+            await LoadAsync();
+        }
+        else ShowMessage(result?.Errors.FirstOrDefault() ?? Error(error), false);
+    }
+
+    private async Task PublishAsync()
+    {
+        if (Id == null) return;
+        _busy = true;
+        var (result, error) = await AuthApi.ChallengeActionAsync(Id.Value, "publish");
+        _busy = false;
+        if (result?.Success == true) { ShowMessage(string.Format(L("published"), result.VersionNumber), true); await LoadAsync(); }
+        else
+        {
+            _errors = result?.Errors ?? new();
+            ShowMessage(result?.Errors.Count == 1 ? result.Errors[0] : Error(error ?? "validation"), false);
+        }
+    }
+
+    private string Error(string? code) => code switch
+    {
+        "forbidden" => L("forbidden"),
+        "validation" => L("validationTitle"),
+        _ => L("genericError")
+    };
+
+    private void ShowMessage(string text, bool ok)
+    {
+        _message = text;
+        _messageOk = ok;
+    }
+
+    internal static string StatusClass(ChallengeStatus s) => s switch
+    {
+        ChallengeStatus.Published => "admin-status--success",
+        ChallengeStatus.Archived => "admin-status--inactive",
+        _ => "admin-status--draft"
+    };
+}

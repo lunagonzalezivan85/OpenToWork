@@ -16,6 +16,7 @@
     "mode": { "Practice": "Práctica", "Evaluation": "Evaluación" },
     "review": { "NotRequired": "Corrección automática", "Pending": "Pendiente de revisión", "InProgress": "En revisión", "Completed": "Revisado" },
     "historyEmpty": "Aún no has entregado ningún reto.",
+    "company": { "title": "Retos de hostelería" },
     "dashboardCard": "Demuestra tus habilidades",
     "dashboardCardDesc": "Retos prácticos de hostelería para tu perfil",
     "intro": {

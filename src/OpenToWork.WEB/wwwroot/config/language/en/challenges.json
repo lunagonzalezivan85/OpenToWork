@@ -16,6 +16,7 @@
     "mode": { "Practice": "Practice", "Evaluation": "Evaluation" },
     "review": { "NotRequired": "Automatic scoring", "Pending": "Awaiting review", "InProgress": "Under review", "Completed": "Reviewed" },
     "historyEmpty": "You haven't submitted any challenge yet.",
+    "company": { "title": "Hospitality challenges" },
     "dashboardCard": "Show your skills",
     "dashboardCardDesc": "Hands-on hospitality challenges for your profile",
     "intro": {
