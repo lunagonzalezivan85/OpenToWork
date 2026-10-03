@@ -18,8 +18,8 @@
     </div>
 
     <div class="chp-tabs" role="group">
-        <button class="chp-tab" aria-pressed="@(!_showHistory)" @onclick="() => _showHistory = false">@Lang.T("challenges.tabChallenges")</button>
-        <button class="chp-tab" aria-pressed="@_showHistory" @onclick="ShowHistoryAsync">@Lang.T("challenges.tabHistory")</button>
+        <button class="chp-tab" aria-pressed="@(_showHistory ? "false" : "true")" @onclick="() => _showHistory = false">@Lang.T("challenges.tabChallenges")</button>
+        <button class="chp-tab" aria-pressed="@(_showHistory ? "true" : "false")" @onclick="ShowHistoryAsync">@Lang.T("challenges.tabHistory")</button>
     </div>
 
     @if (_error != null)
@@ -42,7 +42,7 @@
             <div class="chp-tabs" role="group" aria-labelledby="chp-job-label">
                 @foreach (var jt in _jobTypes)
                 {
-                    <button class="chp-tab" aria-pressed="@(jt.Id == _jobTypeId)" @onclick="() => SelectJobAsync(jt.Id)">@jt.Name (@jt.ChallengeCount)</button>
+                    <button class="chp-tab" aria-pressed="@(jt.Id == _jobTypeId ? "true" : "false")" @onclick="() => SelectJobAsync(jt.Id)">@jt.Name (@jt.ChallengeCount)</button>
                 }
             </div>
             @if (_jobTypes.FirstOrDefault(j => j.Id == _jobTypeId)?.Description is { Length: > 0 } desc)

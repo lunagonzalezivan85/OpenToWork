@@ -79,6 +79,7 @@
     },
     "errors": {
         "generic": "Algo salió mal. Inténtalo de nuevo.",
+        "unauthorized": "Inicia sesión como candidato para ver los retos.",
         "notFound": "Este reto no existe o ya no está disponible.",
         "forbidden": "No tienes acceso a este intento.",
         "noCandidate": "Necesitas un perfil de candidato para hacer retos.",

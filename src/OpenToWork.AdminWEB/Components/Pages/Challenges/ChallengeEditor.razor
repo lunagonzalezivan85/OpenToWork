@@ -87,7 +87,7 @@ else
             @foreach (var jt in _jobTypes)
             {
                 var on = _jobTypeIds.Contains(jt.Id);
-                <button class="admin-chip @(on ? "admin-chip--active" : "")" aria-pressed="@on" @onclick="() => ToggleJobType(jt.Id)">@jt.Name</button>
+                <button class="admin-chip @(on ? "admin-chip--active" : "")" aria-pressed="@(on ? "true" : "false")" @onclick="() => ToggleJobType(jt.Id)">@jt.Name</button>
             }
         </div>
     </div>

@@ -79,6 +79,7 @@
     },
     "errors": {
         "generic": "Something went wrong. Please try again.",
+        "unauthorized": "Sign in as a candidate to see the challenges.",
         "notFound": "This challenge doesn't exist or is no longer available.",
         "forbidden": "You don't have access to this attempt.",
         "noCandidate": "You need a candidate profile to take challenges.",

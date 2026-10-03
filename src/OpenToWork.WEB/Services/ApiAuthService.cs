@@ -936,8 +936,9 @@ public class ApiAuthService
             if (body != null) request.Content = JsonContent.Create(body);
             using var response = await _httpClient.SendAsync(request);
             if (response.IsSuccessStatusCode) return (await response.Content.ReadFromJsonAsync<T>(), null);
-            var error = await response.Content.ReadFromJsonAsync<ChallengeError>().ConfigureAwait(false);
-            return (default, error?.Error ?? (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ? "forbidden" : "generic"));
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized) return (default, "unauthorized"); // cuerpo vacio
+            try { return (default, (await response.Content.ReadFromJsonAsync<ChallengeError>())?.Error ?? "generic"); }
+            catch (System.Text.Json.JsonException) { return (default, response.StatusCode == System.Net.HttpStatusCode.Forbidden ? "forbidden" : "generic"); }
         }
         catch (Exception ex)
         {

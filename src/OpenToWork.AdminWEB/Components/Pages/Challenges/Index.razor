@@ -27,7 +27,7 @@
 <div class="admin-tabs" role="tablist">
     @foreach (var t in new[] { "challenges", "competencies", "jobTypes" })
     {
-        <button class="admin-tab @(_tab == t ? "admin-tab--active" : "")" role="tab" aria-selected="@(_tab == t)" @onclick="() => _tab = t">@L($"tabs.{t}")</button>
+        <button class="admin-tab @(_tab == t ? "admin-tab--active" : "")" role="tab" aria-selected="@(_tab == t ? "true" : "false")" @onclick="() => _tab = t">@L($"tabs.{t}")</button>
     }
 </div>
 
@@ -138,7 +138,7 @@ else
                 @foreach (var c in _competencies.Where(c => c.IsActive || jt.CompetencyIds.Contains(c.Id)))
                 {
                     var on = jt.CompetencyIds.Contains(c.Id);
-                    <button class="admin-chip @(on ? "admin-chip--active" : "")" aria-pressed="@on"
+                    <button class="admin-chip @(on ? "admin-chip--active" : "")" aria-pressed="@(on ? "true" : "false")"
                             @onclick="() => { if (!jt.CompetencyIds.Remove(c.Id)) jt.CompetencyIds.Add(c.Id); }">@c.Name</button>
                 }
             </div>
