@@ -320,7 +320,7 @@
     height: 100%;
     border-radius: var(--radius-pill);
     background: var(--gradient-accent);
-    transition: width var(--transition-normal);
+    transition: width var(--transition-slow);
 }
 
 .notif-item-progress-text {

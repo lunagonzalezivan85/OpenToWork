@@ -983,7 +983,7 @@ textarea.admin-input {
 .admin-progress-fill {
     height: 100%;
     border-radius: 999px;
-    transition: width 0.6s ease;
+    transition: width var(--transition-slow);
 }
 
 .admin-progress-fill--success { background: var(--success); }
@@ -1047,7 +1047,7 @@ textarea.admin-input {
     color: #FFFFFF;
     font-size: 0.78rem;
     font-weight: 700;
-    transition: width 0.6s ease;
+    transition: width var(--transition-slow);
     min-width: 28px;
 }
 
@@ -2683,7 +2683,7 @@ textarea.admin-input {
     height: 100%;
     border-radius: 999px;
     background: var(--accent-primary);
-    transition: width 0.3s;
+    transition: width var(--transition-slow);
 }
 
 .admin-kanban-progress-text {
@@ -3561,7 +3561,7 @@ textarea.admin-input {
     height: 100%;
     background: var(--accent-primary);
     border-radius: 3px;
-    transition: width 0.3s ease;
+    transition: width var(--transition-slow);
 }
 
 .admin-delivery-detail-toggle {

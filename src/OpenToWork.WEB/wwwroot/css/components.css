@@ -3442,7 +3442,7 @@ a.cv-contact-item:hover {
     height: 100%;
     border-radius: 999px;
     background: var(--info, #0066FF);
-    transition: width 0.5s ease;
+    transition: width var(--transition-slow);
 }
 
 .cv-info-list {
