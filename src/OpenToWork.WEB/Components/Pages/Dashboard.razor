@@ -292,19 +292,8 @@
 
     <!-- Row 2: Quick Actions -->
     <h2 class="dash-section-title">@Lang.T("dashboard.sections.quickActions")</h2>
-    <div class="bento-grid">
-        <div class="bento-card dash-action-card" @onclick="GoToWizard" style="cursor: pointer;">
-            <div class="dash-action-icon dash-action-icon--blue">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
-                    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
-            </div>
-            <div class="dash-action-content">
-                <span class="dash-action-title">@Lang.T("dashboard.actions.completeProfile")</span>
-                <span class="dash-action-desc">@Lang.T("dashboard.wizardPrompt.message")</span>
-            </div>
-        </div>
-
+    @* "Completar perfil" no va aqui: ya esta junto al % del perfil, arriba. *@
+    <div class="bento-grid dash-actions-grid">
         <div class="bento-card dash-action-card" @onclick="GoToUploadCv" style="cursor: pointer;">
             <div class="dash-action-icon dash-action-icon--green">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
@@ -549,7 +538,6 @@
         ShowPending = false;
     }
 
-    private void GoToWizard() => OpenPending();
     private void GoToProfile() => Nav.NavigateTo("/profile");
     private void GoToPlans() => Nav.NavigateTo("/plans");
     private void GoToVerification() => Nav.NavigateTo("/verification-request");
