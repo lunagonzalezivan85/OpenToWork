@@ -1,0 +1,243 @@
+@using OpenToWork.Shared.Challenges
+@using OpenToWork.SharedUI.Services
+@inject LanguageService Lang
+
+@* Una actividad de un reto (portal: jugar; admin: vista previa). Solo pinta y edita Response:
+   la correccion es siempre del servidor. Estilos en _content/OpenToWork.SharedUI/challenges.css. *@
+
+<section class="chx" aria-labelledby="@($"chx-{Activity.Key}-title")">
+    <header class="chx-head">
+        <h2 id="@($"chx-{Activity.Key}-title")" class="chx-title">@Activity.Title</h2>
+        @if (!string.IsNullOrWhiteSpace(Activity.Context))
+        {
+            <p class="chx-context">@Activity.Context</p>
+        }
+        <p class="chx-prompt">@Activity.Prompt</p>
+    </header>
+
+    @if (Activity.Conversation.Count > 0)
+    {
+        <div class="chx-chat" role="log" aria-label="@Lang.T("challenges.player.conversation")">
+            @foreach (var line in Activity.Conversation)
+            {
+                <div class="chx-bubble">
+                    <span class="chx-speaker">@line.Speaker</span>
+                    <span>@line.Text</span>
+                </div>
+            }
+        </div>
+    }
+
+    @foreach (var r in Activity.Resources)
+    {
+        var markable = IsErrorDetection && r.Key == Activity.ErrorResourceKey;
+        <article class="chx-doc">
+            <div class="chx-doc-head">
+                @if (!string.IsNullOrWhiteSpace(r.Kind)) { <span class="chx-kind">@r.Kind</span> }
+                <h3 class="chx-doc-title">@r.Title</h3>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(r.Text))
+            {
+                <p class="chx-doc-text">@r.Text</p>
+            }
+            @if (r.Rows.Count > 0)
+            {
+                @if (markable)
+                {
+                    <p class="chx-hint">@Lang.T("challenges.player.markErrorsHint")</p>
+                }
+                <div class="chx-table-wrap">
+                    <table class="chx-table">
+                        @if (r.Columns.Count > 0)
+                        {
+                            <thead><tr>
+                                @if (markable) { <th scope="col"><span class="chx-sr">@Lang.T("challenges.player.markColumn")</span></th> }
+                                @foreach (var c in r.Columns) { <th scope="col">@c</th> }
+                            </tr></thead>
+                        }
+                        <tbody>
+                            @foreach (var row in r.Rows)
+                            {
+                                var marked = Response.SelectedKeys.Contains(row.Key);
+                                <tr class="@(markable ? "chx-row-markable" : "") @(marked ? "chx-row-marked" : "")">
+                                    @if (markable)
+                                    {
+                                        <td>
+                                            <input type="checkbox" class="chx-check" checked="@marked" disabled="@ReadOnly"
+                                                   aria-label="@($"{Lang.T("challenges.player.markRow")}: {string.Join(" · ", row.Cells)}")"
+                                                   @onchange="() => Toggle(row.Key)" />
+                                        </td>
+                                    }
+                                    @foreach (var cell in row.Cells) { <td>@cell</td> }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(r.Footer))
+            {
+                <p class="chx-doc-footer">@r.Footer</p>
+            }
+        </article>
+    }
+
+    <div class="chx-answer">
+        @switch (Activity.ResponseType)
+        {
+            case ChallengeResponseType.SingleChoice:
+            case ChallengeResponseType.MultipleChoice:
+            case ChallengeResponseType.ActionsWithJustification:
+                <fieldset class="chx-options">
+                    <legend class="chx-sr">@Activity.Prompt</legend>
+                    @if (Activity.AllowMultipleSelection)
+                    {
+                        <p class="chx-hint">@Lang.T("challenges.player.chooseSeveral")@(Activity.PartialScoringNotice ? " " + Lang.T("challenges.player.partialNotice") : "")</p>
+                    }
+                    @foreach (var o in Activity.Options)
+                    {
+                        var selected = Response.SelectedKeys.Contains(o.Key);
+                        <label class="chx-option @(selected ? "chx-option--on" : "")">
+                            @if (Activity.AllowMultipleSelection)
+                            {
+                                <input type="checkbox" checked="@selected" disabled="@ReadOnly" @onchange="() => Toggle(o.Key)" />
+                            }
+                            else
+                            {
+                                <input type="radio" name="@($"chx-{Activity.Key}")" checked="@selected" disabled="@ReadOnly" @onchange="() => Pick(o.Key)" />
+                            }
+                            <span>@o.Text</span>
+                        </label>
+                    }
+                </fieldset>
+                break;
+
+            case ChallengeResponseType.Ordering:
+                <p class="chx-hint" id="@($"chx-{Activity.Key}-order")">@Lang.T("challenges.player.orderHint")</p>
+                <ol class="chx-order" aria-describedby="@($"chx-{Activity.Key}-order")">
+                    @for (var i = 0; i < Response.OrderedKeys.Count; i++)
+                    {
+                        var index = i;
+                        var opt = Activity.Options.FirstOrDefault(o => o.Key == Response.OrderedKeys[index]);
+                        <li class="chx-order-item">
+                            <span class="chx-order-pos" aria-hidden="true">@(index + 1)</span>
+                            <span class="chx-order-text">@opt?.Text</span>
+                            <span class="chx-order-btns">
+                                <button type="button" class="chx-icon-btn" disabled="@(ReadOnly || index == 0)"
+                                        aria-label="@($"{Lang.T("challenges.player.moveUp")}: {opt?.Text}")" @onclick="() => Move(index, -1)">↑</button>
+                                <button type="button" class="chx-icon-btn" disabled="@(ReadOnly || index == Response.OrderedKeys.Count - 1)"
+                                        aria-label="@($"{Lang.T("challenges.player.moveDown")}: {opt?.Text}")" @onclick="() => Move(index, 1)">↓</button>
+                            </span>
+                        </li>
+                    }
+                </ol>
+                <p class="chx-sr" aria-live="polite">@_announce</p>
+                break;
+
+            case ChallengeResponseType.ErrorDetection:
+                <p class="chx-hint">@Lang.T("challenges.player.noErrorsOk")</p>
+                break;
+
+            case ChallengeResponseType.Numeric:
+                <div class="chx-fields">
+                    @foreach (var f in Activity.NumericFields)
+                    {
+                        var id = $"chx-{Activity.Key}-{f.Key}";
+                        <div class="chx-field">
+                            <label for="@id">@f.Label</label>
+                            <div class="chx-field-input">
+                                <input id="@id" type="text" inputmode="decimal" autocomplete="off" maxlength="30" disabled="@ReadOnly"
+                                       value="@Response.NumericValues.GetValueOrDefault(f.Key)" @onchange="e => SetNumber(f.Key, e.Value?.ToString())" />
+                                <span class="chx-unit">@f.Unit</span>
+                            </div>
+                            @if (f.Decimals > 0)
+                            {
+                                <small class="chx-field-help">@string.Format(Lang.T("challenges.player.decimals"), f.Decimals)</small>
+                            }
+                        </div>
+                    }
+                </div>
+                break;
+        }
+
+        @if (Activity.ResponseType is ChallengeResponseType.ShortText or ChallengeResponseType.ActionsWithJustification)
+        {
+            var tid = $"chx-{Activity.Key}-text";
+            <div class="chx-textbox">
+                <label for="@tid">@(Activity.ResponseType == ChallengeResponseType.ShortText ? Lang.T("challenges.player.yourAnswer") : Lang.T("challenges.player.justify"))</label>
+                <textarea id="@tid" rows="5" maxlength="@Activity.MaxTextLength" disabled="@ReadOnly"
+                          value="@Response.Text" @oninput="e => SetText(e.Value?.ToString())"></textarea>
+                <small class="chx-field-help">@Response.Text.Length / @Activity.MaxTextLength · @Lang.T("challenges.player.humanReview")</small>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public ActivityViewDto Activity { get; set; } = null!;
+    [Parameter, EditorRequired] public ChallengeResponse Response { get; set; } = null!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+
+    private string _announce = "";
+    private bool IsErrorDetection => Activity.ResponseType == ChallengeResponseType.ErrorDetection;
+
+    private bool _orderInitialized;
+
+    protected override void OnParametersSet()
+    {
+        // Ordenacion: se parte del orden en que llegan las opciones (el servidor ya lo baraja).
+        if (Activity.ResponseType == ChallengeResponseType.Ordering && Response.OrderedKeys.Count != Activity.Options.Count)
+        {
+            Response.OrderedKeys = Activity.Options.Select(o => o.Key).ToList();
+            _orderInitialized = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Ese orden inicial tambien es una respuesta: se avisa para que se guarde aunque no se toque.
+        if (_orderInitialized && !ReadOnly)
+        {
+            _orderInitialized = false;
+            await OnChanged.InvokeAsync();
+        }
+    }
+
+    private Task Changed() => OnChanged.InvokeAsync();
+
+    private Task Pick(string key)
+    {
+        Response.SelectedKeys = new() { key };
+        return Changed();
+    }
+
+    private Task Toggle(string key)
+    {
+        if (!Response.SelectedKeys.Remove(key)) Response.SelectedKeys.Add(key);
+        return Changed();
+    }
+
+    private Task Move(int index, int delta)
+    {
+        var target = index + delta;
+        var list = Response.OrderedKeys;
+        if (target < 0 || target >= list.Count) return Task.CompletedTask;
+        (list[index], list[target]) = (list[target], list[index]);
+        var text = Activity.Options.FirstOrDefault(o => o.Key == list[target])?.Text;
+        _announce = string.Format(Lang.T("challenges.player.movedTo"), text, target + 1);
+        return Changed();
+    }
+
+    private Task SetNumber(string key, string? value)
+    {
+        Response.NumericValues[key] = value ?? "";
+        return Changed();
+    }
+
+    private Task SetText(string? value)
+    {
+        Response.Text = value ?? "";
+        return Changed();
+    }
+}

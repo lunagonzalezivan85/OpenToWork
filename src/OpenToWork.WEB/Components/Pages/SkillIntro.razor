@@ -1,0 +1,129 @@
+@page "/skills/{Id:guid}"
+@using OpenToWork.Shared.Challenges
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+<PageTitle>@(_intro?.Title ?? Lang.T("challenges.title"))</PageTitle>
+
+<div class="page-container">
+    <div class="dash-banner-card">
+        <div class="dash-banner-info">
+            <h1 class="dash-banner-title">@(_intro?.Title ?? Lang.T("challenges.title"))</h1>
+            @if (_intro != null) { <p class="dash-banner-role">@_intro.Situation</p> }
+        </div>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="@(() => Nav.NavigateTo("/skills"))">@Lang.T("challenges.back")</button>
+    </div>
+
+    @if (_error != null && _intro == null)
+    {
+        <div class="bento-card bento-card--full"><p>@Lang.T($"challenges.errors.{_error}")</p></div>
+    }
+    else if (_intro == null)
+    {
+        <p class="chp-muted">@Lang.T("challenges.loading")</p>
+    }
+    else
+    {
+        <div class="bento-grid">
+            <div class="bento-card bento-card--full">
+                <div class="chp-meta" style="margin-bottom:12px;">
+                    <span class="chp-chip chp-chip--accent">@Lang.T($"challenges.level.{_intro.Level}")</span>
+                    <span class="chp-chip">@string.Format(Lang.T("challenges.minutes"), _intro.EstimatedMinutes)</span>
+                    <span class="chp-chip">@string.Format(Lang.T("challenges.activities"), _intro.ActivityCount)</span>
+                    <span class="chp-chip">@string.Format(Lang.T("challenges.version"), _intro.VersionNumber)</span>
+                </div>
+                <h2 class="bento-card-title">@Lang.T("challenges.intro.instructions")</h2>
+                <p style="white-space:pre-line;">@_intro.Instructions</p>
+                <h2 class="bento-card-title">@Lang.T("challenges.intro.deliverable")</h2>
+                <p>@_intro.Deliverable</p>
+                <h2 class="bento-card-title">@Lang.T("challenges.intro.tools")</h2>
+                <p>@_intro.AllowedTools</p>
+                <h2 class="bento-card-title">@Lang.T("challenges.intro.assessment")</h2>
+                <p>@_intro.AssessmentDescription</p>
+                @if (_intro.Competencies.Count > 0)
+                {
+                    <h2 class="bento-card-title">@Lang.T("challenges.intro.competencies")</h2>
+                    <div class="chp-meta">@foreach (var c in _intro.Competencies) { <span class="chp-chip">@c</span> }</div>
+                }
+                @if (_intro.HasHumanReview)
+                {
+                    <p class="chp-feedback" style="margin-top:16px;">@Lang.T("challenges.intro.humanReview")</p>
+                }
+            </div>
+
+            @if (_intro.AllowPractice)
+            {
+                <div class="bento-card">
+                    <h2 class="bento-card-title">@Lang.T("challenges.intro.practiceTitle")</h2>
+                    <p>@Lang.T("challenges.intro.practiceDesc")</p>
+                    <button class="ot-btn ot-btn--outline" disabled="@(_busy || (_intro.IsArchived && _intro.PracticeInProgressId == null))" @onclick="() => StartAsync(AttemptMode.Practice)">
+                        @(_intro.PracticeInProgressId != null ? Lang.T("challenges.intro.continuePractice") : Lang.T("challenges.intro.startPractice"))
+                    </button>
+                </div>
+            }
+
+            @if (_intro.AllowEvaluation)
+            {
+                <div class="bento-card">
+                    <h2 class="bento-card-title">@Lang.T("challenges.intro.evalTitle")</h2>
+                    <p>@Lang.T("challenges.intro.evalDesc")</p>
+                    <p class="chp-muted">@string.Format(Lang.T("challenges.intro.attemptsUsed"), _intro.EvaluationsUsed, _intro.MaxEvaluationAttempts)</p>
+                    @if (_intro.EvaluationInProgressId != null)
+                    {
+                        <button class="ot-btn ot-btn--primary" disabled="@_busy" @onclick="() => StartAsync(AttemptMode.Evaluation)">@Lang.T("challenges.intro.continueEval")</button>
+                    }
+                    else if (_intro.EvaluationBlockedReason != null)
+                    {
+                        <p>@Lang.T($"challenges.intro.blocked.{_intro.EvaluationBlockedReason}")</p>
+                        @if (_intro.NextEvaluationAvailableAt is { } next)
+                        {
+                            <p class="chp-muted">@string.Format(Lang.T("challenges.intro.cooldown"), next.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</p>
+                        }
+                    }
+                    else
+                    {
+                        <label class="wizard-checkbox" style="margin:8px 0 12px;">
+                            <input type="checkbox" @bind="_accept" />
+                            <span>@Lang.T("challenges.intro.acceptConditions")</span>
+                        </label>
+                        <button class="ot-btn ot-btn--primary" disabled="@(_busy || !_accept)" @onclick="() => StartAsync(AttemptMode.Evaluation)">@Lang.T("challenges.intro.startEval")</button>
+                    }
+                </div>
+            }
+
+            @if (_error != null)
+            {
+                <div class="bento-card bento-card--full"><p role="alert">@Lang.T($"challenges.errors.{_error}")</p></div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ChallengeIntroDto? _intro;
+    private string? _error;
+    private bool _accept;
+    private bool _busy;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Lang._translations.Count == 0) await Lang.InitializeAsync();
+        (_intro, _error) = await AuthApi.GetChallengeIntroAsync(Id);
+    }
+
+    private async Task StartAsync(AttemptMode mode)
+    {
+        _busy = true;
+        _error = null;
+        var (attempt, error) = await AuthApi.StartChallengeAttemptAsync(Id, new StartAttemptDto { Mode = mode, AcceptConditions = _accept });
+        _busy = false;
+        if (attempt != null) { Nav.NavigateTo($"/skills/attempt/{attempt.AttemptId}"); return; }
+        // Los bloqueos (cooldown, attempts...) se ven mejor recargando la intro.
+        if (error is "cooldown" or "attempts" or "archived" or "notAllowed") { (_intro, _) = await AuthApi.GetChallengeIntroAsync(Id); return; }
+        _error = error is "conditions" or "noCandidate" or "notFound" or "forbidden" ? error : "generic";
+    }
+}

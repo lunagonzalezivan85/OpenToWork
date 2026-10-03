@@ -252,8 +252,8 @@
                     </svg>
                 </div>
                 <div class="dash-action-content">
-                    <span class="dash-action-title">@Lang.T("dashboard.score.skillTestsQuickAction")</span>
-                    <span class="dash-action-desc">@Lang.T("dashboard.score.skillTestsQuickActionDesc")</span>
+                    <span class="dash-action-title">@Lang.T("challenges.dashboardCard")</span>
+                    <span class="dash-action-desc">@Lang.T("challenges.dashboardCardDesc")</span>
                 </div>
             </div>
         </div>
@@ -447,7 +447,7 @@
     }
 
     private void GoToReferences() => Nav.NavigateTo("/references");
-    private void GoToSkillTests() => Nav.NavigateTo("/skill-tests");
+    private void GoToSkillTests() => Nav.NavigateTo("/skills");
 
     private string StatusLabel(int status) => status switch
     {

@@ -894,6 +894,63 @@ public class ApiAuthService
         public int Total { get; set; }
     }
 
+    // ---------------- Retos de hosteleria (api/challenges, api/challenge-attempts) ----------------
+    // Devuelven (valor, codigo de error de la API: "notFound", "cooldown", "locked"...).
+
+    public Task<(List<OpenToWork.Shared.Challenges.ChallengeJobTypeDto>?, string?)> GetChallengeJobTypesAsync() =>
+        ChallengeCallAsync<List<OpenToWork.Shared.Challenges.ChallengeJobTypeDto>>(HttpMethod.Get, "api/challenges/job-types");
+
+    public Task<(List<OpenToWork.Shared.Challenges.ChallengeCardDto>?, string?)> GetChallengeCatalogAsync(Guid jobTypeId) =>
+        ChallengeCallAsync<List<OpenToWork.Shared.Challenges.ChallengeCardDto>>(HttpMethod.Get, $"api/challenges/job-types/{jobTypeId}");
+
+    public Task<(OpenToWork.Shared.Challenges.ChallengeIntroDto?, string?)> GetChallengeIntroAsync(Guid id) =>
+        ChallengeCallAsync<OpenToWork.Shared.Challenges.ChallengeIntroDto>(HttpMethod.Get, $"api/challenges/{id}");
+
+    public Task<(OpenToWork.Shared.Challenges.AttemptViewDto?, string?)> StartChallengeAttemptAsync(Guid id, OpenToWork.Shared.Challenges.StartAttemptDto dto) =>
+        ChallengeCallAsync<OpenToWork.Shared.Challenges.AttemptViewDto>(HttpMethod.Post, $"api/challenges/{id}/attempts", dto);
+
+    public Task<(OpenToWork.Shared.Challenges.AttemptViewDto?, string?)> GetChallengeAttemptAsync(Guid attemptId) =>
+        ChallengeCallAsync<OpenToWork.Shared.Challenges.AttemptViewDto>(HttpMethod.Get, $"api/challenge-attempts/{attemptId}");
+
+    public Task<(OpenToWork.Shared.Challenges.SaveAnswerResultDto?, string?)> SaveChallengeAnswerAsync(Guid attemptId, string activityKey, OpenToWork.Shared.Challenges.ChallengeResponse response) =>
+        ChallengeCallAsync<OpenToWork.Shared.Challenges.SaveAnswerResultDto>(HttpMethod.Put, $"api/challenge-attempts/{attemptId}/answers/{Uri.EscapeDataString(activityKey)}", response);
+
+    public Task<(OpenToWork.Shared.Challenges.AttemptResultDto?, string?)> SubmitChallengeAttemptAsync(Guid attemptId) =>
+        ChallengeCallAsync<OpenToWork.Shared.Challenges.AttemptResultDto>(HttpMethod.Post, $"api/challenge-attempts/{attemptId}/submit");
+
+    public Task<(OpenToWork.Shared.Challenges.AttemptResultDto?, string?)> GetChallengeResultAsync(Guid attemptId) =>
+        ChallengeCallAsync<OpenToWork.Shared.Challenges.AttemptResultDto>(HttpMethod.Get, $"api/challenge-attempts/{attemptId}/result");
+
+    public Task<(List<OpenToWork.Shared.Challenges.AttemptResultDto>?, string?)> GetChallengeHistoryAsync() =>
+        ChallengeCallAsync<List<OpenToWork.Shared.Challenges.AttemptResultDto>>(HttpMethod.Get, "api/challenge-attempts/history");
+
+    public Task<(List<OpenToWork.Shared.Challenges.CompanyChallengeResultDto>?, string?)> GetCandidateChallengeResultsForCompanyAsync(Guid candidateId) =>
+        ChallengeCallAsync<List<OpenToWork.Shared.Challenges.CompanyChallengeResultDto>>(HttpMethod.Get, $"api/company/candidates/{candidateId}/challenge-results");
+
+    private async Task<(T?, string?)> ChallengeCallAsync<T>(HttpMethod method, string url, object? body = null)
+    {
+        try
+        {
+            await SetAuthHeaderAsync();
+            using var request = new HttpRequestMessage(method, url);
+            if (body != null) request.Content = JsonContent.Create(body);
+            using var response = await _httpClient.SendAsync(request);
+            if (response.IsSuccessStatusCode) return (await response.Content.ReadFromJsonAsync<T>(), null);
+            var error = await response.Content.ReadFromJsonAsync<ChallengeError>().ConfigureAwait(false);
+            return (default, error?.Error ?? (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ? "forbidden" : "generic"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Retos: fallo llamando a {Url}", url);
+            return (default, "generic");
+        }
+    }
+
+    private class ChallengeError
+    {
+        public string? Error { get; set; }
+    }
+
     private class RecaptchaResult
     {
         public bool Success { get; set; }
