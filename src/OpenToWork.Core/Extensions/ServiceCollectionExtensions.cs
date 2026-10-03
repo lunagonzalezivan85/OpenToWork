@@ -20,6 +20,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IAlertService, AlertService>();
+        // Retos de hosteleria (docs/dsiezar/retos-hosteleria.md)
+        services.AddScoped<IChallengeAdminService, ChallengeAdminService>();
+        services.AddScoped<IChallengeService, ChallengeService>();
+        services.AddScoped<IChallengeReviewService, ChallengeReviewService>();
         services.AddScoped<ICvParserService, CvParserService>();
         services.AddHttpClient<ICvParserService, CvParserService>();
         services.AddScoped<IValidationService, ValidationService>();
