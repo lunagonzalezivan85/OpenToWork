@@ -319,8 +319,8 @@
                 </svg>
             </div>
             <div class="dash-action-content">
-                <span class="dash-action-title">@Lang.T("dashboard.actions.recordVideo")</span>
-                <span class="dash-action-desc">@Lang.T("dashboard.actions.recordVideoDesc")</span>
+                <span class="dash-action-title">@Lang.T(CandidateProfile?.HasPresentationVideo == true ? "dashboard.actions.viewVideo" : "dashboard.actions.recordVideo")</span>
+                <span class="dash-action-desc">@Lang.T(CandidateProfile?.HasPresentationVideo == true ? "dashboard.actions.viewVideoDesc" : "dashboard.actions.recordVideoDesc")</span>
             </div>
         </div>
 
@@ -571,7 +571,7 @@
         if (CandidateProfile == null) Nav.NavigateTo("/profile?step=0");
         else ShowCvUpdate = true;
     }
-    private void GoToRecordVideo() => Nav.NavigateTo("/profile");
+    private void GoToRecordVideo() => Nav.NavigateTo("/presentation-video");
 
     private static VacancyDto MapToVacancyDto(TempVacancyDto v)
     {

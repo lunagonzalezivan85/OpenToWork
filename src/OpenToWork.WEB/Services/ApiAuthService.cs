@@ -622,6 +622,15 @@ public class ApiAuthService
     }
 
     /// <summary>Foto de perfil propia como data URL (esta en almacenamiento privado del API, no es una URL publica).</summary>
+    /// <summary>Borra el video de presentacion propio. La subida y la reproduccion las hace
+    /// presentation-video.js directamente (ver GetApiAccessAsync).</summary>
+    public async Task<bool> DeletePresentationVideoAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.DeleteAsync("api/profile/video");
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<string?> GetMyPhotoDataUrlAsync()
     {
         await SetAuthHeaderAsync();
@@ -700,6 +709,13 @@ public class ApiAuthService
         await SetAuthHeaderAsync();
         await _httpClient.PutAsync($"api/messages/{conversationId}/read", null);
     }
+
+    /// <summary>
+    /// URL base del API y token actual, para las subidas y descargas grandes que hace JavaScript
+    /// directamente (video de presentacion) sin pasar el archivo por la memoria de WebAssembly.
+    /// </summary>
+    public async Task<(string BaseUrl, string? Token)> GetApiAccessAsync() =>
+        (_httpClient.BaseAddress?.ToString() ?? "/", await _localStorage.GetItemAsync("opentowork-token"));
 
     public async Task SetAuthHeaderAsync()
     {

@@ -1,0 +1,312 @@
+@page "/presentation-video"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@implements IAsyncDisposable
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+@inject NavigationManager Nav
+@inject IJSRuntime Js
+
+@* Video de presentacion de 1 minuto (accion rapida "Mejorar presentacion", 3-Oct): grabarlo con la
+   camara o subir uno grabado con el movil. Solo lo ve el equipo de Trato Directo (no las empresas).
+   La grabacion, la subida y la reproduccion las hace wwwroot/js/presentation-video.js. *@
+
+<PageTitle>@Lang.T("profile.video.title")</PageTitle>
+
+<div class="page-container">
+    <div class="dash-banner-card">
+        <div class="dash-banner-info">
+            <h1 class="dash-banner-title">@Lang.T("profile.video.title")</h1>
+            <p class="dash-banner-role">@Lang.T("profile.video.subtitle")</p>
+        </div>
+        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="GoBack">@Lang.T("dashboard.references.back")</button>
+    </div>
+
+    <div class="bento-grid">
+        <div class="bento-card bento-card--full pv-card">
+            @if (State == "loading")
+            {
+                <div class="wizard-loading"><div class="wizard-skeleton-main"></div></div>
+            }
+
+            @* El reproductor esta siempre en el DOM: JS le asigna la camara, lo grabado o el video guardado. *@
+            <video @ref="Player" class="pv-player @(ShowPlayer ? "" : "pv-player--hidden")" playsinline></video>
+
+            @if (State == "recording")
+            {
+                <div class="pv-recording-bar">
+                    <span class="pv-rec-dot"></span>
+                    <span class="pv-timer">@FormatSeconds(Seconds) / 1:00</span>
+                    <button class="ot-btn ot-btn--primary ot-btn--small" @onclick="StopRecordingAsync" disabled="@(!IsRecording)">
+                        @Lang.T("profile.video.stop")
+                    </button>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Error))
+            {
+                <div class="alert alert-error">@Error</div>
+            }
+
+            @switch (State)
+            {
+                case "current":
+                    <p class="dash-chart-info-text">@Lang.T("profile.video.currentText")</p>
+                    <div class="pv-actions">
+                        <button class="ot-btn ot-btn--outline ot-btn--small" @onclick="ChooseAgain">@Lang.T("profile.video.replace")</button>
+                        <button class="ot-btn ot-btn--ghost ot-btn--small" @onclick="DeleteAsync" disabled="@IsBusy">@Lang.T("profile.video.delete")</button>
+                    </div>
+                    break;
+
+                case "choose":
+                    <ul class="pv-tips">
+                        <li>@Lang.T("profile.video.tip1")</li>
+                        <li>@Lang.T("profile.video.tip2")</li>
+                        <li>@Lang.T("profile.video.tip3")</li>
+                    </ul>
+                    <div class="pv-actions">
+                        @if (CanRecord)
+                        {
+                            <button class="ot-btn ot-btn--primary" @onclick="StartCameraAsync">@Lang.T("profile.video.record")</button>
+                        }
+                        <label class="ot-btn ot-btn--outline" for="pv-file-input">@Lang.T("profile.video.upload")</label>
+                        <input id="pv-file-input" @ref="FileInput" type="file" accept="video/*" class="pv-file-input" @onchange="OnFilePickedAsync" />
+                        @if (HadVideo)
+                        {
+                            <button class="ot-btn ot-btn--ghost" @onclick="BackToCurrentAsync">@Lang.T("common.buttons.cancel")</button>
+                        }
+                    </div>
+                    <p class="onboarding-hint">@Lang.T("profile.video.limits")</p>
+                    break;
+
+                case "camera":
+                    <div class="pv-actions">
+                        <button class="ot-btn ot-btn--primary" @onclick="StartRecordingAsync">@Lang.T("profile.video.startRecording")</button>
+                        <button class="ot-btn ot-btn--ghost" @onclick="CancelCameraAsync">@Lang.T("common.buttons.cancel")</button>
+                    </div>
+                    break;
+
+                case "review":
+                    <p class="dash-chart-info-text">@Lang.T("profile.video.reviewText")</p>
+                    <div class="pv-actions">
+                        <button class="ot-btn ot-btn--primary" @onclick="UploadAsync">@Lang.T("profile.video.useThis")</button>
+                        <button class="ot-btn ot-btn--outline" @onclick="DiscardAsync">@Lang.T("profile.video.again")</button>
+                    </div>
+                    break;
+
+                case "uploading":
+                    <div class="pv-progress"><div class="pv-progress-fill" style="width: @(Progress)%"></div></div>
+                    <p class="dash-chart-info-text">@Lang.T("profile.video.uploading") @(Progress)%</p>
+                    break;
+            }
+
+            <p class="pv-privacy">@Lang.T("profile.video.privacy")</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ElementReference Player;
+    private ElementReference FileInput;
+    private DotNetObjectReference<PresentationVideo>? SelfRef;
+
+    // loading | current | choose | camera | recording | review | uploading
+    private string State { get; set; } = "loading";
+    private bool HadVideo { get; set; }
+    private bool CanRecord { get; set; }
+    private bool IsRecording { get; set; }
+    private bool IsBusy { get; set; }
+    private int Seconds { get; set; }
+    private int Progress { get; set; }
+    private string? Error { get; set; }
+
+    private bool ShowPlayer => State is "current" or "camera" or "recording" or "review";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        SelfRef = DotNetObjectReference.Create(this);
+        CanRecord = await Js.InvokeAsync<bool>("presentationVideo.isRecordingSupported");
+
+        var candidate = await AuthApi.GetCandidateProfileAsync();
+        if (candidate == null)
+        {
+            Nav.NavigateTo("/login?returnUrl=/presentation-video");
+            return;
+        }
+
+        HadVideo = candidate.HasPresentationVideo;
+        if (HadVideo && await LoadCurrentAsync())
+            State = "current";
+        else
+            State = "choose";
+        StateHasChanged();
+    }
+
+    private async Task<bool> LoadCurrentAsync()
+    {
+        var (baseUrl, token) = await AuthApi.GetApiAccessAsync();
+        return await Js.InvokeAsync<bool>("presentationVideo.loadCurrent", baseUrl, token, Player);
+    }
+
+    private void ChooseAgain()
+    {
+        Error = null;
+        State = "choose";
+    }
+
+    private async Task BackToCurrentAsync()
+    {
+        Error = null;
+        State = await LoadCurrentAsync() ? "current" : "choose";
+    }
+
+    // --- Grabar ---
+
+    private async Task StartCameraAsync()
+    {
+        Error = null;
+        State = "camera";
+        StateHasChanged();
+        var result = await Js.InvokeAsync<JsResult>("presentationVideo.startCamera", Player);
+        if (!result.Ok)
+        {
+            Error = Lang.T(result.Error == "denied" ? "profile.video.cameraDenied" : "profile.video.cameraUnavailable");
+            State = "choose";
+        }
+    }
+
+    private async Task StartRecordingAsync()
+    {
+        Seconds = 0;
+        IsRecording = await Js.InvokeAsync<bool>("presentationVideo.startRecording", SelfRef);
+        if (IsRecording) State = "recording";
+    }
+
+    private async Task StopRecordingAsync() => await Js.InvokeVoidAsync("presentationVideo.stopRecording");
+
+    private async Task CancelCameraAsync()
+    {
+        await Js.InvokeVoidAsync("presentationVideo.stopCamera");
+        State = "choose";
+    }
+
+    [JSInvokable]
+    public void OnRecordingTick(int seconds)
+    {
+        Seconds = seconds;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnRecordingStopped(long size)
+    {
+        IsRecording = false;
+        await Js.InvokeVoidAsync("presentationVideo.reviewRecording", Player);
+        State = "review";
+        StateHasChanged();
+    }
+
+    // --- Subir archivo ---
+
+    private async Task OnFilePickedAsync(ChangeEventArgs _)
+    {
+        Error = null;
+        State = "review";   // el reproductor tiene que estar visible para mostrar el archivo
+        StateHasChanged();
+        var result = await Js.InvokeAsync<JsResult>("presentationVideo.pickFile", FileInput, Player);
+        if (result.Ok) return;
+
+        State = "choose";
+        Error = result.Error switch
+        {
+            "type" => Lang.T("profile.video.errorType"),
+            "size" => Lang.T("profile.video.errorSize"),
+            "duration" => string.Format(Lang.T("profile.video.errorDuration"), result.Seconds),
+            _ => null
+        };
+    }
+
+    // --- Revisar y guardar ---
+
+    private async Task DiscardAsync()
+    {
+        await Js.InvokeVoidAsync("presentationVideo.discardPending");
+        State = "choose";
+    }
+
+    private async Task UploadAsync()
+    {
+        Error = null;
+        Progress = 0;
+        State = "uploading";
+        StateHasChanged();
+
+        var (baseUrl, token) = await AuthApi.GetApiAccessAsync();
+        var result = await Js.InvokeAsync<JsResult>("presentationVideo.uploadPending", baseUrl, token, SelfRef);
+        if (!result.Ok)
+        {
+            Error = result.Status switch
+            {
+                401 => Lang.T("profile.video.errorSession"),
+                413 => Lang.T("profile.video.errorSize"),
+                400 when !string.IsNullOrEmpty(result.Message) => result.Message,
+                _ => Lang.T("profile.video.errorUpload")
+            };
+            State = "review";
+            return;
+        }
+
+        await Js.InvokeVoidAsync("presentationVideo.discardPending");
+        HadVideo = true;
+        State = await LoadCurrentAsync() ? "current" : "choose";
+    }
+
+    [JSInvokable]
+    public void OnUploadProgress(int percent)
+    {
+        Progress = percent;
+        StateHasChanged();
+    }
+
+    private async Task DeleteAsync()
+    {
+        IsBusy = true;
+        if (await AuthApi.DeletePresentationVideoAsync())
+        {
+            HadVideo = false;
+            State = "choose";
+        }
+        else
+        {
+            Error = Lang.T("profile.video.errorUpload");
+        }
+        IsBusy = false;
+    }
+
+    private void GoBack() => Nav.NavigateTo("/dashboard");
+
+    private static string FormatSeconds(int s) => $"{s / 60}:{s % 60:00}";
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await Js.InvokeVoidAsync("presentationVideo.dispose"); } catch { }
+        SelfRef?.Dispose();
+    }
+
+    private class JsResult
+    {
+        public bool Ok { get; set; }
+        public string? Error { get; set; }
+        public int? Seconds { get; set; }
+        public int Status { get; set; }
+        public string? Message { get; set; }
+    }
+}
