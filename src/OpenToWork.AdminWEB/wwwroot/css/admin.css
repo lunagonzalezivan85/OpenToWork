@@ -154,14 +154,21 @@
     transform: rotate(180deg);
 }
 
+/* Plegado con grid-template-rows 0fr -> 1fr: anima hasta la altura real del grupo
+   (con max-height fijo la curva se estiraba sobre 600px y el cierre arrancaba tarde). */
 .admin-nav-group-items {
-    overflow: hidden;
-    max-height: 0;
-    transition: max-height var(--transition);
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--transition);
 }
 
 .admin-nav-group--collapsible.expanded .admin-nav-group-items {
-    max-height: 600px;
+    grid-template-rows: 1fr;
+}
+
+.admin-nav-group-inner {
+    min-height: 0;
+    overflow: hidden;
 }
 
 .admin-nav-item--sub {
