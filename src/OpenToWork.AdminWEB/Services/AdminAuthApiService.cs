@@ -205,6 +205,21 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<PresentationVideoSettingsDto?> GetPresentationVideoSettingsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/admin/system-config/presentation-videos");
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<PresentationVideoSettingsDto>();
+    }
+
+    public async Task<bool> SetPresentationVideosEnabledAsync(bool enabled)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync("api/admin/system-config/presentation-videos", new { Enabled = enabled });
+        return response.IsSuccessStatusCode;
+    }
+
     public async Task<bool> GetCandidatePriorityPlanEnabledAsync()
     {
         await SetAuthHeaderAsync();
@@ -1052,6 +1067,12 @@ public class AdminAuthApiService
         var response = await _httpClient.PostAsJsonAsync($"api/admin/recruitment-deliveries/{deliveryId}/feedback", dto);
         return await ReadResultAsync<DeliveryDto>(response);
     }
+
+    /// <summary>
+    /// Token del admin (descifrado) para las descargas grandes que hace JavaScript a traves de
+    /// /media/... (video de presentacion), sin pasar el archivo por el circuito de Blazor.
+    /// </summary>
+    public async Task<string?> GetAccessTokenAsync() => await _localStorage.GetItemAsync("otwadmin-token");
 
     public async Task SetAuthHeaderAsync()
     {

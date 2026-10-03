@@ -16,6 +16,18 @@
         "pendingText": "Fill in what your CV didn't include. You can leave it for later.",
         "finish": "Confirm and go to my dashboard"
     },
+    "cvUpdate": {
+        "title": "Update your CV",
+        "titleFirst": "Upload your CV",
+        "text": "Upload your latest CV. The AI will read it again and update your profile; you can review the details before saving.",
+        "textFirst": "Upload your CV and our AI will fill in your profile for you. You can review the details before saving.",
+        "upload": "Upload updated CV",
+        "reviewText": "Check that the details are correct. When you confirm, your experience, education and skills are replaced with those from this CV.",
+        "keepCurrent": "Keep my current CV",
+        "pendingTitle": "CV updated",
+        "pendingText": "Check whether anything is still missing from your profile. You can leave it for later.",
+        "finish": "Save and back to dashboard"
+    },
     "pending": {
         "title": "Complete your profile",
         "nothingMissing": "Your profile is complete!",
@@ -52,8 +64,12 @@
         "createVacancy": "Create vacancy",
         "uploadCv": "Upload my CV",
         "uploadCvDesc": "Attach your PDF resume",
+        "updateCv": "Update my CV",
+        "updateCvDesc": "Upload your latest CV and the AI will bring your profile up to date",
         "recordVideo": "Improve presentation",
-        "recordVideoDesc": "Record a presentation video",
+        "recordVideoDesc": "Record a 1-minute video introducing yourself",
+        "viewVideo": "My introduction video",
+        "viewVideoDesc": "Watch it or record it again",
         "findJob": "Find your next job",
         "findJobDesc": "Explore vacancies that match you",
         "requestVerification": "Request verification",

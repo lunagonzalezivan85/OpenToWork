@@ -80,6 +80,26 @@ public class ProfileService : IProfileService
         return true;
     }
 
+    public async Task<string?> GetPresentationVideoAsync(Guid userId) =>
+        await _context.PT_Candidates
+            .Where(c => c.SCUserId == userId && !c.IsDeleted)
+            .Select(c => c.PresentationVideoUrl)
+            .FirstOrDefaultAsync();
+
+    public async Task<bool> SetPresentationVideoAsync(Guid userId, string? videoUrl)
+    {
+        var candidate = await _context.PT_Candidates
+            .FirstOrDefaultAsync(c => c.SCUserId == userId && !c.IsDeleted);
+        if (candidate == null) return false;
+
+        candidate.PresentationVideoUrl = videoUrl;
+        candidate.PresentationVideoUploadedAt = videoUrl == null ? null : DateTime.UtcNow;
+        candidate.UpdatedAt = DateTime.UtcNow;
+        candidate.UpdatedBy = userId;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     private static string Truncate(string value, int max) => value.Length <= max ? value : value[..max];
 
     public async Task<CandidateCvReference?> GetCvForViewerAsync(Guid candidateId, Guid viewerUserId)

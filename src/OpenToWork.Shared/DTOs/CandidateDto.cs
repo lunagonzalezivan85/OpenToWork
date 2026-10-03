@@ -14,6 +14,7 @@ public class CandidateDto
     public string? Summary { get; set; }
     public string? CvUrl { get; set; }
     public string? ProfilePictureUrl { get; set; }
+    public bool HasPresentationVideo { get; set; }
     public string? Country { get; set; }
     public string? City { get; set; }
     public string? Address { get; set; }

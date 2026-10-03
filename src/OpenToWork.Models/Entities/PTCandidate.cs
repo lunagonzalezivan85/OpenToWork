@@ -57,6 +57,15 @@ public class PTCandidate : BaseEntity
     [MaxLength(500)]
     public string? ProfilePictureUrl { get; set; }
 
+    /// <summary>
+    /// Video de presentacion (1 minuto) en almacenamiento privado: "/uploads/videos/{archivo}".
+    /// Solo lo ven el candidato y el equipo de Trato Directo desde el admin; no se comparte con empresas.
+    /// </summary>
+    [MaxLength(500)]
+    public string? PresentationVideoUrl { get; set; }
+
+    public DateTime? PresentationVideoUploadedAt { get; set; }
+
     [MaxLength(100)]
     public string? Country { get; set; }
 

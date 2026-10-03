@@ -105,6 +105,8 @@ public class AdminUserService : IAdminUserService
             dto.PortfolioUrl = c.PortfolioUrl;
             dto.CvUrl = c.CvUrl;
             dto.ProfilePictureUrl = c.ProfilePictureUrl;
+            dto.HasPresentationVideo = c.PresentationVideoUrl != null;
+            dto.PresentationVideoUploadedAt = c.PresentationVideoUploadedAt;
             dto.WizardCompleted = c.WizardCompleted;
             dto.Availability = c.Availability;
             dto.WorkAuthorization = c.WorkAuthorization;

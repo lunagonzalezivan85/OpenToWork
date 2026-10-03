@@ -16,12 +16,16 @@ public class ProfileController : ControllerBase
     private readonly IWebHostEnvironment _env;
     private readonly ICvStorage _cvStorage;
     private readonly IProfilePhotoStorage _photoStorage;
+    private readonly IPresentationVideoStorage _videoStorage;
+    private readonly ISystemConfigService _configService;
     private readonly ILogger<ProfileController> _logger;
 
-    public ProfileController(IProfileService profileService, ICvParserService cvParserService, IWebHostEnvironment env, ICvStorage cvStorage, IProfilePhotoStorage photoStorage, ILogger<ProfileController> logger)
+    public ProfileController(IProfileService profileService, ICvParserService cvParserService, IWebHostEnvironment env, ICvStorage cvStorage, IProfilePhotoStorage photoStorage, IPresentationVideoStorage videoStorage, ISystemConfigService configService, ILogger<ProfileController> logger)
     {
         _cvStorage = cvStorage;
         _photoStorage = photoStorage;
+        _videoStorage = videoStorage;
+        _configService = configService;
         _profileService = profileService;
         _cvParserService = cvParserService;
         _env = env;
@@ -123,6 +127,73 @@ public class ProfileController : ControllerBase
 
         _photoStorage.Delete(previous, userId.Value);
         return Ok(new { profilePictureUrl = photoUrl });
+    }
+
+    /// <summary>Si la opcion de videos de presentacion esta encendida (configuracion del admin).</summary>
+    [HttpGet("video/enabled")]
+    public async Task<IActionResult> GetVideoEnabled() =>
+        Ok(new { enabled = await _configService.GetPresentationVideosEnabledAsync() });
+
+    /// <summary>Video de presentacion propio. Almacenamiento privado (IPresentationVideoStorage): solo
+    /// lo ven el candidato y el equipo de Trato Directo desde el admin. Con rangos para poder avanzar.
+    /// Con la opcion apagada el candidato no lo ve (el equipo si, desde el admin).</summary>
+    [HttpGet("video")]
+    public async Task<IActionResult> GetMyVideo()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        if (!await _configService.GetPresentationVideosEnabledAsync()) return NotFound();
+
+        var video = _videoStorage.ResolveForOwner(await _profileService.GetPresentationVideoAsync(userId.Value), userId.Value);
+        return video == null ? NotFound() : PhysicalFile(video.Value.Path, video.Value.ContentType, enableRangeProcessing: true);
+    }
+
+    /// <summary>Sube (o sustituye) el video de presentacion: grabado en la web (WebM) o desde el movil (MP4/MOV).
+    /// La duracion (1 minuto) la controla el navegador; aqui se limita el tamaño y se valida el formato.</summary>
+    [HttpPost("video")]
+    [RequestSizeLimit(PresentationVideoStorage.MaxBytes + 1_000_000)]
+    [RequestFormLimits(MultipartBodyLengthLimit = PresentationVideoStorage.MaxBytes + 1_000_000)]
+    public async Task<IActionResult> UploadVideo(IFormFile file)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (!await _configService.GetPresentationVideosEnabledAsync())
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Los videos de presentacion no estan disponibles." });
+
+        if (file == null || file.Length == 0) return BadRequest(new { message = "No se recibio ningun video." });
+        if (file.Length > PresentationVideoStorage.MaxBytes) return BadRequest(new { message = "El video no puede superar 20 MB." });
+
+        await using var stream = file.OpenReadStream();
+        var header = new byte[PresentationVideoStorage.HeaderBytes];
+        var read = await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false);
+        var type = _videoStorage.Detect(header[..read]);
+        if (type == null) return BadRequest(new { message = "Solo se admiten videos MP4, MOV o WebM." });
+        stream.Position = 0;
+
+        var previous = await _profileService.GetPresentationVideoAsync(userId.Value);
+        var videoUrl = await _videoStorage.SaveAsync(userId.Value, stream, type.Value.Extension);
+        if (!await _profileService.SetPresentationVideoAsync(userId.Value, videoUrl))
+        {
+            _videoStorage.Delete(videoUrl, userId.Value);
+            return NotFound();
+        }
+
+        _videoStorage.Delete(previous, userId.Value);
+        return Ok(new { hasPresentationVideo = true });
+    }
+
+    [HttpDelete("video")]
+    public async Task<IActionResult> DeleteVideo()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var previous = await _profileService.GetPresentationVideoAsync(userId.Value);
+        if (!await _profileService.SetPresentationVideoAsync(userId.Value, null)) return NotFound();
+
+        _videoStorage.Delete(previous, userId.Value);
+        return NoContent();
     }
 
     [HttpDelete("photo")]

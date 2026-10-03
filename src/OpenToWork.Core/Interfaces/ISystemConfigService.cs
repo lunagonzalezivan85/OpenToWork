@@ -27,6 +27,11 @@ public interface ISystemConfigService
     Task<bool> GetCandidatePriorityPlanEnabledAsync();
     Task SetCandidatePriorityPlanEnabledAsync(bool enabled, Guid staffId);
 
+    /// <summary>Video de presentacion de candidatos. Apagado por defecto: el candidato no ve la opcion
+    /// ni puede subir videos; los ya subidos se conservan y el equipo los sigue viendo en el admin.</summary>
+    Task<bool> GetPresentationVideosEnabledAsync();
+    Task SetPresentationVideosEnabledAsync(bool enabled, Guid staffId);
+
     /// <summary>Independiente del flag de candidatos. Encendido por defecto (los planes de empresa
     /// ya estaban visibles antes de que este flag existiera).</summary>
     Task<bool> GetCompanyPlansEnabledAsync();

@@ -222,6 +222,8 @@ public class AdminUserProfileDto
     public string? PortfolioUrl { get; set; }
     public string? CvUrl { get; set; }
     public string? ProfilePictureUrl { get; set; }
+    public bool HasPresentationVideo { get; set; }
+    public DateTime? PresentationVideoUploadedAt { get; set; }
     public bool? WizardCompleted { get; set; }
     public int? Availability { get; set; }
     public int? WorkAuthorization { get; set; }

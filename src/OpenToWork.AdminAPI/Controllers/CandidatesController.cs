@@ -23,6 +23,7 @@ public class CandidatesController : AdminControllerBase
     private readonly ICompatibilityService _compatibilityService;
     private readonly ICvStorage _cvStorage;
     private readonly IProfilePhotoStorage _photoStorage;
+    private readonly IPresentationVideoStorage _videoStorage;
     private readonly IProfileService _profileService;
 
     public CandidatesController(
@@ -37,6 +38,7 @@ public class CandidatesController : AdminControllerBase
         ICompatibilityService compatibilityService,
         ICvStorage cvStorage,
         IProfilePhotoStorage photoStorage,
+        IPresentationVideoStorage videoStorage,
         IProfileService profileService)
     {
         _candidateService = candidateService;
@@ -50,7 +52,17 @@ public class CandidatesController : AdminControllerBase
         _compatibilityService = compatibilityService;
         _cvStorage = cvStorage;
         _photoStorage = photoStorage;
+        _videoStorage = videoStorage;
         _profileService = profileService;
+    }
+
+    /// <summary>Video de presentacion del candidato para el equipo de TD (almacenamiento privado; no se
+    /// comparte con empresas). Con rangos para poder avanzar en el reproductor.</summary>
+    [HttpGet("{userId:guid}/video")]
+    public async Task<IActionResult> GetVideo(Guid userId)
+    {
+        var video = _videoStorage.ResolveForOwner(await _profileService.GetPresentationVideoAsync(userId), userId);
+        return video == null ? NotFound() : PhysicalFile(video.Value.Path, video.Value.ContentType, enableRangeProcessing: true);
     }
 
     /// <summary>Foto de perfil del candidato para el equipo de TD (almacenamiento privado).</summary>

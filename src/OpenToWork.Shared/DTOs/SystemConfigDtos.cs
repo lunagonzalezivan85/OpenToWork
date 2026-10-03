@@ -63,3 +63,11 @@ public class AiSettingsDto
     public bool AdminSuggestionsEnabled { get; set; }
     public bool MatchingEnabled { get; set; }
 }
+
+/// <summary>Configuracion > Videos de candidatos: interruptor y espacio que ocupan los videos guardados.</summary>
+public class PresentationVideoSettingsDto
+{
+    public bool Enabled { get; set; }
+    public int VideoCount { get; set; }
+    public long TotalBytes { get; set; }
+}

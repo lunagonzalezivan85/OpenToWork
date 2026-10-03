@@ -1045,8 +1045,11 @@
             UserInitials = NameInitials.From(ProfileData.FirstName, ProfileData.LastName);
 
         // /profile?step=N abre directamente ese paso (lo usa "Completar perfil" del panel).
+        // Sin ?step y con CV ya subido se empieza en el paso siguiente, sin volver a pedirlo.
         if (Step is >= 0 && Step < WizardSteps.Count)
             CurrentStep = Step.Value;
+        else if (!string.IsNullOrEmpty(ProfileData.CvUrl))
+            CurrentStep = 1;
         if (!string.IsNullOrEmpty(ProfileData.ProfilePictureUrl))
             PhotoDataUrl = await AuthApi.GetMyPhotoDataUrlAsync();
     }
