@@ -3687,6 +3687,7 @@ textarea.admin-input {
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    transition: opacity 0.2s var(--ease-out);
 }
 
 .admin-modal {
@@ -3696,6 +3697,20 @@ textarea.admin-input {
     min-width: 400px;
     max-width: 500px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+
+/* Entrada de los modales: el fondo funde y la ventana crece un poco desde el centro.
+   @starting-style anima al montarse en el DOM sin JS; con movimiento reducido queda solo el fundido. */
+@starting-style {
+    .admin-modal-overlay {
+        opacity: 0;
+    }
+
+    .admin-modal {
+        opacity: 0;
+        transform: scale(0.96);
+    }
 }
 
 .admin-modal-title {
