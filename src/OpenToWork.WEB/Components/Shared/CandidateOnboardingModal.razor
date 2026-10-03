@@ -7,7 +7,9 @@
 
 @* Ventana del primer ingreso del candidato (pedido de Darwin, 1-Oct; sustituye al antiguo /wizard):
    subir el CV -> la IA lo analiza -> el candidato revisa lo extraido -> completa lo que falte -> panel.
-   Sin CV: "Completar manualmente" lleva al perfil por pasos. *@
+   Sin CV: "Completar manualmente" lleva al perfil por pasos.
+   Con IsUpdate (accion rapida "Actualizar mi CV", 3-Oct) es el mismo flujo para sustituir un CV
+   desactualizado: textos propios y "Cancelar" en lugar de "completar manualmente". *@
 <div class="cv-modal-overlay">
     @* Fuera del switch a proposito: si el InputFile desaparece al pasar a "analizando", Blazor ya no
        puede leer el archivo y la subida falla. *@
@@ -23,8 +25,8 @@
                             <path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3" />
                         </svg>
                     </div>
-                    <h3 class="cv-modal-title">@WelcomeTitle</h3>
-                    <p class="cv-modal-desc">@Lang.T("dashboard.onboarding.welcomeText")</p>
+                    <h3 class="cv-modal-title">@(IsUpdate ? Lang.T(HasCv ? "dashboard.cvUpdate.title" : "dashboard.cvUpdate.titleFirst") : WelcomeTitle)</h3>
+                    <p class="cv-modal-desc">@Lang.T(IsUpdate ? (HasCv ? "dashboard.cvUpdate.text" : "dashboard.cvUpdate.textFirst") : "dashboard.onboarding.welcomeText")</p>
 
                     @if (!string.IsNullOrEmpty(Error))
                     {
@@ -32,13 +34,22 @@
                     }
 
                     <label class="ot-btn ot-btn--primary ot-btn--medium onboarding-upload" for="onboarding-cv-input">
-                        @Lang.T("dashboard.onboarding.uploadCv")
+                        @Lang.T(IsUpdate && HasCv ? "dashboard.cvUpdate.upload" : "dashboard.onboarding.uploadCv")
                     </label>
                     <p class="onboarding-hint">@Lang.T("dashboard.onboarding.pdfHint")</p>
 
-                    <button type="button" class="ot-btn ot-btn--ghost ot-btn--small" @onclick="CompleteManuallyAsync">
-                        @Lang.T("dashboard.onboarding.manual")
-                    </button>
+                    @if (IsUpdate)
+                    {
+                        <button type="button" class="ot-btn ot-btn--ghost ot-btn--small" @onclick="() => OnCancel.InvokeAsync()">
+                            @Lang.T("common.buttons.cancel")
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="ot-btn ot-btn--ghost ot-btn--small" @onclick="CompleteManuallyAsync">
+                            @Lang.T("dashboard.onboarding.manual")
+                        </button>
+                    }
                 </div>
                 break;
 
@@ -55,11 +66,16 @@
                     <h3 class="cv-modal-title">@Lang.T("dashboard.onboarding.reviewTitle")</h3>
                 </div>
                 <div class="cv-modal-body">
-                    <p class="cv-modal-desc">@Lang.T("dashboard.onboarding.reviewText")</p>
+                    <p class="cv-modal-desc">@Lang.T(IsUpdate ? "dashboard.cvUpdate.reviewText" : "dashboard.onboarding.reviewText")</p>
                     <CvParseResultView Result="ParseResult!" />
                 </div>
                 <div class="cv-modal-footer">
                     <div class="cv-modal-footer-buttons">
+                        @if (IsUpdate)
+                        {
+                            @* Hasta confirmar no se toca nada: el CV del perfil solo cambia al aplicar. *@
+                            <button class="ot-btn ot-btn--ghost" @onclick="() => OnCancel.InvokeAsync()">@Lang.T("dashboard.cvUpdate.keepCurrent")</button>
+                        }
                         <button class="ot-btn ot-btn--secondary" @onclick="BackToWelcome">@Lang.T("dashboard.onboarding.otherCv")</button>
                         <button class="ot-btn ot-btn--primary" @onclick="ApplyCvAsync">@Lang.T("dashboard.onboarding.confirmData")</button>
                     </div>
@@ -75,12 +91,12 @@
 
             case "pending":
                 <div class="cv-modal-header">
-                    <h3 class="cv-modal-title">@Lang.T("dashboard.onboarding.pendingTitle")</h3>
+                    <h3 class="cv-modal-title">@Lang.T(IsUpdate ? "dashboard.cvUpdate.pendingTitle" : "dashboard.onboarding.pendingTitle")</h3>
                 </div>
                 <div class="cv-modal-body">
-                    <p class="cv-modal-desc">@Lang.T("dashboard.onboarding.pendingText")</p>
+                    <p class="cv-modal-desc">@Lang.T(IsUpdate ? "dashboard.cvUpdate.pendingText" : "dashboard.onboarding.pendingText")</p>
                     <PendingProfileForm Candidate="Current" OnSaved="FinishAsync"
-                                        SaveLabel="@Lang.T("dashboard.onboarding.finish")" />
+                                        SaveLabel="@Lang.T(IsUpdate ? "dashboard.cvUpdate.finish" : "dashboard.onboarding.finish")" />
                 </div>
                 break;
         }
@@ -91,6 +107,10 @@
     [Parameter, EditorRequired] public CandidateDto Candidate { get; set; } = default!;
     /// <summary>Al terminar (CV aplicado y datos confirmados). Recibe el candidato actualizado.</summary>
     [Parameter] public EventCallback<CandidateDto> OnFinished { get; set; }
+    /// <summary>Actualizar un CV ya subido en lugar del primer ingreso.</summary>
+    [Parameter] public bool IsUpdate { get; set; }
+    /// <summary>Solo con IsUpdate: cerrar sin cambiar nada (se conservan el CV y los datos actuales).</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
 
     private const long MaxCvBytes = 10 * 1024 * 1024; // mismo limite que el perfil
 
@@ -101,6 +121,7 @@
     // Candidato tras aplicar el CV (el parametro no se pisa desde dentro).
     private CandidateDto? Reloaded { get; set; }
     private CandidateDto Current => Reloaded ?? Candidate;
+    private bool HasCv => !string.IsNullOrEmpty(Candidate.CvUrl);
 
     private string WelcomeTitle => string.IsNullOrWhiteSpace(Candidate.FirstName)
         ? Lang.T("dashboard.onboarding.welcomeTitleNoName")
