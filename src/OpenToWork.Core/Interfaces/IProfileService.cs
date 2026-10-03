@@ -21,6 +21,10 @@ public interface IProfileService
     Task<string?> GetProfilePictureAsync(Guid userId);
     /// <summary>Cambia (o quita, con null) la foto de perfil. Devuelve false si el usuario no tiene perfil de candidato.</summary>
     Task<bool> SetProfilePictureAsync(Guid userId, string? photoUrl);
+    /// <summary>Referencia actual del video de presentacion del candidato (null si no tiene).</summary>
+    Task<string?> GetPresentationVideoAsync(Guid userId);
+    /// <summary>Cambia (o quita, con null) el video de presentacion. Devuelve false si el usuario no tiene perfil de candidato.</summary>
+    Task<bool> SetPresentationVideoAsync(Guid userId, string? videoUrl);
     Task<CandidateExperienceDto> AddExperienceAsync(Guid userId, CreateExperienceDto dto);
     Task<CandidateExperienceDto?> UpdateExperienceAsync(Guid experienceId, UpdateExperienceDto dto, Guid userId);
     Task<bool> DeleteExperienceAsync(Guid experienceId, Guid userId);

@@ -55,6 +55,7 @@ var storageRoot = builder.Configuration["Storage:Root"]
     ?? Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "..", "storage"));
 builder.Services.AddSingleton<OpenToWork.Core.Interfaces.ICvStorage>(new OpenToWork.Core.Services.CvStorage(storageRoot));
 builder.Services.AddSingleton<OpenToWork.Core.Interfaces.IProfilePhotoStorage>(new OpenToWork.Core.Services.ProfilePhotoStorage(storageRoot));
+builder.Services.AddSingleton<OpenToWork.Core.Interfaces.IPresentationVideoStorage>(new OpenToWork.Core.Services.PresentationVideoStorage(storageRoot));
 
 // Keyring compartido con la API del portal: secretos de SY_SystemConfig cifrados con IDataProtection.
 builder.Services.AddDataProtection()

@@ -163,6 +163,7 @@ public class CandidateService : ICandidateService
         Summary = c.Summary,
         CvUrl = c.CvUrl,
         ProfilePictureUrl = c.ProfilePictureUrl,
+        HasPresentationVideo = c.PresentationVideoUrl != null,
         Country = c.Country,
         City = c.City,
         Address = c.Address,
