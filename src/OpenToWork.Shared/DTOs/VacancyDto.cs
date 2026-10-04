@@ -13,6 +13,14 @@ public class VacancyDto
     public decimal? SalaryMin { get; set; }
     public decimal? SalaryMax { get; set; }
     public string? Location { get; set; }
+
+    /// <summary>Coordenadas geocodificadas (busqueda por radio). Null si la ubicacion no se resolvio.</summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
+    /// <summary>Solo en busquedas por radio: distancia al punto elegido.</summary>
+    public double? DistanceKm { get; set; }
+
     public int ContractType { get; set; }
     public int WorkMode { get; set; }
     public string? Category { get; set; }
@@ -39,6 +47,7 @@ public class VacancyDto
 
 public class CreateVacancyDto
 {
+    [System.ComponentModel.DataAnnotations.Required]
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? Requirements { get; set; }
@@ -86,6 +95,17 @@ public class SearchPermanentVacancyDto
     public int? ExperienceLevel { get; set; }
     public int? EnglishLevel { get; set; }
     public decimal? SalaryMin { get; set; }
+    public decimal? SalaryMax { get; set; }
+
+    /// <summary>recent (defecto) | oldest | salaryDesc | salaryAsc | distance (solo con geo).</summary>
+    public string? SortBy { get; set; }
+
+    /// <summary>Busqueda por radio: punto elegido en el mapa + radio en km. Con geo activo
+    /// el filtro de texto Location no aplica.</summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public int? RadiusKm { get; set; }
+
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
 }

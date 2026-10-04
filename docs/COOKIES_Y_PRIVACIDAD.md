@@ -48,6 +48,10 @@ Terceros que recibe el navegador del visitante:
 |---|---|---|---|
 | `cdn.jsdelivr.net` | SweetAlert2 (JS + CSS), en `wwwroot/index.html` | No | IP, navegador, pagina de origen (Referer) |
 | Cloudflare | Proxy / tunel delante de todo el sitio | No en el portal | Todo el trafico (es nuestro encargado de tratamiento) |
+| `tiles.openfreemap.org` | Teselas vectoriales del mapa de /vacancies (solo al abrir el modal "Mapa") | No | IP, navegador |
+| `nominatim.openstreetmap.org` | Buscar ciudad / direccion desde el mapa (solo al usar el buscador o hacer clic) | No | IP, navegador, texto buscado y punto elegido en el mapa |
+
+Nota (fase 7, geo-busqueda): el mapa de `/vacancies` carga Leaflet, MapLibre GL y su worker desde `wwwroot/lib` propio — no hay peticiones de librerias a CDNs. Las peticiones a OpenFreeMap/Nominatim solo se producen si el usuario abre el modal del mapa.
 
 ### 3.2 Panel administrativo — `admin.tratodirecto.es`
 

@@ -13,12 +13,14 @@ public class VacanciesController : AdminControllerBase
     private readonly IAdminVacancyService _vacancyService;
     private readonly ICompatibilityService _compatibilityService;
     private readonly IAdminApplicationService _applicationService;
+    private readonly IGeocodingService _geocoding;
 
-    public VacanciesController(IAdminVacancyService vacancyService, ICompatibilityService compatibilityService, IAdminApplicationService applicationService)
+    public VacanciesController(IAdminVacancyService vacancyService, ICompatibilityService compatibilityService, IAdminApplicationService applicationService, IGeocodingService geocoding)
     {
         _vacancyService = vacancyService;
         _compatibilityService = compatibilityService;
         _applicationService = applicationService;
+        _geocoding = geocoding;
     }
 
     [HttpGet]
@@ -82,6 +84,20 @@ public class VacanciesController : AdminControllerBase
     {
         var matches = await _compatibilityService.GetNonApplicantMatchesAsync(id, limit, minPercentage);
         return Ok(matches);
+    }
+
+    /// <summary>
+    /// Backfill de coordenadas: geocodifica via Nominatim hasta max vacantes que tienen Location
+    /// pero todavia no se intentaron geocodificar (GeocodedAt = null). Necesario tras la migracion
+    /// VacancyGeoCoordinates para que la busqueda por radio del portal cubra las vacantes antiguas.
+    /// Solo SuperAdmin (RequireStaffRole sin lista). ~1 req/s por la politica de Nominatim.
+    /// </summary>
+    [HttpPost("geocode-missing")]
+    [RequireStaffRole]
+    public async Task<IActionResult> GeocodeMissing([FromQuery] int max = 50)
+    {
+        var resolved = await _geocoding.GeocodeMissingLocationsAsync(max);
+        return Ok(new { geocoded = resolved });
     }
 
     /// <summary>Postula al candidato seleccionado a nombre de TD (fuente AdminCurated).</summary>

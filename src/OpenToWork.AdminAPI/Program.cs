@@ -48,6 +48,7 @@ builder.Services.AddSwaggerGen(options =>
 OpenToWork.Core.Extensions.ProductionConfigGuard.Validate(builder.Configuration, builder.Environment.IsDevelopment());
 
 builder.Services.AddDatabaseContext(builder.Configuration);
+builder.Services.AddMemoryCache();
 builder.Services.AddAdminCoreServices(builder.Configuration);
 
 // CVs en carpeta privada compartida por ambos API (fuera de wwwroot y del repo). Por defecto <repo>/storage.
@@ -83,16 +84,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// Login admin: mas estricto que el portal - 5 intentos por minuto por IP en produccion.
+// En Development el default es 100 (misma razon que la API del portal: tests y pruebas manuales);
+// configurable con RateLimiting:AdminAuthPermitLimit.
+var adminAuthPermitLimit = int.TryParse(builder.Configuration["RateLimiting:AdminAuthPermitLimit"], out var aapl)
+    ? aapl
+    : (builder.Environment.IsDevelopment() ? 100 : 5);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    // Login admin: mas estricto que el portal - 5 intentos por minuto por IP.
     options.AddPolicy("admin-auth", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 5,
+                PermitLimit = adminAuthPermitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));

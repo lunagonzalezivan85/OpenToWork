@@ -667,6 +667,367 @@
     border-color: var(--accent-primary);
 }
 
+/* ===== Filter toolbar (busqueda con filtros + mapa) ===== */
+.vacancies-toolbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: var(--space-lg) auto 0;
+    padding: 0 1.5rem;
+}
+
+.vacancies-toolbar-filters {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.vacancies-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.vacancies-filter-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding-left: 2px;
+}
+
+.vacancies-filter-select {
+    appearance: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-width: 9rem;
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow;
+}
+
+select.vacancies-filter-select {
+    padding-right: 1.9rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23778DA9' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.55rem center;
+    background-size: 0.85rem;
+}
+
+.vacancies-filter-select:hover,
+.vacancies-filter-select:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+.vacancies-filter--salary .vacancies-filter-select {
+    min-width: 7rem;
+}
+
+.vacancies-map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow;
+}
+
+.vacancies-map-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.vacancies-map-btn--active {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* ===== Modal del mapa (LocationMapPicker) ===== */
+.map-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(11, 19, 43, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: map-modal-fade 180ms ease-out;
+}
+
+@keyframes map-modal-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.map-modal {
+    width: min(680px, 100%);
+    max-height: min(90vh, 720px);
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg);
+    border-radius: var(--radius-lg, 20px);
+    box-shadow: 0 24px 60px rgba(11, 19, 43, 0.35);
+    overflow: hidden;
+    animation: map-modal-pop 200ms ease-out;
+}
+
+@keyframes map-modal-pop {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.map-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem 0.5rem;
+}
+
+.map-modal-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.map-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm, 8px);
+    transition: var(--transition-fast);
+    transition-property: color, background-color;
+}
+
+.map-modal-close:hover {
+    color: var(--text-primary);
+    background: var(--accent-light);
+}
+
+.map-modal-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0.5rem 1.25rem 0.75rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+    color: var(--text-muted);
+}
+
+.map-modal-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.6rem 0;
+    font-family: var(--font-family);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.map-modal-results {
+    margin: -0.4rem 1.25rem 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+    overflow: hidden;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.map-modal-result {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    text-align: left;
+    padding: 0.55rem 0.9rem;
+    border: none;
+    background: none;
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    transition-property: background-color;
+}
+
+.map-modal-result:hover {
+    background: var(--accent-light);
+}
+
+.map-modal-result strong {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.map-modal-result span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.map-modal-canvas {
+    height: 340px;
+    margin: 0 1.25rem;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: var(--accent-light);
+}
+
+.map-modal-footer {
+    padding: 0.85rem 1.25rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.map-modal-radius {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.map-modal-radius label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.map-modal-radius input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent-primary);
+}
+
+.map-modal-radius-value {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    min-width: 3.2rem;
+    text-align: right;
+}
+
+.map-modal-picked {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+    min-height: 1.2rem;
+}
+
+.map-modal-picked--empty {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.map-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+}
+
+.map-modal-btn {
+    padding: 0.55rem 1.2rem;
+    border-radius: var(--radius-md);
+    font-family: var(--font-family);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: var(--transition-fast);
+    transition-property: color, background-color, border-color, box-shadow;
+}
+
+.map-modal-btn--ghost {
+    background: none;
+    color: var(--text-primary);
+}
+
+.map-modal-btn--ghost:hover {
+    background: var(--accent-light);
+}
+
+.map-modal-btn--primary {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #FFFFFF;
+}
+
+.map-modal-btn--primary:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+.map-modal-btn--primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Marcador del mapa (divIcon, sin imagenes) */
+.otw-pin {
+    position: relative;
+}
+
+.otw-pin-dot {
+    position: absolute;
+    inset: 4px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    background: var(--accent-primary);
+    border: 2px solid #FFFFFF;
+    box-shadow: 0 3px 10px rgba(11, 19, 43, 0.4);
+}
+
+.otw-radius-circle {
+    stroke: var(--accent-primary);
+    stroke-opacity: 0.55;
+    stroke-width: 1.5;
+    stroke-dasharray: 6 5;
+    fill: var(--accent-primary);
+    fill-opacity: 0.08;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .map-modal-backdrop,
+    .map-modal {
+        animation: none;
+    }
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     .profile-body {

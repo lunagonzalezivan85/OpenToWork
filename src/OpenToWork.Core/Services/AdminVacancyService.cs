@@ -11,11 +11,13 @@ public class AdminVacancyService : IAdminVacancyService
 {
     private readonly AppDbContext _context;
     private readonly IAuditLogService _auditLog;
+    private readonly IGeocodingService _geocoding;
 
-    public AdminVacancyService(AppDbContext context, IAuditLogService auditLog)
+    public AdminVacancyService(AppDbContext context, IAuditLogService auditLog, IGeocodingService geocoding)
     {
         _context = context;
         _auditLog = auditLog;
+        _geocoding = geocoding;
     }
 
     public async Task<AdminVacancyResultDto> GetVacanciesAsync(int page, int pageSize, int? status, Guid? companyId = null)
@@ -192,6 +194,7 @@ public class AdminVacancyService : IAdminVacancyService
             jobTypeId = await ResolveJobTypeIdAsync(dto.Category);
         }
 
+        var coords = await _geocoding.GeocodeAsync(dto.Location);
         var vacancy = new PTVacancy
         {
             Id = Guid.NewGuid(),
@@ -202,6 +205,9 @@ public class AdminVacancyService : IAdminVacancyService
             SalaryMin = dto.SalaryMin,
             SalaryMax = dto.SalaryMax,
             Location = dto.Location,
+            Latitude = coords?.Lat,
+            Longitude = coords?.Lng,
+            GeocodedAt = DateTime.UtcNow,
             ContractType = dto.ContractType,
             WorkMode = dto.WorkMode,
             Category = category,

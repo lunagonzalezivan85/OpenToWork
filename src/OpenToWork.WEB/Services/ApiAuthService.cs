@@ -234,6 +234,11 @@ public class ApiAuthService
         if (search.ExperienceLevel.HasValue) query += $"&ExperienceLevel={search.ExperienceLevel}";
         if (search.EnglishLevel.HasValue) query += $"&EnglishLevel={search.EnglishLevel}";
         if (search.SalaryMin.HasValue) query += $"&SalaryMin={search.SalaryMin}";
+        if (search.SalaryMax.HasValue) query += $"&SalaryMax={search.SalaryMax}";
+        if (!string.IsNullOrEmpty(search.SortBy)) query += $"&SortBy={Uri.EscapeDataString(search.SortBy)}";
+        if (search.Latitude.HasValue) query += $"&Latitude={search.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        if (search.Longitude.HasValue) query += $"&Longitude={search.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        if (search.RadiusKm.HasValue) query += $"&RadiusKm={search.RadiusKm}";
 
         var response = await _httpClient.GetAsync(query);
         if (!response.IsSuccessStatusCode) return (new(), 0);

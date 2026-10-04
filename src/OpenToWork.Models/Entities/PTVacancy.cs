@@ -26,6 +26,16 @@ public class PTVacancy : BaseEntity
     [MaxLength(200)]
     public string? Location { get; set; }
 
+    /// <summary>Coordenadas geocodificadas de Location (Nominatim/OSM). Nullable: vacantes
+    /// antiguas o ubicaciones no resueltas quedan fuera de la busqueda por radio.</summary>
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    /// <summary>Ultimo intento de geocodificacion (exito o fallo). El backfill solo reintenta
+    /// filas con GeocodedAt = null para no machacar Nominatim con ubicaciones no resolubles.</summary>
+    public DateTime? GeocodedAt { get; set; }
+
     public int ContractType { get; set; } = 0;
 
     public int WorkMode { get; set; } = 0;

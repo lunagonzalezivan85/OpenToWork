@@ -11,11 +11,13 @@ public class PermanentVacancyService : IPermanentVacancyService
 {
     private readonly AppDbContext _context;
     private readonly IContractPaymentService _payments;
+    private readonly IGeocodingService _geocoding;
 
-    public PermanentVacancyService(AppDbContext context, IContractPaymentService payments)
+    public PermanentVacancyService(AppDbContext context, IContractPaymentService payments, IGeocodingService geocoding)
     {
         _context = context;
         _payments = payments;
+        _geocoding = geocoding;
     }
 
     public async Task<VacancyDto> CreateVacancyAsync(Guid companyId, CreateVacancyDto dto, Guid userId)
@@ -37,6 +39,7 @@ public class PermanentVacancyService : IPermanentVacancyService
             }
         }
 
+        var coords = await _geocoding.GeocodeAsync(dto.Location);
         var vacancy = new PTVacancy
         {
             PT_CompanyId = companyId,
@@ -46,6 +49,9 @@ public class PermanentVacancyService : IPermanentVacancyService
             SalaryMin = dto.SalaryMin,
             SalaryMax = dto.SalaryMax,
             Location = dto.Location,
+            Latitude = coords?.Lat,
+            Longitude = coords?.Lng,
+            GeocodedAt = DateTime.UtcNow,
             ContractType = dto.ContractType,
             WorkMode = dto.WorkMode,
             Category = category,
@@ -133,7 +139,10 @@ public class PermanentVacancyService : IPermanentVacancyService
                                      (v.Requirements != null && v.Requirements.ToLower().Contains(q)));
         }
 
-        if (!string.IsNullOrEmpty(search.Location))
+        // Con busqueda por radio activa, el texto de Location no filtra (el usuario eligio un
+        // punto en el mapa; el label de Nominatim no tiene por que coincidir con el de la vacante).
+        var willUseGeo = search.Latitude.HasValue && search.Longitude.HasValue && search.RadiusKm is > 0;
+        if (!willUseGeo && !string.IsNullOrEmpty(search.Location))
             query = query.Where(v => v.Location != null && v.Location.Contains(search.Location));
 
         if (search.ContractType.HasValue)
@@ -154,16 +163,92 @@ public class PermanentVacancyService : IPermanentVacancyService
         if (search.SalaryMin.HasValue)
             query = query.Where(v => v.SalaryMin >= search.SalaryMin.Value);
 
+        // Salario maximo del filtro: la vacante no puede pasar del techo pedido (sin salario = no se penaliza).
+        if (search.SalaryMax.HasValue)
+            query = query.Where(v => (v.SalaryMax ?? v.SalaryMin ?? 0m) <= search.SalaryMax.Value);
+
+        // Busqueda por radio: bounding box + Haversine (ver SearchByRadiusAsync).
+        if (willUseGeo)
+            return await SearchByRadiusAsync(query, search);
+
         var total = await query.CountAsync();
 
-        var items = await query
-            .OrderByDescending(v => v.PublishedAt ?? v.CreatedAt)
+        var ordered = search.SortBy switch
+        {
+            "oldest" => query.OrderBy(v => v.PublishedAt ?? v.CreatedAt),
+            "salaryAsc" => query
+                .OrderByDescending(v => v.SalaryMin.HasValue)
+                .ThenBy(v => v.SalaryMin)
+                .ThenByDescending(v => v.PublishedAt ?? v.CreatedAt),
+            "salaryDesc" => query
+                .OrderByDescending(v => v.SalaryMax ?? v.SalaryMin)
+                .ThenByDescending(v => v.PublishedAt ?? v.CreatedAt),
+            _ => query.OrderByDescending(v => v.PublishedAt ?? v.CreatedAt),
+        };
+
+        var items = await ordered
             .Skip((search.Page - 1) * search.PageSize)
             .Take(search.PageSize)
             .ToListAsync();
 
         var dtos = await MapManyToDtoAsync(items);
         return (dtos, total);
+    }
+
+    /// <summary>Radio en km alrededor de un punto: bounding box en SQL (usa el indice de
+    /// coordenadas) + distancia Haversine exacta en memoria. Solo entran vacantes geocodificadas;
+    /// sin sort explicito se ordena por distancia.</summary>
+    private async Task<(IEnumerable<VacancyDto> Items, int Total)> SearchByRadiusAsync(
+        IQueryable<PTVacancy> query, SearchPermanentVacancyDto search)
+    {
+        var lat = search.Latitude!.Value;
+        var lng = search.Longitude!.Value;
+        var radiusKm = Math.Clamp(search.RadiusKm!.Value, 1, 1000);
+
+        var latDelta = radiusKm / 111.0;
+        var cosLat = Math.Abs(Math.Cos(lat * Math.PI / 180.0));
+        var lngDelta = cosLat < 0.01 ? 180.0 : radiusKm / (111.0 * cosLat);
+
+        var candidates = await query
+            .Where(v => v.Latitude != null && v.Longitude != null
+                && v.Latitude >= lat - latDelta && v.Latitude <= lat + latDelta
+                && v.Longitude >= lng - lngDelta && v.Longitude <= lng + lngDelta)
+            .ToListAsync();
+
+        var within = candidates
+            .Select(v => (Vacancy: v, Km: HaversineKm(lat, lng, v.Latitude!.Value, v.Longitude!.Value)))
+            .Where(x => x.Km <= radiusKm)
+            .ToList();
+
+        var sorted = search.SortBy switch
+        {
+            "oldest" => within.OrderBy(x => x.Vacancy.PublishedAt ?? x.Vacancy.CreatedAt).ToList(),
+            "salaryAsc" => within.OrderBy(x => x.Vacancy.SalaryMin ?? decimal.MaxValue)
+                .ThenByDescending(x => x.Vacancy.PublishedAt ?? x.Vacancy.CreatedAt).ToList(),
+            "salaryDesc" => within.OrderByDescending(x => x.Vacancy.SalaryMax ?? x.Vacancy.SalaryMin)
+                .ThenByDescending(x => x.Vacancy.PublishedAt ?? x.Vacancy.CreatedAt).ToList(),
+            "recent" => within.OrderByDescending(x => x.Vacancy.PublishedAt ?? x.Vacancy.CreatedAt).ToList(),
+            _ => within.OrderBy(x => x.Km).ToList(),
+        };
+
+        var page = sorted.Skip((search.Page - 1) * search.PageSize).Take(search.PageSize).ToList();
+        var dtos = await MapManyToDtoAsync(page.Select(x => x.Vacancy).ToList());
+        var distById = page.ToDictionary(x => x.Vacancy.Id, x => x.Km);
+        foreach (var dto in dtos)
+            dto.DistanceKm = Math.Round(distById[dto.Id], 1);
+
+        return (dtos, sorted.Count);
+    }
+
+    private static double HaversineKm(double lat1, double lng1, double lat2, double lng2)
+    {
+        const double R = 6371.0;
+        var dLat = (lat2 - lat1) * Math.PI / 180.0;
+        var dLng = (lng2 - lng1) * Math.PI / 180.0;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+            + Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0)
+            * Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
+        return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
     }
 
     public async Task<VacancyDto?> UpdateVacancyAsync(Guid id, UpdateVacancyDto dto, Guid userId)
@@ -185,6 +270,8 @@ public class PermanentVacancyService : IPermanentVacancyService
                 || (dto.Status.HasValue && dto.Status != vacancy.Status)))
             throw new InvalidOperationException(ContractLockedMessage);
 
+        var locationChanged = dto.Location != null && dto.Location != (vacancy.Location ?? "");
+
         if (dto.Title != null) vacancy.Title = dto.Title;
         if (dto.Description != null) vacancy.Description = dto.Description;
         if (dto.Requirements != null) vacancy.Requirements = dto.Requirements;
@@ -197,6 +284,17 @@ public class PermanentVacancyService : IPermanentVacancyService
         if (dto.ExperienceLevel.HasValue) vacancy.ExperienceLevel = dto.ExperienceLevel;
         if (dto.EnglishLevel.HasValue) vacancy.EnglishLevel = dto.EnglishLevel;
         if (dto.Status.HasValue) vacancy.Status = dto.Status.Value;
+
+        // Si cambio la ubicacion se re-geocodifica; si falla queda sin coordenadas
+        // (mejor sin datos que con las coordenadas de la ubicacion anterior).
+        if (locationChanged)
+        {
+            var coords = await _geocoding.GeocodeAsync(dto.Location);
+            vacancy.Latitude = coords?.Lat;
+            vacancy.Longitude = coords?.Lng;
+            vacancy.GeocodedAt = DateTime.UtcNow;
+        }
+
         vacancy.UpdatedAt = DateTime.UtcNow;
         vacancy.UpdatedBy = userId;
 
@@ -269,6 +367,7 @@ public class PermanentVacancyService : IPermanentVacancyService
 
         if (company == null) return false;
 
+        var coords = await _geocoding.GeocodeAsync(tempVacancy.Location);
         var vacancy = new PTVacancy
         {
             PT_CompanyId = company.Id,
@@ -278,6 +377,9 @@ public class PermanentVacancyService : IPermanentVacancyService
             SalaryMin = tempVacancy.SalaryMin,
             SalaryMax = tempVacancy.SalaryMax,
             Location = tempVacancy.Location,
+            Latitude = coords?.Lat,
+            Longitude = coords?.Lng,
+            GeocodedAt = DateTime.UtcNow,
             ContractType = tempVacancy.ContractType,
             WorkMode = tempVacancy.WorkMode,
             Category = tempVacancy.Category,
@@ -367,6 +469,8 @@ public class PermanentVacancyService : IPermanentVacancyService
         SalaryMin = v.SalaryMin,
         SalaryMax = v.SalaryMax,
         Location = v.Location,
+        Latitude = v.Latitude,
+        Longitude = v.Longitude,
         ContractType = v.ContractType,
         WorkMode = v.WorkMode,
         Category = v.Category,
