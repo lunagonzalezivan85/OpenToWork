@@ -1028,6 +1028,114 @@ select.vacancies-filter-select {
     }
 }
 
+/* ===== Skeleton de tarjeta de vacante (misma silueta que home-vacancy-card) ===== */
+.vacancy-skeleton-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 1.1rem 1.2rem;
+    height: 210px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.vacancy-skeleton-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--bg-tertiary), transparent);
+    animation: skeleton-shimmer 1.5s infinite;
+}
+
+.vsk-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.vsk-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 14px;
+    background: var(--bg-tertiary);
+    flex-shrink: 0;
+}
+
+.vsk-company {
+    width: 38%;
+    height: 11px;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+}
+
+.vsk-badge {
+    margin-left: auto;
+    width: 64px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--bg-tertiary);
+}
+
+.vsk-title {
+    width: 72%;
+    height: 17px;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+}
+
+.vsk-line {
+    width: 100%;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+}
+
+.vsk-line--short {
+    width: 62%;
+}
+
+.vsk-meta {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+}
+
+.vsk-chip {
+    width: 90px;
+    height: 12px;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+}
+
+.vsk-chip--salary {
+    width: 110px;
+}
+
+.vsk-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.vsk-views {
+    width: 34px;
+    height: 10px;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+}
+
+.vsk-action {
+    width: 70px;
+    height: 12px;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     .profile-body {

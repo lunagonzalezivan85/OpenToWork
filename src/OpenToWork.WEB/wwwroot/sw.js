@@ -6,7 +6,7 @@
 // which then surfaces as "The POST request does not specify which form is
 // being submitted" when a form on that stale page is submitted. Bumping the
 // cache name also purges any already-cached bad entries from v1 installs.
-const CACHE_NAME = 'tratodirecto-v7';
+const CACHE_NAME = 'tratodirecto-v8';
 const ASSETS = [
   '/icon.svg',
   '/manifest.json',
@@ -20,6 +20,12 @@ const ASSETS = [
   '/css/responsive.css',
   '/themes/navy/theme.css'
 ];
+
+// Recursos inmutables (content-hash en el nombre o librerias versionadas del
+// repo): se sirven cache-first. blazor.boot.json y blazor.webassembly.js NO
+// estan fingerprinteados -> excluidos para no servir un manifiesto viejo.
+const IMMUTABLE_PATH = /^\/(_framework\/|lib\/)/;
+const NOT_IMMUTABLE = /^\/_framework\/(blazor\.boot\.json|blazor\.webassembly\.js)/;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -41,8 +47,27 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-  const isStaticAsset = url.origin === self.location.origin &&
-    (ASSETS.includes(url.pathname) || url.pathname.startsWith('/css/') || url.pathname.startsWith('/themes/'));
+  if (url.origin !== self.location.origin) return;
+
+  // Inmutables (framework .NET fingerprinteado + librerias vendoreadas):
+  // cache-first; la segunda visita arranca sin descargar ~15 MB.
+  if (IMMUTABLE_PATH.test(url.pathname) && !NOT_IMMUTABLE.test(url.pathname)) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => cached ||
+        fetch(event.request).then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+      )
+    );
+    return;
+  }
+
+  const isStaticAsset =
+    ASSETS.includes(url.pathname) || url.pathname.startsWith('/css/') || url.pathname.startsWith('/themes/');
   if (!isStaticAsset) return;
 
   // Network-first: always fetch latest, fall back to cache only if offline

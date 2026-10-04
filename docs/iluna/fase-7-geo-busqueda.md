@@ -60,6 +60,22 @@ Migracion `VacancyGeoCoordinates` limpia (sin ruido de seeds, igual que Hospital
 4. `GET api/permanentvacancies/search?Latitude=40.41&Longitude=-3.70&RadiusKm=600` →
    Madrid (0 km) + Barcelona (505 km), Cartagena fuera. `SortBy=salaryDesc` ordena.
 
+## Anexo — pulido de arranque del portal (UX)
+
+Reporte del usuario: al cargar el portal aparecian claves sin traducir (`common.*`),
+la pantalla "Cargando Trato Directo…" tardaba ~2 s y los skeletons eran cajas planas.
+
+- **Sin flash de claves**: `Routes.razor` no monta el `<Router>` hasta que
+  `LanguageService.InitializeAsync()` termino; mientras tanto muestra el mismo splash
+  del `index.html` (transicion invisible). Español por defecto salvo `opentowork-lang=en`.
+- **Splash instantaneo**: `index.html` pinta un app-shell (nav + hero navy + cards
+  skeleton) con CSS inline — primer paint <50 ms, sin texto "Cargando…".
+- **Skeletons con forma**: `VacancySkeletonCard.razor` replica la silueta de
+  `VacancyCard` (logo, titulo, meta, pie); usado en Home y `/vacancies`.
+- **Revisitas casi instantaneas**: `sw.js` v8 sirve cache-first `/_framework/` y
+  `/lib/` (fingerprinteados/vendoreados). `blazor.boot.json` y
+  `blazor.webassembly.js` excluidos (no fingerprinteados) → el manifiesto siempre fresco.
+
 ## Pendiente / limites
 
 - Vacantes sin `Location` resoluble quedan fuera de la busqueda por radio (aparecen en la

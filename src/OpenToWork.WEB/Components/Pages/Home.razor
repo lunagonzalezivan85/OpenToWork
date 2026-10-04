@@ -114,10 +114,10 @@
         @if (IsLoading)
         {
             <div class="home-vacancies-loading">
-                <div class="home-skeleton-card"></div>
-                <div class="home-skeleton-card"></div>
-                <div class="home-skeleton-card"></div>
-                <div class="home-skeleton-card"></div>
+                @for (var i = 0; i < 4; i++)
+                {
+                    <VacancySkeletonCard />
+                }
             </div>
         }
         else if (!VacancyList.Any())
