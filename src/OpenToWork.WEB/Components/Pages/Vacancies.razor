@@ -367,7 +367,10 @@
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
-        await Task.Delay(350, token);
+        // El cancel tira TaskCanceledException: sin capturarla mata el runtime WASM
+        // (pantalla "Ha ocurrido un error inesperado").
+        try { await Task.Delay(350, token); }
+        catch (TaskCanceledException) { return; }
         if (token.IsCancellationRequested) return;
         ActiveQuery = SearchKeyword;
         ActiveLocation = SearchLocation;

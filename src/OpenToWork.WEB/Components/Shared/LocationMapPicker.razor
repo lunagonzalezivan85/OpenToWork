@@ -172,7 +172,8 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (Visible) await JS.InvokeVoidAsync("otwMap.destroy");
+        try { if (Visible) await JS.InvokeVoidAsync("otwMap.destroy"); }
+        catch { /* dispose: el JS puede no estar disponible al cerrar la app */ }
         _dotNetRef?.Dispose();
     }
 
