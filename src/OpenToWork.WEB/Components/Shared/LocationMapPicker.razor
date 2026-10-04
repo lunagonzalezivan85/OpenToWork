@@ -31,7 +31,16 @@
                 </div>
             }
 
-            <div id="@MapElementId" class="map-modal-canvas"></div>
+            @if (_mapFailed)
+            {
+                <div class="map-modal-canvas map-modal-canvas--error">
+                    <p>@Lang.T("vacancies.map.unavailable")</p>
+                </div>
+            }
+            else
+            {
+                <div id="@MapElementId" class="map-modal-canvas"></div>
+            }
 
             <div class="map-modal-footer">
                 <div class="map-modal-radius">
@@ -81,6 +90,7 @@
     private DotNetObjectReference<LocationMapPicker>? _dotNetRef;
     private CancellationTokenSource? _searchCts;
     private bool _mapInitialized;
+    private bool _mapFailed;
 
     /// <summary>Abre el modal. Si se pasa una seleccion previa (lat/lng) el mapa centra ahi.</summary>
     public async Task ShowAsync(double? lat, double? lng, int? radiusKm, string? label)
@@ -94,6 +104,7 @@
         _query = "";
         _results = new();
         _mapInitialized = false;
+        _mapFailed = false;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -103,10 +114,20 @@
         {
             _mapInitialized = true; // evita doble init por rerenders antes de que cargue el JS
             _dotNetRef ??= DotNetObjectReference.Create(this);
-            await JS.InvokeAsync<bool>("otwMap.init", MapElementId,
-                _hasPicked ? new { lat = _pickedLat, lng = _pickedLng } : null,
-                11, DefaultStyleUrl, _radiusKm, _dotNetRef);
-            await JS.InvokeVoidAsync("otwMap.setRadius", _radiusKm);
+            try
+            {
+                await JS.InvokeAsync<bool>("otwMap.init", MapElementId,
+                    _hasPicked ? new { lat = _pickedLat, lng = _pickedLng } : null,
+                    11, DefaultStyleUrl, _radiusKm, _dotNetRef);
+                await JS.InvokeVoidAsync("otwMap.setRadius", _radiusKm);
+            }
+            catch
+            {
+                // WebGL bloqueado/no disponible u otro fallo JS: mostrar mensaje en vez
+                // de propagar la excepcion (una no capturada en lifecycle tira el WASM).
+                _mapFailed = true;
+                StateHasChanged();
+            }
         }
     }
 

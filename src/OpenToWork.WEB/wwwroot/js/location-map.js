@@ -84,6 +84,13 @@
             });
             map.attributionControl.setPrefix(false);
 
+            // La build CSP de MapLibre no puede crear blob workers: hay que apuntarle
+            // al worker vendoreado. Sin esto pide la URL por defecto -> 404 -> HTML
+            // -> "Unexpected token '<'" (y puede tumbar la app en algunos navegadores).
+            if (typeof maplibregl.setWorkerUrl === 'function') {
+                maplibregl.setWorkerUrl('/lib/maplibre-gl/maplibre-gl-csp-worker.js');
+            }
+
             L.maplibreGL({
                 style: styleUrl,
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &middot; <a href="https://openfreemap.org">OpenFreeMap</a>'

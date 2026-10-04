@@ -155,6 +155,7 @@
         "search": "Busca una ciudad o zona…",
         "radius": "Radio",
         "use": "Usar esta ubicación",
-        "hint": "Haz clic en el mapa o arrastra el marcador"
+        "hint": "Haz clic en el mapa o arrastra el marcador",
+        "unavailable": "El mapa no se pudo cargar en este navegador. Puedes seguir buscando escribiendo la ciudad en el campo de ubicación."
     }
 }

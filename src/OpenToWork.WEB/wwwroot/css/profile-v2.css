@@ -907,6 +907,16 @@ select.vacancies-filter-select {
     background: var(--accent-light);
 }
 
+.map-modal-canvas--error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
 .map-modal-footer {
     padding: 0.85rem 1.25rem 1.1rem;
     display: flex;

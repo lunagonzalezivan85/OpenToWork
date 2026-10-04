@@ -155,6 +155,7 @@
         "search": "Search a city or area…",
         "radius": "Radius",
         "use": "Use this location",
-        "hint": "Click on the map or drag the marker"
+        "hint": "Click on the map or drag the marker",
+        "unavailable": "The map could not load in this browser. You can still search by typing the city in the location field."
     }
 }
