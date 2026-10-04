@@ -1,6 +1,0 @@
-- generic [active] [ref=e1]:
-  - generic [ref=e2]: TD
-  - generic [ref=e19]:
-    - text: Ha ocurrido un error inesperado.
-    - link "Recargar" [ref=e20] [cursor=pointer]:
-      - /url: /
