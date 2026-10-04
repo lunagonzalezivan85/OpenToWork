@@ -76,6 +76,14 @@ la pantalla "Cargando Trato Directo…" tardaba ~2 s y los skeletons eran cajas 
   `/lib/` (fingerprinteados/vendoreados). `blazor.boot.json` y
   `blazor.webassembly.js` excluidos (no fingerprinteados) → el manifiesto siempre fresco.
 
+## Nota de entorno local
+
+`wwwroot/appsettings.json` apunta la API a `:5000` (config de Darwin/prod), pero el
+`launchSettings` de `OpenToWork.API` escucha en `:5100`. Fix local: crear
+`src/OpenToWork.WEB/wwwroot/appsettings.Development.json` (gitignored) con
+`"ApiSettings": { "BaseUrl": "http://localhost:5100/" }` — sin el, el login del portal
+falla con "Ocurrio un error. Intenta de nuevo."
+
 ## Pendiente / limites
 
 - Vacantes sin `Location` resoluble quedan fuera de la busqueda por radio (aparecen en la
