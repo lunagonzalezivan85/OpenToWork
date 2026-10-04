@@ -6,8 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazored.LocalStorage" Version="2.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
   </ItemGroup>
@@ -17,6 +16,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- El portal solo existe en es/en: no descargar el ICU CJK (~2 MB menos de boot) -->
+    <BlazorWebAssemblyLoadAllGlobalizationData>false</BlazorWebAssemblyLoadAllGlobalizationData>
     <!-- Publica el web.config propio de la raiz del proyecto (proxy /api, CSP, cabeceras) -->
     <PublishIISAssets>true</PublishIISAssets>
   </PropertyGroup>
