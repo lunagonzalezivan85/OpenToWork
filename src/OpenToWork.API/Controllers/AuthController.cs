@@ -1,4 +1,6 @@
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using OpenToWork.Core.Interfaces;
@@ -11,10 +13,16 @@ namespace OpenToWork.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IGoogleTokenValidator _google;
+    private readonly IMemoryCache _cache;
+    private readonly IConfiguration _config;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IGoogleTokenValidator google, IMemoryCache cache, IConfiguration config)
     {
         _authService = authService;
+        _google = google;
+        _cache = cache;
+        _config = config;
     }
 
     [EnableRateLimiting("auth")]
@@ -163,13 +171,132 @@ public class AuthController : ControllerBase
         return result ? Ok(new { message = "Password reset successfully." }) : BadRequest(new { message = "Invalid or expired token." });
     }
 
+    // --- Entrar / registrarse con Google (solo candidatos), flujo por redireccion ---
+    // start -> Google -> callback -> portal /auth/google con un codigo de un solo uso (nunca el JWT en la URL).
+    // ponytail: codigos en IMemoryCache, vale con una sola instancia de la API; si se reinicia a mitad, el
+    // candidato vuelve a pulsar el boton. Con varias instancias habria que pasarlos a la base de datos.
+
+    private const string GoogleStateCookie = "td_google_state";
+
+    [HttpGet("google/enabled")]
+    public IActionResult GoogleEnabled() => Ok(new { enabled = _google.IsEnabled });
+
     [EnableRateLimiting("auth")]
-    [HttpPost("google")]
-    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
+    [HttpGet("google/start")]
+    public IActionResult GoogleStart([FromQuery] string? returnUrl)
     {
-        var result = await _authService.GoogleLoginAsync(dto.Token);
-        return result != null ? Ok(result) : Unauthorized(new { message = "Invalid Google token." });
+        if (!_google.IsEnabled) return RedirectToPortal("error=unavailable", null);
+
+        var state = NewOneTimeCode();
+        _cache.Set("google-state:" + state, SafeReturnUrl(returnUrl) ?? "", TimeSpan.FromMinutes(10));
+        // La cookie ata el state a este navegador: sin ella, alguien podria hacer que otro entrara con su cuenta.
+        Response.Cookies.Append(GoogleStateCookie, state, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Path = "/api/auth/google",
+            MaxAge = TimeSpan.FromMinutes(10)
+        });
+        return Redirect(_google.BuildAuthorizeUrl(GoogleRedirectUri, state));
     }
+
+    [HttpGet("google/callback")]
+    public async Task<IActionResult> GoogleCallback([FromQuery] string? code, [FromQuery] string? state, [FromQuery] string? error)
+    {
+        var cookieState = Request.Cookies[GoogleStateCookie];
+        Response.Cookies.Delete(GoogleStateCookie, new CookieOptions { Path = "/api/auth/google" });
+
+        if (string.IsNullOrEmpty(state) || state != cookieState || !_cache.TryGetValue("google-state:" + state, out string? returnUrl))
+            return RedirectToPortal("error=failed", null);
+        _cache.Remove("google-state:" + state);
+
+        if (!string.IsNullOrEmpty(error) || string.IsNullOrEmpty(code))
+            return RedirectToPortal(error == "access_denied" ? "error=cancelled" : "error=failed", returnUrl);
+
+        var identity = await _google.ExchangeCodeAsync(code, GoogleRedirectUri);
+        if (identity == null) return RedirectToPortal("error=failed", returnUrl);
+
+        var (status, auth) = await _authService.GoogleSignInAsync(identity);
+        switch (status)
+        {
+            case GoogleSignInStatus.SignedIn:
+                var loginCode = NewOneTimeCode();
+                _cache.Set("google-login:" + loginCode, auth, TimeSpan.FromMinutes(2));
+                return RedirectToPortal("login=" + loginCode, returnUrl);
+            case GoogleSignInStatus.NeedsSignup:
+                var ticket = NewOneTimeCode();
+                _cache.Set("google-signup:" + ticket, identity, TimeSpan.FromMinutes(30));
+                return RedirectToPortal("signup=" + ticket, returnUrl);
+            case GoogleSignInStatus.NotCandidate:
+                return RedirectToPortal("error=not_candidate", returnUrl);
+            case GoogleSignInStatus.Inactive:
+                return RedirectToPortal("error=inactive", returnUrl);
+            default:
+                return RedirectToPortal("error=email_not_verified", returnUrl);
+        }
+    }
+
+    [EnableRateLimiting("auth")]
+    [HttpPost("google/exchange")]
+    public IActionResult GoogleExchange([FromBody] GoogleExchangeDto dto)
+    {
+        var key = "google-login:" + dto.Code;
+        if (string.IsNullOrEmpty(dto.Code) || !_cache.TryGetValue(key, out AuthResponseDto? auth)) return Unauthorized();
+        _cache.Remove(key);
+        return Ok(auth);
+    }
+
+    [HttpGet("google/signup/{ticket}")]
+    public IActionResult GoogleSignupInfo(string ticket)
+    {
+        if (!_cache.TryGetValue("google-signup:" + ticket, out GoogleIdentity? identity) || identity == null) return NotFound();
+        return Ok(new GoogleSignupInfoDto { Email = identity.Email, FirstName = identity.GivenName, LastName = identity.FamilyName });
+    }
+
+    [EnableRateLimiting("auth")]
+    [HttpPost("google/signup")]
+    public async Task<IActionResult> GoogleSignup([FromBody] GoogleSignupDto dto)
+    {
+        var key = "google-signup:" + dto.Ticket;
+        if (string.IsNullOrEmpty(dto.Ticket) || !_cache.TryGetValue(key, out GoogleIdentity? identity) || identity == null)
+            return NotFound(new { message = "expired" });
+
+        try
+        {
+            var result = await _authService.RegisterAsync(dto, consentIp: HttpContext.Connection.RemoteIpAddress?.ToString(), google: identity);
+            _cache.Remove(key);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    // En produccion API y portal comparten dominio (tratodirecto.es/api), pero detras del proxy el Host que
+    // llega puede ser 127.0.0.1: por eso se puede fijar con GoogleOAuth:RedirectUri (el mismo que en Google Cloud).
+    private string GoogleRedirectUri => _config["GoogleOAuth:RedirectUri"] is { Length: > 0 } configured
+        ? configured
+        : $"{Request.Scheme}://{Request.Host}{Request.PathBase}/api/auth/google/callback";
+
+    private IActionResult RedirectToPortal(string query, string? returnUrl)
+    {
+        var portal = (_config["Portal:BaseUrl"] ?? "http://localhost:5100/").TrimEnd('/');
+        var url = $"{portal}/auth/google?{query}";
+        if (!string.IsNullOrEmpty(returnUrl)) url += "&returnUrl=" + Uri.EscapeDataString(returnUrl);
+        return Redirect(url);
+    }
+
+    // Solo rutas internas del portal, igual que returnUrl en login/registro.
+    private static string? SafeReturnUrl(string? url) =>
+        !string.IsNullOrEmpty(url) && url.StartsWith('/') && !url.StartsWith("//") && !url.StartsWith("/\\") ? url : null;
+
+    private static string NewOneTimeCode() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
     [EnableRateLimiting("auth")]
     [HttpPost("verify-recaptcha")]
