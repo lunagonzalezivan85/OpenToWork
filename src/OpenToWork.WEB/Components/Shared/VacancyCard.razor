@@ -19,7 +19,13 @@
                 }
             </div>
         </div>
-        <span class="home-vacancy-card-badge">@GetWorkModeLabel(Vacancy.WorkMode)</span>
+        <div class="home-vacancy-card-badges">
+            @if (Vacancy.MatchPercentage.HasValue)
+            {
+                <span class="home-vacancy-card-badge home-vacancy-card-badge--match">@Vacancy.MatchPercentage% @Lang.T("vacancies.matchBadge")</span>
+            }
+            <span class="home-vacancy-card-badge">@GetWorkModeLabel(Vacancy.WorkMode)</span>
+        </div>
     </div>
     <h3 class="home-vacancy-card-title">@Vacancy.Title</h3>
     <p class="home-vacancy-card-desc">@(TruncateText(Vacancy.Description, 120))</p>

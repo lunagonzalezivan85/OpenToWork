@@ -133,10 +133,14 @@
         "salaryMin": "Salario mín. €",
         "sortBy": "Ordenar",
         "map": "Mapa",
+        "match": "Hacer Match",
         "allContract": "Todos los contratos",
         "allMode": "Todas",
         "allExperience": "Cualquiera"
     },
+    "matchTag": "Tus coincidencias",
+    "matchBadge": "Match",
+    "matchEmpty": "Ninguna vacante publicada coincide con tu perfil todavía. Completa tu perfil y vuelve a intentarlo.",
     "contract": {
         "fullTime": "Tiempo completo",
         "partTime": "Tiempo parcial",

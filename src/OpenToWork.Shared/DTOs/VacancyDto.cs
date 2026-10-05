@@ -21,6 +21,10 @@ public class VacancyDto
     /// <summary>Solo en busquedas por radio: distancia al punto elegido.</summary>
     public double? DistanceKm { get; set; }
 
+    /// <summary>Solo en "Hacer Match" (my-matches): porcentaje de compatibilidad del candidato
+    /// con esta vacante (PT_JobMatchScores).</summary>
+    public int? MatchPercentage { get; set; }
+
     public int ContractType { get; set; }
     public int WorkMode { get; set; }
     public string? Category { get; set; }

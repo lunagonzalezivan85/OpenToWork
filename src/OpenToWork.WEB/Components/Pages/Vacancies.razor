@@ -139,18 +139,37 @@
             </select>
         </div>
     </div>
-    <button type="button" class="vacancies-map-btn @(HasGeo ? "vacancies-map-btn--active" : "")" @onclick="OpenMap">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-            <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" />
-        </svg>
-        @Lang.T("vacancies.filterBar.map")
-    </button>
+    <div class="vacancies-toolbar-actions">
+        <button type="button" class="vacancies-map-btn @(HasGeo ? "vacancies-map-btn--active" : "")" @onclick="OpenMap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            @Lang.T("vacancies.filterBar.map")
+        </button>
+        @if (IsCandidate)
+        {
+            <button type="button" class="vacancies-map-btn vacancies-match-btn @(IsMatchMode ? "vacancies-map-btn--active" : "")"
+                    @onclick="RunMatch" disabled="@IsLoading">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+                </svg>
+                @Lang.T("vacancies.filterBar.match")
+            </button>
+        }
+    </div>
 </div>
 
 <!-- Active filters -->
-@if (!string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory) || HasGeo || ActiveContractType != null || ActiveWorkMode != null || ActiveExperience != null || ActiveSalaryMin != null)
+@if (IsMatchMode || !string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory) || HasGeo || ActiveContractType != null || ActiveWorkMode != null || ActiveExperience != null || ActiveSalaryMin != null)
 {
     <div class="vacancies-active-filters">
+        @if (IsMatchMode)
+        {
+            <span class="vacancies-filter-tag vacancies-filter-tag--geo">
+                @Lang.T("vacancies.matchTag")
+                <button @onclick="ExitMatchMode" class="vacancies-filter-remove">×</button>
+            </span>
+        }
         @if (!string.IsNullOrEmpty(ActiveQuery))
         {
             <span class="vacancies-filter-tag">
@@ -227,7 +246,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
                 <path d="M21 21l-4.35-4.35M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" />
             </svg>
-            <p>@Lang.T("vacancies.noResults")</p>
+            <p>@(IsMatchMode ? Lang.T("vacancies.matchEmpty") : Lang.T("vacancies.noResults"))</p>
         </div>
     }
     else
@@ -239,7 +258,7 @@
             }
         </div>
 
-        @if (TotalPages > 1)
+        @if (!IsMatchMode && TotalPages > 1)
         {
             <div class="vacancies-pagination">
                 @for (int i = 1; i <= TotalPages; i++)
@@ -275,6 +294,10 @@
     private int TotalResults { get; set; }
     private int TotalPages => (int)Math.Ceiling((double)TotalResults / 12);
     private bool IsLoading { get; set; }
+    private bool IsCandidate { get; set; }
+    // Match mode: la grilla muestra mis coincidencias (no la busqueda); cualquier
+    // busqueda/filtro normal sale del modo (LoadVacancies lo apaga).
+    private bool IsMatchMode { get; set; }
     private ElementReference SearchInputRef;
     private LocationMapPicker? _mapPicker;
 
@@ -299,6 +322,9 @@
 
         SearchKeyword = ActiveQuery;
         SearchLocation = ActiveLocation;
+
+        // El boton "Hacer Match" solo existe para candidatos (rol 0); empresas/anonimos no.
+        IsCandidate = (await AuthApi.GetUserRoleAsync()) == "0";
 
         await LoadVacancies();
     }
@@ -330,6 +356,7 @@
     private async Task LoadVacancies()
     {
         IsLoading = true;
+        IsMatchMode = false;
         try
         {
             var dto = new SearchPermanentVacancyDto
@@ -506,6 +533,38 @@
         ActiveSort = e.Value?.ToString() ?? "recent";
         CurrentPage = 1;
         UpdateUrl();
+        await LoadVacancies();
+    }
+
+    private async Task RunMatch()
+    {
+        IsLoading = true;
+        try
+        {
+            // Null = no autorizado / no es candidato (el boton no deberia estar visible).
+            var list = await AuthApi.GetMyMatchesAsync();
+            if (list != null)
+            {
+                VacancyList = list;
+                TotalResults = list.Count;
+                IsMatchMode = true;
+                CurrentPage = 1;
+            }
+        }
+        catch
+        {
+            // Match fallo silenciosamente: se queda la lista anterior.
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task ExitMatchMode()
+    {
+        IsMatchMode = false;
+        CurrentPage = 1;
         await LoadVacancies();
     }
 

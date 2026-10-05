@@ -479,6 +479,13 @@
     flex-shrink: 0;
 }
 
+.home-vacancy-card-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
 .home-vacancy-card-badge {
     padding: 0.25rem 0.65rem;
     border-radius: var(--radius-pill);
@@ -488,6 +495,11 @@
     font-weight: 700;
     white-space: nowrap;
     flex-shrink: 0;
+}
+
+.home-vacancy-card-badge--match {
+    background: var(--gradient-accent);
+    color: #FFFFFF;
 }
 
 .home-vacancy-card-title {

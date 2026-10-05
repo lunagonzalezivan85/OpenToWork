@@ -80,6 +80,24 @@ public class PermanentVacanciesController : ControllerBase
         return Ok(new { items, total, page = search.Page, pageSize = search.PageSize });
     }
 
+    /// <summary>"Hacer Match" del candidato: recalcula su compatibilidad contra todas las
+    /// vacantes publicadas y devuelve las que tienen match, ordenadas por porcentaje.
+    /// POST porque escribe (persiste PT_JobMatchScores).</summary>
+    [HttpPost("my-matches")]
+    public async Task<IActionResult> GetMyMatches()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var candidate = await _context.PT_Candidates
+            .FirstOrDefaultAsync(c => c.SCUserId == userId && !c.IsDeleted);
+        if (candidate == null) return Forbid(); // no es candidato (empresa/admin)
+
+        await _compatibilityService.CalculateMatchesForCandidateAsync(candidate.Id);
+        var matches = await _vacancyService.GetMatchedVacanciesAsync(candidate.Id);
+        return Ok(matches);
+    }
+
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateVacancyDto dto)
     {

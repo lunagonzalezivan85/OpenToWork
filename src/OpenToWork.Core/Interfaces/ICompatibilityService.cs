@@ -17,6 +17,13 @@ public interface ICompatibilityService
     /// </summary>
     Task<int> CalculateMatchesForVacancyAsync(Guid vacancyId);
 
+    /// <summary>
+    /// Calcula (y persiste) el match del candidato contra todas las vacantes publicadas
+    /// (Status == 1). Devuelve la cantidad de vacantes evaluadas. Es el lado inverso de
+    /// CalculateMatchesForVacancyAsync: el candidato dispara su propio "Hacer Match".
+    /// </summary>
+    Task<int> CalculateMatchesForCandidateAsync(Guid candidateId);
+
     Task<List<JobMatchDto>> GenerateShortlist(Guid vacancyId, int? limit = null);
 
     /// <summary>

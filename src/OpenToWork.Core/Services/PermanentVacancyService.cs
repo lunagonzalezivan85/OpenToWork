@@ -195,6 +195,27 @@ public class PermanentVacancyService : IPermanentVacancyService
         return (dtos, total);
     }
 
+    public async Task<List<VacancyDto>> GetMatchedVacanciesAsync(Guid candidateId, int? limit = null)
+    {
+        var take = limit is > 0 ? limit.Value : 50;
+
+        var matches = await _context.PT_JobMatchScores
+            .Where(m => m.PT_CandidateId == candidateId && !m.IsDeleted
+                && !m.Vacancy.IsDeleted && m.Vacancy.Status == 1)
+            .Include(m => m.Vacancy).ThenInclude(v => v.Company)
+            .OrderByDescending(m => m.MatchPercentage)
+            .Take(take)
+            .ToListAsync();
+
+        var dtos = await MapManyToDtoAsync(matches.Select(m => m.Vacancy).ToList());
+        var pctById = matches.ToDictionary(m => m.PT_VacancyId, m => m.MatchPercentage);
+        foreach (var dto in dtos)
+            dto.MatchPercentage = pctById[dto.Id];
+
+        // MapManyToDtoAsync conserva el orden de entrada (matches ya van por % desc).
+        return dtos;
+    }
+
     /// <summary>Radio en km alrededor de un punto: bounding box en SQL (usa el indice de
     /// coordenadas) + distancia Haversine exacta en memoria. Solo entran vacantes geocodificadas;
     /// sin sort explicito se ordena por distancia.</summary>

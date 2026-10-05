@@ -247,6 +247,17 @@ public class ApiAuthService
         return (result?.Items ?? new(), result?.Total ?? 0);
     }
 
+    /// <summary>"Hacer Match": recalcula la compatibilidad del candidato contra todas las
+    /// vacantes publicadas y devuelve las que tienen match (MatchPercentage lleno), ordenadas
+    /// por porcentaje. Null si 401/403 o error (no es candidato logueado).</summary>
+    public async Task<List<VacancyDto>?> GetMyMatchesAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsync("api/permanentvacancies/my-matches", null);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<List<VacancyDto>>();
+    }
+
     public async Task<VacancyDto?> GetPermanentVacancyAsync(Guid id)
     {
         await SetAuthHeaderAsync();

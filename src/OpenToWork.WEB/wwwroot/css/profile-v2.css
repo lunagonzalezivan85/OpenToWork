@@ -674,9 +674,33 @@
     justify-content: space-between;
     gap: var(--space-md);
     flex-wrap: wrap;
-    max-width: 1200px;
-    margin: var(--space-lg) auto 0;
-    padding: 0 1.5rem;
+    max-width: 1168px;
+    margin: var(--space-xl) auto var(--space-md);
+    padding: var(--space-md);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.vacancies-toolbar-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.vacancies-match-btn {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.vacancies-match-btn:hover {
+    background: var(--accent-light);
+}
+
+.vacancies-match-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
 }
 
 .vacancies-toolbar-filters {
