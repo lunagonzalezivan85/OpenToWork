@@ -80,7 +80,9 @@
         "searchJobs": "Search Jobs",
         "panel": "Dashboard",
         "news": "News",
-        "jobs": "Jobs"
+        "jobs": "Jobs",
+        "candidateSearch": "Find candidates",
+        "verifiedApplicants": "Verified applicants"
     },
     "messages": {
         "title": "Messages",
