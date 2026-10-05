@@ -66,18 +66,6 @@
             </div>
         </div>
 
-        @* Google solo para candidatos: los datos que faltan se piden al volver, en /auth/google. *@
-        @if (IsCandidate && GoogleEnabled)
-        {
-            <button type="button" class="ot-btn ot-btn--outline ot-btn--medium ot-btn--full-width" @onclick="GoToGoogle">
-                <GoogleIcon />
-                @Lang.T("auth.google.registerButton")
-            </button>
-            <div style="text-align: center; margin: 1.5rem 0; color: var(--text-muted); font-size: 0.85rem;">
-                @Lang.T("auth.login.orDivider")
-            </div>
-        }
-
         <EditForm Model="RegisterModel" OnValidSubmit="HandleRegister">
 
             @if (IsCandidate)
@@ -167,6 +155,18 @@
                 @Lang.T("auth.register.legalAnd") <a href="/cookies" target="_blank" rel="noopener">@Lang.T("auth.register.legalCookies")</a>.
             </p>
         </EditForm>
+
+        @* Google solo para candidatos, debajo como en el login: los datos que faltan se piden al volver, en /auth/google. *@
+        @if (IsCandidate && GoogleEnabled)
+        {
+            <div style="text-align: center; margin: 1.5rem 0; color: var(--text-muted); font-size: 0.85rem;">
+                @Lang.T("auth.login.orDivider")
+            </div>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--medium ot-btn--full-width" @onclick="GoToGoogle">
+                <GoogleIcon />
+                @Lang.T("auth.google.registerButton")
+            </button>
+        }
         }
 
         <p class="auth-link">
