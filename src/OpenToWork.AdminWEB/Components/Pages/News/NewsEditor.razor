@@ -1,0 +1,335 @@
+@page "/news/new"
+@page "/news/{Id:guid}"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+@* Editor de una publicacion de Noticias. Un borrador puede guardarse incompleto; la API exige todo al publicar.
+   La foto se reduce en el navegador (RequestImageFileAsync) antes de subir. *@
+
+<PageTitle>@L(Id == null ? "newTitle" : "editTitle")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <a href="/news" class="admin-page-header-subtitle">← @L("back")</a>
+        <h1>@L(Id == null ? "newTitle" : "editTitle")</h1>
+        @if (_status != null)
+        {
+            <span class="admin-status @Index.StatusClass(_status.Value)">@L($"statuses.{_status}")</span>
+        }
+    </div>
+    <div class="admin-page-actions">
+        @if (_status == (int)NewsPostStatus.Published && _portalUrl != null)
+        {
+            <a class="ot-btn ot-btn--outline ot-btn--small" href="@($"{_portalUrl}/news/{_savedSlug}")" target="_blank" rel="noopener">@L("viewInPortal")</a>
+        }
+        <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick="SaveAsync">
+            @L(_status == (int)NewsPostStatus.Published ? "save" : "saveDraft")
+        </button>
+        @if (_status == (int)NewsPostStatus.Published)
+        {
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick='() => ActAsync("unpublish")'>@L("unpublish")</button>
+        }
+        else
+        {
+            <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@_busy" @onclick='() => ActAsync("publish")'>@L("publish")</button>
+        }
+    </div>
+</div>
+
+@if (_message != null)
+{
+    <div class="alert @(_messageOk ? "alert-success" : "alert-error")" role="status">@_message</div>
+}
+
+@if (_loading)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (_notFound)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@L("notFound")</div></div>
+}
+else
+{
+    <div class="admin-profile-section">
+        <div class="admin-form-grid">
+            <div class="admin-form-field">
+                <label class="admin-form-label" for="news-type">@L("type")</label>
+                <select id="news-type" class="ot-input-field" @bind="_form.Type">
+                    @foreach (var t in Enum.GetValues<NewsPostType>())
+                    {
+                        <option value="@((int)t)">@L($"types.{(int)t}")</option>
+                    }
+                </select>
+            </div>
+            <div class="admin-form-field">
+                <label class="admin-form-label" for="news-date">@L("publishedAt")</label>
+                <input id="news-date" class="ot-input-field" type="date" @bind="PublishedDate" />
+                <small class="admin-page-header-subtitle">@L("publishedAtHint")</small>
+            </div>
+            <div class="admin-form-field admin-form-field--full">
+                <label class="admin-form-label" for="news-title">@L("titleField") <small>(@(_form.Title?.Length ?? 0)/120)</small></label>
+                <input id="news-title" class="ot-input-field" maxlength="120" @bind="_form.Title" @bind:event="oninput" />
+            </div>
+            <div class="admin-form-field admin-form-field--full">
+                <label class="admin-form-label" for="news-slug">@L("slug")</label>
+                <input id="news-slug" class="ot-input-field" maxlength="80" @bind="_form.Slug" />
+                @if (_portalUrl != null && !string.IsNullOrEmpty(_savedSlug))
+                {
+                    <small class="admin-page-header-subtitle">@string.Format(L("slugHint"), $"{_portalUrl}/news/{_savedSlug}")</small>
+                }
+            </div>
+            <div class="admin-form-field admin-form-field--full">
+                <label class="admin-form-label" for="news-summary">@L("summary") <small>(@(_form.Summary?.Length ?? 0)/280)</small></label>
+                <textarea id="news-summary" class="ot-input-field" rows="2" maxlength="280" @bind="_form.Summary" @bind:event="oninput"></textarea>
+                <small class="admin-page-header-subtitle">@L("summaryHint")</small>
+            </div>
+            <div class="admin-form-field admin-form-field--full">
+                <label class="admin-form-label"><input type="checkbox" @bind="_form.IsFeatured" /> @L("isFeatured")</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-profile-section">
+        <h3 class="admin-profile-section-title">@L("cover")</h3>
+        @if (_coverDataUrl != null)
+        {
+            <img src="@_coverDataUrl" alt="@_form.CoverImageAlt" style="max-width: 100%; width: 480px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; display: block; margin-bottom: 0.75rem;" />
+        }
+        <label class="ot-btn ot-btn--outline ot-btn--small" style="cursor: pointer;">
+            @(_uploading ? L("uploading") : L(_coverDataUrl == null ? "uploadCover" : "changeCover"))
+            <InputFile accept="image/jpeg,image/png,image/webp" OnChange="UploadCoverAsync" disabled="@(_uploading || _busy)" style="display: none;" />
+        </label>
+        <p class="admin-page-header-subtitle" style="margin: 0.5rem 0 0;">@L("coverHint")</p>
+        <p class="admin-page-header-subtitle" style="margin: 0.25rem 0 0;">@L("coverRights")</p>
+        <div class="admin-form-field admin-form-field--full" style="margin-top: 0.75rem;">
+            <label class="admin-form-label" for="news-alt">@L("coverAlt")</label>
+            <input id="news-alt" class="ot-input-field" maxlength="200" @bind="_form.CoverImageAlt" />
+            <small class="admin-page-header-subtitle">@L("coverAltHint")</small>
+        </div>
+    </div>
+
+    @if (_form.Type == (int)NewsPostType.Video)
+    {
+        <div class="admin-profile-section">
+            <div class="admin-form-field admin-form-field--full">
+                <label class="admin-form-label" for="news-video">@L("videoUrl")</label>
+                <input id="news-video" class="ot-input-field" type="url" placeholder="https://www.youtube.com/watch?v=..." @bind="_form.VideoUrl" />
+                <small class="admin-page-header-subtitle">@L("videoUrlHint")</small>
+            </div>
+        </div>
+    }
+
+    <div class="admin-profile-section">
+        <label class="admin-profile-section-title" for="news-body" style="display:block;">@L("body")</label>
+        <div class="admin-table-actions" style="margin-bottom: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" title="@L("toolbar.bold")" @onclick='() => WrapAsync("**", "**", L("toolbar.bold"))'><strong>B</strong></button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" title="@L("toolbar.italic")" @onclick='() => WrapAsync("*", "*", L("toolbar.italic"))'><em>I</em></button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => PrefixAsync("## ", false)'>@L("toolbar.heading")</button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => PrefixAsync("- ", false)'>@L("toolbar.list")</button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => PrefixAsync("", true)'>@L("toolbar.numbered")</button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => WrapAsync("[", "](https://)", L("toolbar.link"))'>@L("toolbar.link")</button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--small" style="margin-left: auto;" @onclick="TogglePreviewAsync">@L(_previewHtml == null ? "preview" : "hidePreview")</button>
+        </div>
+        <textarea id="news-body" @ref="_bodyRef" class="ot-input-field" rows="14" style="font-family: inherit;" @bind="_form.Body" @bind:event="oninput"></textarea>
+        <small class="admin-page-header-subtitle">@L("bodyHint")</small>
+
+        @if (_previewHtml != null)
+        {
+            <div class="admin-chart-card" style="min-height: 0; margin-top: 1rem;">
+                <span class="admin-chart-card-title">@L("previewHint")</span>
+                <h2 style="margin: 0;">@_form.Title</h2>
+                <p class="admin-page-header-subtitle" style="margin: 0;">@_form.Summary</p>
+                @* HTML ya saneado en el servidor (NewsMarkdown): no admite HTML escrito a mano. *@
+                <div class="news-preview-body">@((MarkupString)_previewHtml)</div>
+            </div>
+        }
+    </div>
+
+    @if (Id != null && _status != (int)NewsPostStatus.Archived)
+    {
+        <div class="admin-table-actions">
+            <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick='() => ActAsync("archive")'>@L("archive")</button>
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private SaveNewsPostDto _form = new();
+    private int? _status;
+    private string? _savedSlug, _coverDataUrl, _previewHtml, _portalUrl, _message;
+    private bool _loading = true, _notFound, _busy, _uploading, _messageOk;
+    private ElementReference _bodyRef;
+
+    private string L(string key) => Lang.T($"admin.news.{key}");
+
+    // <input type="date"> trabaja con DateTime? local; la API guarda UTC.
+    private DateTime? PublishedDate
+    {
+        get => _form.PublishedAt?.ToLocalTime().Date;
+        set => _form.PublishedAt = value == null ? null : DateTime.SpecifyKind(value.Value.Date.AddHours(9), DateTimeKind.Local).ToUniversalTime();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Lang._translations.Count == 0) await Lang.InitializeAsync();
+        _portalUrl ??= await AuthApi.GetNewsPortalUrlAsync();
+        if (Id != null) await LoadAsync(Id.Value);
+        _loading = false;
+    }
+
+    private async Task LoadAsync(Guid id)
+    {
+        var (post, error) = await AuthApi.GetNewsPostAsync(id);
+        if (post == null)
+        {
+            _notFound = error != "forbidden";
+            if (error == "forbidden") Show(Lang.T("admin.staff.notAuthorized"), false);
+            return;
+        }
+        _form = new SaveNewsPostDto
+        {
+            Type = post.Type,
+            Title = post.Title,
+            Slug = post.Slug,
+            Summary = post.Summary,
+            Body = post.Body,
+            CoverImageAlt = post.CoverImageAlt,
+            VideoUrl = post.VideoUrl,
+            IsFeatured = post.IsFeatured,
+            PublishedAt = post.PublishedAt
+        };
+        _status = post.Status;
+        _savedSlug = post.Slug;
+        _coverDataUrl = await AuthApi.GetNewsImageDataUrlAsync(post.CoverImageFile);
+    }
+
+    /// <summary>Guarda (crea si es nueva). Devuelve true si quedo guardada.</summary>
+    private async Task<bool> SaveCoreAsync()
+    {
+        var (result, error) = Id == null
+            ? await AuthApi.CreateNewsPostAsync(_form)
+            : await AuthApi.UpdateNewsPostAsync(Id.Value, _form);
+        if (result?.Id == null)
+        {
+            Show(ErrorText(error), false);
+            return false;
+        }
+        if (Id == null)
+        {
+            // Pasa a /news/{id} sin recargar: a partir de aqui se edita la misma publicacion.
+            Id = result.Id;
+            _status = (int)NewsPostStatus.Draft;
+            Nav.NavigateTo($"/news/{Id}", replace: true);
+        }
+        var (post, _) = await AuthApi.GetNewsPostAsync(Id.Value);
+        if (post != null)
+        {
+            _savedSlug = post.Slug;
+            _form.Slug = post.Slug;
+        }
+        return true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        if (await SaveCoreAsync()) Show(L("done.save"), true);
+        _busy = false;
+    }
+
+    private async Task ActAsync(string action)
+    {
+        _busy = true;
+        // Se guarda primero lo escrito; si no se puede guardar, no se publica.
+        if (action == "publish" && !await SaveCoreAsync())
+        {
+            _busy = false;
+            return;
+        }
+        var (result, error) = await AuthApi.NewsActionAsync(Id!.Value, action);
+        if (result != null)
+        {
+            Show(L($"done.{action}"), true);
+            await LoadAsync(Id.Value);
+        }
+        else
+        {
+            Show(ErrorText(error), false);
+        }
+        _busy = false;
+    }
+
+    private async Task UploadCoverAsync(InputFileChangeEventArgs e)
+    {
+        if (Id == null)
+        {
+            if (string.IsNullOrWhiteSpace(_form.Title))
+            {
+                Show(L("saveBeforeCover"), false);
+                return;
+            }
+            if (!await SaveCoreAsync()) return;
+        }
+
+        _uploading = true;
+        _message = null;
+        try
+        {
+            // Reducida en el navegador: 1600 px como maximo y JPEG (vale para cualquier navegador). Usa una imagen
+            // blob:, por eso la CSP del admin la permite en img-src. Con tope de tiempo: si el navegador no puede
+            // abrir la foto (p. ej. HEIC), avisa en vez de quedarse en "Subiendo...".
+            var resized = await e.File.RequestImageFileAsync("image/jpeg", 1600, 1600).AsTask().WaitAsync(TimeSpan.FromSeconds(30));
+            await using var stream = resized.OpenReadStream(maxAllowedSize: 2_000_000);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            buffer.Position = 0;
+
+            var error = await AuthApi.UploadNewsCoverAsync(Id!.Value, buffer, "portada.jpg", "image/jpeg");
+            if (error != null)
+            {
+                Show(ErrorText(error), false);
+                return;
+            }
+            var (post, _) = await AuthApi.GetNewsPostAsync(Id.Value);
+            _coverDataUrl = await AuthApi.GetNewsImageDataUrlAsync(post?.CoverImageFile);
+        }
+        catch (Exception)
+        {
+            Show(Lang.T("admin.common.errorGeneric"), false);
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private async Task WrapAsync(string before, string after, string placeholder) =>
+        await JS.InvokeVoidAsync("newsEditor.wrap", _bodyRef, before, after, placeholder);
+
+    private async Task PrefixAsync(string prefix, bool numbered) =>
+        await JS.InvokeVoidAsync("newsEditor.prefixLines", _bodyRef, prefix, numbered);
+
+    private async Task TogglePreviewAsync() =>
+        _previewHtml = _previewHtml == null ? await AuthApi.PreviewNewsBodyAsync(_form.Body) ?? "" : null;
+
+    private void Show(string message, bool ok)
+    {
+        _message = message;
+        _messageOk = ok;
+    }
+
+    private string ErrorText(string? error) => error switch
+    {
+        null or "generic" => Lang.T("admin.common.errorGeneric"),
+        "forbidden" => Lang.T("admin.staff.notAuthorized"),
+        _ => error
+    };
+}

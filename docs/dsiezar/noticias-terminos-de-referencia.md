@@ -68,8 +68,8 @@ anuncios— con una foto y un texto, y que aparezca en la sección Noticias del 
 
 - Formatos JPG, PNG o WebP; se comprueba el tipo real del archivo, no solo la extensión (como ya hacen las fotos
   de perfil en `ProfilePhotoStorage`).
-- **Se reducen en el navegador antes de subir** (máximo 1600 px de ancho, WebP o JPEG de buena calidad), igual que
-  hoy se comprime el vídeo de presentación. Así una foto de móvil de 6 MB queda en unos 200-300 KB, sin añadir
+- **Se reducen en el navegador antes de subir** (máximo 1600 px de ancho, en JPEG), igual que
+  hoy se comprime el vídeo de presentación. Así una foto de móvil de 6 MB queda en unos 200-500 KB, sin añadir
   librerías al servidor. Límite en el servidor: 2 MB tras la reducción.
 - Se guardan en la carpeta privada compartida por las dos APIs (`storage/news`), fuera de `wwwroot` y del repositorio.
 - Las fotos de **publicaciones publicadas** son públicas (las sirve la API del portal). Las de borradores solo se
@@ -143,7 +143,7 @@ de presentación. Apagado, el enlace del menú desaparece; así no se ve una sec
 ## 10. Criterios de aceptación
 
 - [ ] Un SuperAdmin crea un artículo con foto y texto, lo publica y aparece en `/news` sin recargar el admin.
-- [ ] La foto de un móvil (6-8 MB) se sube sin errores y en el portal pesa menos de 400 KB.
+- [ ] La foto de un móvil (6-8 MB) se sube sin errores y llega reducida a 1600 px de ancho (en torno a 200-500 KB según la foto).
 - [ ] Un borrador **no** se ve en el portal, ni por su dirección directa ni su foto.
 - [ ] Despublicar o archivar la quita del portal al momento.
 - [ ] Un vídeo no carga nada de YouTube/Vimeo hasta que se pulsa "Reproducir" (comprobado en la pestaña Red).

@@ -15,12 +15,18 @@ public class NewsController : AdminControllerBase
 {
     private readonly INewsService _news;
     private readonly INewsImageStorage _images;
+    private readonly IConfiguration _config;
 
-    public NewsController(INewsService news, INewsImageStorage images)
+    public NewsController(INewsService news, INewsImageStorage images, IConfiguration config)
     {
         _news = news;
         _images = images;
+        _config = config;
     }
+
+    /// <summary>Direccion del portal para "Ver en el portal" (misma clave que las invitaciones a empresas).</summary>
+    [HttpGet("portal-url")]
+    public IActionResult PortalUrl() => Ok(new { url = (_config["Portal:BaseUrl"] ?? "http://localhost:5100/").TrimEnd('/') });
 
     private IActionResult Map(NewsOpResult r) => r.Success ? Ok(new { id = r.Id }) : StatusCode(r.StatusCode, new { error = r.Error });
 
