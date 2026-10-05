@@ -412,6 +412,13 @@
     text-decoration: none;
 }
 
+/* Tablet y escritorio estrecho (769-1100 px): con 5 enlaces no caben icono y texto. Se quitan los iconos y
+   se ajusta el relleno para que el menu quede en una linea (por debajo de 769 px manda la barra inferior). */
+@media (min-width: 769px) and (max-width: 1100px) {
+    .nav-link { padding: 0.5rem 0.7rem; white-space: nowrap; }
+    .nav-link svg { display: none; }
+}
+
 .nav-link:hover {
     background-color: var(--nav-hover);
     color: var(--nav-text);
