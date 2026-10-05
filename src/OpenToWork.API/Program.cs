@@ -73,7 +73,7 @@ builder.Services.AddDataProtection()
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey))
     throw new InvalidOperationException("Jwt:Key no esta configurada. En dev: dotnet user-secrets set \"Jwt:Key\" \"<secreto-256bits>\". En prod: variable de entorno Jwt__Key.");
-var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -89,18 +89,9 @@ var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.Authentic
         };
     });
 
-var googleClientId = builder.Configuration["GoogleOAuth:ClientId"];
-var googleClientSecret = builder.Configuration["GoogleOAuth:ClientSecret"];
-if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
-{
-    authBuilder.AddGoogle(options =>
-    {
-        options.ClientId = googleClientId;
-        options.ClientSecret = googleClientSecret;
-    });
-}
-
 builder.Services.AddAuthorization();
+// Codigos de un solo uso del login con Google (AuthController).
+builder.Services.AddMemoryCache();
 
 builder.Services.AddRateLimiter(options =>
 {

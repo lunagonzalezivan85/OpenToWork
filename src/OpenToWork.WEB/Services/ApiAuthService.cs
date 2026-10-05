@@ -13,6 +13,8 @@ public class RegisterResult
     public bool EmailAlreadyRegistered { get; set; }
     /// <summary>Motivo del rechazo de la API (400) cuando un dato no es valido.</summary>
     public string? ValidationError { get; set; }
+    /// <summary>Registro con Google: el enlace de Google vencio (hay que volver a pulsar el boton).</summary>
+    public bool TicketExpired { get; set; }
 }
 
 /// <summary>Resultado de verificar o reenviar el codigo del correo. Error = clave corta de la API (invalid, expired...).</summary>
@@ -204,14 +206,61 @@ public class ApiAuthService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<AuthResponseDto?> GoogleLoginAsync(string googleToken)
+    // --- Google (solo candidatos): el boton es un enlace a la API, que manda a Google y vuelve a /auth/google ---
+
+    public async Task<bool> IsGoogleEnabledAsync()
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/google", new { Token = googleToken });
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<GoogleEnabledResult>("api/auth/google/enabled");
+            return result?.Enabled == true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>URL absoluta: en desarrollo la API va en otro puerto que el portal.</summary>
+    public string GoogleStartUrl(string? returnUrl) =>
+        new Uri(_httpClient.BaseAddress!, "api/auth/google/start").ToString()
+        + (string.IsNullOrEmpty(returnUrl) ? "" : "?returnUrl=" + Uri.EscapeDataString(returnUrl));
+
+    public async Task<AuthResponseDto?> GoogleExchangeAsync(string code)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/auth/google/exchange", new GoogleExchangeDto { Code = code });
         if (!response.IsSuccessStatusCode) return null;
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         if (result != null) await PersistAuthAsync(result);
         return result;
     }
+
+    public async Task<GoogleSignupInfoDto?> GetGoogleSignupInfoAsync(string ticket)
+    {
+        var response = await _httpClient.GetAsync($"api/auth/google/signup/{Uri.EscapeDataString(ticket)}");
+        return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<GoogleSignupInfoDto>() : null;
+    }
+
+    public async Task<RegisterResult> GoogleSignupAsync(GoogleSignupDto dto)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/auth/google/signup", dto);
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning("Google signup failed: {Error}", error);
+            return new RegisterResult
+            {
+                EmailAlreadyRegistered = response.StatusCode == System.Net.HttpStatusCode.Conflict,
+                TicketExpired = response.StatusCode == System.Net.HttpStatusCode.NotFound,
+                ValidationError = response.StatusCode == System.Net.HttpStatusCode.BadRequest ? ReadMessage(error) : null
+            };
+        }
+        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+        if (result != null) await PersistAuthAsync(result);
+        return new RegisterResult { Data = result };
+    }
+
+    private record GoogleEnabledResult(bool Enabled);
 
     public async Task<bool> VerifyRecaptchaAsync(string recaptchaResponse)
     {

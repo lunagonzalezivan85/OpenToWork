@@ -41,8 +41,16 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, string? createdBy = null, string? consentIp = null)
+    public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, string? createdBy = null, string? consentIp = null, GoogleIdentity? google = null)
     {
+        // Con Google: correo verificado por Google, sin contrasena ni codigo por correo, y solo candidatos.
+        if (google != null)
+        {
+            if (!google.EmailVerified) throw new ArgumentException("Google no ha verificado ese correo.");
+            dto.Email = NormalizeEmail(google.Email);
+            dto.PrimaryRole = (int)UserRole.Candidate;
+        }
+
         var isCandidate = dto.PrimaryRole == (int)UserRole.Candidate;
         var firstName = dto.FirstName?.Trim() ?? string.Empty;
         var lastName = dto.LastName?.Trim() ?? string.Empty;
@@ -51,7 +59,7 @@ public class AuthService : IAuthService
         // El formulario ya avisa de todo esto; aqui se repite porque la API es la que manda.
         if (string.IsNullOrWhiteSpace(dto.Email) || !dto.Email.Contains('@'))
             throw new ArgumentException("El correo electrónico no es válido.");
-        if (string.IsNullOrEmpty(dto.Password) || dto.Password.Length < MinPasswordLength)
+        if (google == null && (string.IsNullOrEmpty(dto.Password) || dto.Password.Length < MinPasswordLength))
             throw new ArgumentException($"La contraseña debe tener al menos {MinPasswordLength} caracteres.");
         if (!dto.AcceptPrivacy)
             throw new ArgumentException("Debes aceptar la política de privacidad.");
@@ -94,14 +102,15 @@ public class AuthService : IAuthService
 
         // Candidato: la cuenta solo se crea con el codigo que se envio al correo (decision de Darwin 1-Oct).
         SCEmailVerificationCode? pendingCode = null;
-        if (isCandidate)
+        if (isCandidate && google == null)
             pendingCode = await ConsumeRegistrationCodeAsync(dto.Email, dto.EmailCode);
 
         var now = DateTime.UtcNow;
         var user = new SCUser
         {
             Email = dto.Email.Trim(),
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            PasswordHash = google == null ? BCrypt.Net.BCrypt.HashPassword(dto.Password) : null,
+            GoogleId = google?.Subject,
             PrimaryRole = dto.PrimaryRole,
             FullName = isCandidate ? $"{firstName} {lastName}" : null,
             Identification = identification,
@@ -513,71 +522,36 @@ public class AuthService : IAuthService
         return true;
     }
 
-    public async Task<AuthResponseDto?> GoogleLoginAsync(string googleToken)
+    public async Task<(GoogleSignInStatus Status, AuthResponseDto? Auth)> GoogleSignInAsync(GoogleIdentity identity)
     {
-        // Revision de seguridad 25-Sep: antes se decodificaba el payload SIN verificar la firma y
-        // cualquiera entraba a una cuenta ajena fabricando un token con su correo. Ahora el token se
-        // valida contra Google (firma, emisor, audiencia, vigencia) en GoogleTokenValidator.
-        var identity = await _googleTokenValidator.ValidateAsync(googleToken);
-        if (identity == null) return null;
+        // Sin correo verificado por Google no se entra ni se crea nada: cualquiera podria poner el correo de otro.
+        if (!identity.EmailVerified) return (GoogleSignInStatus.EmailNotVerified, null);
 
-        var email = identity.Email;
-        var googleId = identity.Subject;
-
-        try
-        {
-            var user = await _context.SC_Users
+        var email = NormalizeEmail(identity.Email);
+        var user = await _context.SC_Users
+            .Include(u => u.UserRoles)
+            .Include(u => u.UserPreference)
+            .Include(u => u.Candidate)
+            .FirstOrDefaultAsync(u => u.GoogleId == identity.Subject && !u.IsDeleted)
+            ?? await _context.SC_Users
                 .Include(u => u.UserRoles)
                 .Include(u => u.UserPreference)
                 .Include(u => u.Candidate)
-                .FirstOrDefaultAsync(u => u.GoogleId == googleId && !u.IsDeleted);
+                .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
 
-            if (user == null)
-            {
-                // Check if email exists - link GoogleId to existing account
-                user = await _context.SC_Users
-                    .Include(u => u.UserRoles)
-                    .Include(u => u.UserPreference)
-                    .Include(u => u.Candidate)
-                    .FirstOrDefaultAsync(u => u.Email == email && !u.IsDeleted);
+        // Cuenta nueva: no se crea aqui, falta el paso de completar registro (nombre, documento, consentimientos).
+        if (user == null) return (GoogleSignInStatus.NeedsSignup, null);
 
-                if (user == null)
-                {
-                    // Create new user from Google info
-                    user = new SCUser
-                    {
-                        Email = email,
-                        GoogleId = googleId,
-                        PrimaryRole = 0,
-                        EmailVerified = true,
-                        IsActive = true
-                    };
-                    user.UserRoles.Add(new SCUserRole { Role = 0, SCUserId = user.Id });
-                    user.UserPreference = new SYUserPreference { SCUserId = user.Id, Theme = "navy", Language = "es" };
-                    user.Candidate = new PTCandidate { SCUserId = user.Id, WizardStep = 0, WizardCompleted = false };
+        // Solo candidatos (decision de Darwin 5-Oct): empresas y staff entran con su contrasena.
+        if (user.PrimaryRole != (int)UserRole.Candidate) return (GoogleSignInStatus.NotCandidate, null);
+        if (!user.IsActive) return (GoogleSignInStatus.Inactive, null);
 
-                    _context.SC_Users.Add(user);
-                }
-                else
-                {
-                    // Solo se vincula a una cuenta existente si Google garantiza que el correo es de
-                    // quien inicia sesion; si no, cualquiera con una cuenta de Google con ese correo
-                    // sin verificar podria apropiarse de la cuenta.
-                    if (!identity.EmailVerified) return null;
-                    user.GoogleId = googleId;
-                    user.EmailVerified = true;
-                }
-            }
+        user.GoogleId ??= identity.Subject;
+        user.EmailVerified = true;
+        user.LastLoginAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
 
-            user.LastLoginAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-
-            return await GenerateAuthResponseAsync(user);
-        }
-        catch
-        {
-            return null;
-        }
+        return (GoogleSignInStatus.SignedIn, await GenerateAuthResponseAsync(user));
     }
 
     public async Task<bool> VerifyRecaptchaAsync(string recaptchaResponse)

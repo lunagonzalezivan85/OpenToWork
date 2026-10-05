@@ -27,15 +27,54 @@ public class GoogleTokenValidator : IGoogleTokenValidator
     private readonly HttpClient _http;
     private readonly ILogger<GoogleTokenValidator> _logger;
     private readonly string? _clientId;
+    private readonly string? _clientSecret;
 
     public GoogleTokenValidator(HttpClient http, IConfiguration config, ILogger<GoogleTokenValidator> logger)
     {
         _http = http;
         _logger = logger;
         _clientId = config["GoogleOAuth:ClientId"];
+        _clientSecret = config["GoogleOAuth:ClientSecret"];
     }
 
-    public bool IsEnabled => !string.IsNullOrWhiteSpace(_clientId);
+    public bool IsEnabled => !string.IsNullOrWhiteSpace(_clientId) && !string.IsNullOrWhiteSpace(_clientSecret);
+
+    public string BuildAuthorizeUrl(string redirectUri, string state) =>
+        "https://accounts.google.com/o/oauth2/v2/auth"
+        + $"?client_id={Uri.EscapeDataString(_clientId ?? "")}"
+        + $"&redirect_uri={Uri.EscapeDataString(redirectUri)}"
+        + "&response_type=code&scope=openid%20email%20profile&prompt=select_account"
+        + $"&state={Uri.EscapeDataString(state)}";
+
+    public async Task<GoogleIdentity?> ExchangeCodeAsync(string code, string redirectUri)
+    {
+        if (!IsEnabled || string.IsNullOrWhiteSpace(code)) return null;
+
+        try
+        {
+            var response = await _http.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["code"] = code,
+                ["client_id"] = _clientId!,
+                ["client_secret"] = _clientSecret!,
+                ["redirect_uri"] = redirectUri,
+                ["grant_type"] = "authorization_code"
+            }));
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Google rechazo el codigo de autorizacion: {Status} {Body}", (int)response.StatusCode, await response.Content.ReadAsStringAsync());
+                return null;
+            }
+
+            using var doc = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            return doc.RootElement.TryGetProperty("id_token", out var idToken) ? await ValidateAsync(idToken.GetString() ?? "") : null;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+        {
+            _logger.LogError(ex, "No se pudo cambiar el codigo de Google por el token");
+            return null;
+        }
+    }
 
     public async Task<GoogleIdentity?> ValidateAsync(string idToken)
     {
@@ -75,7 +114,8 @@ public class GoogleTokenValidator : IGoogleTokenValidator
             var emailVerified = string.Equals(principal.FindFirst("email_verified")?.Value, "true", StringComparison.OrdinalIgnoreCase);
             if (string.IsNullOrEmpty(sub) || string.IsNullOrEmpty(email)) return null;
 
-            return new GoogleIdentity(sub, email, emailVerified);
+            return new GoogleIdentity(sub, email, emailVerified,
+                principal.FindFirst("given_name")?.Value, principal.FindFirst("family_name")?.Value);
         }
         catch (Exception ex) when (ex is SecurityTokenException or ArgumentException)
         {
