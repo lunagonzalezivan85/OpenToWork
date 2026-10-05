@@ -72,7 +72,6 @@ public class NewsService : INewsService
             CoverImageFile = p.CoverImageFile,
             CoverImageAlt = p.CoverImageAlt,
             VideoUrl = p.VideoUrl,
-            VideoThumbnailFile = p.VideoThumbnailFile,
             IsFeatured = p.IsFeatured,
             PublishedAt = p.PublishedAt
         };
@@ -181,7 +180,6 @@ public class NewsService : INewsService
         post.DeletedBy = adminId;
         await _context.SaveChangesAsync();
         _images.Delete(post.CoverImageFile);
-        _images.Delete(post.VideoThumbnailFile);
         await _audit.LogAsync(adminId, "NewsPostDeleted", "PT_NewsPosts", post.Id, post.Title, null);
         return NewsOpResult.Ok(post.Id);
     }
@@ -233,13 +231,12 @@ public class NewsService : INewsService
             PublishedAt = card.PublishedAt,
             BodyHtml = NewsMarkdown.ToHtml(p.Body),
             VideoProvider = video?.Provider,
-            VideoEmbedUrl = video is { } v ? NewsVideo.EmbedUrl(v.Provider, v.Id) : null,
-            VideoThumbnailFile = p.VideoThumbnailFile
+            VideoEmbedUrl = video is { } v ? NewsVideo.EmbedUrl(v.Provider, v.Id) : null
         };
     }
 
     public Task<bool> IsPublishedImageAsync(string fileName) =>
-        Published().AnyAsync(n => n.CoverImageFile == fileName || n.VideoThumbnailFile == fileName);
+        Published().AnyAsync(n => n.CoverImageFile == fileName);
 
     // ------------------------------------------------------------------ Helpers
 

@@ -90,7 +90,8 @@
 
 @media (min-width: 900px) {
     .news-card--featured { flex-direction: row; }
-    .news-card--featured .news-card-img { width: 58%; aspect-ratio: auto; min-height: 320px; }
+    .news-card--featured .news-card-media { width: 58%; flex-shrink: 0; min-height: 320px; }
+    .news-card--featured .news-card-img { position: absolute; inset: 0; height: 100%; aspect-ratio: auto; }
     .news-card--featured .news-card-body { justify-content: center; padding: var(--space-xl); }
     .news-card--featured .news-card-title { font-size: 1.75rem; }
 }
@@ -175,4 +176,56 @@
 @media (prefers-reduced-motion: reduce) {
     .news-card { transition: none; }
     .news-card:hover { transform: none; }
+}
+
+/* --- Video: reproductor en dos pasos (portada + boton; el iframe solo al pulsar) --- */
+
+.news-card-media { position: relative; }
+
+.news-video {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: #000;
+    margin-bottom: var(--space-sm);
+}
+
+.news-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.news-video--facade {
+    display: block;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+.news-video--facade img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.news-video--facade:focus-visible { outline: 3px solid var(--accent-primary); outline-offset: 3px; }
+
+.news-video-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 72px;
+    height: 72px;
+    margin: -36px 0 0 -36px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .65);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .2s ease, background-color .2s ease;
+}
+
+.news-video--facade:hover .news-video-play { transform: scale(1.08); background: var(--accent-primary); }
+.news-card-media .news-video-play { width: 52px; height: 52px; margin: -26px 0 0 -26px; }
+
+.news-video-notice { font-size: .8rem; color: var(--text-muted); margin: 0 0 var(--space-xl); }
+
+@media (prefers-reduced-motion: reduce) {
+    .news-video-play { transition: none; }
+    .news-video--facade:hover .news-video-play { transform: none; }
 }

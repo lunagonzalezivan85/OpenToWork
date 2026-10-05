@@ -39,10 +39,6 @@ public class PTNewsPost : BaseEntity
     [MaxLength(300)]
     public string? VideoUrl { get; set; }
 
-    /// <summary>Miniatura del video descargada al publicar, para no llamar a YouTube/Vimeo hasta "Reproducir".</summary>
-    [MaxLength(120)]
-    public string? VideoThumbnailFile { get; set; }
-
     public bool IsFeatured { get; set; }
 
     public DateTime? PublishedAt { get; set; }

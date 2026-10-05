@@ -1,6 +1,6 @@
 namespace OpenToWork.Core.Interfaces;
 
-/// <summary>Fotos de Noticias (portada y miniatura de video) en la carpeta privada compartida por las dos APIs
+/// <summary>Fotos de portada de Noticias en la carpeta privada compartida por las dos APIs
 /// (storage/news). Se guardan y se piden por nombre de archivo, nunca por ruta.</summary>
 public interface INewsImageStorage
 {

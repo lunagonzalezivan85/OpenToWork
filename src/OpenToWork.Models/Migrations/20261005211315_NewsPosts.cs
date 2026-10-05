@@ -32,8 +32,6 @@ namespace OpenToWork.Models.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     VideoUrl = table.Column<string>(type: "varchar(300)", maxLength: 300, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    VideoThumbnailFile = table.Column<string>(type: "varchar(120)", maxLength: 120, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     IsFeatured = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     PublishedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),

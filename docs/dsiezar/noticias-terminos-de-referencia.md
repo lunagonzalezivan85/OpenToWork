@@ -83,8 +83,9 @@ anuncios— con una foto y un texto, y que aparezca en la sección Noticias del 
 Insertar un vídeo de YouTube o Vimeo carga contenido de Google o Vimeo, que pone sus propias cookies. Hoy la
 política de cookies dice que el portal no carga nada de terceros, así que se propone un **reproductor de dos pasos**:
 
-1. En la página se ve la miniatura con un botón de reproducir. La miniatura se descarga en el servidor al publicar
-   y se sirve desde nuestro dominio, así que no se llama a YouTube ni a Vimeo.
+1. En la página se ve la foto de portada (obligatoria) con un botón de reproducir. Se sirve desde nuestro dominio,
+   así que no se llama a YouTube ni a Vimeo. (Al construirlo se descartó descargar la miniatura del vídeo: la
+   portada ya cumple ese papel y así no hace falta otra columna ni llamadas del servidor a terceros.)
 2. Solo al pulsar "Reproducir" se carga el vídeo, usando el modo "sin cookies" de YouTube (`youtube-nocookie.com`)
    o el modo `dnt` de Vimeo, con un aviso breve ("Al reproducir, el vídeo se carga desde YouTube").
 
@@ -108,15 +109,15 @@ Se aplica en la API con `[RequireStaffRole]`, como el resto del admin; el menú 
 
 ## 8. Diseño técnico (resumen)
 
-**Tabla nueva `PT_NewsPosts`:** `Id`, `Type`, `Title`, `Slug` (único), `Summary`, `Body`, `CoverImagePath`,
-`CoverImageAlt`, `VideoUrl`, `VideoThumbnailPath`, `Status` (Borrador / Publicada / Archivada), `IsFeatured`,
+**Tabla nueva `PT_NewsPosts`:** `Id`, `Type`, `Title`, `Slug` (único), `Summary`, `Body`, `CoverImageFile`,
+`CoverImageAlt`, `VideoUrl`, `Status` (Borrador / Publicada / Archivada), `IsFeatured`,
 `PublishedAt`, `CreatedBy`, `UpdatedBy`, `CreatedAt`, `UpdatedAt`, `IsDeleted`. Una migración, sin ruido de seeds,
 que en local se aplica a mano (`dotnet ef database update ...`) y en producción la aplica el despliegue.
 
 **Admin API (`/api/admin/news`):** listar, obtener, crear, editar, subir foto, publicar, despublicar, archivar, borrar.
 
 **API del portal (`/api/news`, sin login):** listado paginado (solo publicadas, filtro por tipo), detalle por slug,
-y la foto o miniatura de una publicación publicada.
+y la foto de portada de una publicación publicada.
 
 **Texto con formato:** se guarda como Markdown sencillo y se convierte a HTML **en el servidor**, sin permitir HTML
 escrito a mano ni scripts. Los enlaces externos se abren en pestaña nueva con `rel="noopener nofollow"`. En el admin,

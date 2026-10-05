@@ -39,7 +39,6 @@ public class NewsPostAdminDto : SaveNewsPostDto
     public Guid Id { get; set; }
     public int Status { get; set; }
     public string? CoverImageFile { get; set; }
-    public string? VideoThumbnailFile { get; set; }
 }
 
 /// <summary>Tarjeta del listado del portal.</summary>
@@ -70,7 +69,6 @@ public class NewsPostDetailDto : NewsPostCardDto
     public string? VideoProvider { get; set; }
     /// <summary>Se carga solo al pulsar Reproducir (youtube-nocookie / vimeo dnt).</summary>
     public string? VideoEmbedUrl { get; set; }
-    public string? VideoThumbnailFile { get; set; }
 }
 
 /// <summary>Resultado de una accion del admin. Error = mensaje para el equipo; StatusCode para la API.</summary>
