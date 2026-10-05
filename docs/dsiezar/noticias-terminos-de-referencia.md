@@ -1,6 +1,6 @@
 # Noticias — Términos de referencia
 
-**IA:** Dsiezar · **Fecha:** 2026-10-05 · **Rama:** `dsiezar-noticias` · **Estado:** propuesta, pendiente de que Darwin cierre las decisiones de la sección 9.
+**IA:** Dsiezar · **Fecha:** 2026-10-05 · **Rama:** `dsiezar-noticias` · **Estado:** decisiones cerradas (sección 9), listo para construir.
 
 ## 1. Contexto
 
@@ -96,11 +96,13 @@ dentro del portal. No requiere cambios legales, pero se sale del portal. Ver dec
 
 ## 7. Permisos
 
+Decidido (D1): los tres roles del staff pueden hacer todo.
+
 | Rol del staff | Ver | Crear y editar borradores | Publicar / despublicar / archivar / borrar |
 |---|---|---|---|
 | SuperAdmin | Sí | Sí | Sí |
-| Comercial | Sí | Sí | Propuesta: **sí** (ver D1) |
-| Reclutador | Sí | Propuesta: **sí** | Propuesta: **no** |
+| Comercial | Sí | Sí | Sí |
+| Reclutador | Sí | Sí | Sí |
 
 Se aplica en la API con `[RequireStaffRole]`, como el resto del admin; el menú solo enseña lo que cada rol puede hacer.
 
@@ -127,16 +129,16 @@ resto (tarjetas, tema claro/oscuro, móvil). Imágenes con carga diferida (`load
 **Interruptor:** opción "Mostrar Noticias en el portal" en Configuración del admin, como ya se hace con los vídeos
 de presentación. Apagado, el enlace del menú desaparece; así no se ve una sección vacía mientras se carga contenido.
 
-## 9. Decisiones pendientes (Darwin)
+## 9. Decisiones (cerradas por Darwin el 2026-10-05)
 
-| # | Decisión | Propuesta |
+| # | Decisión | Resultado |
 |---|---|---|
-| D1 | ¿Quién puede **publicar**? | SuperAdmin y Comercial publican; Reclutador solo prepara borradores. |
-| D2 | Formato del texto | Markdown sencillo con barra de botones (seguro y sin dependencias). La alternativa es un editor visual tipo Word, más cómodo pero con más código de terceros. |
-| D3 | Vídeos | Reproductor de dos pasos dentro del portal (sección 6). La alternativa es solo enlazar a YouTube/Vimeo. |
-| D4 | ¿Para quién son las noticias? | Para todos (también sin cuenta). Si más adelante hace falta, se añade "solo candidatos" / "solo empresas". |
-| D5 | ¿Subir vídeos propios (archivo MP4) además de enlaces? | No en la primera versión: pesa mucho en el servidor. Se puede reutilizar más adelante la compresión del vídeo de presentación. |
-| D6 | Categorías además del tipo (p. ej. "Consejos", "Sector", "Empresa") | No en la primera versión; el tipo basta para filtrar mientras haya poco contenido. |
+| D1 | ¿Quién puede **publicar**? | **SuperAdmin, Comercial y Reclutador** pueden crear, publicar, despublicar, archivar y borrar. |
+| D2 | Formato del texto | Markdown sencillo con barra de botones (seguro y sin dependencias). |
+| D3 | Vídeos | Reproductor de dos pasos dentro del portal (sección 6). |
+| D4 | ¿Para quién son las noticias? | Para todos, también sin cuenta. |
+| D5 | ¿Subir vídeos propios (archivo MP4)? | No en la primera versión. |
+| D6 | Categorías además del tipo | No en la primera versión; el tipo basta para filtrar. |
 
 ## 10. Criterios de aceptación
 
