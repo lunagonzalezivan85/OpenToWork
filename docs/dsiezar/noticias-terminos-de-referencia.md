@@ -26,7 +26,7 @@ anuncios— con una foto y un texto, y que aparezca en la sección Noticias del 
 - Listado de publicaciones con estado, tipo, fecha de publicación y autor; filtro por estado y buscador por título.
 - Crear y editar una publicación (ver campos en la sección 4).
 - Subir **una foto de portada** por publicación, con vista previa y recorte automático al formato de la tarjeta.
-- Guardar como **borrador**, **publicar**, **despublicar** (vuelve a borrador) y **archivar**. Borrar solo en borrador.
+- Guardar como **borrador**, **publicar**, **despublicar** (vuelve a borrador) y **archivar**. Borrar solo borradores o archivadas (una publicada hay que despublicarla o archivarla antes).
 - **Destacar** una publicación: sale primera y más grande en el portal (máximo una destacada a la vez).
 - Botón "Ver como en el portal" para revisar antes de publicar.
 - Cada acción (crear, editar, publicar, despublicar, archivar, borrar) queda en el **registro de auditoría** que ya
@@ -74,7 +74,7 @@ anuncios— con una foto y un texto, y que aparezca en la sección Noticias del 
 - Se guardan en la carpeta privada compartida por las dos APIs (`storage/news`), fuera de `wwwroot` y del repositorio.
 - Las fotos de **publicaciones publicadas** son públicas (las sirve la API del portal). Las de borradores solo se
   ven desde el admin.
-- Al archivar o borrar, la foto se borra con la publicación.
+- Al borrar una publicación se borran también sus fotos. Archivar no las borra (se puede volver a publicar).
 - **Derechos y personas:** solo fotos propias, con licencia o de bancos libres; si aparecen personas reconocibles,
   con su consentimiento. Lo recordará un aviso junto al botón de subir.
 
