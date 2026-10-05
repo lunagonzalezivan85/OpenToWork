@@ -378,7 +378,7 @@ else
 
     private async Task CopyPublicLink()
     {
-        var url = $"{Nav.BaseUri}vacancy/{Id}";
+        var url = $"{Nav.BaseUri}vacancy/{(string.IsNullOrEmpty(Vacancy.ReferenceCode) ? Id.ToString() : Vacancy.ReferenceCode)}";
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
         await JS.InvokeVoidAsync("Swal.fire", new
         {

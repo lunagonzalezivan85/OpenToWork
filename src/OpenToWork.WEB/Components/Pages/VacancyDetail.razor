@@ -1,4 +1,4 @@
-@page "/vacancy/{Id:guid}"
+@page "/vacancy/{Id}"
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
 @inject ApiAuthService AuthApi
@@ -32,6 +32,10 @@
                 <div class="vacancy-detail-header-info">
                     <h1 class="vacancy-detail-title">@Vacancy.Title</h1>
                     <p class="vacancy-detail-company">@Vacancy.CompanyName</p>
+                    @if (!string.IsNullOrEmpty(Vacancy.ReferenceCode))
+                    {
+                        <span class="vacancy-detail-badge vacancy-detail-ref">Ref. @Vacancy.ReferenceCode</span>
+                    }
                 </div>
                 @if (Vacancy.CompanyIsVerified)
                 {
@@ -161,7 +165,8 @@
 </div>
 
 @code {
-    [Parameter] public Guid Id { get; set; }
+    // Id puede ser el Guid interno o la referencia publica TD-XXXXXXXX (URL amigable).
+    [Parameter] public string Id { get; set; } = "";
     private VacancyDto? Vacancy { get; set; }
     private bool LoadFailed { get; set; }
     private string CoverLetter { get; set; } = "";
@@ -196,7 +201,7 @@
     {
         var dto = new CreateApplicationDto
         {
-            VacancyId = Id,
+            VacancyId = Vacancy!.Id,
             CoverLetter = string.IsNullOrEmpty(CoverLetter) ? null : CoverLetter,
             ExpectedSalary = ExpectedSalary,
             AvailableFromDate = AvailableFromDate

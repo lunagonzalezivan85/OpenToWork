@@ -20,6 +20,11 @@
     <BlazorWebAssemblyLoadAllGlobalizationData>false</BlazorWebAssemblyLoadAllGlobalizationData>
     <!-- Publica el web.config propio de la raiz del proyecto (proxy /api, CSP, cabeceras) -->
     <PublishIISAssets>true</PublishIISAssets>
+    <!-- Bug del devserver (.NET 10): los endpoints .gz de _framework sirven 0 bytes
+         cuando el asset comprimido vive en obj/compressed con placeholder {0} -> el
+         navegador recibe dotnet.js vacio y Blazor no arranca. Solo afecta a Build;
+         en Publish la compresion (gzip+brotli) sigue activa. -->
+    <DisableBuildCompression Condition="'$(Configuration)' == 'Debug'">true</DisableBuildCompression>
   </PropertyGroup>
 
 </Project>

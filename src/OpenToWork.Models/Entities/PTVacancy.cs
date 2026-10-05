@@ -11,6 +11,13 @@ public class PTVacancy : BaseEntity
     [ForeignKey("PT_CompanyId")]
     public virtual PTCompany Company { get; set; } = null!;
 
+    /// <summary>Referencia publica de la vacante (formato TD-XXXXXXXX, igual que
+    /// PTVerificationRequest.ReferenceNumber). Va en la URL publica /vacancy/{code} en
+    /// vez del Guid interno.</summary>
+    [Required]
+    [MaxLength(20)]
+    public string ReferenceCode { get; set; } = "";
+
     [Required]
     [MaxLength(200)]
     public string Title { get; set; } = string.Empty;

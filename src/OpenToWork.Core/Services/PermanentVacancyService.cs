@@ -43,6 +43,7 @@ public class PermanentVacancyService : IPermanentVacancyService
         var vacancy = new PTVacancy
         {
             PT_CompanyId = companyId,
+            ReferenceCode = NewReferenceCode(),
             Title = dto.Title,
             Description = dto.Description,
             Requirements = dto.Requirements,
@@ -103,6 +104,16 @@ public class PermanentVacancyService : IPermanentVacancyService
         var dto = await MapToDtoAsync(vacancy);
         dto.IsContractLocked = await IsContractLockedAsync(vacancy.Id);
         return dto;
+    }
+
+    public async Task<VacancyDto?> GetVacancyByCodeAsync(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code) || code.Length > 20) return null;
+        var id = await _context.PT_Vacancies
+            .Where(v => !v.IsDeleted && v.ReferenceCode == code.Trim().ToUpper())
+            .Select(v => (Guid?)v.Id)
+            .FirstOrDefaultAsync();
+        return id.HasValue ? await GetVacancyByIdAsync(id.Value) : null;
     }
 
     /// <summary>La vacante esta en un contrato Enviado o Aceptado (ver VacancyDto.IsContractLocked).</summary>
@@ -392,6 +403,7 @@ public class PermanentVacancyService : IPermanentVacancyService
         var vacancy = new PTVacancy
         {
             PT_CompanyId = company.Id,
+            ReferenceCode = NewReferenceCode(),
             Title = tempVacancy.Title,
             Description = tempVacancy.Description,
             Requirements = tempVacancy.Requirements,
@@ -477,9 +489,14 @@ public class PermanentVacancyService : IPermanentVacancyService
         return dtos;
     }
 
+    /// <summary>Referencia publica TD-XXXXXXXX (misma convencion que PTVerificationRequest).</summary>
+    private static string NewReferenceCode()
+        => $"TD-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+
     private static VacancyDto BuildDto(PTVacancy v, PTCompany? company, Guid? jobTypeId, string? jobTypeName, string? jobLevelName, List<string> skills) => new()
     {
         Id = v.Id,
+        ReferenceCode = v.ReferenceCode,
         CompanyId = v.PT_CompanyId,
         CompanyName = company?.Name ?? string.Empty,
         CompanyLogoUrl = company?.LogoUrl,

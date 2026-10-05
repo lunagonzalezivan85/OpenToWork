@@ -258,10 +258,14 @@ public class ApiAuthService
         return await response.Content.ReadFromJsonAsync<List<VacancyDto>>();
     }
 
-    public async Task<VacancyDto?> GetPermanentVacancyAsync(Guid id)
+    /// <summary>idOrCode: Guid interno o referencia publica TD-XXXXXXXX.</summary>
+    public Task<VacancyDto?> GetPermanentVacancyAsync(Guid id) => GetPermanentVacancyAsync(id.ToString());
+
+    /// <summary>idOrCode: Guid interno o referencia publica TD-XXXXXXXX.</summary>
+    public async Task<VacancyDto?> GetPermanentVacancyAsync(string idOrCode)
     {
         await SetAuthHeaderAsync();
-        var response = await _httpClient.GetAsync($"api/permanentvacancies/{id}");
+        var response = await _httpClient.GetAsync($"api/permanentvacancies/{Uri.EscapeDataString(idOrCode)}");
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<VacancyDto>();
     }

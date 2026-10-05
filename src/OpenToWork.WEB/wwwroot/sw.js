@@ -6,7 +6,7 @@
 // which then surfaces as "The POST request does not specify which form is
 // being submitted" when a form on that stale page is submitted. Bumping the
 // cache name also purges any already-cached bad entries from v1 installs.
-const CACHE_NAME = 'tratodirecto-v8';
+const CACHE_NAME = 'tratodirecto-v9';
 const ASSETS = [
   '/icon.svg',
   '/manifest.json',
@@ -21,11 +21,11 @@ const ASSETS = [
   '/themes/navy/theme.css'
 ];
 
-// Recursos inmutables (content-hash en el nombre o librerias versionadas del
-// repo): se sirven cache-first. blazor.boot.json y blazor.webassembly.js NO
-// estan fingerprinteados -> excluidos para no servir un manifiesto viejo.
-const IMMUTABLE_PATH = /^\/(_framework\/|lib\/)/;
-const NOT_IMMUTABLE = /^\/_framework\/(blazor\.boot\.json|blazor\.webassembly\.js)/;
+// Recursos inmutables: SOLO las librerias vendoreadas de /lib/ (las versionamos a
+// mano al actualizarlas). Los archivos de /_framework/ NO estan fingerprinteados en
+// standalone WASM (los nombres son fijos: OpenToWork.WEB.dll, dotnet.js...), asi que
+// cache-first serviria DLLs viejos tras cada deploy -> van por network-first abajo.
+const IMMUTABLE_PATH = /^\/lib\//;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -49,9 +49,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Inmutables (framework .NET fingerprinteado + librerias vendoreadas):
-  // cache-first; la segunda visita arranca sin descargar ~15 MB.
-  if (IMMUTABLE_PATH.test(url.pathname) && !NOT_IMMUTABLE.test(url.pathname)) {
+  // Inmutables (librerias vendoreadas versionadas): cache-first.
+  if (IMMUTABLE_PATH.test(url.pathname)) {
     event.respondWith(
       caches.match(event.request).then((cached) => cached ||
         fetch(event.request).then((response) => {
@@ -66,8 +65,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // _framework (WASM runtime + DLLs) NO pasa por el SW: en dev la respuesta llega
+  // vacia a traves de respondWith (module scripts son estrictos con el MIME) y sin
+  // fingerprint cache-first serviria codigo viejo tras un deploy. Sin respondWith
+  // el navegador negocia directo, que es lo correcto para el boot de Blazor.
   const isStaticAsset =
-    ASSETS.includes(url.pathname) || url.pathname.startsWith('/css/') || url.pathname.startsWith('/themes/');
+    ASSETS.includes(url.pathname) || url.pathname.startsWith('/css/')
+    || url.pathname.startsWith('/themes/');
   if (!isStaticAsset) return;
 
   // Network-first: always fetch latest, fall back to cache only if offline

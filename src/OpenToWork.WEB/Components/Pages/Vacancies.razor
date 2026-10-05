@@ -451,9 +451,9 @@
         await LoadVacancies();
     }
 
-    private void GoToVacancy(Guid id)
+    private void GoToVacancy(VacancyDto vacancy)
     {
-        Nav.NavigateTo($"/vacancy/{id}");
+        Nav.NavigateTo($"/vacancy/{(string.IsNullOrEmpty(vacancy.ReferenceCode) ? vacancy.Id.ToString() : vacancy.ReferenceCode)}");
     }
 
     private void ClearQuery()

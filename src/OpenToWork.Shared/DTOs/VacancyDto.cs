@@ -3,6 +3,10 @@ namespace OpenToWork.Shared.DTOs;
 public class VacancyDto
 {
     public Guid Id { get; set; }
+
+    /// <summary>Referencia publica TD-XXXXXXXX - va en la URL /vacancy/{code} en vez del Guid.</summary>
+    public string ReferenceCode { get; set; } = "";
+
     public Guid CompanyId { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     public string? CompanyLogoUrl { get; set; }

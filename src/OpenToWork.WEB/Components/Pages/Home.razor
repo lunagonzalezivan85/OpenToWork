@@ -239,9 +239,9 @@
         Nav.NavigateTo($"/vacancies{qs}");
     }
 
-    private void GoToVacancy(Guid id)
+    private void GoToVacancy(VacancyDto vacancy)
     {
-        Nav.NavigateTo($"/vacancy/{id}");
+        Nav.NavigateTo($"/vacancy/{(string.IsNullOrEmpty(vacancy.ReferenceCode) ? vacancy.Id.ToString() : vacancy.ReferenceCode)}");
     }
 
     private static string TruncateText(string? text, int max)

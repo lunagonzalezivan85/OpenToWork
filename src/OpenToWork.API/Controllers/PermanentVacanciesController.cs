@@ -37,14 +37,18 @@ public class PermanentVacanciesController : ControllerBase
         }
 
         var result = await _vacancyService.CreateVacancyAsync(companyId.Value, dto, userId.Value);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        return CreatedAtAction(nameof(GetById), new { idOrCode = result.Id }, result);
     }
 
-    [HttpGet("{id}")]
+    // Acepta tanto el Guid interno como la referencia publica TD-XXXXXXXX:
+    // /vacancy/{code} es la URL que ven y comparten los usuarios.
+    [HttpGet("{idOrCode}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(string idOrCode)
     {
-        var result = await _vacancyService.GetVacancyByIdAsync(id);
+        var result = Guid.TryParse(idOrCode, out var id)
+            ? await _vacancyService.GetVacancyByIdAsync(id)
+            : await _vacancyService.GetVacancyByCodeAsync(idOrCode);
         return result != null ? Ok(result) : NotFound();
     }
 
