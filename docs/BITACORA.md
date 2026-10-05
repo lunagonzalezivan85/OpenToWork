@@ -486,3 +486,43 @@ El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` 
 ### Pendiente
 - Avisos por correo al candidato (entregado/contratado).
 - Recargar `/profile` redirige al login aunque haya sesión (bug previo).
+
+---
+
+## Sesión: 5 Octubre 2026 (Iluna — busqueda geo, match de candidatos y codigo publico de vacante)
+
+Rama: `iluna-geo-search` (NO mergeada a `main`, pendiente de revisión de Darwin).
+
+### IMPORTANTE - Migraciones
+> Aplicar a mano (`dotnet ef database update --project src/OpenToWork.Models --startup-project src/OpenToWork.API`):
+> - `VacancyGeoCoordinates` — `PT_Vacancies.Latitude`/`Longitude` + índices por ubicación/categoría/modo.
+> - `VacancyReferenceCode` — `PT_Vacancies.ReferenceCode` (varchar 20, único). **El Up() ya trae el backfill**: `UPDATE ... CONCAT('TD-', UPPER(SUBSTRING(REPLACE(UUID(),'-',''),1,8)))` antes del índice único, y vacía/reinserta los seeds de `SY_DocumentTypes`/`SY_WizardSteps` porque los GUIDs de `HasData` cambian en cada scaffold y chocaban con el índice por nombre.
+
+### Cambios Realizados
+
+#### 1. Búsqueda de empleo geo (portal candidato, `/vacancies`)
+- Filtros ajustables: texto, localidad, radio en km con mapa Leaflet + tiles vectoriales MapLibre, contrato, modo, experiencia, salario y orden (antigüedad/salario).
+- Geocodificación vía Nominatim (`IGeocodingService`); worker de MapLibre vendoreado + `setWorkerUrl` para la CSP.
+- Skeleton cards mientras carga y `finally` para que `IsLoading` no se quede pegado si la API devuelve null.
+
+#### 2. Menú del candidato y de empresa
+- El candidato logueado no tenía enlace a `/vacancies` y la empresa no veía `/candidate-search`. Añadidos con claves i18n (`common.nav.jobs`, `candidateSearch`, `verifiedApplicants`) en escritorio y móvil.
+
+#### 3. "Hacer Match" (candidato)
+- `POST api/permanentvacancies/my-matches` → `CompatibilityService` recalcula contra las vacantes publicadas usando la configuración del candidato (skills/experiencia/ubicación con pesos 0.5/0.3/0.2). Resultados ordenados por % y badge "N% Match" en las tarjetas; tag "Tus coincidencias" quitables.
+
+#### 4. PARA DARWIN — Codificación URI de vacantes (referencia pública)
+- **Antes**: la URL del detalle exponía el `Guid` interno (`/vacancy/e1111111-...`). Ese `Id` es el identificador de base de datos — no debe ser público (enumeración, URLs feas, acoplamiento interno↔externo).
+- **Ahora**: `PTVacancy.ReferenceCode` con formato **`TD-XXXXXXXX`** (misma convención que `PTVerificationRequest.ReferenceNumber`, así todo el sistema usa el mismo patrón de referencia pública). ASCII puro, sin caracteres que rompan la URI — eso es lo que "se cambió la codificación para evitar errores en uri".
+- `GET api/permanentvacancies/{idOrCode}` acepta **los dos**: si parsea como `Guid` busca por `Id`; si no, por `ReferenceCode` (case-insensitive, máx 20 chars). Las URLs viejas con Guid siguen funcionando → no hay enlaces rotos.
+- Las páginas internas de empresa (`/my-vacancies/{guid}`, `/edit`) siguen con `Guid`: interno = Guid, público = `TD-XXXX`. Si en el admin construyes enlaces públicos, usa `VacancyDto.ReferenceCode`.
+- El detalle muestra "Ref. TD-XXXX" en la cabecera y `VacancyManage` comparte el enlace con el código.
+
+#### 5. Dos bugs de infraestructura locales (importantes)
+- **`wwwroot/sw.js`**: el service worker servía `/_framework/` cache-first. En standalone WASM los DLLs no van fingerprinteados por `dotnet run`, así que tras cada deploy el navegador seguía con código viejo (ese era el motivo de "el menú no se actualiza"). Ahora `/_framework/` no pasa por el SW; solo `/lib/` queda cache-first. Bump a `tratodirecto-v9`.
+- **`OpenToWork.WEB.csproj`**: `DisableBuildCompression` en Debug. El devserver de .NET 10 devuelve **0 bytes** para los endpoints `.gz` de `_framework` cuyo asset vive en `obj/compressed` con placeholder `{0}` → `dotnet.js` llegaba vacío y Blazor no arrancaba ("MIME type of ''"). Solo afecta a Debug; en Publish siguen gzip+brotli.
+
+### Pendiente
+- Revisión de Darwin y merge de `iluna-geo-search` → `main`.
+- El match del candidato solo pondera skills/experiencia/ubicación; falta desglosar "por qué haces match" en el detalle.
+- En prod convendría redirigir `/vacancy/{guid}` → `/vacancy/{code}` (301) para que Google/SERP solo indexe la canónica.
