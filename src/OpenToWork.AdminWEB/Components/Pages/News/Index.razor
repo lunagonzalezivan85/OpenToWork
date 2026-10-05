@@ -1,0 +1,185 @@
+@page "/news"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@inject LanguageService Lang
+@inject LocalStorageService LocalStorage
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+@* Noticias (docs/dsiezar/noticias-terminos-de-referencia.md): todo el staff crea y publica.
+   El interruptor de la seccion en el portal es solo para SuperAdmin. *@
+
+<PageTitle>@L("title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@L("title")</h1>
+        <p class="admin-page-header-subtitle">@L("subtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="ot-btn ot-btn--primary ot-btn--small" @onclick='() => Nav.NavigateTo("/news/new")'>+ @L("newPost")</button>
+    </div>
+</div>
+
+@if (_isSuperAdmin)
+{
+    <div class="admin-chart-card" style="min-height: 0; margin-bottom: 1rem;">
+        <label style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" checked="@_enabled" @onchange="ToggleAsync" disabled="@_busy" />
+            @L("toggle")
+        </label>
+        <p class="admin-page-header-subtitle" style="margin: 0;">@L("toggleHint")</p>
+    </div>
+}
+
+<div class="admin-inline-form" style="margin-bottom: 1rem; flex-wrap: wrap;">
+    <input class="ot-input-field" style="max-width: 280px;" placeholder="@L("search")" aria-label="@L("search")" @bind="_search" @bind:after="ReloadAsync" />
+    <select class="ot-input-field" style="max-width: 200px;" aria-label="@L("colStatus")" @bind="_status" @bind:after="ReloadAsync">
+        <option value="">@L("allStatuses")</option>
+        @foreach (var s in Enum.GetValues<NewsPostStatus>())
+        {
+            <option value="@((int)s)">@L($"statuses.{(int)s}")</option>
+        }
+    </select>
+</div>
+
+@if (_message != null)
+{
+    <div class="alert @(_messageOk ? "alert-success" : "alert-error")" role="status">@_message</div>
+}
+
+@if (_posts == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (_posts.Count == 0)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@L("empty")</div></div>
+}
+else
+{
+    <div class="admin-table-wrapper">
+        <table class="ot-table">
+            <thead>
+                <tr><th>@L("colTitle")</th><th>@L("colType")</th><th>@L("colStatus")</th><th>@L("colPublished")</th><th>@L("colUpdated")</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in _posts)
+                {
+                    <tr>
+                        <td><a href="/news/@p.Id">@p.Title</a></td>
+                        <td>@L($"types.{p.Type}")</td>
+                        <td>
+                            <span class="admin-status @StatusClass(p.Status)">@L($"statuses.{p.Status}")</span>
+                            @if (p.IsFeatured) { <span class="admin-status admin-status--info">@L("featured")</span> }
+                        </td>
+                        <td>@(p.PublishedAt?.ToLocalTime().ToString("dd/MM/yyyy") ?? "—")</td>
+                        <td>@p.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")@(p.AuthorName != null ? $" · {p.AuthorName}" : "")</td>
+                        <td>
+                            <div class="admin-table-actions">
+                                <button class="ot-btn ot-btn--outline ot-btn--small" @onclick='() => Nav.NavigateTo($"/news/{p.Id}")'>@Lang.T("admin.common.edit")</button>
+                                @if (p.Status == (int)NewsPostStatus.Published)
+                                {
+                                    @if (_portalUrl != null)
+                                    {
+                                        <a class="ot-btn ot-btn--outline ot-btn--small" href="@($"{_portalUrl}/news/{p.Slug}")" target="_blank" rel="noopener">@L("viewInPortal")</a>
+                                    }
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick='() => ActAsync(p.Id, "unpublish")'>@L("unpublish")</button>
+                                }
+                                else
+                                {
+                                    <button class="ot-btn ot-btn--primary ot-btn--small" disabled="@_busy" @onclick='() => ActAsync(p.Id, "publish")'>@L("publish")</button>
+                                }
+                                @if (p.Status != (int)NewsPostStatus.Archived)
+                                {
+                                    <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick='() => ActAsync(p.Id, "archive")'>@L("archive")</button>
+                                }
+                                @if (p.Status != (int)NewsPostStatus.Published)
+                                {
+                                    <button class="ot-btn ot-btn--danger ot-btn--small" disabled="@_busy" @onclick="() => DeleteAsync(p)">@Lang.T("admin.common.delete")</button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<NewsPostAdminListDto>? _posts;
+    private string? _search;
+    private string _status = "";
+    private bool _isSuperAdmin, _enabled, _busy, _messageOk;
+    private string? _message, _portalUrl;
+
+    private string L(string key) => Lang.T($"admin.news.{key}");
+
+    public static string StatusClass(int status) => status switch
+    {
+        (int)NewsPostStatus.Published => "admin-status--success",
+        (int)NewsPostStatus.Archived => "admin-status--inactive",
+        _ => "admin-status--draft"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0) await Lang.InitializeAsync();
+        _isSuperAdmin = int.TryParse(await LocalStorage.GetItemAsync("otwadmin-staff-role"), out var role) && role == (int)AdminStaffRole.SuperAdmin;
+        if (_isSuperAdmin) _enabled = await AuthApi.GetNewsEnabledAsync();
+        _portalUrl = await AuthApi.GetNewsPortalUrlAsync();
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        var (posts, error) = await AuthApi.GetNewsPostsAsync(int.TryParse(_status, out var s) ? s : null, _search);
+        _posts = posts ?? new();
+        if (error != null) Show(ErrorText(error), false);
+    }
+
+    private async Task ToggleAsync(ChangeEventArgs e)
+    {
+        var enabled = e.Value is bool b && b;
+        _busy = true;
+        if (await AuthApi.SetNewsEnabledAsync(enabled)) _enabled = enabled;
+        else Show(Lang.T("admin.common.errorGeneric"), false);
+        _busy = false;
+    }
+
+    private async Task ActAsync(Guid id, string action)
+    {
+        _busy = true;
+        var (result, error) = await AuthApi.NewsActionAsync(id, action);
+        _busy = false;
+        Show(result != null ? L($"done.{action}") : ErrorText(error), result != null);
+        await ReloadAsync();
+    }
+
+    private async Task DeleteAsync(NewsPostAdminListDto p)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", string.Format(L("confirmDelete"), p.Title))) return;
+        _busy = true;
+        var (result, error) = await AuthApi.DeleteNewsPostAsync(p.Id);
+        _busy = false;
+        Show(result != null ? L("done.delete") : ErrorText(error), result != null);
+        await ReloadAsync();
+    }
+
+    private void Show(string message, bool ok)
+    {
+        _message = message;
+        _messageOk = ok;
+    }
+
+    /// <summary>La API devuelve el motivo ya en espanol; "generic"/"forbidden" son fallos sin mensaje.</summary>
+    private string ErrorText(string? error) => error switch
+    {
+        null or "generic" => Lang.T("admin.common.errorGeneric"),
+        "forbidden" => Lang.T("admin.staff.notAuthorized"),
+        _ => error
+    };
+}

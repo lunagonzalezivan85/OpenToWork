@@ -270,5 +270,30 @@
         "locationLabel": "Preferred location",
         "locationPlaceholder": "Country or city",
         "email": "Email"
+    },
+    "news": {
+        "title": "News",
+        "subtitle": "Tips, industry news and the latest from Trato Directo.",
+        "all": "All",
+        "types": {
+            "0": "Articles",
+            "1": "Videos",
+            "2": "Announcements"
+        },
+        "typeSingular": {
+            "0": "Article",
+            "1": "Video",
+            "2": "Announcement"
+        },
+        "featured": "Featured",
+        "readMore": "Read more",
+        "loadMore": "Load more",
+        "empty": "No news yet. Check back soon.",
+        "emptyFilter": "No posts of this type yet.",
+        "notFound": "This post doesn't exist or is no longer published.",
+        "back": "Back to News",
+        "error": "We couldn't load the news. Please try again.",
+        "play": "Play video",
+        "videoNotice": "When you play it, the video loads from {0}."
     }
 }

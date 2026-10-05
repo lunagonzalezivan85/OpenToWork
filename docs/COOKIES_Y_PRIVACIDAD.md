@@ -45,6 +45,8 @@ En produccion el portal **no crea ninguna cookie** (verificado con `curl`: sin `
 
 Login con Google (5-Oct): flujo por redireccion. El portal no carga nada de Google; el navegador solo va a `accounts.google.com` si el candidato pulsa el boton. Google nos da nombre, correo e identificador de la cuenta.
 
+Videos de Noticias (5-Oct): reproductor en dos pasos. Hasta pulsar "Reproducir" solo se ve la foto de portada (nuestro dominio). Al pulsar se carga un iframe de `www.youtube-nocookie.com` o `player.vimeo.com` (`dnt=1`), con aviso previo en la pagina. CSP del portal: `frame-src` solo admite esos dos dominios (`src/OpenToWork.WEB/web.config`). Esas cookies de terceros son de YouTube/Vimeo y solo existen si el visitante decide reproducir.
+
 Terceros que recibe el navegador del visitante:
 
 | Tercero | Que se carga | Cookies | Datos que recibe |

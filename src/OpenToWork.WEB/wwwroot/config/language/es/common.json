@@ -270,5 +270,30 @@
         "locationLabel": "Ubicación preferida",
         "locationPlaceholder": "País o ciudad",
         "email": "Correo"
+    },
+    "news": {
+        "title": "Noticias",
+        "subtitle": "Consejos, novedades del sector y lo último de Trato Directo.",
+        "all": "Todo",
+        "types": {
+            "0": "Artículos",
+            "1": "Vídeos",
+            "2": "Anuncios"
+        },
+        "typeSingular": {
+            "0": "Artículo",
+            "1": "Vídeo",
+            "2": "Anuncio"
+        },
+        "featured": "Destacada",
+        "readMore": "Leer más",
+        "loadMore": "Ver más",
+        "empty": "Todavía no hay noticias. Vuelve pronto.",
+        "emptyFilter": "No hay publicaciones de este tipo todavía.",
+        "notFound": "Esta noticia no existe o ya no está publicada.",
+        "back": "Volver a Noticias",
+        "error": "No pudimos cargar las noticias. Inténtalo de nuevo.",
+        "play": "Reproducir vídeo",
+        "videoNotice": "Al reproducir, el vídeo se carga desde {0}."
     }
 }

@@ -32,6 +32,10 @@ public interface ISystemConfigService
     Task<bool> GetPresentationVideosEnabledAsync();
     Task SetPresentationVideosEnabledAsync(bool enabled, Guid staffId);
 
+    /// <summary>Seccion Noticias del portal. Apagada por defecto para no ensenar una seccion vacia.</summary>
+    Task<bool> GetNewsEnabledAsync();
+    Task SetNewsEnabledAsync(bool enabled, Guid staffId);
+
     /// <summary>Independiente del flag de candidatos. Encendido por defecto (los planes de empresa
     /// ya estaban visibles antes de que este flag existiera).</summary>
     Task<bool> GetCompanyPlansEnabledAsync();

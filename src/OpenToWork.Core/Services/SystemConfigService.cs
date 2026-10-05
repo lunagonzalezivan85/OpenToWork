@@ -39,6 +39,7 @@ public class SystemConfigService : ISystemConfigService
     public const string CandidatePriorityPlanEnabled = "feature_candidate_priority_plan_enabled";
     public const string CompanyPlansEnabled = "feature_company_plans_enabled";
     public const string PresentationVideosEnabled = "feature_presentation_videos_enabled";
+    public const string NewsEnabled = "feature_news_enabled";
 
     public const string AiCategory = "Ai";
     public const string AiProvider = "ai_provider";
@@ -369,6 +370,42 @@ public class SystemConfigService : ISystemConfigService
 
         await _context.SaveChangesAsync();
         await _auditLog.LogAsync(staffId, "SetPresentationVideosEnabled", "SY_SystemConfig", null, enabled.ToString(), null);
+    }
+
+    public async Task<bool> GetNewsEnabledAsync()
+    {
+        var config = await _context.SY_SystemConfig
+            .FirstOrDefaultAsync(c => !c.IsDeleted && c.Key == NewsEnabled);
+
+        return config != null && bool.TryParse(config.Value, out var enabled) && enabled;
+    }
+
+    public async Task SetNewsEnabledAsync(bool enabled, Guid staffId)
+    {
+        var config = await _context.SY_SystemConfig
+            .FirstOrDefaultAsync(c => !c.IsDeleted && c.Key == NewsEnabled);
+
+        if (config == null)
+        {
+            _context.SY_SystemConfig.Add(new SYSystemConfig
+            {
+                Key = NewsEnabled,
+                Value = enabled.ToString(),
+                Category = FeaturesCategory,
+                Description = "Muestra la seccion Noticias en el portal. Apagado: el enlace del menu desaparece y las paginas no muestran nada; las publicaciones se siguen preparando en el admin.",
+                IsActive = true,
+                CreatedBy = staffId
+            });
+        }
+        else
+        {
+            config.Value = enabled.ToString();
+            config.UpdatedAt = DateTime.UtcNow;
+            config.UpdatedBy = staffId;
+        }
+
+        await _context.SaveChangesAsync();
+        await _auditLog.LogAsync(staffId, "SetNewsEnabled", "SY_SystemConfig", null, enabled.ToString(), null);
     }
 
     public async Task SetCandidatePriorityPlanEnabledAsync(bool enabled, Guid staffId)

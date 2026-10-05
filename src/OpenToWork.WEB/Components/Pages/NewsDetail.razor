@@ -1,0 +1,97 @@
+@page "/news/{Slug}"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+
+@* Publicacion completa. El cuerpo llega como HTML ya saneado por el servidor (NewsMarkdown): no admite HTML
+   escrito a mano, asi que se puede pintar tal cual. *@
+
+<PageTitle>@(Post?.Title ?? L("title")) · Trato Directo</PageTitle>
+
+<div class="page-container page-container--narrow">
+    <a href="/news" class="news-back">← @L("back")</a>
+
+    @if (Loading)
+    {
+        <p class="news-state">@Lang.T("common.labels.loading")</p>
+    }
+    else if (Post == null)
+    {
+        <p class="news-state">@L("notFound")</p>
+    }
+    else
+    {
+        <article class="news-article">
+            <div class="news-meta">
+                <span class="news-type">@L($"typeSingular.{Post.Type}")</span>
+                <time datetime="@Post.PublishedAt.ToString("yyyy-MM-dd")">@Post.PublishedAt.ToLocalTime().ToString("dd/MM/yyyy")</time>
+            </div>
+            <h1 class="news-article-title">@Post.Title</h1>
+            <p class="news-article-lead">@Post.Summary</p>
+
+            @if (Post.VideoEmbedUrl != null)
+            {
+                @* Reproductor en dos pasos: hasta pulsar no se carga nada de YouTube/Vimeo (ver /cookies). *@
+                @if (Playing)
+                {
+                    <div class="news-video">
+                        <iframe src="@Post.VideoEmbedUrl" title="@Post.Title" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+                    </div>
+                }
+                else
+                {
+                    <button type="button" class="news-video news-video--facade" @onclick="() => Playing = true" aria-label="@L("play"): @Post.Title">
+                        @if (AuthApi.NewsImageUrl(Post.CoverImageFile) is { } poster)
+                        {
+                            <img src="@poster" alt="@Post.CoverImageAlt" />
+                        }
+                        <span class="news-video-play" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                        </span>
+                    </button>
+                    <p class="news-video-notice">@string.Format(L("videoNotice"), Post.VideoProvider == "vimeo" ? "Vimeo" : "YouTube")</p>
+                }
+            }
+            else if (AuthApi.NewsImageUrl(Post.CoverImageFile) is { } img)
+            {
+                <img class="news-article-img" src="@img" alt="@Post.CoverImageAlt" />
+            }
+
+            @if (!string.IsNullOrEmpty(Post.BodyHtml))
+            {
+                <div class="news-article-body">@((MarkupString)Post.BodyHtml)</div>
+            }
+        </article>
+
+        <a href="/news" class="news-back">← @L("back")</a>
+    }
+</div>
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    private NewsPostDetailDto? Post { get; set; }
+    private bool Loading { get; set; } = true;
+    private bool Playing { get; set; }
+
+    private string L(string key) => Lang.T($"common.news.{key}");
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        Loading = true;
+        Playing = false;
+        try
+        {
+            Post = await AuthApi.GetNewsPostAsync(Slug);
+        }
+        catch
+        {
+            Post = null;
+        }
+        Loading = false;
+    }
+}

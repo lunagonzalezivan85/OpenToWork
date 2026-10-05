@@ -44,6 +44,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISystemConfigService, SystemConfigService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IMessagingService, MessagingService>();
+        services.AddScoped<INewsService, NewsService>();
 
         return services;
     }
@@ -91,6 +92,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IChallengeAdminService, ChallengeAdminService>();
         services.AddScoped<IChallengeService, ChallengeService>();
         services.AddScoped<IChallengeReviewService, ChallengeReviewService>();
+        // Noticias (docs/dsiezar/noticias-terminos-de-referencia.md)
+        services.AddScoped<INewsService, NewsService>();
 
         return services;
     }

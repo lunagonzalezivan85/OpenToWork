@@ -16,7 +16,10 @@ public class ProfilePhotoStorage : IProfilePhotoStorage
         Directory.CreateDirectory(_dir);
     }
 
-    public (string Extension, string ContentType)? Detect(byte[] c)
+    public (string Extension, string ContentType)? Detect(byte[] c) => DetectImage(c);
+
+    /// <summary>Tipo real por los primeros bytes (no por la extension). Tambien lo usan las fotos de Noticias.</summary>
+    public static (string Extension, string ContentType)? DetectImage(byte[] c)
     {
         if (c.Length > 3 && c[0] == 0xFF && c[1] == 0xD8 && c[2] == 0xFF) return (".jpg", "image/jpeg");
         if (c.Length > 8 && c[0] == 0x89 && c[1] == 0x50 && c[2] == 0x4E && c[3] == 0x47) return (".png", "image/png");

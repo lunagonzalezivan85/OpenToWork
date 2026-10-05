@@ -66,6 +66,17 @@ public class SystemConfigController : AdminControllerBase
         return Ok();
     }
 
+    /// <summary>Interruptor de la seccion Noticias del portal.</summary>
+    [HttpGet("news")]
+    public async Task<IActionResult> GetNewsEnabled() => Ok(new { enabled = await _configService.GetNewsEnabledAsync() });
+
+    [HttpPut("news")]
+    public async Task<IActionResult> SetNewsEnabled([FromBody] SetFeatureFlagDto dto)
+    {
+        await _configService.SetNewsEnabledAsync(dto.Enabled, AdminId);
+        return Ok();
+    }
+
     [HttpGet("candidate-priority-plan")]
     public async Task<IActionResult> GetCandidatePriorityPlanEnabled()
     {
