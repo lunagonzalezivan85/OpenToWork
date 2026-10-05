@@ -45,13 +45,17 @@
             </button>
         </EditForm>
 
-        <div style="text-align: center; margin: 1.5rem 0; color: var(--text-muted); font-size: 0.85rem;">
-            @Lang.T("auth.login.orDivider")
-        </div>
+        @* Solo candidatos (la API rechaza empresas). La API manda a Google y vuelve a /auth/google. *@
+        @if (GoogleEnabled)
+        {
+            <div style="text-align: center; margin: 1.5rem 0; color: var(--text-muted); font-size: 0.85rem;">
+                @Lang.T("auth.login.orDivider")
+            </div>
 
-        <button class="ot-btn ot-btn--outline ot-btn--medium ot-btn--full-width" disabled="@IsLoading">
-            @Lang.T("auth.login.googleButton")
-        </button>
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--medium ot-btn--full-width" @onclick="GoToGoogle">
+                @Lang.T("auth.login.googleButton")
+            </button>
+        }
 
         <p class="auth-link">
             @Lang.T("auth.login.noAccount")
@@ -65,6 +69,9 @@
     private bool IsLoading { get; set; }
     private string? ErrorMessage { get; set; }
     private string? ReturnUrl { get; set; }
+    private bool GoogleEnabled { get; set; }
+    // forceLoad: en produccion /api va en el mismo dominio y el router de Blazor se lo quedaria.
+    private void GoToGoogle() => Nav.NavigateTo(AuthApi.GoogleStartUrl(ReturnUrl), forceLoad: true);
     private string RegisterLink => string.IsNullOrEmpty(ReturnUrl) ? "/register" : $"/register?returnUrl={Uri.EscapeDataString(ReturnUrl)}";
 
     protected override async Task OnInitializedAsync()
@@ -74,6 +81,7 @@
 
         var uri = Nav.ToAbsoluteUri(Nav.Uri);
         ReturnUrl = HttpUtility.ParseQueryString(uri.Query)["returnUrl"] ?? ReturnUrl;
+        GoogleEnabled = await AuthApi.IsGoogleEnabledAsync();
     }
 
     private async Task HandleLogin()

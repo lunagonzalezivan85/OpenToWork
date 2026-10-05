@@ -66,6 +66,17 @@
             </div>
         </div>
 
+        @* Google solo para candidatos: los datos que faltan se piden al volver, en /auth/google. *@
+        @if (IsCandidate && GoogleEnabled)
+        {
+            <button type="button" class="ot-btn ot-btn--outline ot-btn--medium ot-btn--full-width" @onclick="GoToGoogle">
+                @Lang.T("auth.google.registerButton")
+            </button>
+            <div style="text-align: center; margin: 1.5rem 0; color: var(--text-muted); font-size: 0.85rem;">
+                @Lang.T("auth.login.orDivider")
+            </div>
+        }
+
         <EditForm Model="RegisterModel" OnValidSubmit="HandleRegister">
 
             @if (IsCandidate)
@@ -231,7 +242,13 @@
         var returnUrl = query["returnUrl"];
         if (!string.IsNullOrEmpty(returnUrl) && returnUrl.StartsWith("/") && !returnUrl.StartsWith("//"))
             ReturnUrl = returnUrl;
+
+        GoogleEnabled = await AuthApi.IsGoogleEnabledAsync();
     }
+
+    private bool GoogleEnabled { get; set; }
+    // forceLoad: en produccion /api va en el mismo dominio y el router de Blazor se lo quedaria.
+    private void GoToGoogle() => Nav.NavigateTo(AuthApi.GoogleStartUrl(ReturnUrl), forceLoad: true);
 
     private void SelectRole(int role)
     {
