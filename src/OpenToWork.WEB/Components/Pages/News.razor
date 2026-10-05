@@ -1,0 +1,130 @@
+@page "/news"
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject LanguageService Lang
+
+@* Noticias publicas (docs/dsiezar/noticias-terminos-de-referencia.md). Sin login. La destacada sale primero y
+   mas grande; el resto en tarjetas, de 9 en 9. *@
+
+<PageTitle>@L("title") · Trato Directo</PageTitle>
+
+<div class="page-container">
+    <div class="about-hero">
+        <h1 class="about-hero-title">@L("title")</h1>
+        <p class="about-hero-subtitle">@L("subtitle")</p>
+    </div>
+
+    <div class="news-filters" role="group" aria-label="@L("title")">
+        <button type="button" class="news-chip @(Type == null ? "news-chip--active" : "")" aria-pressed="@(Type == null ? "true" : "false")" @onclick="() => FilterAsync(null)">@L("all")</button>
+        @foreach (var t in Enum.GetValues<NewsPostType>())
+        {
+            var value = (int)t;
+            <button type="button" class="news-chip @(Type == value ? "news-chip--active" : "")" aria-pressed="@(Type == value ? "true" : "false")" @onclick="() => FilterAsync(value)">@L($"types.{value}")</button>
+        }
+    </div>
+
+    @if (Items == null)
+    {
+        <p class="news-state">@Lang.T("common.labels.loading")</p>
+    }
+    else if (Failed)
+    {
+        <p class="news-state">@L("error")</p>
+    }
+    else if (Items.Count == 0)
+    {
+        <p class="news-state">@L(Type == null ? "empty" : "emptyFilter")</p>
+    }
+    else
+    {
+        <div class="news-grid">
+            @foreach (var post in Items)
+            {
+                var featured = post.IsFeatured && Type == null;
+                <a href="/news/@post.Slug" class="news-card @(featured ? "news-card--featured" : "")">
+                    @if (AuthApi.NewsImageUrl(post.CoverImageFile) is { } img)
+                    {
+                        <img class="news-card-img" src="@img" alt="@post.CoverImageAlt" loading="lazy" />
+                    }
+                    <div class="news-card-body">
+                        <div class="news-meta">
+                            <span class="news-type">@L($"typeSingular.{post.Type}")</span>
+                            @if (featured) { <span class="news-type news-type--featured">@L("featured")</span> }
+                            <time datetime="@post.PublishedAt.ToString("yyyy-MM-dd")">@post.PublishedAt.ToLocalTime().ToString("dd/MM/yyyy")</time>
+                        </div>
+                        <h2 class="news-card-title">@post.Title</h2>
+                        <p class="news-card-summary">@post.Summary</p>
+                        <span class="news-card-more">@L("readMore") →</span>
+                    </div>
+                </a>
+            }
+        </div>
+
+        @if (HasMore)
+        {
+            <div class="news-more">
+                <button type="button" class="ot-btn ot-btn--outline ot-btn--medium" disabled="@Loading" @onclick="LoadMoreAsync">
+                    @(Loading ? Lang.T("common.labels.loading") : L("loadMore"))
+                </button>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<NewsPostCardDto>? Items { get; set; }
+    private int? Type { get; set; }
+    private int Page { get; set; } = 1;
+    private bool HasMore { get; set; }
+    private bool Loading { get; set; }
+    private bool Failed { get; set; }
+
+    private string L(string key) => Lang.T($"common.news.{key}");
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        await LoadAsync(reset: true);
+    }
+
+    private async Task FilterAsync(int? type)
+    {
+        if (Type == type) return;
+        Type = type;
+        await LoadAsync(reset: true);
+    }
+
+    private Task LoadMoreAsync() => LoadAsync(reset: false);
+
+    private async Task LoadAsync(bool reset)
+    {
+        Loading = true;
+        if (reset)
+        {
+            Page = 1;
+            Items = null;
+        }
+        try
+        {
+            var page = await AuthApi.GetNewsAsync(Type, Page);
+            // 404 = seccion apagada en el admin: se ve como "todavia no hay noticias".
+            var items = page?.Items ?? new();
+            Items = reset ? items : (Items ?? new()).Concat(items).ToList();
+            HasMore = page?.HasMore == true;
+            Failed = false;
+            Page++;
+        }
+        catch
+        {
+            Items ??= new();
+            Failed = true;
+        }
+        finally
+        {
+            Loading = false;
+        }
+    }
+}

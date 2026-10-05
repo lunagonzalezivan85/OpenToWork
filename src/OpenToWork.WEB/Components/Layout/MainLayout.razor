@@ -67,6 +67,16 @@
                         </svg>
                         @Lang.T("common.nav.messages")
                     </a>
+                    @if (NewsEnabled)
+                    {
+                        <a href="/news" class="nav-link @(CurrentPage == "news" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2" />
+                                <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z" />
+                            </svg>
+                            @Lang.T("common.nav.news")
+                        </a>
+                    }
                 }
                 else
                 {
@@ -83,13 +93,17 @@
                         </svg>
                         @Lang.T("common.nav.about")
                     </a>
-                    <a href="/news" class="nav-link @(CurrentPage == "news" ? "active" : "")">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2" />
-                            <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z" />
-                        </svg>
-                        @Lang.T("common.nav.news")
-                    </a>
+                    @* Solo con la seccion encendida en el admin (Noticias > Mostrar en el portal). *@
+                    @if (NewsEnabled)
+                    {
+                        <a href="/news" class="nav-link @(CurrentPage == "news" ? "active" : "")">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2" />
+                                <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z" />
+                            </svg>
+                            @Lang.T("common.nav.news")
+                        </a>
+                    }
                     <a href="/vacancies" class="nav-link @(CurrentPage == "vacancies" ? "active" : "")">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                             <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
@@ -280,6 +294,7 @@
                 </svg>
                 <span>@Lang.T("common.nav.messages")</span>
             </a>
+            @NewsBottomItem
         }
         else
         {
@@ -296,6 +311,7 @@
                 </svg>
                 <span>@Lang.T("common.nav.about")</span>
             </a>
+            @NewsBottomItem
             <a href="/vacancies" class="bottom-nav-item @(CurrentPage == "vacancies" ? "active" : "")">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
                     <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
@@ -405,6 +421,21 @@
     private bool ShowSettingsMenu { get; set; }
     private string CurrentLang { get; set; } = "es";
     private string CurrentPage { get; set; } = "";
+    private bool NewsEnabled { get; set; }
+
+    // Noticias en la barra inferior del movil, con y sin sesion; solo con la seccion encendida.
+    private RenderFragment NewsBottomItem => @<text>
+        @if (NewsEnabled)
+        {
+            <a href="/news" class="bottom-nav-item @(CurrentPage == "news" ? "active" : "")">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                    <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2" />
+                    <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z" />
+                </svg>
+                <span>@Lang.T("common.nav.news")</span>
+            </a>
+        }
+    </text>;
     private string DashboardUrl => IsCompany ? "/company-dashboard" : "/dashboard";
     private string MyApplicationsUrl => IsCompany ? "/my-vacancies" : "/my-applications";
     private string MyApplicationsLabel => IsCompany ? Lang.T("common.nav.myVacancies") : Lang.T("common.nav.myApplications");
@@ -424,6 +455,7 @@
 
         UpdateCurrentPage();
         Nav.LocationChanged += OnLocationChanged;
+        NewsEnabled = await AuthApi.IsNewsEnabledAsync();
 
         if (IsLoggedIn)
         {
@@ -532,6 +564,7 @@
             "dashboard" => Lang.T("common.nav.panel"),
             "company-dashboard" => Lang.T("common.nav.panel"),
             "vacancies" => Lang.T("common.nav.vacancies"),
+            "news" => Lang.T("common.nav.news"),
             "my-vacancies" => Lang.T("common.nav.myVacancies"),
             "my-applications" => Lang.T("common.nav.myApplications"),
             "my-process" => Lang.T("common.nav.myProcess"),

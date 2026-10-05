@@ -262,6 +262,38 @@ public class ApiAuthService
 
     private record GoogleEnabledResult(bool Enabled);
 
+    // --- Noticias (publicas, sin login). Si la seccion esta apagada la API responde 404. ---
+
+    public async Task<bool> IsNewsEnabledAsync()
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<GoogleEnabledResult>("api/news/enabled");
+            return result?.Enabled == true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<NewsPageDto?> GetNewsAsync(int? type, int page, int pageSize = 9)
+    {
+        var response = await _httpClient.GetAsync($"api/news?page={page}&pageSize={pageSize}" + (type != null ? $"&type={type}" : ""));
+        return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<NewsPageDto>() : null;
+    }
+
+    public async Task<NewsPostDetailDto?> GetNewsPostAsync(string slug)
+    {
+        var response = await _httpClient.GetAsync($"api/news/{Uri.EscapeDataString(slug)}");
+        return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<NewsPostDetailDto>() : null;
+    }
+
+    /// <summary>URL absoluta de una foto publicada (en desarrollo la API va en otro puerto).</summary>
+    public string? NewsImageUrl(string? fileName) => string.IsNullOrEmpty(fileName)
+        ? null
+        : new Uri(_httpClient.BaseAddress!, $"api/news/images/{Uri.EscapeDataString(fileName)}").ToString();
+
     public async Task<bool> VerifyRecaptchaAsync(string recaptchaResponse)
     {
         var response = await _httpClient.PostAsJsonAsync("api/auth/verify-recaptcha", new { Response = recaptchaResponse });
