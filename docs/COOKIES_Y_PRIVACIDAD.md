@@ -30,7 +30,7 @@
 
 ### 3.1 Portal — `tratodirecto.es`
 
-En produccion el portal **no crea ninguna cookie** (verificado con `curl`: sin `Set-Cookie`). Todo va en `localStorage`:
+En produccion el portal **no crea ninguna cookie** (verificado con `curl`: sin `Set-Cookie`), salvo `td_google_state` durante el login con Google. El resto va en `localStorage`:
 
 | Nombre | Donde | Tipo | Finalidad | Duracion | Titular |
 |---|---|---|---|---|---|
@@ -41,6 +41,9 @@ En produccion el portal **no crea ninguna cookie** (verificado con `curl`: sin `
 | `opentowork-lang` | localStorage | Preferencia | Recordar el idioma elegido | Permanente, hasta borrarlo | Trato Directo |
 | `opentowork-theme` | localStorage | Preferencia | Recordar el tema visual elegido | Permanente, hasta borrarlo | Trato Directo |
 | `tratodirecto-v7` | Cache del service worker | Tecnica | Guardar estilos e iconos para que el portal cargue mas rapido | Hasta la siguiente version del portal | Trato Directo |
+| `td_google_state` | Cookie (HttpOnly, path `/api/auth/google`) | Tecnica | Solo al pulsar "Continuar con Google" (candidatos): ata el `state` de OAuth al navegador contra login CSRF | 10 min, se borra al volver | Trato Directo |
+
+Login con Google (5-Oct): flujo por redireccion. El portal no carga nada de Google; el navegador solo va a `accounts.google.com` si el candidato pulsa el boton. Google nos da nombre, correo e identificador de la cuenta.
 
 Terceros que recibe el navegador del visitante:
 
