@@ -70,6 +70,7 @@
         @if (IsCandidate && GoogleEnabled)
         {
             <button type="button" class="ot-btn ot-btn--outline ot-btn--medium ot-btn--full-width" @onclick="GoToGoogle">
+                <GoogleIcon />
                 @Lang.T("auth.google.registerButton")
             </button>
             <div style="text-align: center; margin: 1.5rem 0; color: var(--text-muted); font-size: 0.85rem;">
