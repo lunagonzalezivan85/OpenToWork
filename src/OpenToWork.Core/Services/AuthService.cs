@@ -72,7 +72,9 @@ public class AuthService : IAuthService
             if (dto.DocumentType is not int docType || !Enum.IsDefined(typeof(IdentityDocumentType), docType))
                 throw new ArgumentException("Selecciona el tipo de documento.");
             if (!IdentityDocumentValidator.IsValid((IdentityDocumentType)docType, identification))
-                throw new ArgumentException("El número de documento no es válido para el tipo seleccionado.");
+                throw new ArgumentException(IdentityDocumentValidator.HasValidFormat((IdentityDocumentType)docType, identification)
+                    ? "La letra no corresponde a ese número de documento. Revisa que esté bien escrito."
+                    : "El número de documento no es válido para el tipo seleccionado.");
             identification = IdentityDocumentValidator.Normalize(identification);
         }
 

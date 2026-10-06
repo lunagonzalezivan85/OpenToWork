@@ -134,8 +134,11 @@
         _ => ""
     };
 
+    // Igual que Register.razor: forma correcta pero letra equivocada -> se dice eso.
     private string DocumentHint => DocumentType switch
     {
+        IdentityDocumentType.Dni or IdentityDocumentType.Nie when IdentityDocumentValidator.HasValidFormat(DocumentType.Value, Identification)
+            => Lang.T("auth.register.wrongControlLetter"),
         IdentityDocumentType.Dni => Lang.T("auth.register.invalidDni"),
         IdentityDocumentType.Nie => Lang.T("auth.register.invalidNie"),
         _ => Lang.T("auth.register.invalidPassport")

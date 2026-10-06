@@ -222,8 +222,11 @@
         _ => ""
     };
 
+    // Forma correcta pero letra de control equivocada: se dice eso, no se repite el formato.
     private string DocumentHint => RegisterModel.DocumentType switch
     {
+        IdentityDocumentType.Dni or IdentityDocumentType.Nie when IdentityDocumentValidator.HasValidFormat(RegisterModel.DocumentType.Value, RegisterModel.Identification)
+            => Lang.T("auth.register.wrongControlLetter"),
         IdentityDocumentType.Dni => Lang.T("auth.register.invalidDni"),
         IdentityDocumentType.Nie => Lang.T("auth.register.invalidNie"),
         _ => Lang.T("auth.register.invalidPassport")

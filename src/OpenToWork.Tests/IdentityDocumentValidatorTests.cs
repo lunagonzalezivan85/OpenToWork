@@ -82,6 +82,18 @@ public class IdentityDocumentValidatorTests
     public void NifEmpresa_Invalido(string? value) =>
         Assert.False(IdentityDocumentValidator.IsValidCompanyNif(value));
 
+    // Forma correcta con letra equivocada: el formulario avisa "la letra no corresponde", no el formato.
+    [Theory]
+    [InlineData(IdentityDocumentType.Dni, "12345678A", true)]   // forma de DNI, letra mal
+    [InlineData(IdentityDocumentType.Dni, "12345678-z", true)]  // se normaliza
+    [InlineData(IdentityDocumentType.Dni, "1234567Z", false)]   // faltan numeros
+    [InlineData(IdentityDocumentType.Dni, "123456789", false)]  // sin letra
+    [InlineData(IdentityDocumentType.Nie, "X1234567A", true)]   // forma de NIE, letra mal
+    [InlineData(IdentityDocumentType.Nie, "A1234567L", false)]  // no empieza por X/Y/Z
+    [InlineData(IdentityDocumentType.Dni, null, false)]
+    public void FormatoValido_SinMirarLaLetra(IdentityDocumentType type, string? value, bool expected) =>
+        Assert.Equal(expected, IdentityDocumentValidator.HasValidFormat(type, value));
+
     [Fact]
     public void Normalize_QuitaSeparadoresYPasaAMayusculas() =>
         Assert.Equal("X1234567L", IdentityDocumentValidator.Normalize(" x.1234567-l "));
