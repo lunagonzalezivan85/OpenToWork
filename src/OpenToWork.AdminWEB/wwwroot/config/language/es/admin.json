@@ -29,6 +29,7 @@
     "candidates": "Candidatos",
     "assigned": "Asignados",
     "pipeline": "Pipeline",
+    "candidateRequests": "Solicitudes",
     "management": "Gestión",
     "users": "Usuarios",
     "vacancies": "Vacantes",
@@ -1414,5 +1415,20 @@
     "testRecipient": "Enviar prueba a",
     "sendTest": "Enviar correo de prueba",
     "testSuccess": "Correo de prueba enviado correctamente."
+  },
+  "candidateRequests": {
+    "title": "Solicitudes de candidatos",
+    "subtitle": "Empresas verificadas que piden que TD les presente a un candidato. La entrega se hace desde el pipeline del candidato.",
+    "showAll": "Mostrar también gestionadas",
+    "empty": "No hay solicitudes pendientes.",
+    "colCandidate": "Candidato",
+    "colCompany": "Empresa",
+    "colVacancy": "Vacante",
+    "colNotes": "Notas",
+    "colStatus": "Estado",
+    "colRequested": "Solicitado",
+    "markHandled": "Marcar gestionada",
+    "reject": "Rechazar",
+    "statuses": { "0": "Pendiente", "1": "Gestionada", "2": "Rechazada" }
   }
 }

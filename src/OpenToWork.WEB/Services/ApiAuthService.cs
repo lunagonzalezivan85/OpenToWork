@@ -277,6 +277,55 @@ public class ApiAuthService
 
     private record GoogleEnabledResult(bool Enabled);
 
+    // --- Busqueda de candidatos (solo empresas verificadas; reapertura controlada H-39) ---
+
+    /// <summary>Resultados anonimizados (nombre + inicial) de candidatos con consentimiento.
+    /// forbidden=true -> el usuario no es una empresa verificada (la UI muestra el aviso).</summary>
+    public async Task<(CandidateSearchResultPageDto? Page, bool Forbidden)> SearchCandidatesAsync(CandidateSearchFilterDto filter)
+    {
+        await SetAuthHeaderAsync();
+        var query = $"api/candidates/search?Page={filter.Page}&PageSize={filter.PageSize}";
+        if (filter.MinOverallScore.HasValue) query += $"&MinOverallScore={filter.MinOverallScore}";
+        if (filter.MinStabilityIndex.HasValue) query += $"&MinStabilityIndex={filter.MinStabilityIndex}";
+        if (filter.MinReliabilityIndex.HasValue) query += $"&MinReliabilityIndex={filter.MinReliabilityIndex}";
+        if (filter.MinEvidenceIndex.HasValue) query += $"&MinEvidenceIndex={filter.MinEvidenceIndex}";
+        if (filter.MinCompatibilityIndex.HasValue) query += $"&MinCompatibilityIndex={filter.MinCompatibilityIndex}";
+        if (filter.MinVerificationStatus.HasValue) query += $"&MinVerificationStatus={filter.MinVerificationStatus}";
+        if (filter.SkillId.HasValue) query += $"&SkillId={filter.SkillId}";
+
+        var response = await _httpClient.GetAsync(query);
+        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden) return (null, true);
+        if (!response.IsSuccessStatusCode) return (null, false);
+        return (await response.Content.ReadFromJsonAsync<CandidateSearchResultPageDto>(), false);
+    }
+
+    public async Task<(List<SkillOptionDto> Skills, bool Forbidden)> GetSearchableSkillsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/candidates/search/skills");
+        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden) return (new(), true);
+        if (!response.IsSuccessStatusCode) return (new(), false);
+        return (await response.Content.ReadFromJsonAsync<List<SkillOptionDto>>() ?? new(), false);
+    }
+
+    /// <summary>Pide al staff que prepare la entrega de este candidato (no desbloquea nada).</summary>
+    public async Task<bool> RequestCandidateAsync(Guid candidateId, Guid? vacancyId, string? notes)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PostAsJsonAsync($"api/candidates/{candidateId}/request",
+            new CandidateRequestDto { VacancyId = vacancyId, Notes = notes });
+        return response.IsSuccessStatusCode;
+    }
+
+    /// <summary>Ids de candidatos que esta empresa ya solicito (pendientes).</summary>
+    public async Task<List<Guid>> GetCompanyCandidateRequestsAsync()
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync("api/candidates/company/requests");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<Guid>>() ?? new();
+    }
+
     // --- Noticias (publicas, sin login). Si la seccion esta apagada la API responde 404. ---
 
     public async Task<bool> IsNewsEnabledAsync()
@@ -841,20 +890,39 @@ public class ApiAuthService
     /// directamente (video de presentacion) sin pasar el archivo por la memoria de WebAssembly.
     /// </summary>
     public async Task<(string BaseUrl, string? Token)> GetApiAccessAsync() =>
-        (_httpClient.BaseAddress?.ToString() ?? "/", await _localStorage.GetItemAsync("opentowork-token"));
+        (_httpClient.BaseAddress?.ToString() ?? "/", await GetTokenAsync());
+
+    /// <summary>
+    /// Access token SOLO en memoria (cierre residual de H-04): un XSS que lea localStorage
+    /// ya no saca la credencial; al recargar se recupera una vez via la cookie HttpOnly
+    /// td_refresh. El centinela opentowork-user-id evita llamar al refresh en visitas
+    /// anonimas (caeria en el rate limit).
+    /// </summary>
+    public async Task<string?> GetTokenAsync()
+    {
+        if (_cachedToken != null) return _cachedToken;
+        if (await _localStorage.GetItemAsync("opentowork-user-id") is { Length: > 0 }
+            && await TryRefreshSessionAsync() is { } refreshed)
+            _cachedToken = refreshed.Token;
+        return _cachedToken;
+    }
+
+    private string? _cachedToken;
 
     public async Task SetAuthHeaderAsync()
     {
-        var token = await _localStorage.GetItemAsync("opentowork-token");
+        var token = await GetTokenAsync();
         if (!string.IsNullOrEmpty(token))
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
     private async Task PersistAuthAsync(AuthResponseDto auth)
     {
-        await _localStorage.SetItemAsync("opentowork-token", auth.Token);
-        // El refresh token vive en la cookie HttpOnly td_refresh; no se guarda en localStorage
-        // (auditoria 08-Oct H-04). Se borra por si quedo uno viejo de antes del cambio.
+        _cachedToken = auth.Token;
+        // Ni el access ni el refresh token se guardan en localStorage (auditoria 08-Oct H-04):
+        // el refresh vive en la cookie HttpOnly td_refresh y el access solo en memoria.
+        // Se borran ambos por si quedaron de antes de los cambios.
+        await _localStorage.RemoveItemAsync("opentowork-token");
         await _localStorage.RemoveItemAsync("opentowork-refresh-token");
         await _localStorage.SetItemAsync("opentowork-user-id", auth.User.Id.ToString());
         await _localStorage.SetItemAsync("opentowork-role", auth.User.PrimaryRole.ToString());
@@ -864,6 +932,7 @@ public class ApiAuthService
 
     public async Task ClearAuthAsync()
     {
+        _cachedToken = null;
         await _localStorage.RemoveItemAsync("opentowork-token");
         await _localStorage.RemoveItemAsync("opentowork-refresh-token");
         await _localStorage.RemoveItemAsync("opentowork-user-id");
@@ -997,7 +1066,6 @@ public class ApiAuthService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<string?> GetTokenAsync() => await _localStorage.GetItemAsync("opentowork-token");
     public async Task<string?> GetUserIdAsync() => await _localStorage.GetItemAsync("opentowork-user-id");
     public async Task<string?> GetUserRoleAsync() => await _localStorage.GetItemAsync("opentowork-role");
 

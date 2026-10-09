@@ -20,9 +20,10 @@ public class AppAuthStateProvider : AuthenticationStateProvider
     {
         var claims = await GetValidClaimsAsync();
 
-        // Sin token valido: intento unico de renovacion silenciosa con la cookie td_refresh
-        // (HttpOnly, auditoria 08-Oct H-04). Solo si hubo sesion (opentowork-user-id quedo):
-        // sin ese centinela, cada visita anonima haria un POST /refresh que cae en el rate limit.
+        // Sin token valido: renovacion silenciosa con la cookie td_refresh (HttpOnly).
+        // GetTokenAsync ya lo intenta una vez cuando existe el centinela opentowork-user-id
+        // (sin el, cada visita anonima haria un POST /refresh que cae en el rate limit);
+        // si aun asi no hay claims, se insiste una vez por si el token llego expirado.
         if (claims == null && await _localStorage.GetItemAsync("opentowork-user-id") is { Length: > 0 }
             && await _apiAuth.TryRefreshSessionAsync() is { })
             claims = await GetValidClaimsAsync();
@@ -35,7 +36,7 @@ public class AppAuthStateProvider : AuthenticationStateProvider
 
     private async Task<List<Claim>?> GetValidClaimsAsync()
     {
-        var token = await _localStorage.GetItemAsync("opentowork-token");
+        var token = await _apiAuth.GetTokenAsync();
         if (string.IsNullOrEmpty(token)) return null;
 
         var claims = ParseClaimsFromJwt(token).ToList();

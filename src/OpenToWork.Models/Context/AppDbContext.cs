@@ -74,6 +74,7 @@ public class AppDbContext : DbContext
     public DbSet<PTPromoCode> PT_PromoCodes => Set<PTPromoCode>();
     public DbSet<PTPromoCodeRedemption> PT_PromoCodeRedemptions => Set<PTPromoCodeRedemption>();
     public DbSet<PTNewsPost> PT_NewsPosts => Set<PTNewsPost>();
+public DbSet<PTCandidateRequest> PT_CandidateRequests => Set<PTCandidateRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

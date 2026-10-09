@@ -163,7 +163,7 @@
     },
     "candidateSearch": {
         "title": "Advanced Search",
-        "unavailable": "This feature is not available right now. We send you verified candidates for your vacancies.",
+        "unavailable": "Candidate search is only available to companies verified by the Trato Directo team. We send you verified candidates for your vacancies.",
         "subtitle": "Find candidates by score, verification status and skills",
         "filtersTitle": "Filters",
         "minScore": "Minimum score",
@@ -177,6 +177,8 @@
         "anySkill": "Any skill",
         "search": "Search",
         "empty": "No candidates found with those filters.",
-        "resultsCount": "candidates found"
+        "resultsCount": "candidates found",
+        "request": "Request candidate",
+        "requested": "Request sent"
     }
 }
