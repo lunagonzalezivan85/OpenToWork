@@ -50,11 +50,11 @@ const Shell: React.FC = () => {
 
   return (
     <>
-      {/* Menu lateral con TODAS las secciones del rol - la tab bar solo lleva lo esencial */}
+      {/* Menu lateral con TODAS las secciones del rol - la tab bar solo lleva lo esencial.
+          El contentId apunta al outlet: un div envolvente deja IonTabs con altura 0. */}
       <AppMenu />
-      <div id="main" style={{ height: '100%' }}>
       <IonTabs>
-        <IonRouterOutlet>
+        <IonRouterOutlet id="main">
           {/* Candidato */}
           <Route path="/candidate/dashboard" element={<Dashboard />} />
           <Route path="/candidate/vacancies" element={<Vacancies />} />
@@ -100,7 +100,6 @@ const Shell: React.FC = () => {
           </IonTabButton>
         </IonTabBar>
       </IonTabs>
-      </div>
     </>
   );
 };
