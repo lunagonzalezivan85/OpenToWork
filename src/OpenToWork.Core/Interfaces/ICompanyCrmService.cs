@@ -11,6 +11,9 @@ public interface ICompanyCrmService
     Task<CompanyDetailDto?> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto, Guid adminId, string? ipAddress);
     Task<bool> DeleteCompanyAsync(Guid id, Guid adminId, string? ipAddress);
     Task<bool> SetFeaturedAsync(Guid id, bool featured, Guid adminId, string? ipAddress);
+    /// <summary>Marca la empresa como verificada por el equipo TD. Sin esto la empresa no
+    /// puede usar la busqueda de candidatos (auditoria 08-Oct H-39/H-40).</summary>
+    Task<bool> SetVerifiedAsync(Guid id, bool verified, Guid adminId, string? ipAddress);
     Task<bool> SetCompanyPlanTierAsync(Guid id, CompanyPlanTier tier, Guid adminId, string? ipAddress);
 
     Task<CompanyPipelineResultDto> GetPipelineAsync(int page, int pageSize, int? stage = null, Guid? assignedTo = null, string? search = null);

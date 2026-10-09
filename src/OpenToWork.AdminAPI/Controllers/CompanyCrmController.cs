@@ -63,6 +63,15 @@ public class CompanyCrmController : AdminControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    /// <summary>Verificacion manual de la empresa por el equipo (NIF, registro mercantil).
+    /// Desbloquea la busqueda de candidatos en el portal (auditoria 08-Oct H-39/H-40).</summary>
+    [HttpPut("companies/{id}/verified")]
+    public async Task<IActionResult> SetVerified(Guid id, [FromBody] SetVerifiedDto dto)
+    {
+        var result = await _crmService.SetVerifiedAsync(id, dto.Verified, AdminId, ClientIp);
+        return result ? NoContent() : NotFound();
+    }
+
     [HttpPut("companies/{id}/plan-tier")]
     public async Task<IActionResult> SetPlanTier(Guid id, [FromBody] SetCompanyPlanTierDto dto)
     {
@@ -181,6 +190,11 @@ public class CompanyCrmController : AdminControllerBase
 public class ReassignCompanyDto
 {
     public Guid NewUserId { get; set; }
+}
+
+public class SetVerifiedDto
+{
+    public bool Verified { get; set; }
 }
 
 public class SetFeaturedDto

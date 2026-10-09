@@ -1,4 +1,5 @@
 @page "/wizard"
+@attribute [Authorize(Roles = "Candidate")]
 @inject NavigationManager Nav
 
 @* El asistente antiguo de 10 pasos (con el CV como un enlace) se retiro el 1-Oct: el primer ingreso

@@ -61,8 +61,10 @@
     private string? ErrorMessage { get; set; }
     private string? InfoMessage { get; set; }
 
-    // Solo rutas internas, igual que returnUrl en login/registro.
-    private string NextUrl => !string.IsNullOrEmpty(Next) && Next.StartsWith("/") && !Next.StartsWith("//") ? Next : "/dashboard";
+    // Solo rutas internas, igual que returnUrl en login/registro. Tambien se rechaza /\
+    // (los navegadores lo tratan como protocol-relative y seria un open redirect - H-43).
+    private string NextUrl => !string.IsNullOrEmpty(Next) && Next.StartsWith("/")
+        && !Next.StartsWith("//") && !Next.StartsWith("/\\") ? Next : "/dashboard";
 
     protected override async Task OnInitializedAsync()
     {

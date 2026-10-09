@@ -86,16 +86,16 @@ public class AuthService : IAuthService
             phone = PhoneValidator.Normalize(phone);
         }
 
+        // El codigo de registro se consume ANTES de comprobar si el correo existe (auditoria
+        // 08-Oct H-41: "email ya registrado" permitia enumerar usuarios). Como send-code no
+        // emite codigos para correos con cuenta, nadie ajeno a ese correo puede pasar de aqui.
+        var pendingCode = await ConsumeRegistrationCodeAsync(dto.Email, dto.EmailCode);
+
         var existing = await _context.SC_Users
             .FirstOrDefaultAsync(u => u.Email == dto.Email && !u.IsDeleted);
 
         if (existing != null)
             throw new InvalidOperationException("Email already registered");
-
-        // Candidato: la cuenta solo se crea con el codigo que se envio al correo (decision de Darwin 1-Oct).
-        SCEmailVerificationCode? pendingCode = null;
-        if (isCandidate)
-            pendingCode = await ConsumeRegistrationCodeAsync(dto.Email, dto.EmailCode);
 
         var now = DateTime.UtcNow;
         var user = new SCUser
@@ -106,7 +106,7 @@ public class AuthService : IAuthService
             FullName = isCandidate ? $"{firstName} {lastName}" : null,
             Identification = identification,
             Phone = phone,
-            EmailVerified = isCandidate,
+            EmailVerified = true,
             IsActive = true,
             CreatedBy = createdBy != null ? Guid.Parse(createdBy) : null,
             PrivacyAcceptedAt = now,
@@ -147,13 +147,8 @@ public class AuthService : IAuthService
         }
 
         _context.SC_Users.Add(user);
-        if (pendingCode != null)
-            _context.SC_EmailVerificationCodes.Remove(pendingCode);
+        _context.SC_EmailVerificationCodes.Remove(pendingCode);
         await _context.SaveChangesAsync();
-
-        // Empresa: se verifica despues (no bloquea). Si el correo no sale, puede pedir otro codigo desde el portal.
-        if (!isCandidate)
-            await SendEmailVerificationCodeAsync(user.Id);
 
         return await GenerateAuthResponseAsync(user);
     }
@@ -164,8 +159,31 @@ public class AuthService : IAuthService
         if (normalized.Length == 0 || normalized.Length > 256 || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(normalized))
             return SendVerificationCodeResult.InvalidEmail;
 
+        // Anti-enumeracion (auditoria 08-Oct H-41): si el correo ya tiene cuenta, respondemos
+        // igual que si el codigo se hubiera enviado y avisamos al titular por correo. Nadie
+        // puede saber desde fuera si una persona esta registrada. El aviso comparte el cooldown
+        // del codigo para que no se pueda bombardear el correo de un tercero.
         if (await _context.SC_Users.AnyAsync(u => u.Email == normalized && !u.IsDeleted))
-            return SendVerificationCodeResult.EmailAlreadyRegistered;
+        {
+            var noticeRow = await _context.SC_EmailVerificationCodes.FirstOrDefaultAsync(c => c.Email == normalized);
+            if (noticeRow == null || DateTime.UtcNow - noticeRow.LastSentAt >= EmailCodeResendCooldown)
+            {
+                if (noticeRow == null)
+                {
+                    // Hash de un valor aleatorio: la fila existe solo para el cooldown; ningun
+                    // codigo de 6 digitos la supera, asi que la cuenta no se puede registrar.
+                    noticeRow = new SCEmailVerificationCode { Email = normalized };
+                    _context.SC_EmailVerificationCodes.Add(noticeRow);
+                }
+                noticeRow.CodeHash = HashRegistrationCode(normalized, Guid.NewGuid().ToString("N"));
+                noticeRow.ExpiresAt = DateTime.UtcNow.AddMinutes(EmailCodeValidityMinutes);
+                noticeRow.LastSentAt = DateTime.UtcNow;
+                noticeRow.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                await SendRegistrationAttemptNoticeAsync(normalized);
+            }
+            return SendVerificationCodeResult.Sent;
+        }
 
         var pending = await _context.SC_EmailVerificationCodes.FirstOrDefaultAsync(c => c.Email == normalized);
         if (pending != null && DateTime.UtcNow - pending.LastSentAt < EmailCodeResendCooldown)
@@ -246,6 +264,16 @@ public class AuthService : IAuthService
 
         _logger.LogWarning("No se pudo enviar el codigo de verificacion: {Error}", error);
         return false;
+    }
+
+    /// <summary>Aviso "ya tienes cuenta" al titular. Es best-effort: si el correo falla se
+    /// responde Sent igualmente (la respuesta no puede revelar nada del envio).</summary>
+    private async Task SendRegistrationAttemptNoticeAsync(string normalizedEmail)
+    {
+        var (sent, error) = await _email.SendAsync(normalizedEmail, null,
+            "Ya tienes una cuenta en Trato Directo", EmailTemplates.RegistrationAttemptNotice());
+        if (!sent)
+            _logger.LogWarning("No se pudo enviar el aviso de intento de registro: {Error}", error);
     }
 
     public async Task<EmailVerificationStatusDto?> GetEmailVerificationStatusAsync(Guid userId)

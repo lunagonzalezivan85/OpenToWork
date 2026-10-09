@@ -96,7 +96,8 @@
             {
                 AuthProvider.NotifyAuthenticationStateChanged();
                 var defaultRedirect = result.User.PrimaryRole == 1 ? "/company-dashboard" : "/dashboard";
-                var redirectTo = !string.IsNullOrEmpty(ReturnUrl) && ReturnUrl.StartsWith("/") && !ReturnUrl.StartsWith("//")
+                var redirectTo = !string.IsNullOrEmpty(ReturnUrl) && ReturnUrl.StartsWith("/")
+                    && !ReturnUrl.StartsWith("//") && !ReturnUrl.StartsWith("/\\")
                     ? ReturnUrl
                     : defaultRedirect;
                 Nav.NavigateTo(redirectTo);

@@ -18,18 +18,26 @@
             <div class="boot-splash-card"></div>
             <div class="boot-splash-card"></div>
             <div class="boot-splash-card"></div>
-            <div class="boot-splash-card"></div>
         </div>
     </div>
 }
 else
 {
-    <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
-        <Found Context="routeData">
-            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-            <FocusOnNavigate RouteData="routeData" Selector="h1" />
-        </Found>
-    </Router>
+    @* Guard de rutas (auditoria 08-Oct H-29/H-30): AuthorizeRouteView bloquea las paginas
+       con [Authorize] para anonimos y con Roles= para el rol equivocado. La autoridad es
+       siempre la API (401/403); esto solo evita renderizar UI privada sin sesion. *@
+    <CascadingAuthenticationState>
+        <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+            <Found Context="routeData">
+                <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                    <NotAuthorized>
+                        <RedirectToLogin />
+                    </NotAuthorized>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </Found>
+        </Router>
+    </CascadingAuthenticationState>
 }
 
 @code {

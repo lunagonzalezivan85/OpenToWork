@@ -1,4 +1,5 @@
 @page "/skills/{Id:guid}"
+@attribute [Authorize(Roles = "Candidate")]
 @using OpenToWork.Shared.Challenges
 @using OpenToWork.WEB.Services
 @inject ApiAuthService AuthApi

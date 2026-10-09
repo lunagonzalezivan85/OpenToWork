@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenToWork.Core.Interfaces;
+using OpenToWork.Models.Context;
 using OpenToWork.Shared.DTOs;
 
 namespace OpenToWork.API.Controllers;
@@ -17,8 +19,9 @@ public class CandidatesController : ControllerBase
     private readonly IVerificationStatusService _verificationStatusService;
     private readonly ICandidateSearchService _candidateSearchService;
     private readonly ISystemConfigService _systemConfig;
+    private readonly AppDbContext _context;
 
-    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService, ICandidateSearchService candidateSearchService, ISystemConfigService systemConfig)
+    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService, ICandidateSearchService candidateSearchService, ISystemConfigService systemConfig, AppDbContext context)
     {
         _candidateService = candidateService;
         _validationService = validationService;
@@ -27,23 +30,42 @@ public class CandidatesController : ControllerBase
         _verificationStatusService = verificationStatusService;
         _candidateSearchService = candidateSearchService;
         _systemConfig = systemConfig;
+        _context = context;
     }
 
-    /// <summary>Busqueda avanzada de la empresa por score/verificacion/skill (Fase 5). Solo candidatos con perfil publico.</summary>
+    /// <summary>Busqueda avanzada de la empresa por score/verificacion/skill (Fase 5).
+    /// Solo candidatos con perfil publico Y solo empresas verificadas por el equipo TD
+    /// (auditoria 08-Oct H-39: antes cualquier usuario autenticado -incluido una empresa
+    /// recien registrada sin comprobar- listaba candidatos reales con nombre, ciudad y
+    /// metricas de perfilado).</summary>
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] CandidateSearchFilterDto filter)
     {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        if (!await IsVerifiedCompanyAsync(userId.Value)) return Forbid();
+
         var result = await _candidateSearchService.SearchAsync(filter);
         return Ok(result);
     }
 
-    /// <summary>Skills que aparecen en candidatos con perfil publico - para el filtro de busqueda.</summary>
+    /// <summary>Skills que aparecen en candidatos con perfil publico - para el filtro de
+    /// busqueda. Misma regla que search: solo empresas verificadas.</summary>
     [HttpGet("search/skills")]
     public async Task<IActionResult> GetSearchableSkills()
     {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        if (!await IsVerifiedCompanyAsync(userId.Value)) return Forbid();
+
         var result = await _candidateSearchService.GetSearchableSkillsAsync();
         return Ok(result);
     }
+
+    /// <summary>Solo una empresa verificada por el equipo TD puede buscar candidatos.
+    /// Usuarios sin empresa (candidatos) o con empresa sin verificar -> 403.</summary>
+    private Task<bool> IsVerifiedCompanyAsync(Guid userId) =>
+        _context.PT_Companies.AnyAsync(c => c.SCUserId == userId && !c.IsDeleted && c.IsVerified);
 
     [HttpGet("me")]
     public async Task<IActionResult> GetMyProfile()

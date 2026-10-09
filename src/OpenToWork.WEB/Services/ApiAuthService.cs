@@ -132,6 +132,7 @@ public class ApiAuthService
 
     public async Task<bool> RevokeTokenAsync(string refreshToken)
     {
+        await SetAuthHeaderAsync();
         var response = await _httpClient.PostAsJsonAsync("api/auth/revoke", new RefreshTokenDto { RefreshToken = refreshToken });
         return response.IsSuccessStatusCode;
     }
@@ -899,7 +900,8 @@ public class ApiAuthService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<CandidateSearchResultPageDto?> SearchCandidatesAsync(CandidateSearchFilterDto filter)
+    /// <summary>Forbidden=true cuando la empresa no esta verificada (el API responde 403).</summary>
+    public async Task<(CandidateSearchResultPageDto? Page, bool Forbidden)> SearchCandidatesAsync(CandidateSearchFilterDto filter)
     {
         await SetAuthHeaderAsync();
         var query = $"api/candidates/search?page={filter.Page}&pageSize={filter.PageSize}";
@@ -911,8 +913,9 @@ public class ApiAuthService
         if (filter.MinVerificationStatus.HasValue) query += $"&minVerificationStatus={filter.MinVerificationStatus}";
         if (filter.SkillId.HasValue) query += $"&skillId={filter.SkillId}";
         var response = await _httpClient.GetAsync(query);
-        if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<CandidateSearchResultPageDto>();
+        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden) return (null, true);
+        if (!response.IsSuccessStatusCode) return (null, false);
+        return (await response.Content.ReadFromJsonAsync<CandidateSearchResultPageDto>(), false);
     }
 
     public async Task<List<SkillOptionDto>> GetSearchableSkillsAsync()

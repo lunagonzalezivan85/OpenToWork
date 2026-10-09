@@ -1,4 +1,4 @@
-{
+﻿{
     "title": "Dashboard",
     "welcome": "Hello",
     "onboarding": {
@@ -176,6 +176,7 @@
         "anySkill": "Any skill",
         "search": "Search",
         "empty": "No candidates found with those filters.",
+        "notVerified": "Candidate search is available to companies verified by Trato Directo. Your company is not verified yet: complete your profile and the team will review it.",
         "resultsCount": "candidates found"
     }
 }

@@ -1380,6 +1380,15 @@ public class AdminAuthApiService
         return response.IsSuccessStatusCode;
     }
 
+    /// <summary>Verificacion manual por el equipo. Sin ella la empresa no puede usar la
+    /// busqueda de candidatos en el portal (auditoria 08-Oct H-39/H-40).</summary>
+    public async Task<bool> SetCompanyVerifiedAsync(Guid id, bool verified)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync($"api/admin/company-crm/companies/{id}/verified", new { verified });
+        return response.IsSuccessStatusCode;
+    }
+
     /// <summary>CV del candidato (carpeta privada del servidor; null si no tiene).</summary>
     public async Task<(byte[] Content, string FileName)?> GetCandidateCvAsync(Guid userId)
     {

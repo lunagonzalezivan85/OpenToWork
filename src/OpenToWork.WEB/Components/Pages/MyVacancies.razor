@@ -1,4 +1,5 @@
 @page "/my-vacancies"
+@attribute [Authorize(Roles = "Company")]
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
 @using System.Web

@@ -224,6 +224,20 @@ public class CompanyCrmService : ICompanyCrmService
         return true;
     }
 
+    public async Task<bool> SetVerifiedAsync(Guid id, bool verified, Guid adminId, string? ipAddress)
+    {
+        var company = await _db.PT_Companies.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        if (company == null) return false;
+
+        company.IsVerified = verified;
+        company.UpdatedAt = DateTime.UtcNow;
+        company.UpdatedBy = adminId;
+
+        await _db.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "CompanyCrm.SetVerified", "PTCompany", id, $"Empresa {(verified ? "verificada" : "sin verificar")}: {company.Name}", ipAddress);
+        return true;
+    }
+
     public async Task<bool> SetCompanyPlanTierAsync(Guid id, CompanyPlanTier tier, Guid adminId, string? ipAddress)
     {
         var company = await _db.PT_Companies.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);

@@ -1,4 +1,5 @@
 @page "/verified-applicants"
+@attribute [Authorize(Roles = "Company")]
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.Shared.Enums
 @using OpenToWork.WEB.Services

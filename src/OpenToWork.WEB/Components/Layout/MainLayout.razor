@@ -524,10 +524,20 @@
         await JS.InvokeVoidAsync("notifSidebar.close");
     }
 
+    /// <summary>Cierre de sesion real: revoca el refresh token en el servidor y limpia
+    /// todo el estado local (auditoria 08-Oct H-31: antes solo borraba el access token).</summary>
     private async Task HandleLogout()
     {
-        await LocalStorage.RemoveItemAsync("opentowork-token");
-        Nav.NavigateTo("/login", forceLoad: true);
+        try
+        {
+            var refreshToken = await LocalStorage.GetItemAsync("opentowork-refresh-token");
+            if (!string.IsNullOrEmpty(refreshToken))
+                await AuthApi.RevokeTokenAsync(refreshToken);
+        }
+        catch { /* revocar es best-effort; el cierre local igual procede */ }
+
+        await AuthApi.ClearAuthAsync();
+        Nav.NavigateTo("/logout");
     }
 
     private void ToggleSettingsMenu() => ShowSettingsMenu = !ShowSettingsMenu;
