@@ -560,15 +560,8 @@
     /// todo el estado local (auditoria 08-Oct H-31: antes solo borraba el access token).</summary>
     private async Task HandleLogout()
     {
-        try
-        {
-            var refreshToken = await LocalStorage.GetItemAsync("opentowork-refresh-token");
-            if (!string.IsNullOrEmpty(refreshToken))
-                await AuthApi.RevokeTokenAsync(refreshToken);
-        }
-        catch { /* revocar es best-effort; el cierre local igual procede */ }
-
-        await AuthApi.ClearAuthAsync();
+        // El revoke real lo hace /logout (RevokeSessionAsync con la cookie HttpOnly);
+        // aqui solo se navega a esa ruta.
         Nav.NavigateTo("/logout");
     }
 

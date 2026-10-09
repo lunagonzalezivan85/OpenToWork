@@ -18,10 +18,25 @@ public class AppAuthStateProvider : AuthenticationStateProvider
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var token = await _localStorage.GetItemAsync("opentowork-token");
+        var claims = await GetValidClaimsAsync();
 
-        if (string.IsNullOrEmpty(token))
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        // Sin token valido: intento unico de renovacion silenciosa con la cookie td_refresh
+        // (HttpOnly, auditoria 08-Oct H-04). Solo si hubo sesion (opentowork-user-id quedo):
+        // sin ese centinela, cada visita anonima haria un POST /refresh que cae en el rate limit.
+        if (claims == null && await _localStorage.GetItemAsync("opentowork-user-id") is { Length: > 0 }
+            && await _apiAuth.TryRefreshSessionAsync() is { })
+            claims = await GetValidClaimsAsync();
+
+        var identity = claims == null
+            ? new ClaimsIdentity()
+            : new ClaimsIdentity(claims, "jwt");
+        return new AuthenticationState(new ClaimsPrincipal(identity));
+    }
+
+    private async Task<List<Claim>?> GetValidClaimsAsync()
+    {
+        var token = await _localStorage.GetItemAsync("opentowork-token");
+        if (string.IsNullOrEmpty(token)) return null;
 
         var claims = ParseClaimsFromJwt(token).ToList();
 
@@ -30,10 +45,9 @@ public class AppAuthStateProvider : AuthenticationStateProvider
         var exp = claims.FirstOrDefault(c => c.Type == "exp")?.Value;
         if (!long.TryParse(exp, out var expUnix) ||
             DateTimeOffset.FromUnixTimeSeconds(expUnix) <= DateTimeOffset.UtcNow)
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            return null;
 
-        var identity = new ClaimsIdentity(claims, "jwt");
-        return new AuthenticationState(new ClaimsPrincipal(identity));
+        return claims;
     }
 
     public void NotifyAuthenticationStateChanged()

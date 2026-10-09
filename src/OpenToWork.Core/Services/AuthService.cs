@@ -168,8 +168,13 @@ public class AuthService : IAuthService
         return await GenerateAuthResponseAsync(user);
     }
 
-    public async Task<SendVerificationCodeResult> SendRegistrationCodeAsync(string email, string? firstName = null)
+    public async Task<SendVerificationCodeResult> SendRegistrationCodeAsync(string email, string? firstName = null, string? recaptchaToken = null)
     {
+        // Con Recaptcha:Enforced el endpoint pide el token valido (auditoria: abuso de codigos
+        // por bots). Apagado por defecto hasta cablear el widget en el portal.
+        if (!await IsCaptchaOkAsync(recaptchaToken))
+            return SendVerificationCodeResult.CaptchaFailed;
+
         var normalized = NormalizeEmail(email);
         if (normalized.Length == 0 || normalized.Length > 256 || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(normalized))
             return SendVerificationCodeResult.InvalidEmail;
@@ -356,6 +361,11 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {
+        // Con Recaptcha:Enforced el login pide el token; sin el flag sigue como antes
+        // (el rate limit "auth" ya frena fuerza bruta). Mensaje neutro "captcha" -> 401.
+        if (!await IsCaptchaOkAsync(dto.RecaptchaToken))
+            throw new UnauthorizedAccessException("captcha");
+
         var user = await _context.SC_Users
             .Include(u => u.UserRoles)
             .Include(u => u.UserPreference)
@@ -586,6 +596,16 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
 
         return (GoogleSignInStatus.SignedIn, await GenerateAuthResponseAsync(user));
+    }
+
+    /// <summary>Con Recaptcha:Enforced + SecretKey configurados exige un token valido;
+    /// en cualquier otro caso pasa (la UI aun no muestra el widget hasta que se configuren).</summary>
+    private async Task<bool> IsCaptchaOkAsync(string? token)
+    {
+        if (!_config.GetValue<bool>("Recaptcha:Enforced") || string.IsNullOrEmpty(_config["Recaptcha:SecretKey"]))
+            return true;
+        if (string.IsNullOrEmpty(token)) return false;
+        return await VerifyRecaptchaAsync(token);
     }
 
     public async Task<bool> VerifyRecaptchaAsync(string recaptchaResponse)

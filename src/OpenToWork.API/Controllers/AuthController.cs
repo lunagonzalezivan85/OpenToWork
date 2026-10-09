@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Shared.DTOs;
@@ -32,6 +33,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.RegisterAsync(dto, consentIp: HttpContext.Connection.RemoteIpAddress?.ToString());
+            SetRefreshCookie(result.RefreshToken);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -49,11 +51,12 @@ public class AuthController : ControllerBase
     [HttpPost("register/send-code")]
     public async Task<IActionResult> SendRegistrationCode([FromBody] RegistrationCodeRequestDto dto)
     {
-        return await _authService.SendRegistrationCodeAsync(dto.Email, dto.FirstName) switch
+        return await _authService.SendRegistrationCodeAsync(dto.Email, dto.FirstName, dto.RecaptchaToken) switch
         {
             SendVerificationCodeResult.Sent => NoContent(),
             SendVerificationCodeResult.EmailAlreadyRegistered => Conflict(new { message = "email_exists" }),
             SendVerificationCodeResult.InvalidEmail => BadRequest(new { message = "invalid_email" }),
+            SendVerificationCodeResult.CaptchaFailed => BadRequest(new { message = "captcha_required" }),
             SendVerificationCodeResult.TooSoon => StatusCode(StatusCodes.Status429TooManyRequests, new { message = "too_soon" }),
             _ => StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "send_failed" })
         };
@@ -113,6 +116,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.LoginAsync(dto);
+            SetRefreshCookie(result.RefreshToken);
             return Ok(result);
         }
         catch (UnauthorizedAccessException ex)
@@ -123,11 +127,18 @@ public class AuthController : ControllerBase
 
     [EnableRateLimiting("auth")]
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto dto)
+    public async Task<IActionResult> Refresh([FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefreshTokenDto? dto)
     {
+        // El refresh puede venir en el cuerpo (clientes antiguos) o en la cookie HttpOnly
+        // td_refresh (portal WASM desde Fase 1 de seguridad, auditoria 08-Oct H-04). Ojo:
+        // un cuerpo "{}" trae RefreshToken="" (no null) - hay que mirar vacio, no solo null.
+        var refreshToken = string.IsNullOrEmpty(dto?.RefreshToken) ? Request.Cookies[RefreshCookieName] : dto!.RefreshToken;
+        if (string.IsNullOrEmpty(refreshToken)) return Unauthorized();
+
         try
         {
-            var result = await _authService.RefreshTokenAsync(dto);
+            var result = await _authService.RefreshTokenAsync(new RefreshTokenDto { RefreshToken = refreshToken });
+            SetRefreshCookie(result.RefreshToken); // rotacion: renueva token y cookie a la vez
             return Ok(result);
         }
         catch (UnauthorizedAccessException ex)
@@ -138,11 +149,36 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("revoke")]
-    public async Task<IActionResult> Revoke([FromBody] RefreshTokenDto dto)
+    public async Task<IActionResult> Revoke([FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RefreshTokenDto? dto)
     {
-        await _authService.RevokeTokenAsync(dto.RefreshToken);
+        var refreshToken = string.IsNullOrEmpty(dto?.RefreshToken) ? Request.Cookies[RefreshCookieName] : dto!.RefreshToken;
+        if (!string.IsNullOrEmpty(refreshToken))
+            await _authService.RevokeTokenAsync(refreshToken);
+        DeleteRefreshCookie();
         return NoContent();
     }
+
+    // --- Refresh token como cookie HttpOnly (auditoria 08-Oct H-04: antes vivia en localStorage,
+    // al alcance de cualquier XSS). Path /api/auth: solo viaja a estos endpoints. SameSite=Lax
+    // basta: en dev el portal y la API comparten sitio (localhost) y en prod comparten dominio
+    // (tratodirecto.es y tratodirecto.es/api); en ambos casos la cookie acompana las llamadas XHR. ---
+    private const string RefreshCookieName = "td_refresh";
+
+    private void SetRefreshCookie(string refreshToken)
+    {
+        var days = _config.GetValue<int>("Jwt:RefreshTokenExpireDays", 7);
+        Response.Cookies.Append(RefreshCookieName, refreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Path = "/api/auth",
+            Expires = DateTimeOffset.UtcNow.AddDays(days)
+        });
+    }
+
+    private void DeleteRefreshCookie() =>
+        Response.Cookies.Delete(RefreshCookieName, new CookieOptions { Path = "/api/auth" });
 
     [Authorize]
     [HttpGet("check-device")]
@@ -244,6 +280,7 @@ public class AuthController : ControllerBase
         var key = "google-login:" + dto.Code;
         if (string.IsNullOrEmpty(dto.Code) || !_cache.TryGetValue(key, out AuthResponseDto? auth)) return Unauthorized();
         _cache.Remove(key);
+        SetRefreshCookie(auth!.RefreshToken);
         return Ok(auth);
     }
 
@@ -266,6 +303,7 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.RegisterAsync(dto, consentIp: HttpContext.Connection.RemoteIpAddress?.ToString(), google: identity);
             _cache.Remove(key);
+            SetRefreshCookie(result.RefreshToken);
             return Ok(result);
         }
         catch (ArgumentException ex)

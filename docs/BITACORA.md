@@ -565,3 +565,44 @@ Rama: `iluna-sec-contencion` (commit `2556cbe`, sin merge a `main`).
 - Fase 2: RGPD — consentimiento informado de visibilidad del perfil del candidato, EIPD del scoring.
 - Fase 3: vacante pública `/vacancy/TD-XXXX` sin login + SEO/JSON-LD.
 - `System.Security.Cryptography.Xml` 8.0.2 tiene NU1903 alta — actualizar.
+
+## Sesión: 9 Octubre 2026, noche (Iluna — merge con `main` + Fase 1 de sesiones)
+
+Ramas: merge de `origin/main` en `iluna-sec-contencion` (commit `c14c26c`), luego
+`iluna-sec-sesiones` para la Fase 1.
+
+### IMPORTANTE - Nota para Darwin
+> Al traer `main` (Dsiezar) se adoptó su contención **más estricta** de H-39: la búsqueda
+> `/api/candidates/search` está **cerrada a todos** (403) hasta el rediseño con opt-in del
+> candidato — ya no basta `IsVerified`. La URL del portal muestra un aviso, no un error.
+> Documento de Dsiezar: `docs/dsiezar/seguridad-busqueda-candidatos.md`.
+>
+> El refresh token ya **no** está en localStorage: vive en la cookie HttpOnly `td_refresh`
+> (Path `/api/auth`, SameSite=Lax) y rota en cada renovación — un XSS ya no roba la sesión
+> completa (H-04). Tras un pull: `dotnet ef database update` (viene `NewsPosts` de Dsiezar).
+
+### Cambios Realizados
+- **Merge `origin/main`:** resueltos 8 conflictos conservando ambos lados — cierre total del
+  search (Dsiezar) + anti-enumeración, guard de rutas y logout real (Iluna); CSP unión de
+  mapas y vídeos de Noticias; snapshot EF con `PTNewsPost` + campos geo/`ReferenceCode`
+  intactos. Trae: Noticias (admin + portal, apagada por feature flag), Google login
+  (candidatos), fix DNI/NIE y 168 tests de integración nuevos.
+- **Fase 1 sesiones (H-04):** cookie `td_refresh` HttpOnly en login/register/Google/refresh;
+  `refresh`/`revoke` leen cookie o body (compat); el WASM manda `credentials:include` y hace
+  **silent refresh** al arrancar si hubo sesión (centinela `opentowork-user-id`, para no
+  gastar rate limit en anónimos).
+- **CAPTCHA exigible:** `Recaptcha:Enforced` hace obligatorio el token en login y `send-code`
+  (off por defecto hasta cablear el widget).
+- **Correo empresa verificada:** `SetVerifiedAsync` avisa por email al contacto de la empresa
+  (plantilla nueva, best-effort).
+- **NU1903:** `System.Security.Cryptography.Xml` pinneado a `10.0.12` (8 advisories altas en la
+  8.0.2 transitiva de DataProtection).
+- Verificado: build 0 errores, `dotnet test` 163/168 (5 fallos = seed-data ausente, iguales
+  que antes), matriz cookie curl y Playwright en `test_log_2026-10-09.md` (M1–M9, S1–S9) y
+  `docs/iluna/fase-9-sesiones.md`.
+
+### Pendiente
+- Access token a memoria (residual H-04, 60 min de ventana en localStorage).
+- Fase 2: opt-in de visibilidad del candidato + datos mínimos para reabrir la búsqueda; EIPD.
+- Matriz de autorización por endpoint (H-10); decidir si el dashboard de empresa sin verificar
+  queda limitado.

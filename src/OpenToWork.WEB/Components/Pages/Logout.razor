@@ -3,22 +3,16 @@
 @using OpenToWork.SharedUI.Services
 @using OpenToWork.WEB.Services
 @inject ApiAuthService AuthApi
-@inject LocalStorageService LocalStorage
 @inject AppAuthStateProvider AuthProvider
 @inject NavigationManager Nav
 
 @code {
     /// <summary>Ruta de cierre de sesion real (auditoria 08-Oct H-31: antes no hacia nada):
-    /// revoca el refresh token en el servidor, limpia el storage local y avisa al estado
-    /// de autenticacion para que el guard de rutas bloquee las paginas privadas.</summary>
+    /// revoca el refresh token en el servidor (cookie td_refresh, HttpOnly), limpia el storage
+    /// local y avisa al estado de autenticacion para que el guard bloquee las paginas privadas.</summary>
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var refreshToken = await LocalStorage.GetItemAsync("opentowork-refresh-token");
-            if (!string.IsNullOrEmpty(refreshToken))
-                await AuthApi.RevokeTokenAsync(refreshToken);
-        }
+        try { await AuthApi.RevokeSessionAsync(); }
         catch { /* revocar es best-effort; el cierre local igual procede */ }
 
         await AuthApi.ClearAuthAsync();
