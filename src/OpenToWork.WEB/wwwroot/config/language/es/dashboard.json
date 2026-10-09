@@ -163,6 +163,7 @@
     },
     "candidateSearch": {
         "title": "Búsqueda Avanzada",
+        "unavailable": "Esta función no está disponible por ahora. Te enviamos candidatos verificados para tus vacantes.",
         "subtitle": "Encontrá candidatos por score, estado de verificación y skills",
         "filtersTitle": "Filtros",
         "minScore": "Score mínimo",

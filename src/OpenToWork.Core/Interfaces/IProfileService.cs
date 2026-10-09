@@ -12,6 +12,8 @@ public interface IProfileService
     /// empresa solo si Trato Directo le entrego a ese candidato (sin DNI, nacimiento ni direccion).
     /// Null para cualquier otro.</summary>
     Task<CandidateProfileDto?> GetCandidateByIdAsync(Guid candidateId, Guid viewerUserId);
+    /// <summary>Mismo criterio que el perfil: el propio candidato o una empresa a la que TD se lo entrego.</summary>
+    Task<bool> CanViewCandidateAsync(Guid candidateId, Guid viewerUserId);
 
     /// <summary>Referencia al CV de un candidato con la misma regla que el perfil (el propio candidato o una
     /// empresa a la que TD se lo entrego). Null si no tiene CV o el usuario no puede verlo.</summary>
