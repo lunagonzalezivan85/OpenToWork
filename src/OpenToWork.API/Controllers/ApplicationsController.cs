@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenToWork.Core.Interfaces;
 using OpenToWork.Models.Context;
 using OpenToWork.Shared.DTOs;
+using OpenToWork.Shared.Enums;
 
 namespace OpenToWork.API.Controllers;
 
@@ -32,8 +33,12 @@ public class ApplicationsController : ControllerBase
         var candidateId = await GetCandidateIdAsync(userId.Value);
         if (candidateId == null) return BadRequest("Candidate profile not found");
 
+        // Solo se puede postular a vacantes activas (Status=Active) - antes bastaba con
+        // que existiera, y un candidato con el Guid podia postularse a borradores o
+        // vacantes ya cerradas (auditoria de endpoints, H-10).
         var vacancyExists = await _context.PT_Vacancies
-            .AnyAsync(v => v.Id == dto.VacancyId && !v.IsDeleted);
+            .AnyAsync(v => v.Id == dto.VacancyId && !v.IsDeleted
+                && v.Status == (int)VacancyStatus.Active);
         if (!vacancyExists) return NotFound("Vacancy not found");
 
         if (await _applicationService.HasAlreadyAppliedAsync(candidateId.Value, dto.VacancyId))
