@@ -8,7 +8,8 @@ misma API .NET que usa el portal Blazor (`OpenToWork.API`).
 ```bash
 cd app-multiplataforma
 npm install
-npm run dev          # vite en http://localhost:5173 (o el puerto libre)
+npm run dev          # vite en http://localhost:5150
+npm run lab          # Ionic Lab en http://localhost:8200 - marco de telefono iOS+Android
 ```
 
 La API espera en `src/config.ts` (`VITE_API_URL`, por defecto `http://localhost:5100`).

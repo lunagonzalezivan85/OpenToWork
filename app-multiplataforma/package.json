@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5150",
+    "lab": "ionic-lab http://localhost:5150 --port 8200 --app-name \"Trato Directo\" --app-version 0.0.1",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test.e2e": "cypress run",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3",
+    "@ionic/lab": "^3.2.15",
     "@testing-library/dom": ">=7.21.4",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^16.2.0",
