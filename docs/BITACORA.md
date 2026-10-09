@@ -526,3 +526,42 @@ Rama: `iluna-geo-search` (NO mergeada a `main`, pendiente de revisión de Darwin
 - Revisión de Darwin y merge de `iluna-geo-search` → `main`.
 - El match del candidato solo pondera skills/experiencia/ubicación; falta desglosar "por qué haces match" en el detalle.
 - En prod convendría redirigir `/vacancy/{guid}` → `/vacancy/{code}` (301) para que Google/SERP solo indexe la canónica.
+
+---
+
+## Sesión: 9 Octubre 2026 (Iluna — contención de auditoría externa)
+
+Rama: `iluna-sec-contencion` (commit `2556cbe`, sin merge a `main`).
+
+### IMPORTANTE - Nota para Darwin
+> Auditoría externa de producción (tratodirecto.es, 08-Oct): 49 hallazgos, 1 crítico — **H-39**:
+> cualquier empresa recién registrada listaba candidatos reales con nombre, ciudad y score.
+> La contención ya está en `iluna-sec-contencion`: `/api/candidates/search` (y `search/skills`)
+> exige ahora empresa con `IsVerified=true` (403 si no). AdminWEB tiene botón "Verificar empresa"
+> en el detalle de la empresa (auditado en log). **Ninguna empresa nueva busca candidatos sin
+> revisión del equipo.**
+>
+> El alta de empresa también cambió: requiere el código de correo como el candidato (flujo único,
+> `EmailVerified=true` desde el registro). Y `register/send-code` ya no revela si un correo existe
+> (responde siempre igual; el titular recibe un aviso).
+
+### Cambios Realizados
+- **Guard de rutas WASM:** `CascadingAuthenticationState` + `AuthorizeRouteView` + `RedirectToLogin`;
+  22 páginas privadas con `[Authorize]`/`Roles=`; tras logout toda ruta privada → `/login`
+  (antes `/dashboard` se renderizaba para anónimos — H-29).
+- **`/logout` real:** revoca el refresh token en servidor y limpia storage (antes no hacía nada — H-31).
+  Bug aparte: `RevokeTokenAsync` no enviaba el Bearer → la revocación nunca funcionaba.
+- **Provider de auth:** expira tokens caducados (un JWT viejo en localStorage ya no "autentica") y
+  expande claims `role` en array — `IsInRole("Company")` funcionaba mal con varios roles.
+- **`appsettings.json` público** ya no lleva `localhost` (H-05); config dev movida a
+  `appsettings.Development.json`.
+- Verificado con `dotnet build` (0 errores), matriz curl (`scripts/qa-fase0.ps1`) y Playwright:
+  401/403/200 según rol y verificación, redirects de rutas, logout con storage limpio.
+  Todo en `docs/iluna/test_log_2026-10-09.md` y `fase-8-contencion-auditoria.md`.
+
+### Pendiente (fases siguientes)
+- Fase 1: refresh token en cookie HttpOnly + captcha obligatorio + validaciones servidor (ya hay
+  `IdentityDocumentValidator`/`PhoneValidator` del lado del servidor — se reforzó el flujo).
+- Fase 2: RGPD — consentimiento informado de visibilidad del perfil del candidato, EIPD del scoring.
+- Fase 3: vacante pública `/vacancy/TD-XXXX` sin login + SEO/JSON-LD.
+- `System.Security.Cryptography.Xml` 8.0.2 tiene NU1903 alta — actualizar.
