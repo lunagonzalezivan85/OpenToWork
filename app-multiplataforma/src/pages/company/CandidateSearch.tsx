@@ -5,6 +5,7 @@ import {
   IonRefresher, IonRefresherContent, IonSearchbar, IonSpinner, IonTitle,
   IonToolbar, useIonAlert, useIonViewWillEnter,
 } from '@ionic/react';
+import PageHeader from '../../components/PageHeader';
 import { api, ApiError } from '../../services/api';
 import type { CandidateResult } from '../../types';
 import { useAuth } from '../../auth/AuthContext';
@@ -56,13 +57,12 @@ export default function CandidateSearch() {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar><IonTitle>Buscar candidatos</IonTitle></IonToolbar>
+      <PageHeader title="Buscar candidatos">
         <IonToolbar>
           <IonSearchbar placeholder="Puesto, skill o sector" debounce={400}
             value={query} onIonInput={e => { setQuery(e.detail.value ?? ''); void load(); }} />
         </IonToolbar>
-      </IonHeader>
+      </PageHeader>
       <IonContent>
         <IonRefresher slot="fixed" onIonRefresh={async e => { await load(); e.detail.complete(); }}>
           <IonRefresherContent />

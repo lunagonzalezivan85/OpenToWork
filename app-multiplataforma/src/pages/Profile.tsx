@@ -2,6 +2,7 @@ import {
   IonButton, IonContent, IonHeader, IonItem, IonLabel, IonList, IonPage,
   IonTitle, IonToolbar, useIonAlert,
 } from '@ionic/react';
+import PageHeader from '../components/PageHeader';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../services/api';
 
@@ -21,7 +22,7 @@ export default function Profile() {
 
   return (
     <IonPage>
-      <IonHeader><IonToolbar><IonTitle>Perfil</IonTitle></IonToolbar></IonHeader>
+      <PageHeader title="Perfil" />
       <IonContent>
         <IonList inset>
           <IonItem><IonLabel><h2>{user?.email}</h2><p>{user?.primaryRole === 1 ? 'Cuenta de empresa' : 'Cuenta de candidato'}</p></IonLabel></IonItem>

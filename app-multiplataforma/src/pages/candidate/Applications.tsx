@@ -4,6 +4,7 @@ import {
   IonPage, IonRefresher, IonRefresherContent, IonSpinner, IonTitle, IonToolbar,
   useIonViewWillEnter,
 } from '@ionic/react';
+import PageHeader from '../../components/PageHeader';
 import { api, ApiError } from '../../services/api';
 import type { Application } from '../../types';
 import { useAuth } from '../../auth/AuthContext';
@@ -35,7 +36,7 @@ export default function Applications() {
 
   return (
     <IonPage>
-      <IonHeader><IonToolbar><IonTitle>Mis postulaciones</IonTitle></IonToolbar></IonHeader>
+      <PageHeader title="Mis postulaciones" />
       <IonContent>
         <IonRefresher slot="fixed" onIonRefresh={async e => { await load(); e.detail.complete(); }}>
           <IonRefresherContent />

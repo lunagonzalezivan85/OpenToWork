@@ -5,6 +5,7 @@ import {
   IonToolbar, useIonViewWillEnter,
 } from '@ionic/react';
 import { useIonRouter } from '@ionic/react';
+import PageHeader from '../components/PageHeader';
 import { api, ApiError } from '../services/api';
 import type { Conversation } from '../types';
 import { useAuth } from '../auth/AuthContext';
@@ -29,7 +30,7 @@ export default function Messages() {
 
   return (
     <IonPage>
-      <IonHeader><IonToolbar><IonTitle>Mensajes</IonTitle></IonToolbar></IonHeader>
+      <PageHeader title="Mensajes" />
       <IonContent>
         <IonRefresher slot="fixed" onIonRefresh={async e => { await load(); e.detail.complete(); }}>
           <IonRefresherContent />

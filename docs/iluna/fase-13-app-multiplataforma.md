@@ -27,6 +27,21 @@ contra la misma `OpenToWork.API`.
 | Mis vacantes (empresa) | `GET /api/permanentvacancies/my-company` |
 | Buscar candidatos | `GET /api/candidates/search` + `POST {id}/request` (403 si no verificada — se muestra el aviso) |
 | Mensajes | `GET /api/messages/conversations` (lista; hilo pendiente) |
+| Panel | `applications/my` o `permanentvacancies/my-company` (resumen) |
+| Mi proceso (candidato) | `GET /api/candidates/me/process` (etapas + entregas) |
+| Entregados (empresa) | `GET /api/deliveries/my` |
+| Noticias | `GET /api/news` |
+
+## Navegación
+
+Barra inferior con las secciones esenciales del rol + **menú lateral (hamburguesa) con el
+menú completo** — el mismo set que el portal: Panel, Vacantes/Mis vacantes,
+Postulaciones/Buscar candidatos, Mi proceso/Entregados, Mensajes, Noticias, Perfil,
+Cerrar sesión.
+
+**Trampa de Ionic aprendida:** los `IonTabButton` deben ser hijos directos de
+`IonTabBar` — envolverlos en un `<>` fragment los deja fuera del mapa de tabs y no se
+renderizan (por eso solo se veían Mensajes y Perfil).
 
 ## Verificación
 

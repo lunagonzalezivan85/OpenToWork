@@ -4,6 +4,7 @@ import {
   IonPage, IonRefresher, IonRefresherContent, IonSpinner, IonTitle, IonToolbar,
   useIonViewWillEnter,
 } from '@ionic/react';
+import PageHeader from '../../components/PageHeader';
 import { api, ApiError } from '../../services/api';
 import type { Vacancy } from '../../types';
 import { useAuth } from '../../auth/AuthContext';
@@ -31,7 +32,7 @@ export default function MyVacancies() {
 
   return (
     <IonPage>
-      <IonHeader><IonToolbar><IonTitle>Mis vacantes</IonTitle></IonToolbar></IonHeader>
+      <PageHeader title="Mis vacantes" />
       <IonContent>
         <IonRefresher slot="fixed" onIonRefresh={async e => { await load(); e.detail.complete(); }}>
           <IonRefresherContent />

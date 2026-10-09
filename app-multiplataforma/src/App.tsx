@@ -9,12 +9,17 @@ import {
   personOutline, peopleOutline,
 } from 'ionicons/icons';
 import { AuthProvider, useAuth } from './auth/AuthContext';
+import AppMenu from './components/AppMenu';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 import Vacancies from './pages/candidate/Vacancies';
 import Applications from './pages/candidate/Applications';
+import MyProcess from './pages/candidate/MyProcess';
 import MyVacancies from './pages/company/MyVacancies';
 import CandidateSearch from './pages/company/CandidateSearch';
+import Deliveries from './pages/company/Deliveries';
 import Messages from './pages/Messages';
+import News from './pages/News';
 import Profile from './pages/Profile';
 
 import '@ionic/react/css/core.css';
@@ -41,52 +46,62 @@ const Shell: React.FC = () => {
   if (!user) return <Login />;
 
   const isCompany = user.primaryRole === 1;
+  const home = isCompany ? '/company/dashboard' : '/candidate/dashboard';
 
   return (
-    <IonTabs>
-      <IonRouterOutlet>
-        {/* Candidato */}
-        <Route path="/candidate/vacancies" element={<Vacancies />} />
-        <Route path="/candidate/applications" element={<Applications />} />
-        {/* Empresa */}
-        <Route path="/company/vacancies" element={<MyVacancies />} />
-        <Route path="/company/candidates" element={<CandidateSearch />} />
-        {/* Compartidas */}
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/" element={
-          <Navigate to={isCompany ? '/company/vacancies' : '/candidate/vacancies'} replace />
-        } />
-      </IonRouterOutlet>
+    <>
+      {/* Menu lateral con TODAS las secciones del rol - la tab bar solo lleva lo esencial */}
+      <AppMenu />
+      <div id="main" style={{ height: '100%' }}>
+      <IonTabs>
+        <IonRouterOutlet>
+          {/* Candidato */}
+          <Route path="/candidate/dashboard" element={<Dashboard />} />
+          <Route path="/candidate/vacancies" element={<Vacancies />} />
+          <Route path="/candidate/applications" element={<Applications />} />
+          <Route path="/candidate/process" element={<MyProcess />} />
+          {/* Empresa */}
+          <Route path="/company/dashboard" element={<Dashboard />} />
+          <Route path="/company/vacancies" element={<MyVacancies />} />
+          <Route path="/company/candidates" element={<CandidateSearch />} />
+          <Route path="/company/deliveries" element={<Deliveries />} />
+          {/* Compartidas */}
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/" element={<Navigate to={home} replace />} />
+        </IonRouterOutlet>
 
-      <IonTabBar slot="bottom">
-        {isCompany ? (
-          <>
-            <IonTabButton tab="company-vacancies" href="/company/vacancies">
-              <IonIcon icon={briefcaseOutline} /><IonLabel>Vacantes</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="company-candidates" href="/company/candidates">
-              <IonIcon icon={peopleOutline} /><IonLabel>Candidatos</IonLabel>
-            </IonTabButton>
-          </>
-        ) : (
-          <>
-            <IonTabButton tab="candidate-vacancies" href="/candidate/vacancies">
-              <IonIcon icon={briefcaseOutline} /><IonLabel>Vacantes</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="candidate-applications" href="/candidate/applications">
-              <IonIcon icon={documentTextOutline} /><IonLabel>Postulaciones</IonLabel>
-            </IonTabButton>
-          </>
-        )}
-        <IonTabButton tab="messages" href="/messages">
-          <IonIcon icon={mailOutline} /><IonLabel>Mensajes</IonLabel>
-        </IonTabButton>
-        <IonTabButton tab="profile" href="/profile">
-          <IonIcon icon={personOutline} /><IonLabel>Perfil</IonLabel>
-        </IonTabButton>
-      </IonTabBar>
-    </IonTabs>
+        <IonTabBar slot="bottom">
+          {/* OJO: los IonTabButton deben ser hijos DIRECTOS del IonTabBar - un
+              Fragment aqui hace que no se registren y no se rendericen. */}
+          {isCompany
+            ? [
+                <IonTabButton key="cv" tab="vacancies" href="/company/vacancies">
+                  <IonIcon icon={briefcaseOutline} /><IonLabel>Vacantes</IonLabel>
+                </IonTabButton>,
+                <IonTabButton key="cc" tab="candidates" href="/company/candidates">
+                  <IonIcon icon={peopleOutline} /><IonLabel>Candidatos</IonLabel>
+                </IonTabButton>,
+              ]
+            : [
+                <IonTabButton key="v" tab="vacancies" href="/candidate/vacancies">
+                  <IonIcon icon={briefcaseOutline} /><IonLabel>Vacantes</IonLabel>
+                </IonTabButton>,
+                <IonTabButton key="a" tab="applications" href="/candidate/applications">
+                  <IonIcon icon={documentTextOutline} /><IonLabel>Postulaciones</IonLabel>
+                </IonTabButton>,
+              ]}
+          <IonTabButton tab="messages" href="/messages">
+            <IonIcon icon={mailOutline} /><IonLabel>Mensajes</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="profile" href="/profile">
+            <IonIcon icon={personOutline} /><IonLabel>Perfil</IonLabel>
+          </IonTabButton>
+        </IonTabBar>
+      </IonTabs>
+      </div>
+    </>
   );
 };
 

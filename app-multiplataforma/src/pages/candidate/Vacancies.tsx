@@ -5,6 +5,7 @@ import {
   IonNote, IonPage, IonRefresher, IonRefresherContent, IonSearchbar, IonSpinner,
   IonTitle, IonToolbar, useIonAlert, useIonLoading, useIonViewWillEnter,
 } from '@ionic/react';
+import PageHeader from '../../components/PageHeader';
 import { api, ApiError } from '../../services/api';
 import type { Application, Vacancy, VacancySearchResult } from '../../types';
 import { useAuth } from '../../auth/AuthContext';
@@ -59,15 +60,12 @@ export default function Vacancies() {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Vacantes</IonTitle>
-        </IonToolbar>
+      <PageHeader title="Vacantes">
         <IonToolbar>
           <IonSearchbar placeholder="Puesto, empresa o palabra clave" debounce={400}
             value={query} onIonInput={e => { setQuery(e.detail.value ?? ''); void load(); }} />
         </IonToolbar>
-      </IonHeader>
+      </PageHeader>
       <IonContent>
         <IonRefresher slot="fixed" onIonRefresh={async e => { await load(); e.detail.complete(); }}>
           <IonRefresherContent />
