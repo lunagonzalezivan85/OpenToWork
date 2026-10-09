@@ -114,6 +114,14 @@ public class PTCandidate : BaseEntity
     [MaxLength(20)]
     public string? VisibilityConsentVersion { get; set; }
 
+    /// <summary>Visibilidad real ante empresas: IsProfilePublic (que vale true por defecto en la BD)
+    /// solo cuenta con consentimiento registrado y no retirado. Es lo que se ensena en el perfil y
+    /// en el admin: asi la casilla no sale premarcada (revision Dsiezar 9-Oct). Las consultas EF
+    /// (busqueda, matches) repiten la misma condicion porque esto no se traduce a SQL.</summary>
+    [NotMapped]
+    public bool IsVisibleToCompanies => IsProfilePublic && VisibilityConsentAt != null
+        && (VisibilityConsentRevokedAt == null || VisibilityConsentRevokedAt < VisibilityConsentAt);
+
     public DateTime? CompletedAt { get; set; }
 
     public virtual ICollection<PTCandidateSkill> CandidateSkills { get; set; } = new List<PTCandidateSkill>();

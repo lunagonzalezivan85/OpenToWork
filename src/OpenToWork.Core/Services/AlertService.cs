@@ -67,7 +67,7 @@ public class AlertService : IAlertService
         }
 
         // Profile not public alert
-        if (!candidate.IsProfilePublic)
+        if (!candidate.IsVisibleToCompanies)
         {
             alerts.Add(new AlertDto
             {

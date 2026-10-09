@@ -144,12 +144,16 @@ public class ProfileService : IProfileService
         // como publico junto al texto informado del formulario registra cuando y con que version
         // se acepto; desmarcarlo guarda la revocacion. Sin VisibilityConsentAt el candidato no
         // entra en busquedas ni matches aunque IsProfilePublic sea true.
+        // Revision Dsiezar 9-Oct: se compara con la visibilidad REAL (IsVisibleToCompanies), no con
+        // IsProfilePublic, que vale true por defecto. Antes, guardar el perfil con la casilla tal
+        // como venia registraba un consentimiento que el candidato no habia dado, y desmarcarla sin
+        // haber consentido anotaba una "retirada" falsa.
         if (dto.IsProfilePublic.HasValue)
         {
             var now = DateTime.UtcNow;
             if (dto.IsProfilePublic.Value)
             {
-                if (candidate.VisibilityConsentAt == null || !candidate.IsProfilePublic)
+                if (!candidate.IsVisibleToCompanies)
                 {
                     candidate.VisibilityConsentAt = now;
                     candidate.VisibilityConsentRevokedAt = null;
@@ -157,10 +161,11 @@ public class ProfileService : IProfileService
                 }
                 candidate.IsProfilePublic = true;
             }
-            else if (candidate.IsProfilePublic)
+            else
             {
+                if (candidate.IsVisibleToCompanies)
+                    candidate.VisibilityConsentRevokedAt = now;
                 candidate.IsProfilePublic = false;
-                candidate.VisibilityConsentRevokedAt = now;
             }
         }
         if (dto.CvUrl != null) candidate.CvUrl = dto.CvUrl;
@@ -580,7 +585,7 @@ public class ProfileService : IProfileService
         PortfolioUrl = c.PortfolioUrl,
         Availability = c.Availability,
         WorkAuthorization = c.WorkAuthorization,
-        IsProfilePublic = c.IsProfilePublic,
+        IsProfilePublic = c.IsVisibleToCompanies,
         VisibilityConsentAt = c.VisibilityConsentAt,
         Experiences = CandidateHistoryOrder.Experiences(c.Experiences).Select(MapToExperienceDto).ToList(),
         Educations = CandidateHistoryOrder.Educations(c.Educations).Select(MapToEducationDto).ToList(),
