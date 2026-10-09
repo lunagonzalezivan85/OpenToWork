@@ -11,6 +11,13 @@ public class PTVacancy : BaseEntity
     [ForeignKey("PT_CompanyId")]
     public virtual PTCompany Company { get; set; } = null!;
 
+    /// <summary>Referencia publica de la vacante (formato TD-XXXXXXXX, igual que
+    /// PTVerificationRequest.ReferenceNumber). Va en la URL publica /vacancy/{code} en
+    /// vez del Guid interno.</summary>
+    [Required]
+    [MaxLength(20)]
+    public string ReferenceCode { get; set; } = "";
+
     [Required]
     [MaxLength(200)]
     public string Title { get; set; } = string.Empty;
@@ -25,6 +32,16 @@ public class PTVacancy : BaseEntity
 
     [MaxLength(200)]
     public string? Location { get; set; }
+
+    /// <summary>Coordenadas geocodificadas de Location (Nominatim/OSM). Nullable: vacantes
+    /// antiguas o ubicaciones no resueltas quedan fuera de la busqueda por radio.</summary>
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    /// <summary>Ultimo intento de geocodificacion (exito o fallo). El backfill solo reintenta
+    /// filas con GeocodedAt = null para no machacar Nominatim con ubicaciones no resolubles.</summary>
+    public DateTime? GeocodedAt { get; set; }
 
     public int ContractType { get; set; } = 0;
 

@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.WebAssembly.Http;
 using OpenToWork.Shared.DTOs;
 using OpenToWork.Shared.Enums;
 using OpenToWork.SharedUI.Services;
@@ -41,9 +42,19 @@ public class ApiAuthService
         _logger = logger;
     }
 
+    // Las llamadas que emiten o consumen la cookie td_refresh necesitan credentials:include para
+    // que el navegador la guarde y la envie en origen cruzado de desarrollo (:5147 -> :5100)
+    // (auditoria 08-Oct H-04: el refresh token ya no viaja ni vive en el JS).
+    private Task<HttpResponseMessage> PostWithCredentialsAsync<T>(string url, T payload)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(payload) };
+        request.SetBrowserRequestCredentials(BrowserRequestCredentials.Include);
+        return _httpClient.SendAsync(request);
+    }
+
     public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/login", dto);
+        var response = await PostWithCredentialsAsync("api/auth/login", dto);
         if (!response.IsSuccessStatusCode) return null;
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         if (result != null) await PersistAuthAsync(result);
@@ -52,7 +63,7 @@ public class ApiAuthService
 
     public async Task<RegisterResult> RegisterAsync(RegisterDto dto)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/register", dto);
+        var response = await PostWithCredentialsAsync("api/auth/register", dto);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadAsStringAsync();
@@ -123,18 +134,22 @@ public class ApiAuthService
         }
     }
 
-    public async Task<AuthResponseDto?> RefreshTokenAsync(string refreshToken)
+    /// <summary>Renueva la sesion con la cookie td_refresh (HttpOnly). Devuelve la respuesta si
+    /// hubo sesion viva, null si no hay cookie o esta revocada/caducada.</summary>
+    public async Task<AuthResponseDto?> TryRefreshSessionAsync()
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/refresh", new RefreshTokenDto { RefreshToken = refreshToken });
+        var response = await PostWithCredentialsAsync("api/auth/refresh", new { });
         if (!response.IsSuccessStatusCode) return null;
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         if (result != null) await PersistAuthAsync(result);
         return result;
     }
 
-    public async Task<bool> RevokeTokenAsync(string refreshToken)
+    /// <summary>Revoca la sesion actual: el servidor lee la cookie td_refresh y la borra.</summary>
+    public async Task<bool> RevokeSessionAsync()
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/revoke", new RefreshTokenDto { RefreshToken = refreshToken });
+        await SetAuthHeaderAsync();
+        var response = await PostWithCredentialsAsync("api/auth/revoke", new { });
         return response.IsSuccessStatusCode;
     }
 
@@ -228,7 +243,7 @@ public class ApiAuthService
 
     public async Task<AuthResponseDto?> GoogleExchangeAsync(string code)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/google/exchange", new GoogleExchangeDto { Code = code });
+        var response = await PostWithCredentialsAsync("api/auth/google/exchange", new GoogleExchangeDto { Code = code });
         if (!response.IsSuccessStatusCode) return null;
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         if (result != null) await PersistAuthAsync(result);
@@ -243,7 +258,7 @@ public class ApiAuthService
 
     public async Task<RegisterResult> GoogleSignupAsync(GoogleSignupDto dto)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/google/signup", dto);
+        var response = await PostWithCredentialsAsync("api/auth/google/signup", dto);
         if (!response.IsSuccessStatusCode)
         {
             var error = await response.Content.ReadAsStringAsync();
@@ -315,6 +330,11 @@ public class ApiAuthService
         if (search.ExperienceLevel.HasValue) query += $"&ExperienceLevel={search.ExperienceLevel}";
         if (search.EnglishLevel.HasValue) query += $"&EnglishLevel={search.EnglishLevel}";
         if (search.SalaryMin.HasValue) query += $"&SalaryMin={search.SalaryMin}";
+        if (search.SalaryMax.HasValue) query += $"&SalaryMax={search.SalaryMax}";
+        if (!string.IsNullOrEmpty(search.SortBy)) query += $"&SortBy={Uri.EscapeDataString(search.SortBy)}";
+        if (search.Latitude.HasValue) query += $"&Latitude={search.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        if (search.Longitude.HasValue) query += $"&Longitude={search.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        if (search.RadiusKm.HasValue) query += $"&RadiusKm={search.RadiusKm}";
 
         var response = await _httpClient.GetAsync(query);
         if (!response.IsSuccessStatusCode) return (new(), 0);
@@ -323,10 +343,25 @@ public class ApiAuthService
         return (result?.Items ?? new(), result?.Total ?? 0);
     }
 
-    public async Task<VacancyDto?> GetPermanentVacancyAsync(Guid id)
+    /// <summary>"Hacer Match": recalcula la compatibilidad del candidato contra todas las
+    /// vacantes publicadas y devuelve las que tienen match (MatchPercentage lleno), ordenadas
+    /// por porcentaje. Null si 401/403 o error (no es candidato logueado).</summary>
+    public async Task<List<VacancyDto>?> GetMyMatchesAsync()
     {
         await SetAuthHeaderAsync();
-        var response = await _httpClient.GetAsync($"api/permanentvacancies/{id}");
+        var response = await _httpClient.PostAsync("api/permanentvacancies/my-matches", null);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<List<VacancyDto>>();
+    }
+
+    /// <summary>idOrCode: Guid interno o referencia publica TD-XXXXXXXX.</summary>
+    public Task<VacancyDto?> GetPermanentVacancyAsync(Guid id) => GetPermanentVacancyAsync(id.ToString());
+
+    /// <summary>idOrCode: Guid interno o referencia publica TD-XXXXXXXX.</summary>
+    public async Task<VacancyDto?> GetPermanentVacancyAsync(string idOrCode)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/permanentvacancies/{Uri.EscapeDataString(idOrCode)}");
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<VacancyDto>();
     }
@@ -818,7 +853,9 @@ public class ApiAuthService
     private async Task PersistAuthAsync(AuthResponseDto auth)
     {
         await _localStorage.SetItemAsync("opentowork-token", auth.Token);
-        await _localStorage.SetItemAsync("opentowork-refresh-token", auth.RefreshToken);
+        // El refresh token vive en la cookie HttpOnly td_refresh; no se guarda en localStorage
+        // (auditoria 08-Oct H-04). Se borra por si quedo uno viejo de antes del cambio.
+        await _localStorage.RemoveItemAsync("opentowork-refresh-token");
         await _localStorage.SetItemAsync("opentowork-user-id", auth.User.Id.ToString());
         await _localStorage.SetItemAsync("opentowork-role", auth.User.PrimaryRole.ToString());
         await _localStorage.SetItemAsync("opentowork-theme", auth.User.Theme ?? "navy");
@@ -961,7 +998,6 @@ public class ApiAuthService
     }
 
     public async Task<string?> GetTokenAsync() => await _localStorage.GetItemAsync("opentowork-token");
-    public async Task<string?> GetRefreshTokenAsync() => await _localStorage.GetItemAsync("opentowork-refresh-token");
     public async Task<string?> GetUserIdAsync() => await _localStorage.GetItemAsync("opentowork-user-id");
     public async Task<string?> GetUserRoleAsync() => await _localStorage.GetItemAsync("opentowork-role");
 

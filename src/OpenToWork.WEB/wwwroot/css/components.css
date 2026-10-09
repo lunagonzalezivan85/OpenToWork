@@ -3835,6 +3835,13 @@ a.cv-contact-item:hover {
     font-weight: 700;
 }
 
+.vacancy-detail-ref {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    margin-top: var(--space-xs);
+}
+
 .vacancy-detail-section {
     padding-top: var(--space-lg);
     border-top: 1px solid var(--border-color);

@@ -1,0 +1,211 @@
+@inject IJSRuntime JS
+@inject LanguageService Lang
+@implements IAsyncDisposable
+
+@if (Visible)
+{
+    <div class="map-modal-backdrop" @onclick="Cancel">
+        <div class="map-modal" role="dialog" aria-modal="true" aria-label="@Lang.T("vacancies.map.title")" @onclick:stopPropagation>
+            <div class="map-modal-header">
+                <h3 class="map-modal-title">@Lang.T("vacancies.map.title")</h3>
+                <button type="button" class="map-modal-close" @onclick="Cancel" aria-label="@Lang.T("common.buttons.close")">×</button>
+            </div>
+
+            <div class="map-modal-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input type="text" class="map-modal-search-input" @bind="_query" @bind:event="oninput" @bind:after="OnQueryChanged"
+                       placeholder="@Lang.T("vacancies.map.search")" />
+            </div>
+            @if (_results.Count > 0)
+            {
+                <div class="map-modal-results">
+                    @foreach (var r in _results)
+                    {
+                        <button type="button" class="map-modal-result" @onclick="() => SelectResult(r)">
+                            <strong>@r.Label</strong>
+                            <span>@r.Full</span>
+                        </button>
+                    }
+                </div>
+            }
+
+            @if (_mapFailed)
+            {
+                <div class="map-modal-canvas map-modal-canvas--error">
+                    <p>@Lang.T("vacancies.map.unavailable")</p>
+                </div>
+            }
+            else
+            {
+                <div id="@MapElementId" class="map-modal-canvas"></div>
+            }
+
+            <div class="map-modal-footer">
+                <div class="map-modal-radius">
+                    <label for="map-radius">@Lang.T("vacancies.map.radius")</label>
+                    <input id="map-radius" type="range" min="5" max="100" step="5"
+                           value="@_radiusKm" @oninput="OnRadiusInput" />
+                    <span class="map-modal-radius-value">@_radiusKm km</span>
+                </div>
+                <div class="map-modal-picked @( _hasPicked ? "" : "map-modal-picked--empty")">
+                    @if (_hasPicked)
+                    {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                        </svg>
+                        @_pickedLabel
+                    }
+                    else
+                    {
+                        @Lang.T("vacancies.map.hint")
+                    }
+                </div>
+                <div class="map-modal-actions">
+                    <button type="button" class="map-modal-btn map-modal-btn--ghost" @onclick="Cancel">@Lang.T("common.buttons.cancel")</button>
+                    <button type="button" class="map-modal-btn map-modal-btn--primary" disabled="@(!_hasPicked)" @onclick="Confirm">
+                        @Lang.T("vacancies.map.use")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private const string MapElementId = "location-map-canvas";
+    private const string DefaultStyleUrl = "https://tiles.openfreemap.org/styles/positron";
+
+    [Parameter] public EventCallback<LocationPickResult> OnPick { get; set; }
+
+    private bool Visible { get; set; }
+    private bool _hasPicked;
+    private double _pickedLat;
+    private double _pickedLng;
+    private string _pickedLabel = "";
+    private int _radiusKm = 25;
+    private string _query = "";
+    private List<SearchHit> _results = new();
+    private DotNetObjectReference<LocationMapPicker>? _dotNetRef;
+    private CancellationTokenSource? _searchCts;
+    private bool _mapInitialized;
+    private bool _mapFailed;
+
+    /// <summary>Abre el modal. Si se pasa una seleccion previa (lat/lng) el mapa centra ahi.</summary>
+    public async Task ShowAsync(double? lat, double? lng, int? radiusKm, string? label)
+    {
+        Visible = true;
+        _hasPicked = lat.HasValue && lng.HasValue;
+        _pickedLat = lat ?? 0;
+        _pickedLng = lng ?? 0;
+        _pickedLabel = label ?? "";
+        _radiusKm = radiusKm is > 0 ? radiusKm.Value : 25;
+        _query = "";
+        _results = new();
+        _mapInitialized = false;
+        _mapFailed = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Visible && !_mapInitialized)
+        {
+            _mapInitialized = true; // evita doble init por rerenders antes de que cargue el JS
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeAsync<bool>("otwMap.init", MapElementId,
+                    _hasPicked ? new { lat = _pickedLat, lng = _pickedLng } : null,
+                    11, DefaultStyleUrl, _radiusKm, _dotNetRef);
+                await JS.InvokeVoidAsync("otwMap.setRadius", _radiusKm);
+            }
+            catch
+            {
+                // WebGL bloqueado/no disponible u otro fallo JS: mostrar mensaje en vez
+                // de propagar la excepcion (una no capturada en lifecycle tira el WASM).
+                _mapFailed = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void OnMapPicked(double lat, double lng, string label)
+    {
+        _pickedLat = lat;
+        _pickedLng = lng;
+        _hasPicked = true;
+        if (!string.IsNullOrWhiteSpace(label)) _pickedLabel = label;
+        StateHasChanged();
+    }
+
+    private async Task SelectResult(SearchHit hit)
+    {
+        _results = new();
+        _query = hit.Label;
+        _pickedLabel = hit.Label;
+        _pickedLat = hit.Lat;
+        _pickedLng = hit.Lng;
+        _hasPicked = true;
+        await JS.InvokeVoidAsync("otwMap.goTo", hit.Lat, hit.Lng, _radiusKm);
+    }
+
+    private async Task OnQueryChanged()
+    {
+        _searchCts?.Cancel();
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+        try
+        {
+            await Task.Delay(350, token);
+            if (token.IsCancellationRequested) return;
+            var hits = await JS.InvokeAsync<List<SearchHit>>("otwMap.search", _query, "");
+            if (token.IsCancellationRequested) return;
+            _results = hits;
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private async Task OnRadiusInput(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var km))
+        {
+            _radiusKm = km;
+            await JS.InvokeVoidAsync("otwMap.setRadius", km);
+        }
+    }
+
+    private async Task Confirm()
+    {
+        if (!_hasPicked) return;
+        Visible = false;
+        await JS.InvokeVoidAsync("otwMap.destroy");
+        await OnPick.InvokeAsync(new LocationPickResult(_pickedLat, _pickedLng, _radiusKm, _pickedLabel));
+    }
+
+    private async Task Cancel()
+    {
+        Visible = false;
+        await JS.InvokeVoidAsync("otwMap.destroy");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { if (Visible) await JS.InvokeVoidAsync("otwMap.destroy"); }
+        catch { /* dispose: el JS puede no estar disponible al cerrar la app */ }
+        _dotNetRef?.Dispose();
+    }
+
+    // Publica: System.Text.Json solo deserializa tipos publicos en WASM.
+    public sealed class SearchHit
+    {
+        public string Label { get; set; } = "";
+        public string Full { get; set; } = "";
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+    }
+
+    public sealed record LocationPickResult(double Lat, double Lng, int RadiusKm, string Label);
+}

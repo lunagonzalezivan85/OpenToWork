@@ -191,9 +191,11 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PTVacancy>(e =>
         {
             e.ToTable("PT_Vacancies");
+            e.HasIndex(v => v.ReferenceCode).IsUnique();
             e.HasIndex(v => new { v.PT_CompanyId, v.IsDeleted });
             e.HasIndex(v => new { v.Status, v.IsDeleted });
             e.HasIndex(v => new { v.Location, v.Status, v.IsDeleted });
+            e.HasIndex(v => new { v.Latitude, v.Longitude, v.Status, v.IsDeleted });
             e.HasIndex(v => new { v.Category, v.Status, v.IsDeleted });
             e.HasIndex(v => new { v.WorkMode, v.Status, v.IsDeleted });
             e.Property(v => v.Status).HasDefaultValue(0);

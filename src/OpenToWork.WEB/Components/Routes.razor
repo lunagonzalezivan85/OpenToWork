@@ -1,6 +1,52 @@
-﻿<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
-</Router>
+﻿@inject LanguageService Lang
+
+@* Mientras carga el idioma se muestra el mismo splash que index.html (clases .boot-splash):
+   la transicion es invisible y ningun componente renderiza claves sin traducir (common.*). *@
+@if (!_langReady)
+{
+    <div class="boot-splash">
+        <div class="boot-splash-nav">
+            <div class="boot-splash-logo">TD</div>
+            <div class="boot-splash-nav-bars"><span></span><span></span><span></span></div>
+        </div>
+        <div class="boot-splash-hero">
+            <div class="boot-splash-line boot-splash-line--title"></div>
+            <div class="boot-splash-line boot-splash-line--sub"></div>
+            <div class="boot-splash-search"></div>
+        </div>
+        <div class="boot-splash-cards">
+            <div class="boot-splash-card"></div>
+            <div class="boot-splash-card"></div>
+            <div class="boot-splash-card"></div>
+        </div>
+    </div>
+}
+else
+{
+    @* Guard de rutas (auditoria 08-Oct H-29/H-30): AuthorizeRouteView bloquea las paginas
+       con [Authorize] para anonimos y con Roles= para el rol equivocado. La autoridad es
+       siempre la API (401/403); esto solo evita renderizar UI privada sin sesion. *@
+    <CascadingAuthenticationState>
+        <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+            <Found Context="routeData">
+                <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                    <NotAuthorized>
+                        <RedirectToLogin />
+                    </NotAuthorized>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="routeData" Selector="h1" />
+            </Found>
+        </Router>
+    </CascadingAuthenticationState>
+}
+
+@code {
+    private bool _langReady;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        _langReady = true;
+    }
+}

@@ -1,0 +1,22 @@
+@page "/logout"
+@layout OpenToWork.WEB.Components.Layout.AuthLayout
+@using OpenToWork.SharedUI.Services
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject AppAuthStateProvider AuthProvider
+@inject NavigationManager Nav
+
+@code {
+    /// <summary>Ruta de cierre de sesion real (auditoria 08-Oct H-31: antes no hacia nada):
+    /// revoca el refresh token en el servidor (cookie td_refresh, HttpOnly), limpia el storage
+    /// local y avisa al estado de autenticacion para que el guard bloquee las paginas privadas.</summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try { await AuthApi.RevokeSessionAsync(); }
+        catch { /* revocar es best-effort; el cierre local igual procede */ }
+
+        await AuthApi.ClearAuthAsync();
+        AuthProvider.NotifyAuthenticationStateChanged();
+        Nav.NavigateTo("/login");
+    }
+}

@@ -126,6 +126,26 @@ public class CompatibilityService : ICompatibilityService
         return candidateIds.Count;
     }
 
+    public async Task<int> CalculateMatchesForCandidateAsync(Guid candidateId)
+    {
+        var candidateExists = await _context.PT_Candidates.AnyAsync(c => c.Id == candidateId && !c.IsDeleted);
+        if (!candidateExists) throw new InvalidOperationException("Candidate not found");
+
+        // Solo vacantes publicadas (Status == 1, mismo criterio que la busqueda publica):
+        // match contra borradores o cerradas no tiene sentido para el candidato.
+        var vacancyIds = await _context.PT_Vacancies
+            .Where(v => !v.IsDeleted && v.Status == 1)
+            .Select(v => v.Id)
+            .ToListAsync();
+
+        foreach (var vacancyId in vacancyIds)
+        {
+            await CalculateJobMatch(candidateId, vacancyId);
+        }
+
+        return vacancyIds.Count;
+    }
+
     public async Task<List<JobMatchDto>> GenerateShortlist(Guid vacancyId, int? limit = null)
     {
         var take = limit is > 0 ? limit.Value : DefaultShortlistLimit;

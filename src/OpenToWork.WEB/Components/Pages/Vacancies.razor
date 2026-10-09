@@ -34,7 +34,7 @@
                     </svg>
                     <input type="text" class="cmd-search-location-input" @bind="SearchLocation"
                            placeholder="@Lang.T("common.home.locationPlaceholder")"
-                           @onkeydown="HandleSearchKeyDown" @oninput="OnSearchInput" />
+                           @onkeydown="HandleSearchKeyDown" @oninput="OnLocationInput" />
                 </div>
                 <button class="cmd-search-btn" @onclick="HandleSearchClick">
                     <span>@Lang.T("common.buttons.search")</span>
@@ -74,7 +74,7 @@
                     @TotalResults @Lang.T("vacancies.results")
                 </span>
             }
-            @if (!string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory))
+            @if (!string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory) || HasGeo || ActiveContractType != null || ActiveWorkMode != null || ActiveExperience != null || ActiveSalaryMin != null || ActiveSort != "recent")
             {
                 <button class="vacancies-clear-all" @onclick="ClearAllFilters">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -87,10 +87,89 @@
     </div>
 </div>
 
+<!-- Filter toolbar -->
+<div class="vacancies-toolbar">
+    <div class="vacancies-toolbar-filters">
+        <div class="vacancies-filter">
+            <label class="vacancies-filter-label">@Lang.T("vacancies.filterBar.contractType")</label>
+            <select class="vacancies-filter-select" value="@ActiveContractType" @onchange="OnContractTypeChanged">
+                <option value="">@Lang.T("vacancies.filterBar.allContract")</option>
+                <option value="0">@Lang.T("vacancies.contract.fullTime")</option>
+                <option value="1">@Lang.T("vacancies.contract.partTime")</option>
+                <option value="2">@Lang.T("vacancies.contract.temporary")</option>
+                <option value="3">@Lang.T("vacancies.contract.remote")</option>
+            </select>
+        </div>
+        <div class="vacancies-filter">
+            <label class="vacancies-filter-label">@Lang.T("vacancies.filterBar.workMode")</label>
+            <select class="vacancies-filter-select" value="@ActiveWorkMode" @onchange="OnWorkModeChanged">
+                <option value="">@Lang.T("vacancies.filterBar.allMode")</option>
+                <option value="0">@Lang.T("vacancies.workMode.onSite")</option>
+                <option value="1">@Lang.T("vacancies.workMode.hybrid")</option>
+                <option value="2">@Lang.T("vacancies.workMode.remote")</option>
+            </select>
+        </div>
+        <div class="vacancies-filter">
+            <label class="vacancies-filter-label">@Lang.T("vacancies.filterBar.experience")</label>
+            <select class="vacancies-filter-select" value="@ActiveExperience" @onchange="OnExperienceChanged">
+                <option value="">@Lang.T("vacancies.filterBar.allExperience")</option>
+                <option value="0">@Lang.T("vacancies.experience.none")</option>
+                <option value="1">@Lang.T("vacancies.experience.lessThanOne")</option>
+                <option value="2">@Lang.T("vacancies.experience.oneToThree")</option>
+                <option value="3">@Lang.T("vacancies.experience.threeToFive")</option>
+                <option value="4">@Lang.T("vacancies.experience.moreThanFive")</option>
+            </select>
+        </div>
+        <div class="vacancies-filter vacancies-filter--salary">
+            <label class="vacancies-filter-label">@Lang.T("vacancies.filterBar.salaryMin")</label>
+            <input type="number" class="vacancies-filter-select" min="0" step="50" inputmode="numeric"
+                   value="@ActiveSalaryMin" @onchange="OnSalaryMinChanged" />
+        </div>
+        <div class="vacancies-filter">
+            <label class="vacancies-filter-label">@Lang.T("vacancies.filterBar.sortBy")</label>
+            <select class="vacancies-filter-select" value="@ActiveSort" @onchange="OnSortChanged">
+                <option value="recent">@Lang.T("vacancies.sort.recent")</option>
+                <option value="oldest">@Lang.T("vacancies.sort.oldest")</option>
+                <option value="salaryDesc">@Lang.T("vacancies.sort.salaryDesc")</option>
+                <option value="salaryAsc">@Lang.T("vacancies.sort.salaryAsc")</option>
+                @if (HasGeo)
+                {
+                    <option value="distance">@Lang.T("vacancies.sort.distance")</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="vacancies-toolbar-actions">
+        <button type="button" class="vacancies-map-btn @(HasGeo ? "vacancies-map-btn--active" : "")" @onclick="OpenMap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            @Lang.T("vacancies.filterBar.map")
+        </button>
+        @if (IsCandidate)
+        {
+            <button type="button" class="vacancies-map-btn vacancies-match-btn @(IsMatchMode ? "vacancies-map-btn--active" : "")"
+                    @onclick="RunMatch" disabled="@IsLoading">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" />
+                </svg>
+                @Lang.T("vacancies.filterBar.match")
+            </button>
+        }
+    </div>
+</div>
+
 <!-- Active filters -->
-@if (!string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory))
+@if (IsMatchMode || !string.IsNullOrEmpty(ActiveQuery) || !string.IsNullOrEmpty(ActiveLocation) || !string.IsNullOrEmpty(ActiveCategory) || HasGeo || ActiveContractType != null || ActiveWorkMode != null || ActiveExperience != null || ActiveSalaryMin != null)
 {
     <div class="vacancies-active-filters">
+        @if (IsMatchMode)
+        {
+            <span class="vacancies-filter-tag vacancies-filter-tag--geo">
+                @Lang.T("vacancies.matchTag")
+                <button @onclick="ExitMatchMode" class="vacancies-filter-remove">×</button>
+            </span>
+        }
         @if (!string.IsNullOrEmpty(ActiveQuery))
         {
             <span class="vacancies-filter-tag">
@@ -105,11 +184,46 @@
                 <button @onclick="ClearLocation" class="vacancies-filter-remove">×</button>
             </span>
         }
+        @if (HasGeo)
+        {
+            <span class="vacancies-filter-tag vacancies-filter-tag--geo">
+                @ActiveRadiusKm km
+                <button @onclick="ClearGeo" class="vacancies-filter-remove">×</button>
+            </span>
+        }
         @if (!string.IsNullOrEmpty(ActiveCategory))
         {
             <span class="vacancies-filter-tag">
                 @GetCategoryLabel(ActiveCategory)
                 <button @onclick="ClearCategory" class="vacancies-filter-remove">×</button>
+            </span>
+        }
+        @if (ActiveContractType != null)
+        {
+            <span class="vacancies-filter-tag">
+                @GetContractLabel(ActiveContractType.Value)
+                <button @onclick="() => ClearFilter(nameof(ActiveContractType))" class="vacancies-filter-remove">×</button>
+            </span>
+        }
+        @if (ActiveWorkMode != null)
+        {
+            <span class="vacancies-filter-tag">
+                @GetWorkModeLabel(ActiveWorkMode.Value)
+                <button @onclick="() => ClearFilter(nameof(ActiveWorkMode))" class="vacancies-filter-remove">×</button>
+            </span>
+        }
+        @if (ActiveExperience != null)
+        {
+            <span class="vacancies-filter-tag">
+                @GetExperienceLabel(ActiveExperience.Value)
+                <button @onclick="() => ClearFilter(nameof(ActiveExperience))" class="vacancies-filter-remove">×</button>
+            </span>
+        }
+        @if (ActiveSalaryMin != null)
+        {
+            <span class="vacancies-filter-tag">
+                ≥ @ActiveSalaryMin €
+                <button @onclick="() => ClearFilter(nameof(ActiveSalaryMin))" class="vacancies-filter-remove">×</button>
             </span>
         }
     </div>
@@ -120,10 +234,10 @@
     @if (IsLoading)
     {
         <div class="home-vacancies-loading">
-            <div class="home-skeleton-card"></div>
-            <div class="home-skeleton-card"></div>
-            <div class="home-skeleton-card"></div>
-            <div class="home-skeleton-card"></div>
+            @for (var i = 0; i < 6; i++)
+            {
+                <VacancySkeletonCard />
+            }
         </div>
     }
     else if (!VacancyList.Any())
@@ -132,7 +246,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
                 <path d="M21 21l-4.35-4.35M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" />
             </svg>
-            <p>@Lang.T("vacancies.noResults")</p>
+            <p>@(IsMatchMode ? Lang.T("vacancies.matchEmpty") : Lang.T("vacancies.noResults"))</p>
         </div>
     }
     else
@@ -144,7 +258,7 @@
             }
         </div>
 
-        @if (TotalPages > 1)
+        @if (!IsMatchMode && TotalPages > 1)
         {
             <div class="vacancies-pagination">
                 @for (int i = 1; i <= TotalPages; i++)
@@ -158,6 +272,8 @@
     }
 </div>
 
+<LocationMapPicker @ref="_mapPicker" OnPick="HandleMapPick" />
+
 @code {
     private List<VacancyDto> VacancyList { get; set; } = new();
     private string ActiveQuery { get; set; } = "";
@@ -165,11 +281,25 @@
     private string ActiveCategory { get; set; } = "";
     private string SearchKeyword { get; set; } = "";
     private string SearchLocation { get; set; } = "";
+    private int? ActiveContractType { get; set; }
+    private int? ActiveWorkMode { get; set; }
+    private int? ActiveExperience { get; set; }
+    private decimal? ActiveSalaryMin { get; set; }
+    private string ActiveSort { get; set; } = "recent";
+    private double? ActiveLat { get; set; }
+    private double? ActiveLng { get; set; }
+    private int? ActiveRadiusKm { get; set; }
+    private bool HasGeo => ActiveLat.HasValue && ActiveLng.HasValue && ActiveRadiusKm is > 0;
     private int CurrentPage { get; set; } = 1;
     private int TotalResults { get; set; }
     private int TotalPages => (int)Math.Ceiling((double)TotalResults / 12);
     private bool IsLoading { get; set; }
+    private bool IsCandidate { get; set; }
+    // Match mode: la grilla muestra mis coincidencias (no la busqueda); cualquier
+    // busqueda/filtro normal sale del modo (LoadVacancies lo apaga).
+    private bool IsMatchMode { get; set; }
     private ElementReference SearchInputRef;
+    private LocationMapPicker? _mapPicker;
 
     protected override async Task OnInitializedAsync()
     {
@@ -181,9 +311,20 @@
         if (query["keyword"] is { } kw) ActiveQuery = kw;
         if (query["location"] is { } lc) ActiveLocation = lc;
         if (query["category"] is { } ct) ActiveCategory = ct;
+        if (query["sort"] is { } st) ActiveSort = st;
+        if (int.TryParse(query["contract"], out var ct2)) ActiveContractType = ct2;
+        if (int.TryParse(query["mode"], out var wm)) ActiveWorkMode = wm;
+        if (int.TryParse(query["exp"], out var xp)) ActiveExperience = xp;
+        if (decimal.TryParse(query["smin"], System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var sm)) ActiveSalaryMin = sm;
+        if (double.TryParse(query["lat"], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var la)) ActiveLat = la;
+        if (double.TryParse(query["lng"], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var ln)) ActiveLng = ln;
+        if (int.TryParse(query["radius"], out var rk)) ActiveRadiusKm = rk;
 
         SearchKeyword = ActiveQuery;
         SearchLocation = ActiveLocation;
+
+        // El boton "Hacer Match" solo existe para candidatos (rol 0); empresas/anonimos no.
+        IsCandidate = (await AuthApi.GetUserRoleAsync()) == "0";
 
         await LoadVacancies();
     }
@@ -215,6 +356,7 @@
     private async Task LoadVacancies()
     {
         IsLoading = true;
+        IsMatchMode = false;
         try
         {
             var dto = new SearchPermanentVacancyDto
@@ -222,6 +364,14 @@
                 Query = string.IsNullOrEmpty(ActiveQuery) ? null : ActiveQuery,
                 Location = string.IsNullOrEmpty(ActiveLocation) ? null : ActiveLocation,
                 Category = string.IsNullOrEmpty(ActiveCategory) ? null : ActiveCategory,
+                ContractType = ActiveContractType,
+                WorkMode = ActiveWorkMode,
+                ExperienceLevel = ActiveExperience,
+                SalaryMin = ActiveSalaryMin,
+                SortBy = ActiveSort == "recent" ? null : ActiveSort,
+                Latitude = ActiveLat,
+                Longitude = ActiveLng,
+                RadiusKm = ActiveRadiusKm,
                 Page = CurrentPage,
                 PageSize = 12
             };
@@ -244,12 +394,28 @@
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
-        await Task.Delay(350, token);
+        // El cancel tira TaskCanceledException: sin capturarla mata el runtime WASM
+        // (pantalla "Ha ocurrido un error inesperado").
+        try { await Task.Delay(350, token); }
+        catch (TaskCanceledException) { return; }
         if (token.IsCancellationRequested) return;
         ActiveQuery = SearchKeyword;
         ActiveLocation = SearchLocation;
         CurrentPage = 1;
         await LoadVacancies();
+    }
+
+    // Escribir a mano en el campo de ubicacion desactiva el punto del mapa:
+    // pasa a ser una busqueda por texto. Solo este input limpia el geo
+    // (el de keywords comparte el debounce pero no la ubicacion).
+    private async Task OnLocationInput()
+    {
+        if (HasGeo)
+        {
+            ActiveLat = ActiveLng = ActiveRadiusKm = null;
+            if (ActiveSort == "distance") ActiveSort = "recent";
+        }
+        await OnSearchInput();
     }
 
     private void SelectCategory(string category)
@@ -267,6 +433,12 @@
         ActiveQuery = "";
         ActiveLocation = "";
         ActiveCategory = "";
+        ActiveContractType = null;
+        ActiveWorkMode = null;
+        ActiveExperience = null;
+        ActiveSalaryMin = null;
+        ActiveLat = ActiveLng = ActiveRadiusKm = null;
+        ActiveSort = "recent";
         SearchKeyword = "";
         SearchLocation = "";
         CurrentPage = 1;
@@ -279,9 +451,9 @@
         await LoadVacancies();
     }
 
-    private void GoToVacancy(Guid id)
+    private void GoToVacancy(VacancyDto vacancy)
     {
-        Nav.NavigateTo($"/vacancy/{id}");
+        Nav.NavigateTo($"/vacancy/{(string.IsNullOrEmpty(vacancy.ReferenceCode) ? vacancy.Id.ToString() : vacancy.ReferenceCode)}");
     }
 
     private void ClearQuery()
@@ -307,12 +479,126 @@
         UpdateUrl();
     }
 
+    private void ClearGeo()
+    {
+        ActiveLat = ActiveLng = ActiveRadiusKm = null;
+        if (ActiveSort == "distance") ActiveSort = "recent";
+        CurrentPage = 1;
+        UpdateUrl();
+        _ = LoadVacancies();
+    }
+
+    private async Task ClearFilter(string name)
+    {
+        switch (name)
+        {
+            case nameof(ActiveContractType): ActiveContractType = null; break;
+            case nameof(ActiveWorkMode): ActiveWorkMode = null; break;
+            case nameof(ActiveExperience): ActiveExperience = null; break;
+            case nameof(ActiveSalaryMin): ActiveSalaryMin = null; break;
+        }
+        CurrentPage = 1;
+        UpdateUrl();
+        await LoadVacancies();
+    }
+
+    private async Task OnContractTypeChanged(ChangeEventArgs e)
+        => await ApplyNullableFilter(v => ActiveContractType = v, e.Value?.ToString());
+
+    private async Task OnWorkModeChanged(ChangeEventArgs e)
+        => await ApplyNullableFilter(v => ActiveWorkMode = v, e.Value?.ToString());
+
+    private async Task OnExperienceChanged(ChangeEventArgs e)
+        => await ApplyNullableFilter(v => ActiveExperience = v, e.Value?.ToString());
+
+    private async Task ApplyNullableFilter(Action<int?> set, string? raw)
+    {
+        set(int.TryParse(raw, out var v) ? v : null);
+        CurrentPage = 1;
+        UpdateUrl();
+        await LoadVacancies();
+    }
+
+    private async Task OnSalaryMinChanged(ChangeEventArgs e)
+    {
+        ActiveSalaryMin = decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Number,
+            System.Globalization.CultureInfo.InvariantCulture, out var v) && v > 0 ? v : null;
+        CurrentPage = 1;
+        UpdateUrl();
+        await LoadVacancies();
+    }
+
+    private async Task OnSortChanged(ChangeEventArgs e)
+    {
+        ActiveSort = e.Value?.ToString() ?? "recent";
+        CurrentPage = 1;
+        UpdateUrl();
+        await LoadVacancies();
+    }
+
+    private async Task RunMatch()
+    {
+        IsLoading = true;
+        try
+        {
+            // Null = no autorizado / no es candidato (el boton no deberia estar visible).
+            var list = await AuthApi.GetMyMatchesAsync();
+            if (list != null)
+            {
+                VacancyList = list;
+                TotalResults = list.Count;
+                IsMatchMode = true;
+                CurrentPage = 1;
+            }
+        }
+        catch
+        {
+            // Match fallo silenciosamente: se queda la lista anterior.
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task ExitMatchMode()
+    {
+        IsMatchMode = false;
+        CurrentPage = 1;
+        await LoadVacancies();
+    }
+
+    private async Task OpenMap()
+        => await _mapPicker!.ShowAsync(ActiveLat, ActiveLng, ActiveRadiusKm, ActiveLocation);
+
+    private async Task HandleMapPick(LocationMapPicker.LocationPickResult pick)
+    {
+        ActiveLat = pick.Lat;
+        ActiveLng = pick.Lng;
+        ActiveRadiusKm = pick.RadiusKm;
+        ActiveLocation = pick.Label;
+        SearchLocation = pick.Label;
+        CurrentPage = 1;
+        UpdateUrl();
+        await LoadVacancies();
+    }
+
     private void UpdateUrl()
     {
         var query = new List<string>();
         if (!string.IsNullOrEmpty(ActiveQuery)) query.Add($"keyword={Uri.EscapeDataString(ActiveQuery)}");
         if (!string.IsNullOrEmpty(ActiveLocation)) query.Add($"location={Uri.EscapeDataString(ActiveLocation)}");
         if (!string.IsNullOrEmpty(ActiveCategory)) query.Add($"category={ActiveCategory}");
+        if (ActiveSort != "recent") query.Add($"sort={ActiveSort}");
+        if (ActiveContractType != null) query.Add($"contract={ActiveContractType}");
+        if (ActiveWorkMode != null) query.Add($"mode={ActiveWorkMode}");
+        if (ActiveExperience != null) query.Add($"exp={ActiveExperience}");
+        if (ActiveSalaryMin != null) query.Add($"smin={ActiveSalaryMin.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+        if (HasGeo)
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            query.Add($"lat={ActiveLat!.Value.ToString(inv)}&lng={ActiveLng!.Value.ToString(inv)}&radius={ActiveRadiusKm}");
+        }
         var qs = query.Count > 0 ? "?" + string.Join("&", query) : "";
         Nav.NavigateTo($"/vacancies{qs}");
     }
@@ -328,6 +614,33 @@
         { "AyudanteBarra", Lang.T("common.nav.categoryAyudanteBarra") },
         { "ResponsableLocal", Lang.T("common.nav.categoryResponsableLocal") },
         { "RecepcionistaHotel", Lang.T("common.nav.categoryRecepcionistaHotel") }
+    };
+
+    private string GetContractLabel(int v) => v switch
+    {
+        0 => Lang.T("vacancies.contract.fullTime"),
+        1 => Lang.T("vacancies.contract.partTime"),
+        2 => Lang.T("vacancies.contract.temporary"),
+        3 => Lang.T("vacancies.contract.remote"),
+        _ => v.ToString()
+    };
+
+    private string GetWorkModeLabel(int v) => v switch
+    {
+        0 => Lang.T("vacancies.workMode.onSite"),
+        1 => Lang.T("vacancies.workMode.hybrid"),
+        2 => Lang.T("vacancies.workMode.remote"),
+        _ => v.ToString()
+    };
+
+    private string GetExperienceLabel(int v) => v switch
+    {
+        0 => Lang.T("vacancies.experience.none"),
+        1 => Lang.T("vacancies.experience.lessThanOne"),
+        2 => Lang.T("vacancies.experience.oneToThree"),
+        3 => Lang.T("vacancies.experience.threeToFive"),
+        4 => Lang.T("vacancies.experience.moreThanFive"),
+        _ => v.ToString()
     };
 
     private string GetCategoryLabel(string category)

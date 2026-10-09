@@ -125,5 +125,41 @@
         "weightLocation": "Ubicación",
         "saveScorecard": "Guardar Scorecard",
         "empty": "Todavía no hay candidatos rankeados para esta vacante. El equipo de OpenToWork calcula este ranking periódicamente."
+    },
+    "filterBar": {
+        "contractType": "Contrato",
+        "workMode": "Modalidad",
+        "experience": "Experiencia",
+        "salaryMin": "Salario mín. €",
+        "sortBy": "Ordenar",
+        "map": "Mapa",
+        "match": "Hacer Match",
+        "allContract": "Todos los contratos",
+        "allMode": "Todas",
+        "allExperience": "Cualquiera"
+    },
+    "matchTag": "Tus coincidencias",
+    "matchBadge": "Match",
+    "matchEmpty": "Ninguna vacante publicada coincide con tu perfil todavía. Completa tu perfil y vuelve a intentarlo.",
+    "contract": {
+        "fullTime": "Tiempo completo",
+        "partTime": "Tiempo parcial",
+        "temporary": "Temporal",
+        "remote": "Remoto"
+    },
+    "sort": {
+        "recent": "Más recientes",
+        "oldest": "Más antiguas",
+        "salaryDesc": "Mayor salario",
+        "salaryAsc": "Menor salario",
+        "distance": "Más cercanas"
+    },
+    "map": {
+        "title": "Elige la ubicación",
+        "search": "Busca una ciudad o zona…",
+        "radius": "Radio",
+        "use": "Usar esta ubicación",
+        "hint": "Haz clic en el mapa o arrastra el marcador",
+        "unavailable": "El mapa no se pudo cargar en este navegador. Puedes seguir buscando escribiendo la ciudad en el campo de ubicación."
     }
 }

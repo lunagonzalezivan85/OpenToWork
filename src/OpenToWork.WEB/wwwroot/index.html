@@ -25,13 +25,49 @@
     <link rel="stylesheet" href="/css/responsive.css?v=10" />
     <link id="theme-stylesheet" rel="stylesheet" href="/themes/navy/theme.css?v=10" />
     <link rel="stylesheet" href="/lib/sweetalert2/sweetalert2.min.css" />
+    <link rel="stylesheet" href="/lib/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="/lib/maplibre-gl/maplibre-gl.css" />
     <link rel="stylesheet" href="OpenToWork.WEB.styles.css?v=10" />
+    <style>
+        /* Splash de arranque: pinta antes de que cargue cualquier CSS externo.
+           Routes.razor reusa las mismas clases mientras carga el idioma,
+           asi la transicion splash -> app es invisible. */
+        .boot-splash { min-height: 100vh; background: #F5F7FA; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        .boot-splash-nav { display: flex; align-items: center; gap: 12px; padding: 16px 24px; background: #fff; border-bottom: 1px solid #E8EDF2; }
+        .boot-splash-logo { width: 40px; height: 40px; border-radius: 14px; background: linear-gradient(135deg, #0066FF, #0B4F8A); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; letter-spacing: -0.5px; }
+        .boot-splash-nav-bars { display: flex; gap: 10px; margin-left: auto; }
+        .boot-splash-nav-bars span { width: 52px; height: 10px; border-radius: 5px; background: #EDF1F5; }
+        .boot-splash-hero { background: linear-gradient(135deg, #0B132B 0%, #123A6B 60%, #0B4F8A 100%); padding: 64px 24px 80px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+        .boot-splash-line { border-radius: 8px; background: rgba(255,255,255,0.14); }
+        .boot-splash-line--title { width: min(420px, 70%); height: 30px; }
+        .boot-splash-line--sub { width: min(300px, 55%); height: 14px; opacity: 0.8; }
+        .boot-splash-search { width: min(560px, 90%); height: 54px; border-radius: 16px; background: #fff; margin-top: 8px; }
+        .boot-splash-cards { max-width: 1200px; margin: -32px auto 0; padding: 0 24px 48px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+        .boot-splash-card { height: 210px; border-radius: 20px; background: #fff; border: 1px solid #E8EDF2; position: relative; overflow: hidden; }
+        .boot-splash-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(0,102,255,0.05), transparent); animation: boot-shimmer 1.6s infinite; }
+        @keyframes boot-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        @media (prefers-reduced-motion: reduce) { .boot-splash-card::after { animation: none; } }
+    </style>
 </head>
 
 <body>
     <div id="app">
-        <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;color:#5B6472;font-family:system-ui,sans-serif;">
-            <span>Cargando Trato Directo…</span>
+        <div class="boot-splash">
+            <div class="boot-splash-nav">
+                <div class="boot-splash-logo">TD</div>
+                <div class="boot-splash-nav-bars"><span></span><span></span><span></span></div>
+            </div>
+            <div class="boot-splash-hero">
+                <div class="boot-splash-line boot-splash-line--title"></div>
+                <div class="boot-splash-line boot-splash-line--sub"></div>
+                <div class="boot-splash-search"></div>
+            </div>
+            <div class="boot-splash-cards">
+                <div class="boot-splash-card"></div>
+                <div class="boot-splash-card"></div>
+                <div class="boot-splash-card"></div>
+                <div class="boot-splash-card"></div>
+            </div>
         </div>
     </div>
     <div id="blazor-error-ui" style="display:none;position:fixed;bottom:0;left:0;right:0;padding:0.75rem 1rem;background:#FFEBE7;color:#B3261E;font-family:system-ui,sans-serif;font-size:0.85rem;z-index:9999;">
@@ -43,6 +79,10 @@
     <script src="/js/file-download.js"></script>
     <script src="/js/presentation-video.js?v=2"></script>
     <script src="/lib/sweetalert2/sweetalert2.all.min.js"></script>
+    <script src="/lib/leaflet/leaflet.js"></script>
+    <script src="/lib/maplibre-gl/maplibre-gl-csp.js"></script>
+    <script src="/lib/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
+    <script src="/js/location-map.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="/js/sw-register.js"></script>
 </body>

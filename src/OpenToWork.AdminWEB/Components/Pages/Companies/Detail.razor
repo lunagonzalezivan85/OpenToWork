@@ -22,6 +22,10 @@ else
             @Lang.T("admin.common.back")
         </button>
         <div class="admin-detail-topbar-actions">
+            <button class="admin-pill-btn admin-pill-btn--verified" disabled="@IsTogglingVerified" @onclick="ToggleVerified">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                @(Company.IsVerified ? Lang.T("admin.companies.unverify") : Lang.T("admin.companies.verify"))
+            </button>
             <button class="admin-pill-btn admin-pill-btn--featured" disabled="@IsTogglingFeatured" @onclick="ToggleFeatured">
                 <svg viewBox="0 0 24 24" fill="@(Company.IsFeatured ? "currentColor" : "none")" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                 @(Company.IsFeatured ? Lang.T("admin.companies.unfeature") : Lang.T("admin.companies.feature"))
@@ -81,6 +85,13 @@ else
                     @if (Company.Pipeline != null)
                     {
                         <span class="admin-chip admin-chip--info">@GetStageName(Company.Pipeline.CurrentStage)</span>
+                    }
+                    @if (Company.IsVerified)
+                    {
+                        <span class="admin-chip admin-chip--success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                            @Lang.T("admin.companies.verified")
+                        </span>
                     }
                     @if (Company.IsFeatured)
                     {
@@ -318,6 +329,7 @@ else
     private bool IsDeleting = false;
     private bool IsLoadingContract = false;
     private bool IsTogglingFeatured = false;
+    private bool IsTogglingVerified = false;
     private bool ShowActionsMenu = false;
     private AdminVacancyContractDto? Contract;
 
@@ -416,6 +428,16 @@ else
         {
             Company = await AuthApi.GetCompanyAsync(Company.Id);
         }
+    }
+
+    private async Task ToggleVerified()
+    {
+        if (Company == null) return;
+        IsTogglingVerified = true;
+        var success = await AuthApi.SetCompanyVerifiedAsync(Company.Id, !Company.IsVerified);
+        IsTogglingVerified = false;
+        if (success)
+            Company.IsVerified = !Company.IsVerified;
     }
 
     private async Task ToggleFeatured()

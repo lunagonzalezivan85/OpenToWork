@@ -19,7 +19,7 @@ public interface IAuthService
     Task<bool> VerifyRecaptchaAsync(string recaptchaResponse);
 
     /// <summary>Registro de candidato, paso 1: envia el codigo al correo sin crear la cuenta.</summary>
-    Task<SendVerificationCodeResult> SendRegistrationCodeAsync(string email, string? firstName = null);
+    Task<SendVerificationCodeResult> SendRegistrationCodeAsync(string email, string? firstName = null, string? recaptchaToken = null);
 
     Task<EmailVerificationStatusDto?> GetEmailVerificationStatusAsync(Guid userId);
     /// <summary>Genera un codigo nuevo y lo envia por correo.</summary>
@@ -38,7 +38,9 @@ public enum SendVerificationCodeResult
     UserNotFound,
     /// <summary>Registro: ya hay una cuenta con ese correo.</summary>
     EmailAlreadyRegistered,
-    InvalidEmail
+    InvalidEmail,
+    /// <summary>Con Recaptcha:Enforced activo, el token falta o no es valido.</summary>
+    CaptchaFailed
 }
 
 public enum GoogleSignInStatus

@@ -6,8 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazored.LocalStorage" Version="2.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
   </ItemGroup>
@@ -17,8 +16,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- El portal solo existe en es/en: no descargar el ICU CJK (~2 MB menos de boot) -->
+    <BlazorWebAssemblyLoadAllGlobalizationData>false</BlazorWebAssemblyLoadAllGlobalizationData>
     <!-- Publica el web.config propio de la raiz del proyecto (proxy /api, CSP, cabeceras) -->
     <PublishIISAssets>true</PublishIISAssets>
+    <!-- Bug del devserver (.NET 10): los endpoints .gz de _framework sirven 0 bytes
+         cuando el asset comprimido vive en obj/compressed con placeholder {0} -> el
+         navegador recibe dotnet.js vacio y Blazor no arranca. Solo afecta a Build;
+         en Publish la compresion (gzip+brotli) sigue activa. -->
+    <DisableBuildCompression Condition="'$(Configuration)' == 'Debug'">true</DisableBuildCompression>
   </PropertyGroup>
 
 </Project>

@@ -19,7 +19,13 @@
                 }
             </div>
         </div>
-        <span class="home-vacancy-card-badge">@GetWorkModeLabel(Vacancy.WorkMode)</span>
+        <div class="home-vacancy-card-badges">
+            @if (Vacancy.MatchPercentage.HasValue)
+            {
+                <span class="home-vacancy-card-badge home-vacancy-card-badge--match">@Vacancy.MatchPercentage% @Lang.T("vacancies.matchBadge")</span>
+            }
+            <span class="home-vacancy-card-badge">@GetWorkModeLabel(Vacancy.WorkMode)</span>
+        </div>
     </div>
     <h3 class="home-vacancy-card-title">@Vacancy.Title</h3>
     <p class="home-vacancy-card-desc">@(TruncateText(Vacancy.Description, 120))</p>
@@ -71,7 +77,7 @@
             {
                 <button class="ot-btn ot-btn--secondary ot-btn--small" @onclick="() => OnClose.InvokeAsync(Vacancy.Id)" @onclick:stopPropagation="true">@Lang.T("vacancies.close")</button>
             }
-            <a href="/vacancy/@Vacancy.Id" class="ot-btn ot-btn--secondary ot-btn--small" @onclick:stopPropagation="true">@Lang.T("common.buttons.view")</a>
+            <a href="/vacancy/@DetailSlug" class="ot-btn ot-btn--secondary ot-btn--small" @onclick:stopPropagation="true">@Lang.T("common.buttons.view")</a>
             <button class="ot-btn ot-btn--danger ot-btn--small" @onclick="() => OnDelete.InvokeAsync(Vacancy.Id)" @onclick:stopPropagation="true">@Lang.T("common.buttons.delete")</button>
         </div>
     }
@@ -86,12 +92,16 @@
     [Parameter] public EventCallback<Guid> OnClose { get; set; }
     [Parameter] public EventCallback<Guid> OnDelete { get; set; }
 
+    // La URL publica usa la referencia TD-XXXXXXXX, no el Guid interno.
+    private string DetailSlug =>
+        string.IsNullOrEmpty(Vacancy.ReferenceCode) ? Vacancy.Id.ToString() : Vacancy.ReferenceCode;
+
     private void OnClick()
     {
         if (ShowActions)
             Nav.NavigateTo($"/my-vacancies/{Vacancy.Id}");
         else
-            Nav.NavigateTo($"/vacancy/{Vacancy.Id}");
+            Nav.NavigateTo($"/vacancy/{DetailSlug}");
     }
 
     private static string GetInitials(string? name)

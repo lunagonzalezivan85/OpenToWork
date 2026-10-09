@@ -55,6 +55,7 @@ if (builder.Environment.IsDevelopment())
 OpenToWork.Core.Extensions.ProductionConfigGuard.Validate(builder.Configuration, builder.Environment.IsDevelopment());
 
 builder.Services.AddDatabaseContext(builder.Configuration);
+builder.Services.AddMemoryCache();
 builder.Services.AddCoreServices(builder.Configuration);
 
 // CVs en carpeta privada compartida por ambos API (fuera de wwwroot y del repo). Por defecto <repo>/storage.
@@ -94,16 +95,22 @@ builder.Services.AddAuthorization();
 // Codigos de un solo uso del login con Google (AuthController).
 builder.Services.AddMemoryCache();
 
+// Fuerza bruta / credential stuffing en auth: 10 req por minuto por IP en produccion.
+// En Development el default es 100 para no tumbar la suite de tests de integracion
+// (~30 logins paralelos desde 127.0.0.1); configurable con RateLimiting:AuthPermitLimit.
+var authPermitLimit = int.TryParse(builder.Configuration["RateLimiting:AuthPermitLimit"], out var apl)
+    ? apl
+    : (builder.Environment.IsDevelopment() ? 100 : 10);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    // Fuerza bruta / credential stuffing en auth: 10 req por minuto por IP.
     options.AddPolicy("auth", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = authPermitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));

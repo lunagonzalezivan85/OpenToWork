@@ -5785,6 +5785,19 @@ textarea.admin-input {
     flex-wrap: wrap;
 }
 
+/* Pill verificar (verde) */
+.admin-pill-btn--verified {
+    background: var(--success-light);
+    border-color: var(--success-soft);
+    color: var(--success);
+}
+
+.admin-pill-btn--verified:hover {
+    background: var(--success-soft);
+    border-color: var(--success);
+    color: var(--success);
+}
+
 /* Pill destacar (ámbar) */
 .admin-pill-btn--featured {
     background: var(--warning-light);

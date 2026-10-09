@@ -11,11 +11,13 @@ public class CompanyCrmService : ICompanyCrmService
 {
     private readonly AppDbContext _db;
     private readonly IAuditLogService _auditLog;
+    private readonly IEmailService _email;
 
-    public CompanyCrmService(AppDbContext db, IAuditLogService auditLog)
+    public CompanyCrmService(AppDbContext db, IAuditLogService auditLog, IEmailService email)
     {
         _db = db;
         _auditLog = auditLog;
+        _email = email;
     }
 
     public async Task<List<CompanyListDto>> GetCompaniesAsync(string? search = null, int? status = null, Guid? assignedTo = null, int page = 1, int pageSize = 50)
@@ -221,6 +223,29 @@ public class CompanyCrmService : ICompanyCrmService
 
         await _db.SaveChangesAsync();
         await _auditLog.LogAsync(adminId, "CompanyCrm.SetFeatured", "PTCompany", id, $"Empresa {(featured ? "destacada" : "sin destacar")}: {company.Name}", ipAddress);
+        return true;
+    }
+
+    public async Task<bool> SetVerifiedAsync(Guid id, bool verified, Guid adminId, string? ipAddress)
+    {
+        var company = await _db.PT_Companies.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+        if (company == null) return false;
+
+        var justVerified = verified && !company.IsVerified;
+        company.IsVerified = verified;
+        company.UpdatedAt = DateTime.UtcNow;
+        company.UpdatedBy = adminId;
+
+        await _db.SaveChangesAsync();
+        await _auditLog.LogAsync(adminId, "CompanyCrm.SetVerified", "PTCompany", id, $"Empresa {(verified ? "verificada" : "sin verificar")}: {company.Name}", ipAddress);
+
+        // Al verificar de verdad (no al quitar): aviso por correo al contacto de la empresa.
+        // Best-effort: el flag ya quedo guardado aunque el SMTP falle.
+        if (justVerified && !string.IsNullOrEmpty(company.ContactEmail))
+            await _email.SendAsync(company.ContactEmail, company.ContactName,
+                "Tu empresa ya está verificada en Trato Directo",
+                EmailTemplates.CompanyVerified(company.Name));
+
         return true;
     }
 

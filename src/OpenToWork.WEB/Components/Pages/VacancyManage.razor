@@ -1,4 +1,5 @@
 @page "/my-vacancies/{Id:guid}"
+@attribute [Authorize(Roles = "Company")]
 @using OpenToWork.Shared.DTOs
 @using OpenToWork.WEB.Services
 @inject ApiAuthService AuthApi
@@ -378,7 +379,7 @@ else
 
     private async Task CopyPublicLink()
     {
-        var url = $"{Nav.BaseUri}vacancy/{Id}";
+        var url = $"{Nav.BaseUri}vacancy/{(string.IsNullOrEmpty(Vacancy.ReferenceCode) ? Id.ToString() : Vacancy.ReferenceCode)}";
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
         await JS.InvokeVoidAsync("Swal.fire", new
         {

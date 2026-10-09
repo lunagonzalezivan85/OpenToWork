@@ -486,3 +486,123 @@ El atributo HTML `autofocus` no alcanzaba porque Blazor mueve el foco al `<h1>` 
 ### Pendiente
 - Avisos por correo al candidato (entregado/contratado).
 - Recargar `/profile` redirige al login aunque haya sesión (bug previo).
+
+---
+
+## Sesión: 5 Octubre 2026 (Iluna — busqueda geo, match de candidatos y codigo publico de vacante)
+
+Rama: `iluna-geo-search` (NO mergeada a `main`, pendiente de revisión de Darwin).
+
+### IMPORTANTE - Migraciones
+> Aplicar a mano (`dotnet ef database update --project src/OpenToWork.Models --startup-project src/OpenToWork.API`):
+> - `VacancyGeoCoordinates` — `PT_Vacancies.Latitude`/`Longitude` + índices por ubicación/categoría/modo.
+> - `VacancyReferenceCode` — `PT_Vacancies.ReferenceCode` (varchar 20, único). **El Up() ya trae el backfill**: `UPDATE ... CONCAT('TD-', UPPER(SUBSTRING(REPLACE(UUID(),'-',''),1,8)))` antes del índice único, y vacía/reinserta los seeds de `SY_DocumentTypes`/`SY_WizardSteps` porque los GUIDs de `HasData` cambian en cada scaffold y chocaban con el índice por nombre.
+
+### Cambios Realizados
+
+#### 1. Búsqueda de empleo geo (portal candidato, `/vacancies`)
+- Filtros ajustables: texto, localidad, radio en km con mapa Leaflet + tiles vectoriales MapLibre, contrato, modo, experiencia, salario y orden (antigüedad/salario).
+- Geocodificación vía Nominatim (`IGeocodingService`); worker de MapLibre vendoreado + `setWorkerUrl` para la CSP.
+- Skeleton cards mientras carga y `finally` para que `IsLoading` no se quede pegado si la API devuelve null.
+
+#### 2. Menú del candidato y de empresa
+- El candidato logueado no tenía enlace a `/vacancies` y la empresa no veía `/candidate-search`. Añadidos con claves i18n (`common.nav.jobs`, `candidateSearch`, `verifiedApplicants`) en escritorio y móvil.
+
+#### 3. "Hacer Match" (candidato)
+- `POST api/permanentvacancies/my-matches` → `CompatibilityService` recalcula contra las vacantes publicadas usando la configuración del candidato (skills/experiencia/ubicación con pesos 0.5/0.3/0.2). Resultados ordenados por % y badge "N% Match" en las tarjetas; tag "Tus coincidencias" quitables.
+
+#### 4. PARA DARWIN — Codificación URI de vacantes (referencia pública)
+- **Antes**: la URL del detalle exponía el `Guid` interno (`/vacancy/e1111111-...`). Ese `Id` es el identificador de base de datos — no debe ser público (enumeración, URLs feas, acoplamiento interno↔externo).
+- **Ahora**: `PTVacancy.ReferenceCode` con formato **`TD-XXXXXXXX`** (misma convención que `PTVerificationRequest.ReferenceNumber`, así todo el sistema usa el mismo patrón de referencia pública). ASCII puro, sin caracteres que rompan la URI — eso es lo que "se cambió la codificación para evitar errores en uri".
+- `GET api/permanentvacancies/{idOrCode}` acepta **los dos**: si parsea como `Guid` busca por `Id`; si no, por `ReferenceCode` (case-insensitive, máx 20 chars). Las URLs viejas con Guid siguen funcionando → no hay enlaces rotos.
+- Las páginas internas de empresa (`/my-vacancies/{guid}`, `/edit`) siguen con `Guid`: interno = Guid, público = `TD-XXXX`. Si en el admin construyes enlaces públicos, usa `VacancyDto.ReferenceCode`.
+- El detalle muestra "Ref. TD-XXXX" en la cabecera y `VacancyManage` comparte el enlace con el código.
+
+#### 5. Dos bugs de infraestructura locales (importantes)
+- **`wwwroot/sw.js`**: el service worker servía `/_framework/` cache-first. En standalone WASM los DLLs no van fingerprinteados por `dotnet run`, así que tras cada deploy el navegador seguía con código viejo (ese era el motivo de "el menú no se actualiza"). Ahora `/_framework/` no pasa por el SW; solo `/lib/` queda cache-first. Bump a `tratodirecto-v9`.
+- **`OpenToWork.WEB.csproj`**: `DisableBuildCompression` en Debug. El devserver de .NET 10 devuelve **0 bytes** para los endpoints `.gz` de `_framework` cuyo asset vive en `obj/compressed` con placeholder `{0}` → `dotnet.js` llegaba vacío y Blazor no arrancaba ("MIME type of ''"). Solo afecta a Debug; en Publish siguen gzip+brotli.
+
+### Pendiente
+- Revisión de Darwin y merge de `iluna-geo-search` → `main`.
+- El match del candidato solo pondera skills/experiencia/ubicación; falta desglosar "por qué haces match" en el detalle.
+- En prod convendría redirigir `/vacancy/{guid}` → `/vacancy/{code}` (301) para que Google/SERP solo indexe la canónica.
+
+---
+
+## Sesión: 9 Octubre 2026 (Iluna — contención de auditoría externa)
+
+Rama: `iluna-sec-contencion` (commit `2556cbe`, sin merge a `main`).
+
+### IMPORTANTE - Nota para Darwin
+> Auditoría externa de producción (tratodirecto.es, 08-Oct): 49 hallazgos, 1 crítico — **H-39**:
+> cualquier empresa recién registrada listaba candidatos reales con nombre, ciudad y score.
+> La contención ya está en `iluna-sec-contencion`: `/api/candidates/search` (y `search/skills`)
+> exige ahora empresa con `IsVerified=true` (403 si no). AdminWEB tiene botón "Verificar empresa"
+> en el detalle de la empresa (auditado en log). **Ninguna empresa nueva busca candidatos sin
+> revisión del equipo.**
+>
+> El alta de empresa también cambió: requiere el código de correo como el candidato (flujo único,
+> `EmailVerified=true` desde el registro). Y `register/send-code` ya no revela si un correo existe
+> (responde siempre igual; el titular recibe un aviso).
+
+### Cambios Realizados
+- **Guard de rutas WASM:** `CascadingAuthenticationState` + `AuthorizeRouteView` + `RedirectToLogin`;
+  22 páginas privadas con `[Authorize]`/`Roles=`; tras logout toda ruta privada → `/login`
+  (antes `/dashboard` se renderizaba para anónimos — H-29).
+- **`/logout` real:** revoca el refresh token en servidor y limpia storage (antes no hacía nada — H-31).
+  Bug aparte: `RevokeTokenAsync` no enviaba el Bearer → la revocación nunca funcionaba.
+- **Provider de auth:** expira tokens caducados (un JWT viejo en localStorage ya no "autentica") y
+  expande claims `role` en array — `IsInRole("Company")` funcionaba mal con varios roles.
+- **`appsettings.json` público** ya no lleva `localhost` (H-05); config dev movida a
+  `appsettings.Development.json`.
+- Verificado con `dotnet build` (0 errores), matriz curl (`scripts/qa-fase0.ps1`) y Playwright:
+  401/403/200 según rol y verificación, redirects de rutas, logout con storage limpio.
+  Todo en `docs/iluna/test_log_2026-10-09.md` y `fase-8-contencion-auditoria.md`.
+
+### Pendiente (fases siguientes)
+- Fase 1: refresh token en cookie HttpOnly + captcha obligatorio + validaciones servidor (ya hay
+  `IdentityDocumentValidator`/`PhoneValidator` del lado del servidor — se reforzó el flujo).
+- Fase 2: RGPD — consentimiento informado de visibilidad del perfil del candidato, EIPD del scoring.
+- Fase 3: vacante pública `/vacancy/TD-XXXX` sin login + SEO/JSON-LD.
+- `System.Security.Cryptography.Xml` 8.0.2 tiene NU1903 alta — actualizar.
+
+## Sesión: 9 Octubre 2026, noche (Iluna — merge con `main` + Fase 1 de sesiones)
+
+Ramas: merge de `origin/main` en `iluna-sec-contencion` (commit `c14c26c`), luego
+`iluna-sec-sesiones` para la Fase 1.
+
+### IMPORTANTE - Nota para Darwin
+> Al traer `main` (Dsiezar) se adoptó su contención **más estricta** de H-39: la búsqueda
+> `/api/candidates/search` está **cerrada a todos** (403) hasta el rediseño con opt-in del
+> candidato — ya no basta `IsVerified`. La URL del portal muestra un aviso, no un error.
+> Documento de Dsiezar: `docs/dsiezar/seguridad-busqueda-candidatos.md`.
+>
+> El refresh token ya **no** está en localStorage: vive en la cookie HttpOnly `td_refresh`
+> (Path `/api/auth`, SameSite=Lax) y rota en cada renovación — un XSS ya no roba la sesión
+> completa (H-04). Tras un pull: `dotnet ef database update` (viene `NewsPosts` de Dsiezar).
+
+### Cambios Realizados
+- **Merge `origin/main`:** resueltos 8 conflictos conservando ambos lados — cierre total del
+  search (Dsiezar) + anti-enumeración, guard de rutas y logout real (Iluna); CSP unión de
+  mapas y vídeos de Noticias; snapshot EF con `PTNewsPost` + campos geo/`ReferenceCode`
+  intactos. Trae: Noticias (admin + portal, apagada por feature flag), Google login
+  (candidatos), fix DNI/NIE y 168 tests de integración nuevos.
+- **Fase 1 sesiones (H-04):** cookie `td_refresh` HttpOnly en login/register/Google/refresh;
+  `refresh`/`revoke` leen cookie o body (compat); el WASM manda `credentials:include` y hace
+  **silent refresh** al arrancar si hubo sesión (centinela `opentowork-user-id`, para no
+  gastar rate limit en anónimos).
+- **CAPTCHA exigible:** `Recaptcha:Enforced` hace obligatorio el token en login y `send-code`
+  (off por defecto hasta cablear el widget).
+- **Correo empresa verificada:** `SetVerifiedAsync` avisa por email al contacto de la empresa
+  (plantilla nueva, best-effort).
+- **NU1903:** `System.Security.Cryptography.Xml` pinneado a `10.0.12` (8 advisories altas en la
+  8.0.2 transitiva de DataProtection).
+- Verificado: build 0 errores, `dotnet test` 163/168 (5 fallos = seed-data ausente, iguales
+  que antes), matriz cookie curl y Playwright en `test_log_2026-10-09.md` (M1–M9, S1–S9) y
+  `docs/iluna/fase-9-sesiones.md`.
+
+### Pendiente
+- Access token a memoria (residual H-04, 60 min de ventana en localStorage).
+- Fase 2: opt-in de visibilidad del candidato + datos mínimos para reabrir la búsqueda; EIPD.
+- Matriz de autorización por endpoint (H-10); decidir si el dashboard de empresa sin verificar
+  queda limitado.

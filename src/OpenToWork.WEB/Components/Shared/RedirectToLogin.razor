@@ -1,0 +1,21 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using OpenToWork.WEB.Services
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthProvider
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated == true)
+        {
+            // Autenticado pero sin el rol de esta pagina: vuelve a su home.
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        var relative = Nav.ToBaseRelativePath(Nav.Uri);
+        var returnUrl = string.IsNullOrEmpty(relative) ? "/" : "/" + relative;
+        Nav.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+    }
+}

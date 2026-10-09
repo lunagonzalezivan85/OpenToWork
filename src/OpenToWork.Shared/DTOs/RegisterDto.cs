@@ -31,6 +31,8 @@ public class RegistrationCodeRequestDto
     public string Email { get; set; } = string.Empty;
     /// <summary>Opcional: solo para saludar por el nombre en el correo del codigo.</summary>
     public string? FirstName { get; set; }
+    /// <summary>Token de reCAPTCHA (solo exigido cuando Recaptcha:Enforced esta activo).</summary>
+    public string? RecaptchaToken { get; set; }
 }
 
 public class VerifyEmailDto

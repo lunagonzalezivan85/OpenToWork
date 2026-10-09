@@ -125,5 +125,41 @@
         "weightLocation": "Location",
         "saveScorecard": "Save Scorecard",
         "empty": "No ranked candidates for this vacancy yet. The OpenToWork team calculates this ranking periodically."
+    },
+    "filterBar": {
+        "contractType": "Contract",
+        "workMode": "Work mode",
+        "experience": "Experience",
+        "salaryMin": "Min. salary €",
+        "sortBy": "Sort by",
+        "map": "Map",
+        "match": "Match me",
+        "allContract": "All contracts",
+        "allMode": "All",
+        "allExperience": "Any"
+    },
+    "matchTag": "Your matches",
+    "matchBadge": "Match",
+    "matchEmpty": "No published vacancy matches your profile yet. Complete your profile and try again.",
+    "contract": {
+        "fullTime": "Full-time",
+        "partTime": "Part-time",
+        "temporary": "Temporary",
+        "remote": "Remote"
+    },
+    "sort": {
+        "recent": "Most recent",
+        "oldest": "Oldest",
+        "salaryDesc": "Highest salary",
+        "salaryAsc": "Lowest salary",
+        "distance": "Nearest"
+    },
+    "map": {
+        "title": "Choose a location",
+        "search": "Search a city or area…",
+        "radius": "Radius",
+        "use": "Use this location",
+        "hint": "Click on the map or drag the marker",
+        "unavailable": "The map could not load in this browser. You can still search by typing the city in the location field."
     }
 }

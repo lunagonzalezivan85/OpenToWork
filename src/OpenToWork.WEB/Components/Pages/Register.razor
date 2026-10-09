@@ -36,7 +36,7 @@
                        autocomplete="one-time-code" maxlength="6" placeholder="000000" />
             </div>
 
-            <button class="ot-btn ot-btn--primary ot-btn--medium ot-btn--full-width" disabled="@(IsLoading || EmailCode.Trim().Length != 6)" @onclick="CreateCandidateAccount">
+            <button class="ot-btn ot-btn--primary ot-btn--medium ot-btn--full-width" disabled="@(IsLoading || EmailCode.Trim().Length != 6)" @onclick="CreateAccount">
                 @(IsLoading ? Lang.T("common.labels.loading") : Lang.T("auth.register.createAccount"))
             </button>
 
@@ -306,13 +306,12 @@
             return;
         }
 
-        if (IsCandidate)
-            await RequestCodeAsync(showSentNotice: false);
-        else
-            await SubmitRegistrationAsync(emailCode: null);
+        // Ambos roles pasan por el codigo del correo (auditoria 08-Oct H-41/H-43: la empresa
+        // operaba antes de verificar y el alta revelaba si un correo ya existe).
+        await RequestCodeAsync(showSentNotice: false);
     }
 
-    // --- Candidato: la cuenta no se crea hasta escribir el codigo que llega al correo ---
+    // --- La cuenta (candidato o empresa) no se crea hasta escribir el codigo del correo ---
 
     private bool AwaitingCode { get; set; }
     private string EmailCode { get; set; } = "";
@@ -355,7 +354,7 @@
 
     private Task ResendCode() => RequestCodeAsync(showSentNotice: true);
 
-    private Task CreateCandidateAccount() => SubmitRegistrationAsync(EmailCode.Trim());
+    private Task CreateAccount() => SubmitRegistrationAsync(EmailCode.Trim());
 
     private void BackToForm()
     {
@@ -401,9 +400,8 @@
                 }
                 else
                 {
-                    // Empresa: verifica despues (se puede dejar para mas tarde).
-                    var next = !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/company-dashboard";
-                    Nav.NavigateTo($"/verify-email?next={Uri.EscapeDataString(next)}");
+                    // El correo ya quedo verificado con el codigo del registro: directo al panel.
+                    Nav.NavigateTo(!string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/company-dashboard");
                 }
             }
             else if (result.EmailAlreadyRegistered)

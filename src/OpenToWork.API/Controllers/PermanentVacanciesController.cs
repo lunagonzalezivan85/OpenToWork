@@ -37,14 +37,18 @@ public class PermanentVacanciesController : ControllerBase
         }
 
         var result = await _vacancyService.CreateVacancyAsync(companyId.Value, dto, userId.Value);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        return CreatedAtAction(nameof(GetById), new { idOrCode = result.Id }, result);
     }
 
-    [HttpGet("{id}")]
+    // Acepta tanto el Guid interno como la referencia publica TD-XXXXXXXX:
+    // /vacancy/{code} es la URL que ven y comparten los usuarios.
+    [HttpGet("{idOrCode}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(string idOrCode)
     {
-        var result = await _vacancyService.GetVacancyByIdAsync(id);
+        var result = Guid.TryParse(idOrCode, out var id)
+            ? await _vacancyService.GetVacancyByIdAsync(id)
+            : await _vacancyService.GetVacancyByCodeAsync(idOrCode);
         return result != null ? Ok(result) : NotFound();
     }
 
@@ -78,6 +82,24 @@ public class PermanentVacanciesController : ControllerBase
     {
         var (items, total) = await _vacancyService.SearchVacanciesAsync(search);
         return Ok(new { items, total, page = search.Page, pageSize = search.PageSize });
+    }
+
+    /// <summary>"Hacer Match" del candidato: recalcula su compatibilidad contra todas las
+    /// vacantes publicadas y devuelve las que tienen match, ordenadas por porcentaje.
+    /// POST porque escribe (persiste PT_JobMatchScores).</summary>
+    [HttpPost("my-matches")]
+    public async Task<IActionResult> GetMyMatches()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var candidate = await _context.PT_Candidates
+            .FirstOrDefaultAsync(c => c.SCUserId == userId && !c.IsDeleted);
+        if (candidate == null) return Forbid(); // no es candidato (empresa/admin)
+
+        await _compatibilityService.CalculateMatchesForCandidateAsync(candidate.Id);
+        var matches = await _vacancyService.GetMatchedVacanciesAsync(candidate.Id);
+        return Ok(matches);
     }
 
     [HttpPut("{id}")]
