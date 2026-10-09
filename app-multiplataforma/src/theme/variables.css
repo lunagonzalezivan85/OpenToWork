@@ -1,0 +1,58 @@
+/* Trato Directo - paleta del design system (misma que el portal Blazor):
+   primary #0066FF · texto #0B132B · subtitulo #3A506B · muted #778DA9
+   fondo #F0F7FF · pills #E8F1FF · chips #F1F5F9 · hover #0052CC */
+
+:root {
+  --ion-font-family: "Segoe UI", system-ui, sans-serif;
+
+  --ion-color-primary: #0066FF;
+  --ion-color-primary-rgb: 0, 102, 255;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #0052CC;
+  --ion-color-primary-tint: #3385FF;
+
+  --ion-color-secondary: #3A506B;
+  --ion-color-secondary-rgb: 58, 80, 107;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-shade: #2C4059;
+  --ion-color-secondary-tint: #556E8C;
+
+  --ion-color-tertiary: #778DA9;
+  --ion-color-tertiary-rgb: 119, 141, 169;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-shade: #62789A;
+  --ion-color-tertiary-tint: #8CA0B9;
+
+  --ion-color-success: #0f7b4d;
+  --ion-color-success-rgb: 15, 123, 77;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-shade: #0d6c44;
+  --ion-color-success-tint: #27995f;
+
+  --ion-color-danger: #b3261e;
+  --ion-color-danger-rgb: 179, 38, 30;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-shade: #9e201a;
+  --ion-color-danger-tint: #be3b33;
+
+  --ion-background-color: #F0F7FF;
+  --ion-background-color-rgb: 240, 247, 255;
+  --ion-text-color: #0B132B;
+  --ion-text-color-rgb: 11, 19, 43;
+  --ion-toolbar-background: #FFFFFF;
+  --ion-card-background: #FFFFFF;
+}
+
+/* Tema oscuro siguiendo el token "navy" del portal */
+body.dark {
+  --ion-background-color: #0B132B;
+  --ion-background-color-rgb: 11, 19, 43;
+  --ion-text-color: #E8EEF6;
+  --ion-text-color-rgb: 232, 238, 246;
+  --ion-toolbar-background: #131E38;
+  --ion-card-background: #1A2540;
+}
+
+.ion-page ion-item { --background: transparent; }
+.td-chip { --background: #E8F1FF; --color: #0B132B; }
