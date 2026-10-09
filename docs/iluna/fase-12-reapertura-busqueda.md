@@ -43,6 +43,13 @@ El token de acceso ya **no se persiste**: vive en memoria del WASM (`_cachedToke
   `CompanyProfile`) y el `AppAuthStateProvider` ahora pasan por `GetTokenAsync()`.
 - `Cookies.razor` + `COOKIES_Y_PRIVACIDAD.md` actualizados (documentan `td_refresh`).
 
+## Extra: "cerrar sesión en todos los dispositivos"
+
+`POST /api/auth/revoke-all` (autenticado) → `RevokeAllTokensAsync` revoca **todos** los
+refresh tokens activos del usuario y borra la cookie actual. Probado: 2 sesiones creadas,
+revoke-all devuelve `{revoked:19}` (acumulados de pruebas) y ambos refreshes → 401.
+Pendiente: botón en el perfil (visual — necesita visto bueno de Iluna).
+
 ## Migraciones
 
 `CandidateRequest`: tabla `PT_CandidateRequests` (company, requester, candidate, vacancy?,

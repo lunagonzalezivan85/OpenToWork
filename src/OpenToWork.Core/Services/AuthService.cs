@@ -422,6 +422,24 @@ public class AuthService : IAuthService
         return true;
     }
 
+    /// <summary>"Cerrar sesion en todos los dispositivos": revoca todos los refresh tokens
+    /// activos del usuario. Devuelve cuantos se revocaron.</summary>
+    public async Task<int> RevokeAllTokensAsync(Guid userId)
+    {
+        var tokens = await _context.SC_RefreshTokens
+            .Where(t => t.SCUserId == userId && !t.IsRevoked && !t.IsDeleted)
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+        foreach (var t in tokens)
+        {
+            t.IsRevoked = true;
+            t.UpdatedAt = now;
+        }
+        await _context.SaveChangesAsync();
+        return tokens.Count;
+    }
+
     public async Task<bool> RegisterDeviceAsync(Guid userId, string deviceHash, string? deviceName)
     {
         var device = await _context.SC_UserDevices

@@ -158,6 +158,20 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>"Cerrar sesion en todos los dispositivos": revoca todos los refresh tokens del
+    /// usuario autenticado (este incluido - borra tambien la cookie actual).</summary>
+    [Authorize]
+    [HttpPost("revoke-all")]
+    public async Task<IActionResult> RevokeAll()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdClaim, out var userId)) return Unauthorized();
+
+        var revoked = await _authService.RevokeAllTokensAsync(userId);
+        DeleteRefreshCookie();
+        return Ok(new { revoked });
+    }
+
     // --- Refresh token como cookie HttpOnly (auditoria 08-Oct H-04: antes vivia en localStorage,
     // al alcance de cualquier XSS). Path /api/auth: solo viaja a estos endpoints. SameSite=Lax
     // basta: en dev el portal y la API comparten sitio (localhost) y en prod comparten dominio
