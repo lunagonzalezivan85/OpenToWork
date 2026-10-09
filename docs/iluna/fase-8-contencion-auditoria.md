@@ -13,7 +13,7 @@ y métricas de perfilado). Esta fase aplica **solo contención**: cerrar la supe
 
 | Hallazgo | Cambio | Archivos |
 |---|---|---|
-| H-39 (Crítica) | `candidates/search` y `search/skills` exigen empresa `IsVerified=true` (403) | `API/Controllers/CandidatesController.cs` |
+| H-39 (Crítica) | `candidates/search` y `search/skills` **cerrados a todos** (403) hasta rediseño con opt-in del candidato — en el merge con `main` prevaleció la contención total de Dsiezar sobre el gate por `IsVerified`; además `{id}/score` y `{id}/verification-status` quedaron con la regla de entrega (404 a terceros) | `API/Controllers/CandidatesController.cs`, `docs/dsiezar/seguridad-busqueda-candidatos.md` |
 | H-40 | Verificación manual de empresa por el equipo: `PUT /api/admin/company-crm/companies/{id}/verified` + botón/chip en AdminWEB | `Core/Services/CompanyCrmService.cs`, `AdminAPI/Controllers/CompanyCrmController.cs`, `AdminWEB` (Detail.razor, AdminAuthApiService, admin.css, admin.json es/en) |
 | H-41 | `send-code` con correo registrado responde igual (aviso al titular, plantilla `RegistrationAttemptNotice`, cooldown anti-spam); el código se consume ANTES del chequeo de duplicado | `Core/Services/AuthService.cs`, `EmailTemplates.cs` |
 | H-43 | Empresa también verifica el correo con código al registrarse (un solo flujo); `next`/`returnUrl` rechazan `//` y `/\` | `AuthService.cs`, `WEB/Register.razor`, `VerifyEmail.razor`, `Login.razor` |

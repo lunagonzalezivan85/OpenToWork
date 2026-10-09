@@ -64,6 +64,7 @@ var storageRoot = builder.Configuration["Storage:Root"]
 builder.Services.AddSingleton<OpenToWork.Core.Interfaces.ICvStorage>(new OpenToWork.Core.Services.CvStorage(storageRoot));
 builder.Services.AddSingleton<OpenToWork.Core.Interfaces.IProfilePhotoStorage>(new OpenToWork.Core.Services.ProfilePhotoStorage(storageRoot));
 builder.Services.AddSingleton<OpenToWork.Core.Interfaces.IPresentationVideoStorage>(new OpenToWork.Core.Services.PresentationVideoStorage(storageRoot));
+builder.Services.AddSingleton<OpenToWork.Core.Interfaces.INewsImageStorage>(new OpenToWork.Core.Services.NewsImageStorage(storageRoot));
 
 // Keyring compartido con AdminAPI: secretos de SY_SystemConfig (smtp_password, ai_api_key)
 // se cifran con IDataProtection y ambas APIs tienen que poder descifrarlos.
@@ -74,7 +75,7 @@ builder.Services.AddDataProtection()
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey))
     throw new InvalidOperationException("Jwt:Key no esta configurada. En dev: dotnet user-secrets set \"Jwt:Key\" \"<secreto-256bits>\". En prod: variable de entorno Jwt__Key.");
-var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -90,18 +91,9 @@ var authBuilder = builder.Services.AddAuthentication(JwtBearerDefaults.Authentic
         };
     });
 
-var googleClientId = builder.Configuration["GoogleOAuth:ClientId"];
-var googleClientSecret = builder.Configuration["GoogleOAuth:ClientSecret"];
-if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
-{
-    authBuilder.AddGoogle(options =>
-    {
-        options.ClientId = googleClientId;
-        options.ClientSecret = googleClientSecret;
-    });
-}
-
 builder.Services.AddAuthorization();
+// Codigos de un solo uso del login con Google (AuthController).
+builder.Services.AddMemoryCache();
 
 // Fuerza bruta / credential stuffing en auth: 10 req por minuto por IP en produccion.
 // En Development el default es 100 para no tumbar la suite de tests de integracion

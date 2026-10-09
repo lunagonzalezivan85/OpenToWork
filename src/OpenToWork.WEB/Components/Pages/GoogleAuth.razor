@@ -1,0 +1,254 @@
+@page "/auth/google"
+@layout OpenToWork.WEB.Components.Layout.AuthLayout
+@using OpenToWork.Shared.DTOs
+@using OpenToWork.Shared.Enums
+@using OpenToWork.Shared.Validation
+@using OpenToWork.WEB.Services
+@inject ApiAuthService AuthApi
+@inject AppAuthStateProvider AuthProvider
+@inject LanguageService Lang
+@inject NavigationManager Nav
+
+@* Vuelta de Google (solo candidatos). La API manda aqui con uno de:
+   login=  codigo de un solo uso -> se cambia por la sesion y se entra.
+   signup= cuenta nueva -> formulario de completar registro (nombre, documento, consentimientos).
+   error=  motivo -> mensaje y vuelta al login. *@
+<PageTitle>@Lang.T(Info != null ? "auth.google.completeTitle" : "auth.login.title")</PageTitle>
+
+<div class="auth-container">
+    <div class="auth-card">
+        @if (Info != null)
+        {
+            <h1 class="auth-title">@Lang.T("auth.google.completeTitle")</h1>
+            <p class="auth-subtitle">@Lang.T("auth.google.completeSubtitle") <strong>@Info.Email</strong></p>
+
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="alert alert-error">@ErrorMessage</div>
+            }
+
+            <div class="auth-field-row">
+                <div class="ot-input-group mb-md">
+                    <label class="ot-input-label">@Lang.T("common.labels.firstName")</label>
+                    <input class="ot-input-field" @bind="FirstName" autocomplete="given-name" maxlength="100" />
+                </div>
+                <div class="ot-input-group mb-md">
+                    <label class="ot-input-label">@Lang.T("auth.register.lastNames")</label>
+                    <input class="ot-input-field" @bind="LastName" autocomplete="family-name" maxlength="100" />
+                </div>
+            </div>
+
+            <div class="auth-field-row auth-field-row--doc">
+                <div class="ot-input-group mb-md">
+                    <label class="ot-input-label">@Lang.T("auth.register.documentType")</label>
+                    <select class="ot-input-field" @bind="DocumentType">
+                        <option value="">@Lang.T("auth.register.documentTypeSelect")</option>
+                        <option value="@IdentityDocumentType.Dni">DNI</option>
+                        <option value="@IdentityDocumentType.Nie">NIE</option>
+                        <option value="@IdentityDocumentType.Passport">@Lang.T("auth.register.passport")</option>
+                    </select>
+                </div>
+                <div class="ot-input-group mb-md">
+                    <label class="ot-input-label">@Lang.T("auth.register.documentNumber")</label>
+                    <input class="ot-input-field" @bind="Identification" @bind:after="() => DocumentTouched = true"
+                           placeholder="@DocumentPlaceholder" disabled="@(DocumentType == null)" maxlength="20" />
+                    @if (ShowDocumentError)
+                    {
+                        <span class="ot-input-error">@DocumentHint</span>
+                    }
+                </div>
+            </div>
+
+            <div class="ot-input-group mb-md">
+                <label class="ot-input-label">@Lang.T("common.labels.phone")</label>
+                <input class="ot-input-field" @bind="Phone" autocomplete="tel" />
+            </div>
+
+            @* Mismos consentimientos que el registro normal: sin marcar, privacidad obligatoria. *@
+            <label class="auth-consent">
+                <input type="checkbox" @bind="AcceptPrivacy" />
+                <span>
+                    @Lang.T("auth.register.consentPrivacyPrefix")
+                    <a href="/privacy" target="_blank" rel="noopener">@Lang.T("auth.register.legalPrivacy")</a>
+                    <span class="auth-consent-required">*</span>
+                </span>
+            </label>
+            <label class="auth-consent">
+                <input type="checkbox" @bind="AcceptMarketing" />
+                <span>@Lang.T("auth.register.consentMarketing")</span>
+            </label>
+
+            <button class="ot-btn ot-btn--primary ot-btn--medium ot-btn--full-width mt-md" disabled="@IsLoading" @onclick="CompleteSignupAsync">
+                @(IsLoading ? Lang.T("common.labels.loading") : Lang.T("auth.register.createAccount"))
+            </button>
+
+            <p class="auth-legal">
+                @Lang.T("auth.register.legalPrefix") <a href="/terms" target="_blank" rel="noopener">@Lang.T("auth.register.legalTerms")</a>
+                @Lang.T("auth.register.legalAnd") <a href="/cookies" target="_blank" rel="noopener">@Lang.T("auth.register.legalCookies")</a>.
+            </p>
+        }
+        else if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <h1 class="auth-title">@Lang.T("auth.login.title")</h1>
+            <div class="alert alert-error">@ErrorMessage</div>
+            <p class="auth-link"><a href="@LoginLink">@Lang.T("auth.google.backToLogin")</a></p>
+        }
+        else
+        {
+            <p class="auth-subtitle">@Lang.T("common.labels.loading")</p>
+        }
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "login")] public string? LoginCode { get; set; }
+    [SupplyParameterFromQuery(Name = "signup")] public string? SignupTicket { get; set; }
+    [SupplyParameterFromQuery(Name = "error")] public string? Error { get; set; }
+    [SupplyParameterFromQuery(Name = "returnUrl")] public string? ReturnUrl { get; set; }
+
+    private GoogleSignupInfoDto? Info { get; set; }
+    private string? ErrorMessage { get; set; }
+    private bool IsLoading { get; set; }
+
+    private string? FirstName { get; set; }
+    private string? LastName { get; set; }
+    private IdentityDocumentType? DocumentType { get; set; }
+    private string? Identification { get; set; }
+    private string? Phone { get; set; }
+    private bool AcceptPrivacy { get; set; }
+    private bool AcceptMarketing { get; set; }
+    private bool DocumentTouched { get; set; }
+
+    // Solo rutas internas, igual que en login/registro.
+    private string? SafeReturnUrl => !string.IsNullOrEmpty(ReturnUrl) && ReturnUrl.StartsWith("/") && !ReturnUrl.StartsWith("//") ? ReturnUrl : null;
+    private string LoginLink => SafeReturnUrl == null ? "/login" : $"/login?returnUrl={Uri.EscapeDataString(SafeReturnUrl)}";
+
+    private bool IsDocumentValid => DocumentType is { } type && IdentityDocumentValidator.IsValid(type, Identification);
+    private bool ShowDocumentError => DocumentTouched && !string.IsNullOrWhiteSpace(Identification) && !IsDocumentValid;
+
+    private string DocumentPlaceholder => DocumentType switch
+    {
+        IdentityDocumentType.Dni => "12345678Z",
+        IdentityDocumentType.Nie => "X1234567L",
+        IdentityDocumentType.Passport => "PAA123456",
+        _ => ""
+    };
+
+    // Igual que Register.razor: forma correcta pero letra equivocada -> se dice eso.
+    private string DocumentHint => DocumentType switch
+    {
+        IdentityDocumentType.Dni or IdentityDocumentType.Nie when IdentityDocumentValidator.HasValidFormat(DocumentType.Value, Identification)
+            => Lang.T("auth.register.wrongControlLetter"),
+        IdentityDocumentType.Dni => Lang.T("auth.register.invalidDni"),
+        IdentityDocumentType.Nie => Lang.T("auth.register.invalidNie"),
+        _ => Lang.T("auth.register.invalidPassport")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+
+        if (!string.IsNullOrEmpty(LoginCode))
+        {
+            var auth = await AuthApi.GoogleExchangeAsync(LoginCode);
+            if (auth != null)
+            {
+                AuthProvider.NotifyAuthenticationStateChanged();
+                Nav.NavigateTo(SafeReturnUrl ?? "/dashboard", replace: true);
+                return;
+            }
+            ErrorMessage = Lang.T("auth.google.errorExpired");
+        }
+        else if (!string.IsNullOrEmpty(SignupTicket))
+        {
+            Info = await AuthApi.GetGoogleSignupInfoAsync(SignupTicket);
+            if (Info == null)
+                ErrorMessage = Lang.T("auth.google.errorExpired");
+            else
+            {
+                FirstName = Info.FirstName;
+                LastName = Info.LastName;
+            }
+        }
+        else
+        {
+            ErrorMessage = Error switch
+            {
+                "cancelled" => Lang.T("auth.google.errorCancelled"),
+                "not_candidate" => Lang.T("auth.google.errorNotCandidate"),
+                "inactive" => Lang.T("auth.google.errorInactive"),
+                "email_not_verified" => Lang.T("auth.google.errorEmailNotVerified"),
+                "unavailable" => Lang.T("auth.google.errorUnavailable"),
+                _ => Lang.T("auth.google.errorFailed")
+            };
+        }
+    }
+
+    /// <summary>Lo mismo que valida Register.razor para el candidato (la API lo repite).</summary>
+    private string? ValidateForm()
+    {
+        if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
+            return Lang.T("auth.register.nameRequired");
+        if (DocumentType == null)
+            return Lang.T("auth.register.documentTypeRequired");
+        if (!IsDocumentValid)
+            return DocumentHint;
+        if (!AcceptPrivacy)
+            return Lang.T("auth.register.privacyRequired");
+        return null;
+    }
+
+    private async Task CompleteSignupAsync()
+    {
+        ErrorMessage = ValidateForm();
+        if (ErrorMessage != null)
+        {
+            DocumentTouched = true;
+            return;
+        }
+
+        IsLoading = true;
+        try
+        {
+            var result = await AuthApi.GoogleSignupAsync(new GoogleSignupDto
+            {
+                Ticket = SignupTicket!,
+                FirstName = FirstName?.Trim(),
+                LastName = LastName?.Trim(),
+                DocumentType = (int?)DocumentType,
+                Identification = IdentityDocumentValidator.Normalize(Identification),
+                Phone = Phone,
+                AcceptPrivacy = AcceptPrivacy,
+                AcceptMarketing = AcceptMarketing
+            });
+
+            if (result.Data != null)
+            {
+                AuthProvider.NotifyAuthenticationStateChanged();
+                // Cuenta nueva: en el panel sale la bienvenida (subir el CV o completar a mano).
+                Nav.NavigateTo("/dashboard", replace: true);
+                return;
+            }
+
+            if (result.TicketExpired)
+            {
+                Info = null;
+                ErrorMessage = Lang.T("auth.google.errorExpired");
+            }
+            else
+            {
+                ErrorMessage = result.EmailAlreadyRegistered ? Lang.T("auth.register.emailExists")
+                    : result.ValidationError ?? Lang.T("auth.register.errorGeneric");
+            }
+        }
+        catch
+        {
+            ErrorMessage = Lang.T("auth.register.errorGeneric");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

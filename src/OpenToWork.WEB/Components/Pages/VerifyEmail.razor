@@ -83,6 +83,14 @@
             return;
         }
         Email = status.Email;
+
+        // Llegar desde el aviso del panel no debe exigir pulsar "Reenviar": se envia al abrir.
+        // too_soon = ya hay un codigo reciente (p. ej. empresa recien registrada), no es un error.
+        var sent = await AuthApi.SendEmailVerificationCodeAsync();
+        if (sent.Success)
+            InfoMessage = Lang.T("auth.verifyEmail.sent");
+        else if (sent.Error != "too_soon")
+            ErrorMessage = ErrorText(sent.Error);
     }
 
     private async Task VerifyAsync()

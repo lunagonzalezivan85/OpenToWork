@@ -23,6 +23,18 @@ public static class IdentityDocumentValidator
         _ => false
     };
 
+    /// <summary>
+    /// true si la forma es la de ese documento aunque la letra de control no cuadre. Sirve para avisar
+    /// "la letra no corresponde a ese numero" en lugar de repetir el formato.
+    /// </summary>
+    public static bool HasValidFormat(IdentityDocumentType type, string? value) => type switch
+    {
+        IdentityDocumentType.Dni => Regex.IsMatch(Normalize(value), @"^\d{8}[A-Z]$"),
+        IdentityDocumentType.Nie => Regex.IsMatch(Normalize(value), @"^[XYZ]\d{7}[A-Z]$"),
+        IdentityDocumentType.Passport => IsValidPassport(value),
+        _ => false
+    };
+
     /// <summary>8 digitos + letra de control.</summary>
     public static bool IsValidDni(string? value)
     {

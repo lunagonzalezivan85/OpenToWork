@@ -73,6 +73,7 @@ public class AppDbContext : DbContext
     public DbSet<PTChallengeReview> PT_ChallengeReviews => Set<PTChallengeReview>();
     public DbSet<PTPromoCode> PT_PromoCodes => Set<PTPromoCode>();
     public DbSet<PTPromoCodeRedemption> PT_PromoCodeRedemptions => Set<PTPromoCodeRedemption>();
+    public DbSet<PTNewsPost> PT_NewsPosts => Set<PTNewsPost>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -433,6 +434,12 @@ public class AppDbContext : DbContext
             e.HasIndex(x => new { x.PT_JobTypeId, x.PT_CompetencyId, x.IsDeleted }).IsUnique();
             e.HasOne(x => x.JobType).WithMany().HasForeignKey(x => x.PT_JobTypeId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Competency).WithMany().HasForeignKey(x => x.PT_CompetencyId).OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<PTNewsPost>(e =>
+        {
+            e.ToTable("PT_NewsPosts");
+            e.HasIndex(n => n.Slug).IsUnique();
+            e.HasIndex(n => new { n.Status, n.PublishedAt });
         });
         modelBuilder.Entity<PTChallenge>(e =>
         {

@@ -162,8 +162,9 @@
         "wizardRequired": "NecesitÃ¡s completar tu perfil (wizard) para poder tomar retos."
     },
     "candidateSearch": {
-        "title": "BÃºsqueda Avanzada",
-        "subtitle": "EncontrÃ¡ candidatos por score, estado de verificaciÃ³n y skills",
+        "title": "Búsqueda Avanzada",
+        "unavailable": "Esta función no está disponible por ahora. Te enviamos candidatos verificados para tus vacantes.",
+        "subtitle": "Encontrá candidatos por score, estado de verificación y skills",
         "filtersTitle": "Filtros",
         "minScore": "Score mÃ­nimo",
         "minStability": "Estabilidad mÃ­nima",
@@ -176,7 +177,6 @@
         "anySkill": "Cualquier skill",
         "search": "Buscar",
         "empty": "No se encontraron candidatos con esos filtros.",
-        "notVerified": "La búsqueda de candidatos está disponible para empresas verificadas por Trato Directo. Tu empresa aún no está verificada: completa tu perfil y el equipo la revisará.",
         "resultsCount": "candidatos encontrados"
     }
 }

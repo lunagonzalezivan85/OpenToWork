@@ -1680,4 +1680,89 @@ public class AdminAuthApiService
     }
 
     private static readonly JsonSerializerOptions ChallengeReadOptions = new(JsonSerializerDefaults.Web);
+
+    // --- Noticias (docs/dsiezar/noticias-terminos-de-referencia.md). Errores: el mensaje de la API o "generic"/"forbidden". ---
+
+    public Task<(List<NewsPostAdminListDto>?, string?)> GetNewsPostsAsync(int? status, string? search) =>
+        ChallengeCallAsync<List<NewsPostAdminListDto>>(HttpMethod.Get,
+            $"api/admin/news?search={Uri.EscapeDataString(search ?? "")}" + (status != null ? $"&status={status}" : ""));
+
+    public Task<(NewsPostAdminDto?, string?)> GetNewsPostAsync(Guid id) =>
+        ChallengeCallAsync<NewsPostAdminDto>(HttpMethod.Get, $"api/admin/news/{id}");
+
+    public Task<(NewsSavedDto?, string?)> CreateNewsPostAsync(SaveNewsPostDto dto) =>
+        ChallengeCallAsync<NewsSavedDto>(HttpMethod.Post, "api/admin/news", dto);
+
+    public Task<(NewsSavedDto?, string?)> UpdateNewsPostAsync(Guid id, SaveNewsPostDto dto) =>
+        ChallengeCallAsync<NewsSavedDto>(HttpMethod.Put, $"api/admin/news/{id}", dto);
+
+    /// <summary>action: publish, unpublish o archive.</summary>
+    public Task<(NewsSavedDto?, string?)> NewsActionAsync(Guid id, string action) =>
+        ChallengeCallAsync<NewsSavedDto>(HttpMethod.Post, $"api/admin/news/{id}/{action}");
+
+    public Task<(NewsSavedDto?, string?)> DeleteNewsPostAsync(Guid id) =>
+        ChallengeCallAsync<NewsSavedDto>(HttpMethod.Delete, $"api/admin/news/{id}");
+
+    public async Task<string?> PreviewNewsBodyAsync(string? body)
+    {
+        var (result, _) = await ChallengeCallAsync<JsonElement>(HttpMethod.Post, "api/admin/news/preview", new { Body = body });
+        return result.ValueKind == JsonValueKind.Object ? result.GetProperty("html").GetString() : null;
+    }
+
+    public async Task<string?> GetNewsPortalUrlAsync()
+    {
+        var (result, _) = await ChallengeCallAsync<JsonElement>(HttpMethod.Get, "api/admin/news/portal-url");
+        return result.ValueKind == JsonValueKind.Object ? result.GetProperty("url").GetString() : null;
+    }
+
+    /// <summary>La foto llega ya reducida en el navegador (RequestImageFileAsync).</summary>
+    public async Task<string?> UploadNewsCoverAsync(Guid id, Stream image, string fileName, string contentType)
+    {
+        try
+        {
+            await SetAuthHeaderAsync();
+            using var content = new MultipartFormDataContent();
+            var part = new StreamContent(image);
+            part.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+            content.Add(part, "file", fileName);
+            using var response = await _httpClient.PostAsync($"api/admin/news/{id}/cover", content);
+            if (response.IsSuccessStatusCode) return null;
+            var text = await response.Content.ReadAsStringAsync();
+            try { return JsonDocument.Parse(text).RootElement.GetProperty("error").GetString() ?? "generic"; }
+            catch { return "generic"; }
+        }
+        catch (Exception)
+        {
+            return "generic";
+        }
+    }
+
+    /// <summary>Las fotos de Noticias son privadas en la API del admin: se piden con el token y se pintan como data URL.</summary>
+    public async Task<string?> GetNewsImageDataUrlAsync(string? fileName)
+    {
+        if (string.IsNullOrEmpty(fileName)) return null;
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/news/images/{Uri.EscapeDataString(fileName)}");
+        if (!response.IsSuccessStatusCode) return null;
+        var type = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+        return $"data:{type};base64,{Convert.ToBase64String(await response.Content.ReadAsByteArrayAsync())}";
+    }
+
+    public async Task<bool> GetNewsEnabledAsync()
+    {
+        var (result, _) = await ChallengeCallAsync<FeatureFlagResponse>(HttpMethod.Get, "api/admin/system-config/news");
+        return result?.Enabled == true;
+    }
+
+    public async Task<bool> SetNewsEnabledAsync(bool enabled)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.PutAsJsonAsync("api/admin/system-config/news", new { Enabled = enabled });
+        return response.IsSuccessStatusCode;
+    }
+}
+
+public class NewsSavedDto
+{
+    public Guid? Id { get; set; }
 }

@@ -55,6 +55,10 @@ public class ProfileService : IProfileService
         return dto;
     }
 
+    public async Task<bool> CanViewCandidateAsync(Guid candidateId, Guid viewerUserId) =>
+        await _context.PT_Candidates.AnyAsync(c => c.Id == candidateId && !c.IsDeleted && c.SCUserId == viewerUserId)
+        || await IsDeliveredToViewerAsync(candidateId, viewerUserId);
+
     /// <summary>El candidato fue entregado por TD a la empresa de este usuario (unico caso en que una
     /// empresa ve su perfil y su CV).</summary>
     private Task<bool> IsDeliveredToViewerAsync(Guid candidateId, Guid viewerUserId) =>

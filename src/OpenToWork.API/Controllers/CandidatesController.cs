@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using OpenToWork.Core.Interfaces;
-using OpenToWork.Models.Context;
 using OpenToWork.Shared.DTOs;
 
 namespace OpenToWork.API.Controllers;
@@ -17,55 +15,32 @@ public class CandidatesController : ControllerBase
     private readonly IScoringService _scoringService;
     private readonly IReferenceService _referenceService;
     private readonly IVerificationStatusService _verificationStatusService;
-    private readonly ICandidateSearchService _candidateSearchService;
+    private readonly IProfileService _profileService;
     private readonly ISystemConfigService _systemConfig;
-    private readonly AppDbContext _context;
 
-    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService, ICandidateSearchService candidateSearchService, ISystemConfigService systemConfig, AppDbContext context)
+    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService, IProfileService profileService, ISystemConfigService systemConfig)
     {
         _candidateService = candidateService;
         _validationService = validationService;
         _scoringService = scoringService;
         _referenceService = referenceService;
         _verificationStatusService = verificationStatusService;
-        _candidateSearchService = candidateSearchService;
+        _profileService = profileService;
         _systemConfig = systemConfig;
-        _context = context;
     }
 
-    /// <summary>Busqueda avanzada de la empresa por score/verificacion/skill (Fase 5).
-    /// Solo candidatos con perfil publico Y solo empresas verificadas por el equipo TD
-    /// (auditoria 08-Oct H-39: antes cualquier usuario autenticado -incluido una empresa
-    /// recien registrada sin comprobar- listaba candidatos reales con nombre, ciudad y
-    /// metricas de perfilado).</summary>
+    // Busqueda de candidatos por empresas: CERRADA (auditoria 8-Oct, H-39). Cualquier usuario con sesion,
+    // incluso una empresa sin verificar o un candidato, listaba a candidatos reales con nombre y score.
+    // Se reabrira solo con verificacion de empresas, opt-in del candidato y datos minimos
+    // (docs/dsiezar/seguridad-busqueda-candidatos.md). ICandidateSearchService se conserva para ese rediseno.
     [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] CandidateSearchFilterDto filter)
-    {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-        if (!await IsVerifiedCompanyAsync(userId.Value)) return Forbid();
+    public IActionResult Search() => SearchClosed();
 
-        var result = await _candidateSearchService.SearchAsync(filter);
-        return Ok(result);
-    }
-
-    /// <summary>Skills que aparecen en candidatos con perfil publico - para el filtro de
-    /// busqueda. Misma regla que search: solo empresas verificadas.</summary>
     [HttpGet("search/skills")]
-    public async Task<IActionResult> GetSearchableSkills()
-    {
-        var userId = GetUserId();
-        if (userId == null) return Unauthorized();
-        if (!await IsVerifiedCompanyAsync(userId.Value)) return Forbid();
+    public IActionResult GetSearchableSkills() => SearchClosed();
 
-        var result = await _candidateSearchService.GetSearchableSkillsAsync();
-        return Ok(result);
-    }
-
-    /// <summary>Solo una empresa verificada por el equipo TD puede buscar candidatos.
-    /// Usuarios sin empresa (candidatos) o con empresa sin verificar -> 403.</summary>
-    private Task<bool> IsVerifiedCompanyAsync(Guid userId) =>
-        _context.PT_Companies.AnyAsync(c => c.SCUserId == userId && !c.IsDeleted && c.IsVerified);
+    private IActionResult SearchClosed() =>
+        StatusCode(StatusCodes.Status403Forbidden, new { message = "La busqueda de candidatos no esta disponible." });
 
     [HttpGet("me")]
     public async Task<IActionResult> GetMyProfile()
@@ -147,15 +122,16 @@ public class CandidatesController : ControllerBase
     }
 
     /// <summary>
-    /// Lectura pura, no recalcula. Visible para cualquier usuario autenticado (no solo el
-    /// dueno) - mismo criterio ya usado por ProfileController.GetCandidateProfile para el
-    /// perfil publico; la empresa lo necesita para busqueda avanzada y postulantes (Fase 5).
+    /// Lectura pura, no recalcula. Solo el propio candidato o una empresa a la que TD se lo
+    /// entrego (misma regla que el perfil y el CV). Antes lo veia cualquier usuario con sesion
+    /// (auditoria 8-Oct, H-39/H-27).
     /// </summary>
     [HttpGet("{id}/score")]
     public async Task<IActionResult> GetScore(Guid id)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+        if (!await _profileService.CanViewCandidateAsync(id, userId.Value)) return NotFound();
 
         var result = await _scoringService.GetScoreAsync(id);
         return Ok(result);
@@ -214,16 +190,15 @@ public class CandidatesController : ControllerBase
     }
 
     /// <summary>
-    /// {id} es el Id de PTCandidate. Visible para cualquier usuario autenticado (no solo el
-    /// dueno) desde Fase 5 - resuelve el gap de acceso dejado abierto en fase-3-sub7.md
-    /// pregunta 6, mismo criterio que GetScore de arriba: la empresa necesita ver el badge
-    /// "Verificado TD" de otros candidatos en postulantes y busqueda avanzada.
+    /// {id} es el Id de PTCandidate. Mismo criterio que GetScore: el propio candidato o una
+    /// empresa a la que TD se lo entrego.
     /// </summary>
     [HttpGet("{id}/verification-status")]
     public async Task<IActionResult> GetVerificationStatus(Guid id)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
+        if (!await _profileService.CanViewCandidateAsync(id, userId.Value)) return NotFound();
 
         var result = await _verificationStatusService.GetVerificationStatusAsync(id);
         return Ok(result);

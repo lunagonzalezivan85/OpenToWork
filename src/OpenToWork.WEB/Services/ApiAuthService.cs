@@ -13,6 +13,8 @@ public class RegisterResult
     public bool EmailAlreadyRegistered { get; set; }
     /// <summary>Motivo del rechazo de la API (400) cuando un dato no es valido.</summary>
     public string? ValidationError { get; set; }
+    /// <summary>Registro con Google: el enlace de Google vencio (hay que volver a pulsar el boton).</summary>
+    public bool TicketExpired { get; set; }
 }
 
 /// <summary>Resultado de verificar o reenviar el codigo del correo. Error = clave corta de la API (invalid, expired...).</summary>
@@ -205,14 +207,93 @@ public class ApiAuthService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<AuthResponseDto?> GoogleLoginAsync(string googleToken)
+    // --- Google (solo candidatos): el boton es un enlace a la API, que manda a Google y vuelve a /auth/google ---
+
+    public async Task<bool> IsGoogleEnabledAsync()
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/google", new { Token = googleToken });
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<GoogleEnabledResult>("api/auth/google/enabled");
+            return result?.Enabled == true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>URL absoluta: en desarrollo la API va en otro puerto que el portal.</summary>
+    public string GoogleStartUrl(string? returnUrl) =>
+        new Uri(_httpClient.BaseAddress!, "api/auth/google/start").ToString()
+        + (string.IsNullOrEmpty(returnUrl) ? "" : "?returnUrl=" + Uri.EscapeDataString(returnUrl));
+
+    public async Task<AuthResponseDto?> GoogleExchangeAsync(string code)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/auth/google/exchange", new GoogleExchangeDto { Code = code });
         if (!response.IsSuccessStatusCode) return null;
         var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         if (result != null) await PersistAuthAsync(result);
         return result;
     }
+
+    public async Task<GoogleSignupInfoDto?> GetGoogleSignupInfoAsync(string ticket)
+    {
+        var response = await _httpClient.GetAsync($"api/auth/google/signup/{Uri.EscapeDataString(ticket)}");
+        return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<GoogleSignupInfoDto>() : null;
+    }
+
+    public async Task<RegisterResult> GoogleSignupAsync(GoogleSignupDto dto)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/auth/google/signup", dto);
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning("Google signup failed: {Error}", error);
+            return new RegisterResult
+            {
+                EmailAlreadyRegistered = response.StatusCode == System.Net.HttpStatusCode.Conflict,
+                TicketExpired = response.StatusCode == System.Net.HttpStatusCode.NotFound,
+                ValidationError = response.StatusCode == System.Net.HttpStatusCode.BadRequest ? ReadMessage(error) : null
+            };
+        }
+        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+        if (result != null) await PersistAuthAsync(result);
+        return new RegisterResult { Data = result };
+    }
+
+    private record GoogleEnabledResult(bool Enabled);
+
+    // --- Noticias (publicas, sin login). Si la seccion esta apagada la API responde 404. ---
+
+    public async Task<bool> IsNewsEnabledAsync()
+    {
+        try
+        {
+            var result = await _httpClient.GetFromJsonAsync<GoogleEnabledResult>("api/news/enabled");
+            return result?.Enabled == true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<NewsPageDto?> GetNewsAsync(int? type, int page, int pageSize = 9)
+    {
+        var response = await _httpClient.GetAsync($"api/news?page={page}&pageSize={pageSize}" + (type != null ? $"&type={type}" : ""));
+        return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<NewsPageDto>() : null;
+    }
+
+    public async Task<NewsPostDetailDto?> GetNewsPostAsync(string slug)
+    {
+        var response = await _httpClient.GetAsync($"api/news/{Uri.EscapeDataString(slug)}");
+        return response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<NewsPostDetailDto>() : null;
+    }
+
+    /// <summary>URL absoluta de una foto publicada (en desarrollo la API va en otro puerto).</summary>
+    public string? NewsImageUrl(string? fileName) => string.IsNullOrEmpty(fileName)
+        ? null
+        : new Uri(_httpClient.BaseAddress!, $"api/news/images/{Uri.EscapeDataString(fileName)}").ToString();
 
     public async Task<bool> VerifyRecaptchaAsync(string recaptchaResponse)
     {
@@ -898,32 +979,6 @@ public class ApiAuthService
         await SetAuthHeaderAsync();
         var response = await _httpClient.PutAsJsonAsync($"api/permanentvacancies/{vacancyId}/scorecard", dto);
         return response.IsSuccessStatusCode;
-    }
-
-    /// <summary>Forbidden=true cuando la empresa no esta verificada (el API responde 403).</summary>
-    public async Task<(CandidateSearchResultPageDto? Page, bool Forbidden)> SearchCandidatesAsync(CandidateSearchFilterDto filter)
-    {
-        await SetAuthHeaderAsync();
-        var query = $"api/candidates/search?page={filter.Page}&pageSize={filter.PageSize}";
-        if (filter.MinOverallScore.HasValue) query += $"&minOverallScore={filter.MinOverallScore}";
-        if (filter.MinStabilityIndex.HasValue) query += $"&minStabilityIndex={filter.MinStabilityIndex}";
-        if (filter.MinReliabilityIndex.HasValue) query += $"&minReliabilityIndex={filter.MinReliabilityIndex}";
-        if (filter.MinEvidenceIndex.HasValue) query += $"&minEvidenceIndex={filter.MinEvidenceIndex}";
-        if (filter.MinCompatibilityIndex.HasValue) query += $"&minCompatibilityIndex={filter.MinCompatibilityIndex}";
-        if (filter.MinVerificationStatus.HasValue) query += $"&minVerificationStatus={filter.MinVerificationStatus}";
-        if (filter.SkillId.HasValue) query += $"&skillId={filter.SkillId}";
-        var response = await _httpClient.GetAsync(query);
-        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden) return (null, true);
-        if (!response.IsSuccessStatusCode) return (null, false);
-        return (await response.Content.ReadFromJsonAsync<CandidateSearchResultPageDto>(), false);
-    }
-
-    public async Task<List<SkillOptionDto>> GetSearchableSkillsAsync()
-    {
-        await SetAuthHeaderAsync();
-        var response = await _httpClient.GetAsync("api/candidates/search/skills");
-        if (!response.IsSuccessStatusCode) return new();
-        return await response.Content.ReadFromJsonAsync<List<SkillOptionDto>>() ?? new();
     }
 
     public async Task<string?> GetTokenAsync() => await _localStorage.GetItemAsync("opentowork-token");

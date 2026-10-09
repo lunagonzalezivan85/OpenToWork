@@ -30,7 +30,7 @@
 
 ### 3.1 Portal — `tratodirecto.es`
 
-En produccion el portal **no crea ninguna cookie** (verificado con `curl`: sin `Set-Cookie`). Todo va en `localStorage`:
+En produccion el portal **no crea ninguna cookie** (verificado con `curl`: sin `Set-Cookie`), salvo `td_google_state` durante el login con Google. El resto va en `localStorage`:
 
 | Nombre | Donde | Tipo | Finalidad | Duracion | Titular |
 |---|---|---|---|---|---|
@@ -41,6 +41,11 @@ En produccion el portal **no crea ninguna cookie** (verificado con `curl`: sin `
 | `opentowork-lang` | localStorage | Preferencia | Recordar el idioma elegido | Permanente, hasta borrarlo | Trato Directo |
 | `opentowork-theme` | localStorage | Preferencia | Recordar el tema visual elegido | Permanente, hasta borrarlo | Trato Directo |
 | `tratodirecto-v7` | Cache del service worker | Tecnica | Guardar estilos e iconos para que el portal cargue mas rapido | Hasta la siguiente version del portal | Trato Directo |
+| `td_google_state` | Cookie (HttpOnly, path `/api/auth/google`) | Tecnica | Solo al pulsar "Continuar con Google" (candidatos): ata el `state` de OAuth al navegador contra login CSRF | 10 min, se borra al volver | Trato Directo |
+
+Login con Google (5-Oct): flujo por redireccion. El portal no carga nada de Google; el navegador solo va a `accounts.google.com` si el candidato pulsa el boton. Google nos da nombre, correo e identificador de la cuenta.
+
+Videos de Noticias (5-Oct): reproductor en dos pasos. Hasta pulsar "Reproducir" solo se ve la foto de portada (nuestro dominio). Al pulsar se carga un iframe de `www.youtube-nocookie.com` o `player.vimeo.com` (`dnt=1`), con aviso previo en la pagina. CSP del portal: `frame-src` solo admite esos dos dominios (`src/OpenToWork.WEB/web.config`). Esas cookies de terceros son de YouTube/Vimeo y solo existen si el visitante decide reproducir.
 
 Terceros que recibe el navegador del visitante:
 

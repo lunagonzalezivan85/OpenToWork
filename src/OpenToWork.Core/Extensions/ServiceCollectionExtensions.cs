@@ -46,6 +46,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IMessagingService, MessagingService>();
         // Geocodificacion Nominatim (busqueda por radio en /vacancies, docs/iluna/fase-7-geo-busqueda.md)
         services.AddHttpClient<IGeocodingService, GeocodingService>();
+        services.AddScoped<INewsService, NewsService>();
 
         return services;
     }
@@ -95,6 +96,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IChallengeReviewService, ChallengeReviewService>();
         // Geocodificacion Nominatim (backfill admin + geocode al crear vacantes)
         services.AddHttpClient<IGeocodingService, GeocodingService>();
+        // Noticias (docs/dsiezar/noticias-terminos-de-referencia.md)
+        services.AddScoped<INewsService, NewsService>();
 
         return services;
     }
