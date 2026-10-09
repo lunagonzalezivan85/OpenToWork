@@ -106,6 +106,14 @@ public class PTCandidate : BaseEntity
 
     public bool IsProfilePublic { get; set; } = true;
 
+    // Consentimiento RGPD de visibilidad (auditoria 08-Oct, H-27/H-39): IsProfilePublic solo
+    // tiene efecto si hay consentimiento registrado (VisibilityConsentAt). Revocar guarda
+    // su propio timestamp - queda el rastro de cuando se acepto y cuando se quito.
+    public DateTime? VisibilityConsentAt { get; set; }
+    public DateTime? VisibilityConsentRevokedAt { get; set; }
+    [MaxLength(20)]
+    public string? VisibilityConsentVersion { get; set; }
+
     public DateTime? CompletedAt { get; set; }
 
     public virtual ICollection<PTCandidateSkill> CandidateSkills { get; set; } = new List<PTCandidateSkill>();

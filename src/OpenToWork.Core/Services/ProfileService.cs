@@ -17,6 +17,10 @@ public class ProfileService : IProfileService
         _scoringService = scoringService;
     }
 
+    /// <summary>Version del texto de consentimiento de visibilidad (subir si cambia el texto en
+    /// el perfil del candidato - cada version cuenta como una aceptacion distinta).</summary>
+    private const string VisibilityConsentVersion = "rgpd-v1";
+
     public async Task<CandidateProfileDto?> GetProfileAsync(Guid userId)
     {
         var candidate = await _context.PT_Candidates
@@ -136,7 +140,29 @@ public class ProfileService : IProfileService
         if (dto.PortfolioUrl != null) candidate.PortfolioUrl = dto.PortfolioUrl;
         if (dto.Availability.HasValue) candidate.Availability = dto.Availability;
         if (dto.WorkAuthorization.HasValue) candidate.WorkAuthorization = dto.WorkAuthorization;
-        if (dto.IsProfilePublic.HasValue) candidate.IsProfilePublic = dto.IsProfilePublic.Value;
+        // Consentimiento de visibilidad RGPD (Fase 2, auditoria 08-Oct H-27): marcar el perfil
+        // como publico junto al texto informado del formulario registra cuando y con que version
+        // se acepto; desmarcarlo guarda la revocacion. Sin VisibilityConsentAt el candidato no
+        // entra en busquedas ni matches aunque IsProfilePublic sea true.
+        if (dto.IsProfilePublic.HasValue)
+        {
+            var now = DateTime.UtcNow;
+            if (dto.IsProfilePublic.Value)
+            {
+                if (candidate.VisibilityConsentAt == null || !candidate.IsProfilePublic)
+                {
+                    candidate.VisibilityConsentAt = now;
+                    candidate.VisibilityConsentRevokedAt = null;
+                    candidate.VisibilityConsentVersion = VisibilityConsentVersion;
+                }
+                candidate.IsProfilePublic = true;
+            }
+            else if (candidate.IsProfilePublic)
+            {
+                candidate.IsProfilePublic = false;
+                candidate.VisibilityConsentRevokedAt = now;
+            }
+        }
         if (dto.CvUrl != null) candidate.CvUrl = dto.CvUrl;
         // ProfilePictureUrl ya no se acepta aqui: solo lo fija la subida de foto (SetProfilePictureAsync).
         if (dto.Phone != null) candidate.Phone = dto.Phone;
@@ -555,6 +581,7 @@ public class ProfileService : IProfileService
         Availability = c.Availability,
         WorkAuthorization = c.WorkAuthorization,
         IsProfilePublic = c.IsProfilePublic,
+        VisibilityConsentAt = c.VisibilityConsentAt,
         Experiences = CandidateHistoryOrder.Experiences(c.Experiences).Select(MapToExperienceDto).ToList(),
         Educations = CandidateHistoryOrder.Educations(c.Educations).Select(MapToEducationDto).ToList(),
         Certifications = c.Certifications.Where(c => !c.IsDeleted).Select(MapToCertificationDto).ToList(),

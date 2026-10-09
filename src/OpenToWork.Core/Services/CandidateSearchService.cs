@@ -24,9 +24,13 @@ public class CandidateSearchService : ICandidateSearchService
     public async Task<CandidateSearchResultPageDto> SearchAsync(CandidateSearchFilterDto filter)
     {
         // Los candidatos Colocados no aparecen como disponibles (CandidatePlacementHelper).
+        // Visibilidad RGPD (Fase 2, auditoria H-27): no basta IsProfilePublic - hace falta
+        // el consentimiento registrado (VisibilityConsentAt) y que no este revocado despues.
         var placedIds = CandidatePlacementHelper.PlacedCandidateIds(_context);
         var query = _context.PT_Candidates
-            .Where(c => !c.IsDeleted && c.IsProfilePublic && c.WizardCompleted)
+            .Where(c => !c.IsDeleted && c.IsProfilePublic && c.WizardCompleted
+                && c.VisibilityConsentAt != null
+                && (c.VisibilityConsentRevokedAt == null || c.VisibilityConsentRevokedAt < c.VisibilityConsentAt))
             .Where(c => !placedIds.Contains(c.Id));
 
         if (filter.SkillId.HasValue)
@@ -36,7 +40,7 @@ public class CandidateSearchService : ICandidateSearchService
         }
 
         var candidates = await query
-            .Select(c => new { c.Id, Name = c.FirstName + " " + c.LastName, c.Title, c.City, c.Country })
+            .Select(c => new { c.Id, c.FirstName, c.LastName, c.Title, c.City, c.Country })
             .ToListAsync();
 
         // Score/estado se computan por candidato (no son filtrables via SQL directo: el score
@@ -77,7 +81,9 @@ public class CandidateSearchService : ICandidateSearchService
             results.Add(new CandidateSearchResultDto
             {
                 CandidateId = c.Id,
-                Name = c.Name.Trim(),
+                // Datos minimos (Fase 2 RGPD / embudo ciego): nombre + inicial del apellido.
+                // La identidad completa solo viaja por la via de entrega (CanViewCandidateAsync).
+                Name = MaskName(c.FirstName, c.LastName),
                 Title = c.Title,
                 City = c.City,
                 Country = c.Country,
@@ -114,10 +120,22 @@ public class CandidateSearchService : ICandidateSearchService
     {
         return await _context.PT_CandidateSkills
             .Where(cs => !cs.IsDeleted && !cs.Candidate.IsDeleted && cs.Candidate.IsProfilePublic
+                && cs.Candidate.VisibilityConsentAt != null
+                && (cs.Candidate.VisibilityConsentRevokedAt == null
+                    || cs.Candidate.VisibilityConsentRevokedAt < cs.Candidate.VisibilityConsentAt)
                 && cs.Candidate.WizardCompleted && !cs.Skill.IsDeleted)
             .Select(cs => new SkillOptionDto { Id = cs.PT_SkillId, Name = cs.Skill.Name })
             .Distinct()
             .OrderBy(s => s.Name)
             .ToListAsync();
+    }
+
+    /// <summary>"María García" -> "María G."  Datos minimos: un apellido completo identifica
+    /// demasiado en una busqueda agregada.</summary>
+    private static string MaskName(string? firstName, string? lastName)
+    {
+        var first = (firstName ?? "").Trim();
+        var initial = (lastName ?? "").Trim() is { Length: > 0 } last ? last[..1].ToUpperInvariant() + "." : "";
+        return (first + " " + initial).Trim();
     }
 }
