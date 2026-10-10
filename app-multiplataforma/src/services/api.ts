@@ -7,6 +7,9 @@ async function request(path: string, init: RequestInit = {}, retry = true): Prom
   const token = getAccessToken();
   const headers = new Headers(init.headers);
   headers.set('Content-Type', 'application/json');
+  // La API solo devuelve el refresh en el JSON a clientes por cuerpo (la web lo
+  // recibe por cookie HttpOnly). La app es cliente por cuerpo: login/refresh/register.
+  if (path.startsWith('/api/auth/')) headers.set('X-Auth-Channel', 'body');
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
   const res = await fetch(`${API_URL}${path}`, { ...init, headers });
@@ -17,7 +20,7 @@ async function request(path: string, init: RequestInit = {}, retry = true): Prom
 
   const refresh = await fetch(`${API_URL}/api/auth/refresh`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Auth-Channel': 'body' },
     body: JSON.stringify({ refreshToken }),
   });
   if (!refresh.ok) {
