@@ -120,7 +120,7 @@
     private bool DocumentTouched { get; set; }
 
     // Solo rutas internas, igual que en login/registro.
-    private string? SafeReturnUrl => !string.IsNullOrEmpty(ReturnUrl) && ReturnUrl.StartsWith("/") && !ReturnUrl.StartsWith("//") ? ReturnUrl : null;
+    private string? SafeReturnUrl => !string.IsNullOrEmpty(ReturnUrl) && ReturnUrl.StartsWith("/") && !ReturnUrl.StartsWith("//") && !ReturnUrl.StartsWith("/\\") ? ReturnUrl : null;
     private string LoginLink => SafeReturnUrl == null ? "/login" : $"/login?returnUrl={Uri.EscapeDataString(SafeReturnUrl)}";
 
     private bool IsDocumentValid => DocumentType is { } type && IdentityDocumentValidator.IsValid(type, Identification);

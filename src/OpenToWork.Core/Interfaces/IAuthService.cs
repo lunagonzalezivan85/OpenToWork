@@ -10,7 +10,7 @@ public interface IAuthService
     Task<AuthResponseDto> LoginAsync(LoginDto dto);
     Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenDto dto);
     Task<bool> RevokeTokenAsync(string refreshToken);
-Task<int> RevokeAllTokensAsync(Guid userId);
+    Task<int> RevokeAllTokensAsync(Guid userId);
     Task<bool> RegisterDeviceAsync(Guid userId, string deviceHash, string? deviceName);
     Task<bool> IsDeviceKnownAsync(Guid userId, string deviceHash);
     Task<bool> RequestPasswordResetAsync(string email);

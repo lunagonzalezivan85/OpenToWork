@@ -1,15 +1,11 @@
 namespace OpenToWork.Shared.DTOs;
 
-/// <summary>Busqueda avanzada de la empresa por score/verificacion/skill - Fase 5.</summary>
+/// <summary>Busqueda avanzada de la empresa por verificacion/skill - Fase 5.
+/// Sin filtros por score (H-27): un "minimo" por query permite reconocer el valor
+/// por biseccion - filtrar es una forma de perfilar, y el perfilado laboral espera
+/// la EIPD y la base legal antes de exponerse a empresas.</summary>
 public class CandidateSearchFilterDto
 {
-    public int? MinOverallScore { get; set; }
-    /// <summary>"Estabilidad" - PTCandidateScore.StabilityIndex minimo.</summary>
-    public int? MinStabilityIndex { get; set; }
-    /// <summary>"Confiabilidad" - PTCandidateScore.ReliabilityIndex minimo.</summary>
-    public int? MinReliabilityIndex { get; set; }
-    public int? MinEvidenceIndex { get; set; }
-    public int? MinCompatibilityIndex { get; set; }
     /// <summary>OpenToWork.Shared.Enums.CandidateVerificationStatus - candidatos con este estado o superior.</summary>
     public int? MinVerificationStatus { get; set; }
     public Guid? SkillId { get; set; }
@@ -24,11 +20,6 @@ public class CandidateSearchResultDto
     public string? Title { get; set; }
     public string? City { get; set; }
     public string? Country { get; set; }
-    public int OverallScore { get; set; }
-    public int StabilityIndex { get; set; }
-    public int ReliabilityIndex { get; set; }
-    public int EvidenceIndex { get; set; }
-    public int CompatibilityIndex { get; set; }
     /// <summary>OpenToWork.Shared.Enums.CandidateVerificationStatus</summary>
     public int VerificationStatus { get; set; }
     public bool IsVerifiedTD { get; set; }

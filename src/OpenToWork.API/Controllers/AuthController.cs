@@ -33,8 +33,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.RegisterAsync(dto, consentIp: HttpContext.Connection.RemoteIpAddress?.ToString());
-            SetRefreshCookie(result.RefreshToken);
-            return Ok(result);
+            return RespondWithAuth(result);
         }
         catch (ArgumentException ex)
         {
@@ -116,8 +115,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.LoginAsync(dto);
-            SetRefreshCookie(result.RefreshToken);
-            return Ok(result);
+            return RespondWithAuth(result);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -138,8 +136,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _authService.RefreshTokenAsync(new RefreshTokenDto { RefreshToken = refreshToken });
-            SetRefreshCookie(result.RefreshToken); // rotacion: renueva token y cookie a la vez
-            return Ok(result);
+            return RespondWithAuth(result);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -193,6 +190,17 @@ public class AuthController : ControllerBase
 
     private void DeleteRefreshCookie() =>
         Response.Cookies.Delete(RefreshCookieName, new CookieOptions { Path = "/api/auth" });
+
+    // El refresh ya viaja en la cookie HttpOnly (portal); devolverlo ademas en el JSON
+    // duplica el secreto donde un XSS podria leerlo. Solo los clientes que lo piden por
+    // cuerpo (app Capacitor: X-Auth-Channel: body) lo siguen recibiendo en la respuesta.
+    private IActionResult RespondWithAuth(AuthResponseDto result)
+    {
+        SetRefreshCookie(result.RefreshToken);
+        if (!string.Equals(Request.Headers["X-Auth-Channel"], "body", StringComparison.OrdinalIgnoreCase))
+            result.RefreshToken = string.Empty;
+        return Ok(result);
+    }
 
     [Authorize]
     [HttpGet("check-device")]
@@ -294,8 +302,7 @@ public class AuthController : ControllerBase
         var key = "google-login:" + dto.Code;
         if (string.IsNullOrEmpty(dto.Code) || !_cache.TryGetValue(key, out AuthResponseDto? auth)) return Unauthorized();
         _cache.Remove(key);
-        SetRefreshCookie(auth!.RefreshToken);
-        return Ok(auth);
+        return RespondWithAuth(auth!);
     }
 
     [HttpGet("google/signup/{ticket}")]
@@ -317,8 +324,7 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.RegisterAsync(dto, consentIp: HttpContext.Connection.RemoteIpAddress?.ToString(), google: identity);
             _cache.Remove(key);
-            SetRefreshCookie(result.RefreshToken);
-            return Ok(result);
+            return RespondWithAuth(result);
         }
         catch (ArgumentException ex)
         {

@@ -244,7 +244,7 @@
             SelectedRole = 1;
 
         var returnUrl = query["returnUrl"];
-        if (!string.IsNullOrEmpty(returnUrl) && returnUrl.StartsWith("/") && !returnUrl.StartsWith("//"))
+        if (!string.IsNullOrEmpty(returnUrl) && returnUrl.StartsWith("/") && !returnUrl.StartsWith("//") && !returnUrl.StartsWith("/\\"))
             ReturnUrl = returnUrl;
 
         GoogleEnabled = await AuthApi.IsGoogleEnabledAsync();

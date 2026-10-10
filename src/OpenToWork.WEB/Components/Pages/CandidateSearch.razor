@@ -33,26 +33,6 @@
                 <span class="bento-card-title">@Lang.T("dashboard.candidateSearch.filtersTitle")</span>
                 <div class="wizard-form-grid" style="margin-top: var(--space-md);">
                     <div class="wizard-form-field">
-                        <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minScore")</label>
-                        <input type="number" min="0" max="100" class="wizard-input" @bind="MinScore" placeholder="0-100" />
-                    </div>
-                    <div class="wizard-form-field">
-                        <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minStability")</label>
-                        <input type="number" min="0" max="100" class="wizard-input" @bind="MinStability" placeholder="0-100" />
-                    </div>
-                    <div class="wizard-form-field">
-                        <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minReliability")</label>
-                        <input type="number" min="0" max="100" class="wizard-input" @bind="MinReliability" placeholder="0-100" />
-                    </div>
-                    <div class="wizard-form-field">
-                        <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minEvidence")</label>
-                        <input type="number" min="0" max="100" class="wizard-input" @bind="MinEvidence" placeholder="0-100" />
-                    </div>
-                    <div class="wizard-form-field">
-                        <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minCompatibility")</label>
-                        <input type="number" min="0" max="100" class="wizard-input" @bind="MinCompatibility" placeholder="0-100" />
-                    </div>
-                    <div class="wizard-form-field">
                         <label class="wizard-field-label">@Lang.T("dashboard.candidateSearch.minStatus")</label>
                         <select class="wizard-input" @bind="MinStatus">
                             <option value="">@Lang.T("dashboard.candidateSearch.anyStatus")</option>
@@ -106,9 +86,6 @@
                             }
                         </div>
                         <div class="dash-score-rings" style="margin-top: var(--space-md);">
-                            <div class="dash-score-mini-ring" style="--mini-color: #3b82f6; --deg: @(r.OverallScore * 3.6)deg; width:56px; height:56px;">
-                                <div class="dash-score-mini-ring-inner" style="width:42px; height:42px;">@r.OverallScore</div>
-                            </div>
                             <span class="dash-score-status">@VerificationStatusLabel(r.VerificationStatus)</span>
                         </div>
                         @if (RequestedIds.Contains(r.CandidateId))
@@ -139,11 +116,6 @@
 </div>
 
 @code {
-    private int? MinScore { get; set; }
-    private int? MinStability { get; set; }
-    private int? MinReliability { get; set; }
-    private int? MinEvidence { get; set; }
-    private int? MinCompatibility { get; set; }
     private string MinStatus { get; set; } = "";
     private string SkillId { get; set; } = "";
     private List<SkillOptionDto> Skills { get; set; } = new();
@@ -191,11 +163,6 @@
 
         var filter = new CandidateSearchFilterDto
         {
-            MinOverallScore = MinScore,
-            MinStabilityIndex = MinStability,
-            MinReliabilityIndex = MinReliability,
-            MinEvidenceIndex = MinEvidence,
-            MinCompatibilityIndex = MinCompatibility,
             MinVerificationStatus = string.IsNullOrEmpty(MinStatus) ? null : int.Parse(MinStatus),
             SkillId = string.IsNullOrEmpty(SkillId) ? null : Guid.Parse(SkillId),
             Page = Page,

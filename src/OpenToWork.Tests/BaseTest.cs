@@ -18,6 +18,9 @@ public abstract class BaseTest : IDisposable
     protected BaseTest()
     {
         Client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        // Los tests actuan como cliente por cuerpo (como la app movil): el portal web ya no
+        // recibe el refreshToken en el JSON, solo viaja en la cookie HttpOnly td_refresh.
+        Client.DefaultRequestHeaders.Add("X-Auth-Channel", "body");
     }
 
     protected async Task AuthenticateAsync()

@@ -43,37 +43,13 @@ public class CandidateSearchService : ICandidateSearchService
             .Select(c => new { c.Id, c.FirstName, c.LastName, c.Title, c.City, c.Country })
             .ToListAsync();
 
-        // Score/estado se computan por candidato (no son filtrables via SQL directo: el score
-        // vive en una tabla aparte con upsert diferido, y el estado de verificacion se calcula
-        // siempre en vivo, nunca persistido - fase-3-sub7.md). A esta escala (docenas de
-        // candidatos, no miles) resolver en memoria es aceptable; si el volumen crece, esto
-        // necesitaria un job que materialice snapshots para filtrar/paginar en SQL.
-        var candidateIds = candidates.Select(c => c.Id).ToList();
-        var scores = await _context.PT_CandidateScores
-            .Where(s => !s.IsDeleted && candidateIds.Contains(s.PT_CandidateId))
-            .ToDictionaryAsync(s => s.PT_CandidateId, s => s);
-
+        // El score NO viaja a la empresa (H-27 / BE-19): es perfilado laboral automatizado
+        // y hasta que no haya EIPD y base legal no se muestra ni se filtra por el. El estado
+        // de verificacion se calcula siempre en vivo, nunca persistido (fase-3-sub7.md), y a
+        // esta escala (docenas de candidatos, no miles) resolverlo en memoria es aceptable.
         var results = new List<CandidateSearchResultDto>();
         foreach (var c in candidates)
         {
-            var score = scores.GetValueOrDefault(c.Id);
-            var overallScore = score?.OverallScore ?? 0;
-            var stability = score?.StabilityIndex ?? 0;
-            var reliability = score?.ReliabilityIndex ?? 0;
-            var evidence = score?.EvidenceIndex ?? 0;
-            var compatibility = score?.CompatibilityIndex ?? 0;
-
-            if (filter.MinOverallScore.HasValue && overallScore < filter.MinOverallScore.Value)
-                continue;
-            if (filter.MinStabilityIndex.HasValue && stability < filter.MinStabilityIndex.Value)
-                continue;
-            if (filter.MinReliabilityIndex.HasValue && reliability < filter.MinReliabilityIndex.Value)
-                continue;
-            if (filter.MinEvidenceIndex.HasValue && evidence < filter.MinEvidenceIndex.Value)
-                continue;
-            if (filter.MinCompatibilityIndex.HasValue && compatibility < filter.MinCompatibilityIndex.Value)
-                continue;
-
             var status = await _verificationStatusService.GetVerificationStatusAsync(c.Id);
             if (filter.MinVerificationStatus.HasValue && status.Status < filter.MinVerificationStatus.Value)
                 continue;
@@ -87,18 +63,14 @@ public class CandidateSearchService : ICandidateSearchService
                 Title = c.Title,
                 City = c.City,
                 Country = c.Country,
-                OverallScore = overallScore,
-                StabilityIndex = stability,
-                ReliabilityIndex = reliability,
-                EvidenceIndex = evidence,
-                CompatibilityIndex = compatibility,
                 VerificationStatus = status.Status,
                 IsVerifiedTD = status.IsVerifiedTD
             });
         }
 
         results = results
-            .OrderByDescending(r => r.OverallScore)
+            .OrderByDescending(r => r.VerificationStatus)
+            .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         var total = results.Count;
