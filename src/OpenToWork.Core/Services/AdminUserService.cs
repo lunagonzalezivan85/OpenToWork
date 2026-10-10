@@ -110,7 +110,7 @@ public class AdminUserService : IAdminUserService
             dto.WizardCompleted = c.WizardCompleted;
             dto.Availability = c.Availability;
             dto.WorkAuthorization = c.WorkAuthorization;
-            dto.IsProfilePublic = c.IsProfilePublic;
+            dto.IsProfilePublic = c.IsVisibleToCompanies;
             dto.CompletedAt = c.CompletedAt;
             dto.PlanTier = c.PlanTier;
             dto.PlanExpiresAt = c.PlanExpiresAt;

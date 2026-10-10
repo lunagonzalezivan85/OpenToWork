@@ -34,8 +34,7 @@ En produccion el portal **no crea ninguna cookie** (verificado con `curl`: sin `
 
 | Nombre | Donde | Tipo | Finalidad | Duracion | Titular |
 |---|---|---|---|---|---|
-| `opentowork-token` | localStorage | Tecnica | Token de acceso de la sesion iniciada | Hasta cerrar sesion | Trato Directo |
-| `opentowork-refresh-token` | localStorage | Tecnica | Renovar la sesion sin volver a pedir la contrasena | Hasta cerrar sesion | Trato Directo |
+| `td_refresh` | cookie HttpOnly (`/api/auth`) | Tecnica | Mantener y renovar la sesion. No la puede leer JavaScript ni queda en el almacenamiento del navegador | Hasta cerrar sesion o caducar | Trato Directo |
 | `opentowork-user-id` | localStorage | Tecnica | Identificar al usuario conectado | Hasta cerrar sesion | Trato Directo |
 | `opentowork-role` | localStorage | Tecnica | Saber si la cuenta es de candidato o de empresa (menu) | Hasta cerrar sesion | Trato Directo |
 | `opentowork-lang` | localStorage | Preferencia | Recordar el idioma elegido | Permanente, hasta borrarlo | Trato Directo |

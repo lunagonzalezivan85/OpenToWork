@@ -650,6 +650,13 @@
                                 <input type="checkbox" @bind="ProfileData.IsProfilePublic" />
                                 <span>@Lang.T("profile.fields.isPublic")</span>
                             </label>
+                            <p class="dash-chart-info-text" style="margin: var(--space-xs) 0 var(--space-md) 0;">
+                                @Lang.T("profile.fields.isPublicHint")
+                                @if (ProfileData.VisibilityConsentAt.HasValue)
+                                {
+                                    <span>· @Lang.T("profile.fields.consentSince") @ProfileData.VisibilityConsentAt.Value.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                                }
+                            </p>
                             <button class="ot-btn ot-btn--primary" @onclick="SaveProfileData">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -994,7 +1001,7 @@
         if (Lang._translations.Count == 0)
             await Lang.InitializeAsync();
 
-        var token = await LocalStorage.GetItemAsync("opentowork-token");
+        var token = await AuthApi.GetTokenAsync();
         if (string.IsNullOrEmpty(token))
         {
             Nav.NavigateTo("/login?returnUrl=/profile");

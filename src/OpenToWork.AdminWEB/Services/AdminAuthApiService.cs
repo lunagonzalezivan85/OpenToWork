@@ -1760,6 +1760,24 @@ public class AdminAuthApiService
         var response = await _httpClient.PutAsJsonAsync("api/admin/system-config/news", new { Enabled = enabled });
         return response.IsSuccessStatusCode;
     }
+
+    /// <summary>Cola de solicitudes "presentadme a este candidato" de empresas verificadas (H-39).</summary>
+    public async Task<List<CandidateRequestListDto>> GetCandidateRequestsAsync(bool all = false)
+    {
+        await SetAuthHeaderAsync();
+        var response = await _httpClient.GetAsync($"api/admin/candidate-requests?all={all.ToString().ToLower()}");
+        if (!response.IsSuccessStatusCode) return new();
+        return await response.Content.ReadFromJsonAsync<List<CandidateRequestListDto>>() ?? new();
+    }
+
+    /// <summary>action: "handled" (POST .../handle) o "rejected" (POST .../reject).</summary>
+    public async Task<bool> ReviewCandidateRequestAsync(Guid id, string action)
+    {
+        await SetAuthHeaderAsync();
+        var verb = action == "rejected" ? "reject" : "handle";
+        var response = await _httpClient.PostAsync($"api/admin/candidate-requests/{id}/{verb}", null);
+        return response.IsSuccessStatusCode;
+    }
 }
 
 public class NewsSavedDto

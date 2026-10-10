@@ -1,0 +1,124 @@
+@page "/candidate-requests"
+@using OpenToWork.AdminWEB.Services
+@using OpenToWork.Shared.DTOs
+@inject LanguageService Lang
+@inject AdminAuthApiService AuthApi
+@inject NavigationManager Nav
+
+@* Cola de solicitudes de candidatos (reapertura controlada H-39): empresas verificadas piden
+   candidatos desde la busqueda anonima. El staff revisa y la entrega real va por el pipeline
+   existente (recruitment -> ReadyToDeliver -> entrega). Nombre enmascarado tambien aqui. *@
+
+<PageTitle>@L("title")</PageTitle>
+
+<div class="admin-page-header">
+    <div>
+        <h1>@L("title")</h1>
+        <p class="admin-page-header-subtitle">@L("subtitle")</p>
+    </div>
+    <div class="admin-page-actions">
+        <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.9rem;">
+            <input type="checkbox" checked="@_showAll" @onchange="ToggleAll" />
+            @L("showAll")
+        </label>
+    </div>
+</div>
+
+@if (_requests == null)
+{
+    <div class="admin-loading">@Lang.T("admin.common.loading")</div>
+}
+else if (_requests.Count == 0)
+{
+    <div class="admin-empty"><div class="admin-empty-text">@L("empty")</div></div>
+}
+else
+{
+    <div class="admin-table-wrapper">
+        <table class="ot-table">
+            <thead>
+                <tr>
+                    <th>@L("colCandidate")</th>
+                    <th>@L("colCompany")</th>
+                    <th>@L("colVacancy")</th>
+                    <th>@L("colNotes")</th>
+                    <th>@L("colStatus")</th>
+                    <th>@L("colRequested")</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in _requests)
+                {
+                    <tr>
+                        <td>
+                            <a href="/candidates/pipeline/@r.CandidateUserId">@r.CandidateMaskedName</a>
+                            @if (!string.IsNullOrEmpty(r.CandidateTitle))
+                            {
+                                <div class="admin-page-header-subtitle" style="margin:0;">@r.CandidateTitle</div>
+                            }
+                        </td>
+                        <td>
+                            @r.CompanyName
+                            <div class="admin-page-header-subtitle" style="margin:0;">@r.RequestedByEmail</div>
+                        </td>
+                        <td>@(r.VacancyTitle ?? "—")</td>
+                        <td>@r.Notes</td>
+                        <td><span class="admin-status @StatusClass(r.Status)">@L($"statuses.{r.Status}")</span></td>
+                        <td>@r.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @if (r.Status == 0)
+                            {
+                                <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick='() => ReviewAsync(r.Id, "handled")'>@L("markHandled")</button>
+                                <button class="ot-btn ot-btn--outline ot-btn--small" disabled="@_busy" @onclick='() => ReviewAsync(r.Id, "rejected")'>@L("reject")</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<CandidateRequestListDto>? _requests;
+    private bool _showAll;
+    private bool _busy;
+
+    private string L(string key) => Lang.T($"admin.candidateRequests.{key}");
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Lang._translations.Count == 0)
+            await Lang.InitializeAsync();
+        await ReloadAsync();
+    }
+
+    private async Task ToggleAll()
+    {
+        _showAll = !_showAll;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _requests = null;
+        _requests = await AuthApi.GetCandidateRequestsAsync(_showAll);
+    }
+
+    private async Task ReviewAsync(Guid id, string action)
+    {
+        _busy = true;
+        await AuthApi.ReviewCandidateRequestAsync(id, action);
+        await ReloadAsync();
+        _busy = false;
+    }
+
+    private static string StatusClass(int status) => status switch
+    {
+        0 => "admin-status--draft",
+        1 => "admin-status--success",
+        2 => "admin-status--danger",
+        _ => ""
+    };
+}

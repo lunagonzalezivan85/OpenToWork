@@ -108,12 +108,14 @@ public class CompatibilityService : ICompatibilityService
         var vacancyExists = await _context.PT_Vacancies.AnyAsync(v => v.Id == vacancyId && !v.IsDeleted);
         if (!vacancyExists) throw new InvalidOperationException("Vacancy not found");
 
-        // Candidatos elegibles: perfil publico + wizard completo (mismo criterio que
-        // AlertService para decidir que candidatos son visibles/notificables).
+        // Candidatos elegibles: perfil publico + consentimiento RGPD registrado + wizard
+        // completo (mismo criterio que CandidateSearchService - Fase 2, auditoria H-27).
         // Un candidato Colocado en otra plaza no esta disponible (CandidatePlacementHelper).
         var placedIds = CandidatePlacementHelper.PlacedCandidateIds(_context, vacancyId);
         var candidateIds = await _context.PT_Candidates
-            .Where(c => !c.IsDeleted && c.IsProfilePublic && c.WizardCompleted)
+            .Where(c => !c.IsDeleted && c.IsProfilePublic && c.WizardCompleted
+                && c.VisibilityConsentAt != null
+                && (c.VisibilityConsentRevokedAt == null || c.VisibilityConsentRevokedAt < c.VisibilityConsentAt))
             .Where(c => !placedIds.Contains(c.Id))
             .Select(c => c.Id)
             .ToListAsync();

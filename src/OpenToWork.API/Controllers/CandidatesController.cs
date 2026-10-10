@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OpenToWork.Core.Interfaces;
+using OpenToWork.Models.Context;
+using OpenToWork.Models.Entities;
 using OpenToWork.Shared.DTOs;
 
 namespace OpenToWork.API.Controllers;
@@ -16,9 +19,11 @@ public class CandidatesController : ControllerBase
     private readonly IReferenceService _referenceService;
     private readonly IVerificationStatusService _verificationStatusService;
     private readonly IProfileService _profileService;
+    private readonly ICandidateSearchService _candidateSearchService;
     private readonly ISystemConfigService _systemConfig;
+    private readonly AppDbContext _context;
 
-    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService, IProfileService profileService, ISystemConfigService systemConfig)
+    public CandidatesController(ICandidateService candidateService, IValidationService validationService, IScoringService scoringService, IReferenceService referenceService, IVerificationStatusService verificationStatusService, IProfileService profileService, ICandidateSearchService candidateSearchService, ISystemConfigService systemConfig, AppDbContext context)
     {
         _candidateService = candidateService;
         _validationService = validationService;
@@ -26,21 +31,104 @@ public class CandidatesController : ControllerBase
         _referenceService = referenceService;
         _verificationStatusService = verificationStatusService;
         _profileService = profileService;
+        _candidateSearchService = candidateSearchService;
         _systemConfig = systemConfig;
+        _context = context;
     }
 
-    // Busqueda de candidatos por empresas: CERRADA (auditoria 8-Oct, H-39). Cualquier usuario con sesion,
-    // incluso una empresa sin verificar o un candidato, listaba a candidatos reales con nombre y score.
-    // Se reabrira solo con verificacion de empresas, opt-in del candidato y datos minimos
-    // (docs/dsiezar/seguridad-busqueda-candidatos.md). ICandidateSearchService se conserva para ese rediseno.
+    // Busqueda de candidatos (auditoria 8-Oct, H-39): reabierta con las tres condiciones del
+    // rediseno - empresa verificada por el staff (403 al resto), candidatos solo si dieron
+    // consentimiento de visibilidad (VisibilityConsentAt) y datos minimos + apellido
+    // enmascarado en el resultado. La identidad completa sigue detras de la entrega.
+    /// <summary>Solo una empresa verificada por el equipo TD puede buscar candidatos.
+    /// Usuarios sin empresa (candidatos) o con empresa sin verificar -> 403.</summary>
     [HttpGet("search")]
-    public IActionResult Search() => SearchClosed();
+    public async Task<IActionResult> Search([FromQuery] CandidateSearchFilterDto filter)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        if (!await IsVerifiedCompanyAsync(userId.Value)) return Forbid();
 
+        var result = await _candidateSearchService.SearchAsync(filter);
+        return Ok(result);
+    }
+
+    /// <summary>Skills que aparecen en candidatos visibles - para el filtro de busqueda.
+    /// Misma regla que search: solo empresas verificadas.</summary>
     [HttpGet("search/skills")]
-    public IActionResult GetSearchableSkills() => SearchClosed();
+    public async Task<IActionResult> GetSearchableSkills()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+        if (!await IsVerifiedCompanyAsync(userId.Value)) return Forbid();
 
-    private IActionResult SearchClosed() =>
-        StatusCode(StatusCodes.Status403Forbidden, new { message = "La busqueda de candidatos no esta disponible." });
+        var result = await _candidateSearchService.GetSearchableSkillsAsync();
+        return Ok(result);
+    }
+
+    private Task<bool> IsVerifiedCompanyAsync(Guid userId) =>
+        _context.PT_Companies.AnyAsync(c => c.SCUserId == userId && !c.IsDeleted && c.IsVerified);
+
+    // --- Solicitudes de candidato (empresa verificada -> staff): senal para que TD prepare
+    // la entrega por el pipeline existente. NO desbloquea nada por si sola. ---
+
+    /// <summary>Empresa verificada solicita que TD le presente a este candidato.</summary>
+    [HttpPost("{id}/request")]
+    public async Task<IActionResult> RequestCandidate(Guid id, [FromBody] CandidateRequestDto dto)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var company = await _context.PT_Companies
+            .FirstOrDefaultAsync(c => c.SCUserId == userId.Value && !c.IsDeleted && c.IsVerified);
+        if (company == null) return Forbid();
+
+        var candidateVisible = await _context.PT_Candidates
+            .AnyAsync(c => c.Id == id && !c.IsDeleted && c.IsProfilePublic && c.WizardCompleted
+                && c.VisibilityConsentAt != null);
+        if (!candidateVisible) return NotFound();
+
+        if (dto.VacancyId.HasValue)
+        {
+            var vacancyOwned = await _context.PT_Vacancies
+                .AnyAsync(v => v.Id == dto.VacancyId.Value && !v.IsDeleted && v.PT_CompanyId == company.Id);
+            if (!vacancyOwned) return BadRequest(new { message = "vacancy_not_owned" });
+        }
+
+        var duplicate = await _context.PT_CandidateRequests
+            .AnyAsync(r => r.PT_CompanyId == company.Id && r.PT_CandidateId == id
+                && r.Status == 0 && !r.IsDeleted);
+        if (duplicate) return Conflict(new { message = "already_requested" });
+
+        _context.PT_CandidateRequests.Add(new PTCandidateRequest
+        {
+            PT_CompanyId = company.Id,
+            RequestedByUserId = userId.Value,
+            PT_CandidateId = id,
+            PT_VacancyId = dto.VacancyId,
+            Notes = dto.Notes
+        });
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    /// <summary>Candidatos que esta empresa ya ha solicitado (para marcar "solicitado" en la lista).</summary>
+    [HttpGet("company/requests")]
+    public async Task<IActionResult> GetCompanyRequests()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var company = await _context.PT_Companies
+            .FirstOrDefaultAsync(c => c.SCUserId == userId.Value && !c.IsDeleted);
+        if (company == null) return Ok(Array.Empty<Guid>());
+
+        var ids = await _context.PT_CandidateRequests
+            .Where(r => r.PT_CompanyId == company.Id && !r.IsDeleted && r.Status == 0)
+            .Select(r => r.PT_CandidateId)
+            .ToListAsync();
+        return Ok(ids);
+    }
 
     [HttpGet("me")]
     public async Task<IActionResult> GetMyProfile()

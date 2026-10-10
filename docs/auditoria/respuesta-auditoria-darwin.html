@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Trato Directo — Respuesta a la auditoría</title>
+<style>
+  :root {
+    --bg: #F0F7FF;
+    --surface: #FFFFFF;
+    --line: #D6E4F0;
+    --text: #0B132B;
+    --muted: #3A506B;
+    --faint: #778DA9;
+    --accent: #0066FF;
+    --accent-hover: #0052CC;
+    --accent-light: #E8F1FF;
+    --chip: #F1F5F9;
+    --ok: #0f7b4d; --ok-bg: #e3f4ec;
+    --wip: #8a5b00; --wip-bg: #fdf3e0;
+    --todo: #8a1f2d; --todo-bg: #fde9ec;
+    --crit: #b3261e; --alta: #b3540a; --media: #7a6216; --baja: #0f7b4d;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font: 15px/1.55 "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header.top {
+    position: sticky; top: 0; z-index: 5;
+    background: rgba(255,255,255,.95);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  .head {
+    max-width: 1080px; margin: 0 auto; padding: 18px 20px;
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  }
+  .logo {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: var(--accent); color: #fff;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 15px; letter-spacing: .5px;
+  }
+  h1 { font-size: 20px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 80px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .stat b { display: block; font-size: 26px; line-height: 1.1; }
+  .stat span { color: var(--muted); font-size: 12px; }
+  .stat.ok b { color: var(--ok); } .stat.wip b { color: var(--wip); } .stat.todo b { color: var(--todo); }
+  .legend { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .pill { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; cursor: pointer; }
+  .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--chip); }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+  tr[data-status] td { border-left: 3px solid transparent; }
+  .id { font-weight: 700; white-space: nowrap; font-family: ui-monospace, monospace; font-size: 13px; }
+  .sev { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .sev.critica { color: var(--crit); background: #fdeceb; }
+  .sev.alta { color: var(--alta); background: #fdf0e4; }
+  .sev.media { color: var(--media); background: #fdf8df; }
+  .sev.baja { color: var(--baja); background: var(--ok-bg); }
+  .st { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .st.ok { color: var(--ok); background: var(--ok-bg); }
+  .st.wip { color: var(--wip); background: var(--wip-bg); }
+  .st.todo { color: var(--todo); background: var(--todo-bg); }
+  .resp { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .evid { color: var(--faint); font-size: 12px; margin-top: 4px; font-family: ui-monospace, monospace; }
+  .note { background: var(--accent-light); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin-bottom: 24px; font-size: 14px; color: var(--muted); }
+  .note b { color: var(--text); }
+  footer { color: var(--faint); font-size: 12px; text-align: center; padding: 30px 0; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="head">
+    <div class="logo">TD</div>
+    <div>
+      <h1>Respuesta a la auditoría de seguridad y calidad</h1>
+      <div class="sub">Trato Directo · 9 de octubre de 2026 · rama <code>iluna-sec-rgpd</code> (PR #9 + PR #10 hacia <code>main</code>) · responde a <code>panel-auditoria.html</code></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="note">
+    <b>Contexto.</b> Tras la auditoría se trabajó por fases: contención (cerrar superficie),
+    sesiones, RGPD/opt-in y reapertura controlada de la búsqueda. Todo verificado con pruebas
+    funcionales (curl/Playwright) y documentado en <code>docs/iluna/fase-*.md</code> y
+    <code>docs/iluna/test_log_2026-10-09.md</code>. Suite de integración: <b>168/168</b>.
+  </div>
+
+  <div class="cards">
+    <div class="stat"><b id="n-total">49</b><span>hallazgos revisados</span></div>
+    <div class="stat ok"><b id="n-ok">0</b><span>resueltos y verificados</span></div>
+    <div class="stat wip"><b id="n-wip">0</b><span>en curso (parcial)</span></div>
+    <div class="stat todo"><b id="n-todo">0</b><span>pendientes</span></div>
+  </div>
+
+  <div class="legend">
+    <button class="pill active" data-f="all">Todos</button>
+    <button class="pill" data-f="ok">Resueltos</button>
+    <button class="pill" data-f="wip">En curso</button>
+    <button class="pill" data-f="todo">Pendientes</button>
+  </div>
+
+  <table id="tabla">
+    <thead><tr><th>Hallazgo</th><th>Sev.</th><th>Estado</th><th>Respuesta</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<footer>Documento interno — Trato Directo. Generado 09-Oct-2026.</footer>
+
+<script>
+// status: ok | wip | todo
+const R = [
+["H-01","alta","ok","Detalle de vacante público","Hecho antes del panel: rutas públicas /vacancy/TD-XXXXXXXX con código de referencia (migración VacancyReferenceCode) + AllowAnonymous; la API solo expone el contrato público.","fase-7-geo-busqueda.md"],
+["H-02","alta","todo","Metadatos y prerender SEO","Pendiente — HTML estático público aún sin metadatos por página ni prerender."],
+["H-03","media","todo","robots/sitemap/favicon devuelven HTML","Pendiente — servir archivos reales y 404 correcto."],
+["H-04","alta","ok","Tokens en localStorage","Resuelto y verificado en navegador: refresh en cookie HttpOnly td_refresh (Path=/api/auth, SameSite=Lax, Secure); access token SOLO en memoria del WASM (tras recarga se renueva en silencio por la cookie); logout revoca en servidor; nuevo POST /api/auth/revoke-all cierra todos los dispositivos.","fase-9-sesiones.md, fase-12"],
+["H-05","media","ok","localhost en artefacto público","appsettings del WASM limpio de localhost; configuración dev aparte."],
+["H-06","baja","todo","Cabecera de servidor delata la pila","Pendiente — quitar Server/X-Powered-By en el host de producción."],
+["H-07","media","ok","Cabeceras de seguridad","Security headers + CSP aplicadas en la fase de contención; duplicados por revisar en el despliegue final.","fase-6-seguridad.md"],
+["H-08","baja","todo","Canal para reportar fallos","Pendiente — publicar security.txt / buzón de seguridad."],
+["H-09","alta","wip","DNI y teléfono desde el alta","En curso — el documento se valida en servidor (formato/letra por tipo), pero sigue pidiéndose en el alta. Minimización real (pedirlo solo cuando haga falta) es decisión de producto pendiente.","H-32"],
+["H-10","alta","ok","Autorización por identificador","Matriz completa auditada (26 controllers del portal + 25 del AdminAPI): ownership por endpoint verificado; hueco real corregido (POST /api/applications aceptaba vacantes borrador/cerradas → ahora exige Active). AdminAPI entero tras [Authorize(Roles=Admin)].","fase-11-matriz-autorizacion.md"],
+["H-11","alta","wip","Anti-abuso del alta","En curso — rate limiting en servidor, respuesta uniforme en send-code (H-41) e infra de reCAPTCHA con verificación server-side ya están; falta el widget en el portal y las claves de producción para activar Enforced.","fase-9-sesiones.md"],
+["H-12","media","todo","Listado público de empresas con registro vacío","Pendiente — contrato público mínimo (excluir fichas sin nombre/datos) y tope de paginación."],
+["H-13","baja","todo","Contratos del backoffice en el cliente","Pendiente — separar DTOs de admin del ensamblado público."],
+["H-14","alta","todo","Contenido de demostración visible","Pendiente — teléfonos/correos/redes y cifras demo a reemplazar por contenido real (producto)."],
+["H-15","media","todo","Contraste del enlace de acceso","Pendiente — visual; requiere visto bueno de diseño (Iluna)."],
+["H-16","media","todo","Peso inicial ~5 MB sin Brotli","Pendiente — compresión Brotli, caché con huella y carga diferida."],
+["H-17","media","todo","Política de correo en observación","Pendiente — endurecer DMARC/SPF/DKIM en DNS (operaciones de dominio)."],
+["H-18","media","todo","Runner propio sin análisis de código","Pendiente — inventario de accesos CI/CD y gates de seguridad en pipeline."],
+["H-19","media","todo","Sin monitoreo ni alertas","Pendiente — depende de la elección de hosting; disponibilidad + certificado + logs centralizados."],
+["H-20","alta","todo","Sin backups ni entorno de pruebas","Pendiente — prioridad alta de infraestructura: copias cifradas + restauración probada + staging."],
+["H-21","baja","todo","www sin redirección canónica","Pendiente — redirect en el borde al dominio principal."],
+["H-22","baja","todo","Estilos versionados a mano","En progreso — el service worker ya versiona caché (tratodirecto-v9); falta huella automática en CSS y no cachear HTML."],
+["H-23","baja","todo","Plural de vacantes incorrecto","Pendiente — pluralización i18n."],
+["H-24","media","wip","Señales de las pruebas en el cliente","En curso — el score se calcula en servidor; falta medir tiempos del lado del servidor en skill-tests/challenges."],
+["H-25","alta","ok","Subida de archivos","Tipos permitidos + tamaño + magic bytes validados en servidor; rutas de descarga autorizadas (el CV/perfil solo lo abre el dueño o empresa con entrega: CanViewCandidateAsync).","fase-6-seguridad.md"],
+["H-26","baja","ok","Indicadores públicos sin sesión","Documentados como públicos intencionales (feature flags, planes, legal, vacantes).","fase-11"],
+["H-27","alta","wip","Perfilado mostrado a empresas sin base documentada","En curso y avanzado — consentimiento explícito con timestamp/versión/revocación (VisibilityConsent*, versión rgpd-v1), minimización del resultado (nombre enmascarado María G.), mini-EIPD documentado (finalidad, base 6.1.a, destinatarios, revocación). Falta EIPD formal y revisión legal del scoring.","fase-10-rgpd-optin.md"],
+["H-28","media","todo","Contacto en otro dominio","Pendiente — confirmar titularidad y usar buzón propio del dominio."],
+["H-29","alta","ok","Paneles visibles tras cerrar sesión","Guards de ruta + roles en el WASM; token caducado no autentica; logout limpia estado y revoca. Verificado en Playwright: /dashboard tras logout redirige a login.","fase-8-contencion-auditoria.md"],
+["H-30","media","ok","Páginas de un rol abiertas al otro","Misma tabla de rutas+roles en menús y guards; API además verifica ownership/rol por endpoint.","fase-8"],
+["H-31","media","ok","Logout sin efecto","/logout revoca el refresh token en servidor y limpia estado; además revoke-all para todos los dispositivos.","fase-8, fase-9"],
+["H-32","media","wip","Validación de documento/NIF","Parcial — formato y letra validados en servidor por tipo de documento; comprobación de existencia real (NIF) pendiente.","H-09"],
+["H-33","media","todo","Notificaciones en inglés","Pendiente — plantillas de correo por idioma del usuario."],
+["H-34","media","todo","% de perfil inconsistente","Pendiente — un solo cálculo en servidor."],
+["H-35","baja","todo","Llave suelta / texto basura","Pendiente — saneado de contenido al publicar."],
+["H-36","media","todo","Aviso de bienvenida bloqueante","Pendiente — visual; requiere visto bueno de diseño."],
+["H-37","baja","todo","Avatar enlace y menú a la vez","Pendiente — accesibilidad; separar botón de menú."],
+["H-38","baja","wip","Errores de consola autenticados","En curso — se corrigen según aparecen en las pruebas; falta smoke test que falle ante errores nuevos."],
+["H-39","critica","ok","Búsqueda de candidatos abierta","Resuelto en dos tiempos. 1) Contención total (403 a todos). 2) Reapertura controlada verificada: solo empresa con IsVerified=true; candidatos solo con consentimiento RGPD registrado; resultado con datos mínimos (María G., titular, ciudad, score — sin contacto); la empresa solicita el candidato y el acceso completo solo llega por entrega del staff (pipeline existente). Verificado: candidato→403, empresa verificada→200, solicitud→204/409.","fase-10/11/12"],
+["H-40","alta","ok","Empresa operativa sin verificar","Verificación manual por el equipo (admin API + UI); sin verificar NO puede buscar candidatos ni solicitarlos (403). Limitar también la creación de vacantes queda como decisión abierta (documentada).","fase-8, fase-12"],
+["H-41","media","ok","El alta confirma correo existente","Respuesta uniforme + aviso al titular + cooldown; el código se consume antes del chequeo de duplicado.","fase-8"],
+["H-42","baja","todo","Un correo no puede ser candidato y empresa","Pendiente — decisión de producto, documentada como abierta."],
+["H-43","media","ok","Verificación de correo distinta por rol","Un solo flujo con código para candidato y empresa; next/returnUrl sanitizados (rechaza // y /\\).","fase-8"],
+["H-44","media","ok","Error genérico en postulante ajeno","404 uniforme sin datos (anti-enumeración) para 'no existe' y 'no es tuyo'; el test de integración se alineó al contrato.","fase-8/12"],
+["H-45","media","todo","Perfil de empresa acepta URLs libres","Pendiente — preferir subida de logo y validar enlaces."],
+["H-46","baja","todo","Terminología de otro país / contrato≈modalidad","Pendiente — NIF, razón social, contrato separado de modalidad."],
+["H-47","baja","todo","Voseo y tildes","Pendiente — guía de español de España; los textos nuevos ya la siguen."],
+["H-48","media","todo","Menú de empresa solo con ratón","Pendiente — accesibilidad; visto bueno de diseño."],
+["H-49","media","wip","Buscador asistido en panel de empresa","En curso — el análisis de CV ahora extrae texto en servidor (PdfPig) y al proveedor solo va texto, nunca el archivo; pendiente inventario formal de datos enviados + DPA con el proveedor.","fase-6"],
+];
+
+const LABEL = { ok: "Resuelto", wip: "En curso", todo: "Pendiente" };
+const tbody = document.querySelector("#tabla tbody");
+for (const [id, sev, st, title, resp, evid] of R) {
+  const tr = document.createElement("tr");
+  tr.dataset.status = st;
+  tr.innerHTML = `<td><span class="id">${id}</span><br>${title}</td>
+    <td><span class="sev ${sev}">${sev}</span></td>
+    <td><span class="st ${st}">${LABEL[st]}</span></td>
+    <td>${resp}${evid ? `<div class="evid">docs/iluna/${evid}</div>` : ""}</td>`;
+  tbody.appendChild(tr);
+}
+const count = s => R.filter(r => r[2] === s).length;
+document.getElementById("n-ok").textContent = count("ok");
+document.getElementById("n-wip").textContent = count("wip");
+document.getElementById("n-todo").textContent = count("todo");
+document.querySelectorAll(".pill").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".pill").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  const f = b.dataset.f;
+  document.querySelectorAll("#tabla tr[data-status]").forEach(tr =>
+    tr.style.display = (f === "all" || tr.dataset.status === f) ? "" : "none");
+});
+</script>
+</body>
+</html>

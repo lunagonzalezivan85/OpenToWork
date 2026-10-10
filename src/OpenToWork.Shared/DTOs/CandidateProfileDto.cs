@@ -44,6 +44,8 @@ public class CandidateProfileDto
     public int? Availability { get; set; }
     public int? WorkAuthorization { get; set; }
     public bool IsProfilePublic { get; set; }
+    /// <summary>Cuando acepto compartir el perfil con empresas (RGPD). Null = aun sin consentimiento.</summary>
+    public DateTime? VisibilityConsentAt { get; set; }
     public List<CandidateExperienceDto> Experiences { get; set; } = new();
     public List<CandidateEducationDto> Educations { get; set; } = new();
     public List<CandidateCertificationDto> Certifications { get; set; } = new();

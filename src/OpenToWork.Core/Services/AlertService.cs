@@ -67,7 +67,7 @@ public class AlertService : IAlertService
         }
 
         // Profile not public alert
-        if (!candidate.IsProfilePublic)
+        if (!candidate.IsVisibleToCompanies)
         {
             alerts.Add(new AlertDto
             {
@@ -99,9 +99,10 @@ public class AlertService : IAlertService
             candidate.YearsOfExperience.HasValue,
             candidate.Availability.HasValue,
             candidate.Experiences != null && candidate.Experiences.Any(e => !e.IsDeleted),
-            candidate.Educations != null && candidate.Educations.Any(e => !e.IsDeleted),
-            candidate.IsProfilePublic
+            candidate.Educations != null && candidate.Educations.Any(e => !e.IsDeleted)
         };
+        // IsProfilePublic no cuenta: ligar el % de completitud al consentimiento de
+        // visibilidad presionaria al candidato a aceptarlo (RGPD: consentimiento libre).
 
         var completed = fields.Count(f => f);
         return (int)Math.Round((double)completed / fields.Count * 100);

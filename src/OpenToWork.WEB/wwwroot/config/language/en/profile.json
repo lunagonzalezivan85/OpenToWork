@@ -1,4 +1,4 @@
-{
+﻿{
     "title": "My Profile",
     "personalInfo": "Personal information",
     "professionalInfo": "Professional information",
@@ -33,7 +33,9 @@
         "workAuthorization": "Work authorization",
         "summary": "Professional summary",
         "cvUrl": "CV URL",
-        "isPublic": "Public profile",
+        "isPublic": "Show my profile to verified companies",
+        "isPublicHint": "You share your headline, city, country, skills and score - not your full last name or contact details - only with companies verified by the Trato Directo team. You can turn it off anytime.",
+        "consentSince": "Consent recorded on",
         "phone": "Phone",
         "identification": "Identification",
         "birthDate": "Date of birth",

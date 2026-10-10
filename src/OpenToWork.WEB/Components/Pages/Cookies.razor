@@ -17,7 +17,7 @@
     </div>
 
     <article class="legal-doc">
-        <p class="legal-doc-updated">Última actualización: 5 de octubre de 2026</p>
+        <p class="legal-doc-updated">Última actualización: 10 de octubre de 2026</p>
 
         <h2>1. Qué son las cookies y el almacenamiento local</h2>
         <p>
@@ -44,8 +44,7 @@
                     <tr><th>Nombre</th><th>Tipo</th><th>Finalidad</th><th>Duración</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td><code>opentowork-token</code></td><td>Técnica</td><td>Mantener tu sesión iniciada.</td><td>Hasta que cierres sesión</td></tr>
-                    <tr><td><code>opentowork-refresh-token</code></td><td>Técnica</td><td>Renovar la sesión sin volver a pedirte la contraseña.</td><td>Hasta que cierres sesión</td></tr>
+                    <tr><td><code>td_refresh</code> (cookie HttpOnly)</td><td>Técnica</td><td>Mantener y renovar tu sesión sin volver a pedirte la contraseña. No se puede leer desde JavaScript ni se guarda en el almacenamiento del navegador.</td><td>Hasta que cierres sesión o caduque</td></tr>
                     <tr><td><code>opentowork-user-id</code></td><td>Técnica</td><td>Identificar al usuario conectado.</td><td>Hasta que cierres sesión</td></tr>
                     <tr><td><code>opentowork-role</code></td><td>Técnica</td><td>Saber si tu cuenta es de candidato o de empresa para mostrarte el menú correcto.</td><td>Hasta que cierres sesión</td></tr>
                     <tr><td><code>opentowork-lang</code></td><td>Preferencia</td><td>Recordar el idioma que elegiste.</td><td>Hasta que lo borres</td></tr>
@@ -63,8 +62,16 @@
         <h2>3. Proveedores</h2>
         <p>
             El portal se sirve a través de Cloudflare, que actúa como encargado del tratamiento para entregar la web
-            de forma rápida y segura. Todos los archivos del portal (código, estilos, tipografías e imágenes propias)
-            se sirven desde nuestro propio dominio: tu navegador no descarga nada de otros sitios al navegar por él.
+            de forma rápida y segura. Salvo las excepciones que detallamos justo debajo (mapa, Google y vídeos),
+            todos los archivos del portal (código, estilos, tipografías e imágenes propias) se sirven desde nuestro
+            propio dominio.
+        </p>
+        <p>
+            En la <strong>búsqueda de vacantes</strong> mostramos un mapa interactivo. Al usarlo, tu navegador
+            descarga las teselas del mapa de <strong>OpenFreeMap</strong> y consulta el buscador de lugares de
+            <strong>Nominatim</strong> (OpenStreetMap): ambos servicios reciben tu dirección IP y, en el caso de
+            Nominatim, el texto del lugar que buscas. Solo sucede cuando visitas esa página y se aplica su propia
+            política de privacidad. El mapa no guarda nada en tu navegador más allá de la copia en caché habitual.
         </p>
         <p>
             Si eres candidato y eliges <strong>«Continuar con Google»</strong>, te llevamos a la página de Google para

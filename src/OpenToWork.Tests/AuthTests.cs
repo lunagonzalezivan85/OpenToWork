@@ -31,6 +31,30 @@ public class AuthTests : BaseTest
     }
 
     [Fact]
+    public async Task Login_SinCanalBody_RefreshSoloEnCookie()
+    {
+        // El portal (cookie) no recibe el refresh en el JSON; solo clientes por cuerpo
+        // (X-Auth-Channel: body, como la app movil o este cliente de test) lo piden.
+        using var webClient = new HttpClient { BaseAddress = Client.BaseAddress };
+        var loginDto = new LoginDto
+        {
+            Email = "juan.perez@gmail.com",
+            Password = "Candidato123!",
+            RememberMe = false
+        };
+
+        var response = await webClient.PostAsJsonAsync("api/auth/login", loginDto);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.TryGetValues("Set-Cookie", out var cookies));
+        Assert.Contains(cookies!, c => c.StartsWith("td_refresh="));
+        var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
+        Assert.NotNull(result);
+        Assert.False(string.IsNullOrEmpty(result!.Token));
+        Assert.True(string.IsNullOrEmpty(result.RefreshToken));
+    }
+
+    [Fact]
     public async Task Login_ConPasswordIncorrecta_RetornaUnauthorized()
     {
         var loginDto = new LoginDto

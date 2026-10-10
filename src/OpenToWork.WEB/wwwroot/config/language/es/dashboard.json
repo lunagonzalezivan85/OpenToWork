@@ -163,7 +163,7 @@
     },
     "candidateSearch": {
         "title": "Búsqueda Avanzada",
-        "unavailable": "Esta función no está disponible por ahora. Te enviamos candidatos verificados para tus vacantes.",
+        "unavailable": "La búsqueda de candidatos solo está disponible para empresas verificadas por el equipo de Trato Directo. Te enviamos candidatos verificados para tus vacantes.",
         "subtitle": "Encontrá candidatos por score, estado de verificación y skills",
         "filtersTitle": "Filtros",
         "minScore": "Score mÃ­nimo",
@@ -177,6 +177,8 @@
         "anySkill": "Cualquier skill",
         "search": "Buscar",
         "empty": "No se encontraron candidatos con esos filtros.",
-        "resultsCount": "candidatos encontrados"
+        "resultsCount": "candidatos encontrados",
+        "request": "Solicitar candidato",
+        "requested": "Solicitud enviada"
     }
 }

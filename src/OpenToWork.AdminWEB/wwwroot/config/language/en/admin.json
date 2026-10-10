@@ -29,6 +29,7 @@
     "candidates": "Candidates",
     "assigned": "Assigned",
     "pipeline": "Pipeline",
+    "candidateRequests": "Requests",
     "management": "Management",
     "users": "Users",
     "vacancies": "Vacancies",
@@ -1414,5 +1415,20 @@
     "testRecipient": "Send test to",
     "sendTest": "Send test email",
     "testSuccess": "Test email sent successfully."
+  },
+  "candidateRequests": {
+    "title": "Candidate requests",
+    "subtitle": "Verified companies asking TD to introduce them to a candidate. Delivery happens from the candidate's pipeline.",
+    "showAll": "Also show handled",
+    "empty": "No pending requests.",
+    "colCandidate": "Candidate",
+    "colCompany": "Company",
+    "colVacancy": "Vacancy",
+    "colNotes": "Notes",
+    "colStatus": "Status",
+    "colRequested": "Requested",
+    "markHandled": "Mark handled",
+    "reject": "Reject",
+    "statuses": { "0": "Pending", "1": "Handled", "2": "Rejected" }
   }
 }

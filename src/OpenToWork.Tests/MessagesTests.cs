@@ -78,9 +78,8 @@ public class MessagesTests : BaseTest
         var fakeId = Guid.NewGuid();
         var response = await Client.GetAsync($"api/messages/{fakeId}/messages");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var messages = await response.Content.ReadFromJsonAsync<List<MessageDto>>();
-        Assert.NotNull(messages);
+        // 404 uniforme para "no existe" y "no es tuyo" (anti-enumeracion, embudo ciego).
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
